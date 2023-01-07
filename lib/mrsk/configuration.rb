@@ -24,6 +24,10 @@ class Mrsk::Configuration
     @version ||= ENV["VERSION"] || `git rev-parse HEAD`.strip
   end
 
+  def absolute_image
+    [ config.registry["server"], image ].compact.join("/")
+  end
+
   def image_with_version
     "#{image}:#{version}"
   end
