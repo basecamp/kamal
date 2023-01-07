@@ -46,6 +46,10 @@ class Mrsk::Configuration
       "traefik.http.middlewares.#{service}.retry.initialinterval" => "500ms"
   end
 
+  def ssh_options
+    { user: config.ssh_user || "root", auth_methods: [ "publickey" ] }
+  end
+
   private
     attr_accessor :config
 
