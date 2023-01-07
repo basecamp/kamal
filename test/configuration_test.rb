@@ -8,6 +8,17 @@ class ConfigurationTest < ActiveSupport::TestCase
     @config = { service: "app", image: "dhh/app", registry: { "username" => "dhh", "password" => "secret" } }
   end
 
+  test "ensure valid keys" do
+    assert_raise(ArgumentError) do
+      Mrsk::Configuration.new(@config.tap { _1.delete(:service) })
+      Mrsk::Configuration.new(@config.tap { _1.delete(:image) })
+      Mrsk::Configuration.new(@config.tap { _1.delete(:registry) })
+
+      Mrsk::Configuration.new(@config.tap { _1[:registry].delete("username") })
+      Mrsk::Configuration.new(@config.tap { _1[:registry].delete("password") })
+    end
+  end
+
   test "absolute image" do
     configuration = Mrsk::Configuration.new(@config)
     assert_equal "dhh/app:123", configuration.absolute_image
