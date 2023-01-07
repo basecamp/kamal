@@ -48,6 +48,7 @@ This is alpha software. Lots of stuff is missing. Here are some of the areas we 
 - Adapterize commands to work with Podman and other container runners
 - Better flow for secrets and ENV
 - Possibly switching to a bin/mrsk command rather than raw rake
+- Integrate wirmth cloud CI pipelines
 
 ## License
 
