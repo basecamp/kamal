@@ -1,20 +1,22 @@
+require "active_support/ordered_options"
+
 class Mrsk::Configuration
-  attr_accessor :service, :image, :servers, :env, :ssh_user
+  delegate :service, :image, :env, :registry, :ssh_user, to: :config, allow_nil: true
 
   def self.load_file(file)
     if file.exist?
-      new **YAML.load_file(file).symbolize_keys!
+      new YAML.load_file(file).symbolize_keys
     else
       raise "Configuration file not found in #{file}"
     end
   end
 
-  def initialize(service:, image:, servers:, env: {}, ssh_user: "root")
-    @service, @image, @servers, @env, @ssh_user = service, image, servers, env, ssh_user
+  def initialize(config)
+    @config = ActiveSupport::InheritableOptions.new(config)
   end
 
   def servers
-    ENV["SERVERS"] || @servers
+    ENV["SERVERS"] || config.servers
   end
 
   def version
@@ -45,6 +47,8 @@ class Mrsk::Configuration
   end
 
   private
+    attr_accessor :config
+
     def parameterize(param, hash)
       hash.collect { |k, v| "#{param} #{k}=#{v}" }.join(" ")
     end
