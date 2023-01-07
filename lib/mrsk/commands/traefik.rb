@@ -1,4 +1,4 @@
-class Mrsk::Commands::Traefik
+class Mrsk::Commands::Traefik < Mrsk::Commands::Base
   def start
     "docker run --name traefik " + 
       "--rm -d " +

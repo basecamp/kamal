@@ -1,10 +1,4 @@
-class Mrsk::Commands::App
-  attr_accessor :config
-
-  def initialize(config)
-    @config = config
-  end
-
+class Mrsk::Commands::App < Mrsk::Commands::Base
   def push
     # TODO: Run 'docker buildx create --use' when needed
     "docker buildx build --push --platform=linux/amd64,linux/arm64 -t #{config.image_with_version} ."

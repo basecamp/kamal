@@ -1,4 +1,4 @@
-class Mrsk::Commands::Registry
+class Mrsk::Commands::Registry < Mrsk::Commands::Base
   def login
     if (user = ENV["DOCKER_USER"]).present? && (password = ENV["DOCKER_PASSWORD"]).present?
       # FIXME: Find a way to hide PW so it's not shown on terminal

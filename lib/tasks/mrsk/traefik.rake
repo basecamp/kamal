@@ -1,6 +1,6 @@
 require_relative "setup"
 
-traefik = Mrsk::Commands::Traefik.new
+traefik = Mrsk::Commands::Traefik.new(MRSK_CONFIG)
 
 namespace :mrsk do
   namespace :traefik do
