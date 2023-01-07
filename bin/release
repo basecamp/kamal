@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+VERSION=$1
+
+printf "module Mrsk\n  VERSION = \"$VERSION\"\nend\n" > ./lib/mrsk/version.rb
+bundle
+git add Gemfile.lock lib/mrsk/version.rb
+git commit -m "Bump version for $VERSION"
+git push
+git tag v$VERSION
+git push --tags
+gem build mrsk.gemspec
+gem push "mrsk-$VERSION.gem" --host https://rubygems.org
+rm "mrsk-$VERSION.gem"
