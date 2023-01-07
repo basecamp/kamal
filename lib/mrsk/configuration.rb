@@ -13,6 +13,7 @@ class Mrsk::Configuration
 
   def initialize(config)
     @config = ActiveSupport::InheritableOptions.new(config)
+    ensure_required_keys_present
   end
 
   def servers
@@ -52,6 +53,12 @@ class Mrsk::Configuration
 
   private
     attr_accessor :config
+
+    def ensure_required_keys_present
+      %i[ service image registry ].each do |key|
+        raise ArgumentError, "Missing required configuration for #{key}" unless config[key].present?
+      end
+    end
 
     def parameterize(param, hash)
       hash.collect { |k, v| "#{param} #{k}=#{v}" }.join(" ")
