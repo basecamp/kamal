@@ -1,15 +1,15 @@
 class Mrsk::Commands::App < Mrsk::Commands::Base
   def push
     # TODO: Run 'docker buildx create --use' when needed
-    "docker buildx build --push --platform=linux/amd64,linux/arm64 -t #{config.image_with_version} ."
+    "docker buildx build --push --platform=linux/amd64,linux/arm64 -t #{config.absolute_image} ."
   end
 
   def pull
-    "docker pull #{config.image_with_version}"
+    "docker pull #{config.absolute_image}"
   end
 
   def start
-    "docker run -d --rm --name #{config.service_with_version} #{config.envs} #{config.labels} #{config.image_with_version}"
+    "docker run -d --rm --name #{config.service_with_version} #{config.envs} #{config.labels} #{config.absolute_image}"
   end
 
   def stop
