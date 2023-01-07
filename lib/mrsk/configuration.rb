@@ -62,6 +62,10 @@ class Mrsk::Configuration
       %i[ service image registry ].each do |key|
         raise ArgumentError, "Missing required configuration for #{key}" unless config[key].present?
       end
+
+      %w[ username password ].each do |key|
+        raise ArgumentError, "Missing required configuration for registry/#{key}" unless config.registry[key].present?
+      end      
     end
 
     def parameterize(param, hash)
