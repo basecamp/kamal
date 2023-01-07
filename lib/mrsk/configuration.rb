@@ -25,11 +25,7 @@ class Mrsk::Configuration
   end
 
   def absolute_image
-    [ config.registry["server"], image_with_version ].compact.join("/")
-  end
-
-  def image_with_version
-    "#{image}:#{version}"
+    [ config.registry["server"], "#{image}:#{version}" ].compact.join("/")
   end
 
   def service_with_version
