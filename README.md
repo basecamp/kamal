@@ -40,6 +40,15 @@ This will:
 
 Voila! All the servers are now serving the app on port 80, and you're ready to put them behind a load balancer to serve live traffic.
 
+## Stage of development
+
+This is alpha software. Lots of stuff is missing. Here are some of the areas we seek to improve:
+
+- Use of other registries than Docker Hub
+- Adapterize commands to work with Podman and other container runners
+- Better flow for secrets and ENV
+- Possibly switching to a bin/mrsk command rather than raw rake
+
 ## License
 
 Mrsk is released under the [MIT License](https://opensource.org/licenses/MIT).
