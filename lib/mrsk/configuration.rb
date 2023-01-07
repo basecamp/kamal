@@ -34,7 +34,7 @@ class Mrsk::Configuration
 
   def envs
     parameterize "-e", \
-      { "RAILS_MASTER_KEY" => master_key }.merge(env)
+      { "RAILS_MASTER_KEY" => master_key }.merge(env || {})
   end
 
   def labels
