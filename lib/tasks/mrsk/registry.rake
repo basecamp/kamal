@@ -1,17 +1,13 @@
 require_relative "setup"
 
-registry = Mrsk::Commands::Registry.new
+registry = Mrsk::Commands::Registry.new(MRSK_CONFIG)
 
 namespace :mrsk do
   namespace :registry do
-    desc "Login to the registry using ENV['DOCKER_USER'] and ENV['DOCKER_PASSWORD']"
+    desc "Login to the registry locally and remotely"
     task :login do
-      if ENV["DOCKER_USER"].present? && ENV["DOCKER_PASSWORD"].present?
-        run_locally             { execute registry.login }
-        on(MRSK_CONFIG.servers) { execute registry.login }
-      else
-        puts "Skipping login due to missing ENV['DOCKER_USER'] and ENV['DOCKER_PASSWORD']"
-      end
+      run_locally             { execute registry.login }
+      on(MRSK_CONFIG.servers) { execute registry.login }
     end
   end
 end

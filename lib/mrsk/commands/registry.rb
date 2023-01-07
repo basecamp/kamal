@@ -1,10 +1,13 @@
 class Mrsk::Commands::Registry < Mrsk::Commands::Base
   def login
-    if (user = ENV["DOCKER_USER"]).present? && (password = ENV["DOCKER_PASSWORD"]).present?
-      # FIXME: Find a way to hide PW so it's not shown on terminal
-      "docker login -u #{user} -p #{password}"
-    else
-      raise ArgumentError, "Missing DOCKER_USER or DOCKER_PASSWORD in ENV"
-    end
+    ensure_credentials_present
+    "docker login #{config.registry["server"]} -u #{config.registry["username"]} -p #{config.registry["password"]}"
   end
+
+  private
+    def ensure_credentials_present
+      unless config.registry && config.registry["username"].present? && config.registry["password"].present?
+        raise ArgumentError, "You must configure registry/username and registry/password"
+      end
+    end
 end
