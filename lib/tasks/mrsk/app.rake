@@ -4,9 +4,16 @@ app = Mrsk::Commands::App.new(MRSK_CONFIG)
 
 namespace :mrsk do
   namespace :app do
-    desc "Build and push app image to servers"
+    desc "Deliver a newly built app image to the servers"
+    task deliver: %i[ push pull ]
+
+    desc "Build locally and push app image to the registry"
     task :push do
-      run_locally             { execute app.push }
+      run_locally { execute app.push } unless ENV["SKIP_PUSH"]
+    end
+
+    desc "Pull app image from the registry onto servers"
+    task :pull do
       on(MRSK_CONFIG.servers) { execute app.pull }
     end
 
