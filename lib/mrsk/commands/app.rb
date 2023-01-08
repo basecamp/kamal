@@ -2,6 +2,7 @@
 class Mrsk::Commands::App < Mrsk::Commands::Base
   def push
     # TODO: Run 'docker buildx create --use' when needed
+    # TODO: Make multiarch an option so Linux users can enjoy speedier builds
     "docker buildx build --push --platform=linux/amd64,linux/arm64 -t #{config.absolute_image} ."
   end
 
@@ -18,11 +19,11 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
   end
 
   def stop
-    "docker ps -q --filter label=service=#{config.service} | xargs docker stop"
+    "docker ps -q #{service_filter} | xargs docker stop"
   end
 
   def info
-    "docker ps --filter label=service=#{config.service}"
+    "docker ps #{service_filter}"
   end
 
   def remove_containers
