@@ -13,8 +13,11 @@ namespace :mrsk do
   desc "Display information about Traefik and app containers"
   task info: [ "traefik:info", "app:info" ]
 
-  desc "Create config stub"
+  desc "Create config stub in config/deploy.yml"
   task :init do
-    Rails.root.join("config/deploy.yml")
+    require "fileutils"
+    FileUtils.cp_r \
+      Pathname.new(File.expand_path("templates/deploy.yml", __dir__)),
+      Rails.root.join("config/deploy.yml"))
   end
 end

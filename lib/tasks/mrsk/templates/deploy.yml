@@ -1,0 +1,20 @@
+# Name of your application will be used for uniquely configuring Traefik and app containers
+service: my-app
+
+# Name of the container image
+image: user/chat
+
+# All the servers targeted for deploy. You can reference a single server for a command by using SERVERS=xxx.xxx.xxx.xxx
+servers:
+  - xxx.xxx.xxx.xxx
+
+# The following envs are made available to the container when started
+env:
+  # Remember never to put passwords or tokens directly into this file, use encrypted credentials
+  # REDIS_URL: redis://x/y
+
+registry:
+  # Specify the registry server, if you're not using Docker Hub
+  # server: registry.digitalocean.com / ghcr.io / ...
+  username: <%= Rails.application.credentials.registry["username"] %>
+  password: <%= Rails.application.credentials.registry["password"] %>

@@ -4,19 +4,18 @@ MRSK ships zero-downtime deploys of Rails apps packed as containers to any host.
 
 ## Installation
 
-Create a configuration file for MRSK in `config/deploy.yml` that looks like this:
+Add the gem with `bundle add mrsk`, then run `rake mrsk:init`, and then edit the new file in `config/deploy.yml` to use the proper service name, image reference, servers to deploy on, and so on. It could look something like this:
 
 ```yaml
-service: my-app
-image: name/my-app
+service: hey
+image: 37s/hey
 servers:
   - xxx.xxx.xxx.xxx
   - xxx.xxx.xxx.xxx
 env:
-  DATABASE_URL: mysql2://localhost/my-app_production/
-  REDIS_URL: redis://host:6379/1
+  DATABASE_URL: mysql2://db1/hey_production/
+  REDIS_URL: redis://redis1:6379/1
 registry:
-  # No server definition needed if using Docker Hub
   server: registry.digitalocean.com
   username: <%= Rails.application.credentials.registry["username"] %>
   password: <%= Rails.application.credentials.registry["password"] %>
