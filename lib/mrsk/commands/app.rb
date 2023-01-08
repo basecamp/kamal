@@ -24,4 +24,17 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
   def info
     "docker ps --filter label=service=#{config.service}"
   end
+
+  def remove_containers
+    "docker container prune -f #{service_filter}"
+  end
+
+  def remove_images
+    "docker image prune -a -f #{service_filter}"
+  end
+
+  private
+    def service_filter
+      "--filter label=service=#{config.service}"
+    end
 end

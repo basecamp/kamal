@@ -20,4 +20,7 @@ namespace :mrsk do
       Pathname.new(File.expand_path("templates/deploy.yml", __dir__)),
       Rails.root.join("config/deploy.yml")
   end
+
+  desc "Remove Traefik, app, and registry session from servers"
+  task remove: %w[ traefik:remove app:remove registry:logout ]
 end

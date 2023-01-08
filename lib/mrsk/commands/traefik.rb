@@ -18,4 +18,12 @@ class Mrsk::Commands::Traefik < Mrsk::Commands::Base
   def info
     "docker ps --filter name=traefik"
   end
+
+  def remove_container
+    "docker container prune -f --filter label=org.opencontainers.image.title=Traefik"
+  end
+
+  def remove_image
+    "docker image prune -a -f --filter label=org.opencontainers.image.title=Traefik"
+  end
 end

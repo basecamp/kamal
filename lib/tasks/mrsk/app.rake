@@ -39,5 +39,13 @@ namespace :mrsk do
     task :info do
       on(MRSK_CONFIG.servers) { |host| puts "Host: #{host}\n" + capture(app.info) + "\n\n" }
     end
+
+    desc "Remove app containers and images from servers"
+    task remove: %i[ stop ] do
+      on(MRSK_CONFIG.servers) do
+        execute app.remove_containers
+        execute app.remove_images
+      end
+    end
   end
 end

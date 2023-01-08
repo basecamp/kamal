@@ -21,5 +21,13 @@ namespace :mrsk do
     task :info do
       on(MRSK_CONFIG.servers) { |host| puts "Host: #{host}\n" + capture(traefik.info) + "\n\n" }
     end
+
+    desc "Remove Traefik container and image from servers"
+    task remove: %i[ stop ] do
+      on(MRSK_CONFIG.servers) do
+        execute traefik.remove_container
+        execute traefik.remove_image
+      end
+    end
   end
 end
