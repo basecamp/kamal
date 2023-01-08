@@ -7,6 +7,7 @@ namespace :mrsk do
   desc "Push the latest version of the app, ensure Traefik is running, then restart app"
   task deploy: [ "registry:login", "app:deliver", "traefik:start", "app:stop", "app:run" ]
 
+  desc "Rollback to VERSION=x that was already run as a container on servers"
   task rollback: [ "app:restart" ]
 
   desc "Display information about Traefik and app containers"
