@@ -39,4 +39,10 @@ class ConfigurationTest < ActiveSupport::TestCase
     configuration = Mrsk::Configuration.load_file Pathname.new(File.expand_path("fixtures/deploy.erb.yml", __dir__))
     assert_equal "my-user", configuration.registry["username"]
   end
+
+  test "labels" do
+    configuration = Mrsk::Configuration.new(@config)
+    assert_equal ["--label", "service=app", "--label", "traefik.http.routers.app.rule='PathPrefix(`/`)'", "--label", "traefik.http.services.app.loadbalancer.healthcheck.path=/up", "--label", "traefik.http.services.app.loadbalancer.healthcheck.interval=1s", "--label", "traefik.http.middlewares.app.retry.attempts=3", "--label", "traefik.http.middlewares.app.retry.initialinterval=500ms"],
+      configuration.labels
+  end
 end
