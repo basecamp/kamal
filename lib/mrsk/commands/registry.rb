@@ -1,9 +1,11 @@
 class Mrsk::Commands::Registry < Mrsk::Commands::Base
+  delegate :registry, to: :config
+
   def login
-    "docker login #{config.registry["server"]} -u #{config.registry["username"]} -p #{config.registry["password"]}"
+    docker :login, registry["server"], "-u", redact(registry["username"]), "-p", redact(registry["password"])
   end
 
   def logout
-    "docker logout #{config.registry["server"]}"
+    docker :logout, registry["server"]
   end
 end

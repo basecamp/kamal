@@ -9,23 +9,23 @@ namespace :mrsk do
 
     desc "Build locally and push app image to registry"
     task :push do
-      run_locally { execute app.push } unless ENV["VERSION"]
+      run_locally { execute *app.push } unless ENV["VERSION"]
     end
 
     desc "Pull app image from the registry onto servers"
     task :pull do
-      on(MRSK_CONFIG.servers) { execute app.pull }
+      on(MRSK_CONFIG.servers) { execute *app.pull }
     end
 
     desc "Run app on servers (or start them if they've already been run)"
     task :run do
       on(MRSK_CONFIG.servers) do |host|
         begin
-          execute app.run
+          execute *app.run
         rescue SSHKit::Command::Failed => e
           if e.message =~ /already in use/
             puts "Container with same version already deployed on #{host}, starting that instead"
-            execute app.start, host: host
+            execute *app.start, host: host
           else
             raise
           end
@@ -35,12 +35,12 @@ namespace :mrsk do
 
     desc "Start existing app on servers"
     task :start do
-      on(MRSK_CONFIG.servers) { execute app.start, raise_on_non_zero_exit: false }
+      on(MRSK_CONFIG.servers) { execute *app.start, raise_on_non_zero_exit: false }
     end
 
     desc "Stop app on servers"
     task :stop do
-      on(MRSK_CONFIG.servers) { execute app.stop, raise_on_non_zero_exit: false }
+      on(MRSK_CONFIG.servers) { execute *app.stop, raise_on_non_zero_exit: false }
     end
 
     desc "Start app on servers (use VERSION=<git-hash> to designate which version)"
@@ -48,14 +48,19 @@ namespace :mrsk do
 
     desc "Display information about app containers"
     task :info do
-      on(MRSK_CONFIG.servers) { |host| puts "App Host: #{host}\n" + capture(app.info) + "\n\n" }
+      on(MRSK_CONFIG.servers) { |host| puts "App Host: #{host}\n" + capture(*app.info) + "\n\n" }
+    end
+
+    desc "Tail logs from app containers"
+    task :logs do
+      on(MRSK_CONFIG.servers) { execute *app.logs }
     end
 
     desc "Remove app containers and images from servers"
     task remove: %i[ stop ] do
       on(MRSK_CONFIG.servers) do
-        execute app.remove_containers
-        execute app.remove_images
+        execute *app.remove_containers
+        execute *app.remove_images
       end
     end
   end

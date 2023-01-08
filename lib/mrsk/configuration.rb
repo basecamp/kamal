@@ -38,8 +38,7 @@ class Mrsk::Configuration
   end
 
   def envs
-    parameterize "-e", \
-      { "RAILS_MASTER_KEY" => master_key }.merge(env || {})
+    parameterize "-e", env if env.present?
   end
 
   def labels
@@ -54,6 +53,10 @@ class Mrsk::Configuration
 
   def ssh_options
     { user: config.ssh_user || "root", auth_methods: [ "publickey" ] }
+  end
+
+  def master_key
+    ENV["RAILS_MASTER_KEY"] || File.read(Rails.root.join("config/master.key"))
   end
 
   private
@@ -71,9 +74,5 @@ class Mrsk::Configuration
 
     def parameterize(param, hash)
       hash.collect { |k, v| "#{param} #{k}=#{v}" }.join(" ")
-    end
-
-    def master_key
-      ENV["RAILS_MASTER_KEY"] || File.read(Rails.root.join("config/master.key"))
     end
 end
