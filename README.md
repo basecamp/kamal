@@ -1,6 +1,6 @@
 # MRSK
 
-MRSK lets you do zero-downtime deploys of Rails apps packed as containers to any host running Docker. It uses the dynamic reverse-proxy Traefik to hold requests while the new application container is started and the old one is wound down. It works across multiple hosts at the same time, using SSHKit to execute commands.
+MRSK ships zero-downtime deploys of Rails apps packed as containers to any host. It uses the dynamic reverse-proxy Traefik to hold requests while the new application container is started and the old one is wound down. It works across multiple hosts at the same time, using SSHKit to execute commands.
 
 ## Installation
 
@@ -41,7 +41,7 @@ This will:
 1. Log into the registry both locally and remotely
 2. Build the image using the standard Dockerfile in the root of the application.
 3. Push the image to the registry.
-4. Pull the image on all the servers.
+4. Pull the image from the registry on the servers.
 5. Ensure Traefik is running and accepting traffic on port 80.
 6. Stop any containers running a previous versions of the app.
 7. Start a new container with the version of the app that matches the current git version hash.
