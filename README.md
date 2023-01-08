@@ -13,13 +13,21 @@ servers:
   - xxx.xxx.xxx.xxx
   - xxx.xxx.xxx.xxx
 env:
-  DATABASE_URL: mysql2://username@localhost/database_name/
+  DATABASE_URL: mysql2://localhost/my-app_production/
   REDIS_URL: redis://host:6379/1
 registry:
   # No server definition needed if using Docker Hub
   server: registry.digitalocean.com
-  username: your-token
-  password: your-token
+  username: <%= Rails.application.credentials.registry["username"] %>
+  password: <%= Rails.application.credentials.registry["password"] %>
+```
+
+Then ensure your encrypted credentials have the registry username + password by editing them with `rails credentials:edit`:
+
+```
+registry:
+  username: real-user-name
+  password: real-password
 ```
 
 Now you're ready to deploy a multi-arch image (FIXME: currently you need to manually run `docker buildx create --use` once first):

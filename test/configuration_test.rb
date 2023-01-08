@@ -26,4 +26,9 @@ class ConfigurationTest < ActiveSupport::TestCase
     configuration = Mrsk::Configuration.new(@config.tap { |c| c[:registry].merge!({ "server" => "ghcr.io" }) })
     assert_equal "ghcr.io/dhh/app:123", configuration.absolute_image
   end
+
+  test "erb evaluation of yml config" do
+    configuration = Mrsk::Configuration.load_file Pathname.new(File.expand_path("fixtures/deploy.erb.yml", __dir__))
+    assert_equal "my-user", configuration.registry["username"]
+  end
 end
