@@ -45,6 +45,7 @@ This will:
 5. Ensure Traefik is running and accepting traffic on port 80.
 6. Stop any containers running a previous versions of the app.
 7. Start a new container with the version of the app that matches the current git version hash.
+8. Prune unused images and stopped containers to ensure servers don't fill up.
 
 Voila! All the servers are now serving the app on port 80, and you're ready to put them behind a load balancer to serve live traffic.
 
