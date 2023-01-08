@@ -9,5 +9,10 @@ namespace :mrsk do
       run_locally             { execute registry.login }
       on(MRSK_CONFIG.servers) { execute registry.login }
     end
+
+    desc "Logout of the registry remotely"
+    task :logout do
+      on(MRSK_CONFIG.servers) { execute registry.logout }
+    end
   end
 end
