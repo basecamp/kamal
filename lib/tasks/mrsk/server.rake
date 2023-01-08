@@ -1,7 +1,5 @@
 require_relative "setup"
 
-app = Mrsk::Commands::App.new(MRSK_CONFIG)
-
 namespace :mrsk do
   namespace :server do
     desc "Setup Docker on the remote servers"
