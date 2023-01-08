@@ -4,7 +4,12 @@ traefik = Mrsk::Commands::Traefik.new(MRSK_CONFIG)
 
 namespace :mrsk do
   namespace :traefik do
-    desc "Start Traefik"
+    desc "Run Traefik on servers"
+    task :run do
+      on(MRSK_CONFIG.servers) { execute traefik.run, raise_on_non_zero_exit: false }
+    end
+
+    desc "Start existing Traefik on servers"
     task :start do
       on(MRSK_CONFIG.servers) { execute traefik.start, raise_on_non_zero_exit: false }
     end
