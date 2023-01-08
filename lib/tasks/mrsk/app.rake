@@ -9,7 +9,7 @@ namespace :mrsk do
 
     desc "Build locally and push app image to the registry"
     task :push do
-      run_locally { execute app.push } unless ENV["SKIP_PUSH"]
+      run_locally { execute app.push } unless ENV["VERSION"]
     end
 
     desc "Pull app image from the registry onto servers"
