@@ -19,6 +19,14 @@ class ConfigurationTest < ActiveSupport::TestCase
     end
   end
 
+  test "repository" do
+    configuration = Mrsk::Configuration.new(@config)
+    assert_equal "dhh/app", configuration.repository
+
+    configuration = Mrsk::Configuration.new(@config.tap { |c| c[:registry].merge!({ "server" => "ghcr.io" }) })
+    assert_equal "ghcr.io/dhh/app", configuration.repository
+  end
+
   test "absolute image" do
     configuration = Mrsk::Configuration.new(@config)
     assert_equal "dhh/app:123", configuration.absolute_image
