@@ -36,6 +36,10 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
     [ "docker ps -q #{service_filter.join(" ")} | xargs docker logs -f" ]
   end
 
+  def list_containers
+    docker :container, :ls, "-a", *service_filter
+  end
+
   def remove_containers
     docker :container, :prune, "-f", *service_filter
   end

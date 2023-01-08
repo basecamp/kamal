@@ -51,6 +51,11 @@ namespace :mrsk do
       on(MRSK_CONFIG.servers) { |host| puts "App Host: #{host}\n" + capture(*app.info) + "\n\n" }
     end
 
+    desc "List all the app containers currently on servers"
+    task :containers do
+      on(MRSK_CONFIG.servers) { |host| puts "App Host: #{host}\n" + capture(*app.list_containers) + "\n\n" }
+    end
+
     desc "Tail logs from app containers"
     task :logs do
       on(MRSK_CONFIG.servers) { execute *app.logs }
