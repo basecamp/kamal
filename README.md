@@ -15,12 +15,10 @@ servers:
 env:
   DATABASE_URL: mysql2://username@localhost/database_name/
   REDIS_URL: redis://host:6379/1
-```
-
-Then first login to the Docker Hub registry on the servers:
-
-```
-rake mrsk:registry:login DOCKER_USER=name DOCKER_PASSWORD=pw
+registry:
+  server: registry.digitalocean.com
+  username: your-token
+  password: your-token
 ```
 
 Now you're ready to deploy a multi-arch image (FIXME: currently you need to manually run `docker buildx create --use` once first):
@@ -31,12 +29,13 @@ rake mrsk:deploy
 
 This will:
 
-1. Build the image using the standard Dockerfile in the root of the application.
-2. Push the image to the registry.
-3. Pull the image on all the servers.
-4. Ensure Traefik is running and accepting traffic on port 80.
-5. Stop any containers running a previous versions of the app.
-6. Start a new container with the version of the app that matches the current git version hash.
+1. Log into the registry both locally and remotely
+2. Build the image using the standard Dockerfile in the root of the application.
+3. Push the image to the registry.
+4. Pull the image on all the servers.
+5. Ensure Traefik is running and accepting traffic on port 80.
+6. Stop any containers running a previous versions of the app.
+7. Start a new container with the version of the app that matches the current git version hash.
 
 Voila! All the servers are now serving the app on port 80, and you're ready to put them behind a load balancer to serve live traffic.
 
