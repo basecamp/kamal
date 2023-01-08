@@ -35,7 +35,7 @@ namespace :mrsk do
 
     desc "Start existing app on servers"
     task :start do
-      on(MRSK_CONFIG.servers) { execute app.start }
+      on(MRSK_CONFIG.servers) { execute app.start, raise_on_non_zero_exit: false }
     end
 
     desc "Stop app on servers"
