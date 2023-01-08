@@ -14,15 +14,15 @@ namespace :mrsk do
       on(MRSK_CONFIG.servers) { execute traefik.start, raise_on_non_zero_exit: false }
     end
 
-    desc "Stop Traefik"
+    desc "Stop Traefik on servers"
     task :stop do
       on(MRSK_CONFIG.servers) { execute traefik.stop, raise_on_non_zero_exit: false }
     end
 
-    desc "Restart Traefik"
+    desc "Restart Traefik on servers"
     task restart: %i[ stop start ]
 
-    desc "Display information about Traefik containers"
+    desc "Display information about Traefik containers from servers"
     task :info do
       on(MRSK_CONFIG.servers) { |host| puts "Traefik Host: #{host}\n" + capture(traefik.info) + "\n\n" }
     end
