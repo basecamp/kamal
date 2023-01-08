@@ -1,3 +1,5 @@
+require_relative "setup"
+
 namespace :mrsk do
   desc "Deploy app for the first time to a fresh server"
   task fresh: [ "server:bootstrap", "registry:login", "app:deliver", "traefik:start", "app:start" ]
