@@ -47,7 +47,7 @@ This will:
 7. Start a new container with the version of the app that matches the current git version hash.
 8. Prune unused images and stopped containers to ensure servers don't fill up.
 
-Voila! All the servers are now serving the app on port 80, and you're ready to put them behind a load balancer to serve live traffic.
+Voila! All the servers are now serving the app on port 80. If you're just running a single server, you're ready to go. If you're running multiple servers, you need to put a load balancer in front of them.
 
 ## Stage of development
 
