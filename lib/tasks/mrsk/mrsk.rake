@@ -18,6 +18,6 @@ namespace :mrsk do
     require "fileutils"
     FileUtils.cp_r \
       Pathname.new(File.expand_path("templates/deploy.yml", __dir__)),
-      Rails.root.join("config/deploy.yml"))
+      Rails.root.join("config/deploy.yml")
   end
 end
