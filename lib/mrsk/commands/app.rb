@@ -25,27 +25,27 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
   end
 
   def stop
-    [ "docker ps -q #{service_filter} | xargs docker stop" ]
+    [ "docker ps -q #{service_filter.join(" ")} | xargs docker stop" ]
   end
 
   def info
-    docker :ps, service_filter
+    docker :ps, *service_filter
   end
 
   def logs
-    [ "docker ps -q #{service_filter} | xargs docker logs -f" ]
+    [ "docker ps -q #{service_filter.join(" ")} | xargs docker logs -f" ]
   end
 
   def remove_containers
-    docker :container, :prune, "-f", service_filter
+    docker :container, :prune, "-f", *service_filter
   end
 
   def remove_images
-    docker :image, :prune, "-a", "-f", service_filter
+    docker :image, :prune, "-a", "-f", *service_filter
   end
 
   private
     def service_filter
-      "--filter label=service=#{config.service}"
+      [ "--filter", "label=service=#{config.service}" ]
     end
 end

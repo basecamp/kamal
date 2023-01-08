@@ -18,7 +18,7 @@ class Mrsk::Commands::Traefik < Mrsk::Commands::Base
   end
 
   def info
-    docker :ps, "--filter name=traefik"
+    docker :ps, "--filter", "name=traefik"
   end
 
   def logs
@@ -26,10 +26,10 @@ class Mrsk::Commands::Traefik < Mrsk::Commands::Base
   end
 
   def remove_container
-    docker :container, :prune, "-f", "--filter label=org.opencontainers.image.title=Traefik"
+    docker :container, :prune, "-f", "--filter", "label=org.opencontainers.image.title=Traefik"
   end
 
   def remove_image
-    docker :image, :prune, "-a", "-f", "--filter label=org.opencontainers.image.title=Traefik"
+    docker :image, :prune, "-a", "-f", "--filter", "label=org.opencontainers.image.title=Traefik"
   end
 end
