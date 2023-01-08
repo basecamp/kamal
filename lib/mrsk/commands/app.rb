@@ -15,8 +15,8 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
       "--restart unless-stopped",
       "--name", config.service_with_version,
       "-e", redact("RAILS_MASTER_KEY=#{config.master_key}"),
-      config.envs,
-      config.labels,
+      *config.envs,
+      *config.labels,
       config.absolute_image
   end
 

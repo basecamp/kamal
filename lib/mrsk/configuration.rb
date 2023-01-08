@@ -73,6 +73,6 @@ class Mrsk::Configuration
     end
 
     def parameterize(param, hash)
-      hash.collect { |k, v| "#{param} #{k}=#{v}" }.join(" ")
+      hash.flat_map { |k, v| [ param, "#{k}=#{v}" ] }
     end
 end
