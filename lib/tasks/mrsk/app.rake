@@ -37,7 +37,7 @@ namespace :mrsk do
 
     desc "Display information about app containers"
     task :info do
-      on(MRSK_CONFIG.servers) { |host| puts "Host: #{host}\n" + capture(app.info) + "\n\n" }
+      on(MRSK_CONFIG.servers) { |host| puts "App Host: #{host}\n" + capture(app.info) + "\n\n" }
     end
 
     desc "Remove app containers and images from servers"

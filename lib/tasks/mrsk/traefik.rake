@@ -19,7 +19,7 @@ namespace :mrsk do
 
     desc "Display information about Traefik containers"
     task :info do
-      on(MRSK_CONFIG.servers) { |host| puts "Host: #{host}\n" + capture(traefik.info) + "\n\n" }
+      on(MRSK_CONFIG.servers) { |host| puts "Traefik Host: #{host}\n" + capture(traefik.info) + "\n\n" }
     end
 
     desc "Remove Traefik container and image from servers"
