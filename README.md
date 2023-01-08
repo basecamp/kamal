@@ -108,4 +108,4 @@ This is alpha software. Lots of stuff is missing. Here are some of the areas we 
 
 ## License
 
-Mrsk is released under the [MIT License](https://opensource.org/licenses/MIT).
+MRSK is released under the [MIT License](https://opensource.org/licenses/MIT).
