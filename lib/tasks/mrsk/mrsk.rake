@@ -1,6 +1,6 @@
 namespace :mrsk do
   desc "Push the latest version of the app, ensure Traefik is running, then restart app"
-  task deploy: [ "app:push", "traefik:start", "app:restart" ]
+  task deploy: [ "registry:login", "app:push", "traefik:start", "app:restart" ]
 
   desc "Display information about Traefik and app containers"
   task info: [ "traefik:info", "app:info" ]
