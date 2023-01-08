@@ -52,11 +52,9 @@ Voila! All the servers are now serving the app on port 80, and you're ready to p
 
 This is alpha software. Lots of stuff is missing. Here are some of the areas we seek to improve:
 
-- Use of other registries than Docker Hub
 - Adapterize commands to work with Podman and other container runners
-- Better flow for secrets and ENV
 - Possibly switching to a bin/mrsk command rather than raw rake
-- Integrate wirmth cloud CI pipelines
+- Integrate with cloud CI pipelines
 
 ## License
 
