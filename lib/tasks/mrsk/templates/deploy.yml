@@ -1,4 +1,5 @@
-# Name of your application will be used for uniquely configuring Traefik and app containers
+# Name of your application will be used for uniquely configuring Traefik and app containers.
+# Your Dockerfile should set LABEL service=the-same-value to ensure image pruning works.
 service: my-app
 
 # Name of the container image
