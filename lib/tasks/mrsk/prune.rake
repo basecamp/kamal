@@ -2,7 +2,7 @@ require_relative "setup"
 
 namespace :mrsk do
   desc "Prune unused images and stopped containers"
-  task prune: [ "prune:images", "prune:containers" ]
+  task prune: [ "prune:containers", "prune:images" ]
 
   namespace :prune do
     desc "Prune unused images older than 30 days"
