@@ -16,6 +16,7 @@ env:
   DATABASE_URL: mysql2://username@localhost/database_name/
   REDIS_URL: redis://host:6379/1
 registry:
+  # No server definition needed if using Docker Hub
   server: registry.digitalocean.com
   username: your-token
   password: your-token
