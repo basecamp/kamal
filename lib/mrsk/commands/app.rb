@@ -8,8 +8,12 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
     "docker pull #{config.absolute_image}"
   end
 
+  def run
+    "docker run -d --restart unless-stopped --name #{config.service_with_version} #{config.envs} #{config.labels} #{config.absolute_image}"
+  end
+
   def start
-    "docker run -d --rm --name #{config.service_with_version} #{config.envs} #{config.labels} #{config.absolute_image}"
+    "docker start #{config.service_with_version}"
   end
 
   def stop

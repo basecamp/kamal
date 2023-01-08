@@ -1,10 +1,14 @@
 class Mrsk::Commands::Traefik < Mrsk::Commands::Base
-  def start
+  def run
     "docker run --name traefik " + 
-      "--rm -d " +
+      "-d --restart unless-stopped " +
       "-p 80:80 " +
       "-v /var/run/docker.sock:/var/run/docker.sock " +
       "traefik --providers.docker"
+  end
+
+  def start
+    "docker container start traefik"
   end
 
   def stop

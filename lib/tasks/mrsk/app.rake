@@ -17,7 +17,12 @@ namespace :mrsk do
       on(MRSK_CONFIG.servers) { execute app.pull }
     end
 
-    desc "Start app on servers"
+    desc "Run app on servers"
+    task :run do
+      on(MRSK_CONFIG.servers) { execute app.run }
+    end
+
+    desc "Start existing app on servers"
     task :start do
       on(MRSK_CONFIG.servers) { execute app.start }
     end
@@ -27,7 +32,7 @@ namespace :mrsk do
       on(MRSK_CONFIG.servers) { execute app.stop, raise_on_non_zero_exit: false }
     end
 
-    desc "Restart app on servers"
+    desc "Start app on servers (use VERSION=<git-hash> to designate which version)"
     task restart: %i[ stop start ]
 
     desc "Display information about app containers"
