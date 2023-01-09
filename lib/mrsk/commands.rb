@@ -10,7 +10,7 @@ module Mrsk::Commands
 
     private
       def docker(*args)
-        args.unshift :docker
+        args.compact.unshift :docker
       end
 
       # Copied from SSHKit::Backend::Abstract#redact to be available inside Commands classes
