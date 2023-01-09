@@ -50,6 +50,55 @@ Voila! All the servers are now serving the app on port 80. If you're just runnin
 
 ## Operations
 
+### Executing commands
+
+If you need to execute commands inside the Rails containers, you can use `rake mrsk:app:exec`, `rake mrsk:app:exec:once`, `rake mrsk:app:exec:rails`, and `rake mrsk:app:exec:once:rails`. Examples:
+
+```bash
+# Runs command on all servers
+rake mrsk:app:exec CMD='ruby -v'
+App Host: xxx.xxx.xxx.xxx
+ruby 3.1.3p185 (2022-11-24 revision 1a6b16756e) [x86_64-linux]
+
+App Host: xxx.xxx.xxx.xxx
+ruby 3.1.3p185 (2022-11-24 revision 1a6b16756e) [x86_64-linux]
+
+# Runs command on first server
+rake mrsk:app:exec:once CMD='cat .ruby-version'
+3.1.3
+
+# Runs Rails command on all servers
+rake mrsk:app:exec:rails CMD=about
+App Host: xxx.xxx.xxx.xxx
+About your application's environment
+Rails version             7.1.0.alpha
+Ruby version              ruby 3.1.3p185 (2022-11-24 revision 1a6b16756e) [x86_64-linux]
+RubyGems version          3.3.26
+Rack version              2.2.5
+Middleware                ActionDispatch::HostAuthorization, Rack::Sendfile, ActionDispatch::Static, ActionDispatch::Executor, Rack::Runtime, Rack::MethodOverride, ActionDispatch::RequestId, ActionDispatch::RemoteIp, Rails::Rack::Logger, ActionDispatch::ShowExceptions, ActionDispatch::DebugExceptions, ActionDispatch::Callbacks, ActionDispatch::Cookies, ActionDispatch::Session::CookieStore, ActionDispatch::Flash, ActionDispatch::ContentSecurityPolicy::Middleware, ActionDispatch::PermissionsPolicy::Middleware, Rack::Head, Rack::ConditionalGet, Rack::ETag, Rack::TempfileReaper
+Application root          /rails
+Environment               production
+Database adapter          sqlite3
+Database schema version   20221231233303
+
+App Host: xxx.xxx.xxx.xxx
+About your application's environment
+Rails version             7.1.0.alpha
+Ruby version              ruby 3.1.3p185 (2022-11-24 revision 1a6b16756e) [x86_64-linux]
+RubyGems version          3.3.26
+Rack version              2.2.5
+Middleware                ActionDispatch::HostAuthorization, Rack::Sendfile, ActionDispatch::Static, ActionDispatch::Executor, Rack::Runtime, Rack::MethodOverride, ActionDispatch::RequestId, ActionDispatch::RemoteIp, Rails::Rack::Logger, ActionDispatch::ShowExceptions, ActionDispatch::DebugExceptions, ActionDispatch::Callbacks, ActionDispatch::Cookies, ActionDispatch::Session::CookieStore, ActionDispatch::Flash, ActionDispatch::ContentSecurityPolicy::Middleware, ActionDispatch::PermissionsPolicy::Middleware, Rack::Head, Rack::ConditionalGet, Rack::ETag, Rack::TempfileReaper
+Application root          /rails
+Environment               production
+Database adapter          sqlite3
+Database schema version   20221231233303
+
+# Runs Rails command on first server
+rake mrsk:app:exec:once:rails CMD='db:version'
+database: storage/production.sqlite3
+Current version: 20221231233303
+```
+
 ### Inspecting
 
 You can see the state of your servers by running `rake mrsk:info`. It'll show something like this:
@@ -96,7 +145,7 @@ Note that by default old containers are pruned after 3 days when you run `rake m
 
 ### Removing
 
-...
+If you wish to remove the entire application, including Traefik, containers, images, and registry session, you can run `rake mrsk:remove`. This will leave the servers clean.
 
 ## Stage of development
 

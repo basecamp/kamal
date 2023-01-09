@@ -51,6 +51,30 @@ namespace :mrsk do
       on(MRSK_CONFIG.servers) { |host| puts "App Host: #{host}\n" + capture(*app.info) + "\n\n" }
     end
 
+    desc "Execute a custom task on servers passed in as CMD='bin/rake some:task'"
+    task :exec do
+      on(MRSK_CONFIG.servers) { |host| puts "App Host: #{host}\n" + capture(*app.exec(ENV["CMD"])) + "\n\n" }
+    end
+
+    namespace :exec do
+      desc "Execute Rails command on servers, like CMD='runner \"puts %(Hello World)\""
+      task :rails do
+        on(MRSK_CONFIG.servers) { |host| puts "App Host: #{host}\n" + capture(*app.exec("bin/rails", ENV["CMD"])) + "\n\n" }
+      end
+
+      desc "Execute a custom task on the first defined server"
+      task :once do
+        on(MRSK_CONFIG.servers.first) { |host| puts capture(*app.exec(ENV["CMD"])) }
+      end
+
+      namespace :once do
+        desc "Execute Rails command on the first defined server, like CMD='runner \"puts %(Hello World)\""
+        task :rails do
+          on(MRSK_CONFIG.servers.first) { puts capture(*app.exec("bin/rails", ENV["CMD"])) }
+        end
+      end
+    end
+
     desc "List all the app containers currently on servers"
     task :containers do
       on(MRSK_CONFIG.servers) { |host| puts "App Host: #{host}\n" + capture(*app.list_containers) + "\n\n" }

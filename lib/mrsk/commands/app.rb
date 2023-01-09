@@ -36,6 +36,14 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
     [ "docker ps -q #{service_filter.join(" ")} | xargs docker logs -f" ]
   end
 
+  def exec(*command)
+    docker :exec, 
+      "-e", redact("RAILS_MASTER_KEY=#{config.master_key}"),
+      *config.envs,
+      config.service_with_version,
+      *command
+  end
+
   def list_containers
     docker :container, :ls, "-a", *service_filter
   end
