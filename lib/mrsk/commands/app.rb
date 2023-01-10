@@ -47,6 +47,10 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
       *command
   end
 
+  def console
+    "ssh -t #{config.ssh_user}@#{config.primary_host} 'docker exec -it -e RAILS_MASTER_KEY=#{config.master_key} #{config.env_args.join(" ")} #{config.service_with_version} bin/rails c'"
+  end
+
   def list_containers
     docker :container, :ls, "-a", *service_filter
   end

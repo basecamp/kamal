@@ -58,6 +58,12 @@ namespace :mrsk do
       on(MRSK_CONFIG.hosts) { |host| puts "App Host: #{host}\n" + capture(*app.exec(ENV["CMD"])) + "\n\n" }
     end
 
+    desc "Start Rails Console on primary host"
+    task :console do
+      puts "Launching Rails console on #{MRSK_CONFIG.primary_host}..."
+      exec app.console
+    end
+
     namespace :exec do
       desc "Execute Rails command on servers, like CMD='runner \"puts %(Hello World)\""
       task :rails do

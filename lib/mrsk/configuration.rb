@@ -3,7 +3,7 @@ require "active_support/core_ext/string/inquiry"
 require "erb"
 
 class Mrsk::Configuration
-  delegate :service, :image, :servers, :env, :registry, :ssh_user, to: :config, allow_nil: true
+  delegate :service, :image, :servers, :env, :registry, to: :config, allow_nil: true
 
   class << self
     def load_file(file)
@@ -78,8 +78,12 @@ class Mrsk::Configuration
     self.class.argumentize "-e", config.env if config.env.present?
   end
 
+  def ssh_user
+    config.ssh_user || "root"
+  end
+
   def ssh_options
-    { user: config.ssh_user || "root", auth_methods: [ "publickey" ] }
+    { user: ssh_user, auth_methods: [ "publickey" ] }
   end
 
   def master_key
