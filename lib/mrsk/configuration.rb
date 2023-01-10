@@ -19,9 +19,9 @@ class Mrsk::Configuration
     end
   end
 
-  def initialize(config)
+  def initialize(config, validate: true)
     @config = ActiveSupport::InheritableOptions.new(config)
-    ensure_required_keys_present
+    ensure_required_keys_present if validate
   end
 
 
