@@ -29,9 +29,15 @@ GEM
     builder (3.2.4)
     concurrent-ruby (1.1.10)
     crass (1.0.6)
+    debug (1.7.1)
+      irb (>= 1.5.0)
+      reline (>= 0.3.1)
     erubi (1.12.0)
     i18n (1.12.0)
       concurrent-ruby (~> 1.0)
+    io-console (0.6.0)
+    irb (1.6.2)
+      reline (>= 0.3.0)
     loofah (2.19.1)
       crass (~> 1.0.2)
       nokogiri (>= 1.5.9)
@@ -41,6 +47,10 @@ GEM
       net-ssh (>= 2.6.5, < 8.0.0)
     net-ssh (7.0.1)
     nokogiri (1.14.0.rc1-arm64-darwin)
+      racc (~> 1.4)
+    nokogiri (1.14.0.rc1-x86_64-darwin)
+      racc (~> 1.4)
+    nokogiri (1.14.0.rc1-x86_64-linux)
       racc (~> 1.4)
     racc (1.6.2)
     rack (2.2.5)
@@ -59,6 +69,8 @@ GEM
       thor (~> 1.0)
       zeitwerk (~> 2.5)
     rake (13.0.6)
+    reline (0.3.2)
+      io-console (~> 0.5)
     sshkit (1.21.3)
       net-scp (>= 1.1.2)
       net-ssh (>= 2.8.0)
@@ -76,6 +88,7 @@ PLATFORMS
   x86_64-linux
 
 DEPENDENCIES
+  debug
   mrsk!
 
 BUNDLED WITH
