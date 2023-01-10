@@ -66,7 +66,7 @@ namespace :mrsk do
 
       desc "Execute a custom task on the first defined server"
       task :once do
-        on(MRSK_CONFIG.primary_host) { |host| puts capture(*app.exec(ENV["CMD"])) }
+        on(MRSK_CONFIG.primary_host) { puts capture(*app.exec(ENV["CMD"])) }
       end
 
       namespace :once do
