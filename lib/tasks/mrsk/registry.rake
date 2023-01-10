@@ -6,7 +6,7 @@ namespace :mrsk do
   namespace :registry do
     desc "Login to the registry locally and remotely"
     task :login do
-      run_locally             { execute *registry.login }
+      run_locally           { execute *registry.login }
       on(MRSK_CONFIG.hosts) { execute *registry.login }
     end
 

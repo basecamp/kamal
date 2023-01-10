@@ -19,15 +19,17 @@ namespace :mrsk do
 
     desc "Run app on servers (or start them if they've already been run)"
     task :run do
-      on(MRSK_CONFIG.hosts) do |host|
-        begin
-          execute *app.run
-        rescue SSHKit::Command::Failed => e
-          if e.message =~ /already in use/
-            puts "Container with same version already deployed on #{host}, starting that instead"
-            execute *app.start, host: host
-          else
-            raise
+      MRSK_CONFIG.roles.each do |role|
+        on(MRSK_CONFIG.role(role).hosts) do |host|
+          begin
+            execute *app.run(role: role)
+          rescue SSHKit::Command::Failed => e
+            if e.message =~ /already in use/
+              puts "Container with same version already deployed on #{host}, starting that instead"
+              execute *app.start, host: host
+            else
+              raise
+            end
           end
         end
       end
@@ -64,13 +66,13 @@ namespace :mrsk do
 
       desc "Execute a custom task on the first defined server"
       task :once do
-        on(MRSK_CONFIG.hosts.first) { |host| puts capture(*app.exec(ENV["CMD"])) }
+        on(MRSK_CONFIG.primary_host) { |host| puts capture(*app.exec(ENV["CMD"])) }
       end
 
       namespace :once do
         desc "Execute Rails command on the first defined server, like CMD='runner \"puts %(Hello World)\""
         task :rails do
-          on(MRSK_CONFIG.hosts.first) { puts capture(*app.exec("bin/rails", ENV["CMD"])) }
+          on(MRSK_CONFIG.primary_host) { puts capture(*app.exec("bin/rails", ENV["CMD"])) }
         end
       end
     end

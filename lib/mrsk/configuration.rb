@@ -1,14 +1,21 @@
 require "active_support/ordered_options"
+require "active_support/core_ext/string/inquiry"
 require "erb"
 
 class Mrsk::Configuration
-  delegate :service, :image, :env, :registry, :ssh_user, to: :config, allow_nil: true
+  delegate :service, :image, :servers, :env, :registry, :ssh_user, to: :config, allow_nil: true
 
-  def self.load_file(file)
-    if file.exist?
-      new YAML.load(ERB.new(IO.read(file)).result).symbolize_keys
-    else
-      raise "Configuration file not found in #{file}"
+  class << self
+    def load_file(file)
+      if file.exist?
+        new YAML.load(ERB.new(IO.read(file)).result).symbolize_keys
+      else
+        raise "Configuration file not found in #{file}"
+      end
+    end
+
+    def argumentize(argument, attributes)
+      attributes.flat_map { |k, v| [ argument, "#{k}=#{v}" ] }
     end
   end
 
@@ -17,10 +24,38 @@ class Mrsk::Configuration
     ensure_required_keys_present
   end
 
+
+  def roles
+    @roles ||= role_names.collect { |role_name| Role.new(role_name, config: self) }
+  end
+
+  def role(name)
+    roles.detect { |r| r.name == name.to_s }
+  end
+
   def hosts
-    ENV["HOSTS"] || config.servers
+    hosts =
+      case
+      when ENV["HOSTS"]
+        ENV["HOSTS"].split(",")
+      when ENV["ROLES"]
+        role_names = ENV["ROLES"].split(",")
+        roles.select { |r| role_names.include?(r.name) }.flat_map(&:hosts)
+      else
+        roles.flat_map(&:hosts)
+      end
+
+      if hosts.any?
+        hosts
+      else
+        raise ArgumentError, "No hosts found"
+      end
   end
+
+  def primary_host
+    role(:web).hosts.first
   end
+
 
   def version
     @version ||= ENV["VERSION"] || `git rev-parse HEAD`.strip
@@ -38,18 +73,9 @@ class Mrsk::Configuration
     "#{service}-#{version}"
   end
 
-  def envs
-    parameterize "-e", env if env.present?
-  end
 
-  def labels
-    parameterize "--label", \
-      "service" => service,
-      "traefik.http.routers.#{service}.rule" => "'PathPrefix(`/`)'",
-      "traefik.http.services.#{service}.loadbalancer.healthcheck.path" => "/up",
-      "traefik.http.services.#{service}.loadbalancer.healthcheck.interval" => "1s",
-      "traefik.http.middlewares.#{service}.retry.attempts" => "3",
-      "traefik.http.middlewares.#{service}.retry.initialinterval" => "500ms"
+  def env_args
+    self.class.argumentize "-e", config.env if config.env.present?
   end
 
   def ssh_options
@@ -59,6 +85,7 @@ class Mrsk::Configuration
   def master_key
     ENV["RAILS_MASTER_KEY"] || File.read(Rails.root.join("config/master.key"))
   end
+
 
   private
     attr_accessor :config
@@ -73,7 +100,9 @@ class Mrsk::Configuration
       end      
     end
 
-    def parameterize(param, hash)
-      hash.flat_map { |k, v| [ param, "#{k}=#{v}" ] }
+    def role_names
+      config.servers.is_a?(Array) ? [ "web" ] : config.servers.keys.sort
     end
 end
+
+require "mrsk/configuration/role"

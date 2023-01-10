@@ -9,15 +9,18 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
     docker :pull, config.absolute_image
   end
 
-  def run
+  def run(role: :web)
+    role = config.role(role)
+
     docker :run,
       "-d",
       "--restart unless-stopped",
       "--name", config.service_with_version,
       "-e", redact("RAILS_MASTER_KEY=#{config.master_key}"),
-      *config.envs,
-      *config.labels,
-      config.absolute_image
+      *config.env_args,
+      *role.label_args,
+      config.absolute_image,
+      role.cmd
   end
 
   def start
@@ -39,7 +42,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
   def exec(*command)
     docker :exec, 
       "-e", redact("RAILS_MASTER_KEY=#{config.master_key}"),
-      *config.envs,
+      *config.env_args,
       config.service_with_version,
       *command
   end
