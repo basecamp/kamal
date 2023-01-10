@@ -50,6 +50,24 @@ Voila! All the servers are now serving the app on port 80. If you're just runnin
 
 ## Operations
 
+### Running job hosts separately
+
+If your application uses separate job running hosts, or other roles beyond the default web running, you can specify these hosts and their custom command like so:
+
+```yaml
+servers:
+  web:
+    - xxx.xxx.xxx.xxx
+    - xxx.xxx.xxx.xxx
+  job:
+    hosts:
+      - xxx.xxx.xxx.xxx
+      - xxx.xxx.xxx.xxx
+    cmd: bin/jobs
+```
+
+The application will be deployed to all hosts, but only those in the `web` role will be labeled to run under traefik. If you want to run custom commands on all hosts in a role, you can use `rake mrsk:app:exec:rails CMD=about ROLES=job`.
+
 ### Executing commands
 
 If you need to execute commands inside the Rails containers, you can use `rake mrsk:app:exec`, `rake mrsk:app:exec:once`, `rake mrsk:app:exec:rails`, and `rake mrsk:app:exec:once:rails`. Examples:
