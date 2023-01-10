@@ -14,12 +14,12 @@ namespace :mrsk do
 
     desc "Pull app image from the registry onto servers"
     task :pull do
-      on(MRSK_CONFIG.servers) { execute *app.pull }
+      on(MRSK_CONFIG.hosts) { execute *app.pull }
     end
 
     desc "Run app on servers (or start them if they've already been run)"
     task :run do
-      on(MRSK_CONFIG.servers) do |host|
+      on(MRSK_CONFIG.hosts) do |host|
         begin
           execute *app.run
         rescue SSHKit::Command::Failed => e
@@ -33,32 +33,14 @@ namespace :mrsk do
       end
     end
 
-    desc "Run app on servers (or start them if they've already been run)"
-    task :run do
-      MRSK_CONFIG.roles.each do |role|
-        on(MRSK_CONFIG.servers(role: role)) do |host|
-          begin
-            execute *app.run(role: role)
-          rescue SSHKit::Command::Failed => e
-            if e.message =~ /already in use/
-              puts "Container with same version already deployed on #{host}, starting that instead"
-              execute *app.start, host: host
-            else
-              raise
-            end
-          end
-        end
-      end
-    end
-
     desc "Start existing app on servers"
     task :start do
-      on(MRSK_CONFIG.servers) { execute *app.start, raise_on_non_zero_exit: false }
+      on(MRSK_CONFIG.hosts) { execute *app.start, raise_on_non_zero_exit: false }
     end
 
     desc "Stop app on servers"
     task :stop do
-      on(MRSK_CONFIG.servers) { execute *app.stop, raise_on_non_zero_exit: false }
+      on(MRSK_CONFIG.hosts) { execute *app.stop, raise_on_non_zero_exit: false }
     end
 
     desc "Start app on servers (use VERSION=<git-hash> to designate which version)"
@@ -66,46 +48,46 @@ namespace :mrsk do
 
     desc "Display information about app containers"
     task :info do
-      on(MRSK_CONFIG.servers) { |host| puts "App Host: #{host}\n" + capture(*app.info) + "\n\n" }
+      on(MRSK_CONFIG.hosts) { |host| puts "App Host: #{host}\n" + capture(*app.info) + "\n\n" }
     end
 
     desc "Execute a custom task on servers passed in as CMD='bin/rake some:task'"
     task :exec do
-      on(MRSK_CONFIG.servers) { |host| puts "App Host: #{host}\n" + capture(*app.exec(ENV["CMD"])) + "\n\n" }
+      on(MRSK_CONFIG.hosts) { |host| puts "App Host: #{host}\n" + capture(*app.exec(ENV["CMD"])) + "\n\n" }
     end
 
     namespace :exec do
       desc "Execute Rails command on servers, like CMD='runner \"puts %(Hello World)\""
       task :rails do
-        on(MRSK_CONFIG.servers) { |host| puts "App Host: #{host}\n" + capture(*app.exec("bin/rails", ENV["CMD"])) + "\n\n" }
+        on(MRSK_CONFIG.hosts) { |host| puts "App Host: #{host}\n" + capture(*app.exec("bin/rails", ENV["CMD"])) + "\n\n" }
       end
 
       desc "Execute a custom task on the first defined server"
       task :once do
-        on(MRSK_CONFIG.servers.first) { |host| puts capture(*app.exec(ENV["CMD"])) }
+        on(MRSK_CONFIG.hosts.first) { |host| puts capture(*app.exec(ENV["CMD"])) }
       end
 
       namespace :once do
         desc "Execute Rails command on the first defined server, like CMD='runner \"puts %(Hello World)\""
         task :rails do
-          on(MRSK_CONFIG.servers.first) { puts capture(*app.exec("bin/rails", ENV["CMD"])) }
+          on(MRSK_CONFIG.hosts.first) { puts capture(*app.exec("bin/rails", ENV["CMD"])) }
         end
       end
     end
 
     desc "List all the app containers currently on servers"
     task :containers do
-      on(MRSK_CONFIG.servers) { |host| puts "App Host: #{host}\n" + capture(*app.list_containers) + "\n\n" }
+      on(MRSK_CONFIG.hosts) { |host| puts "App Host: #{host}\n" + capture(*app.list_containers) + "\n\n" }
     end
 
     desc "Tail logs from app containers"
     task :logs do
-      on(MRSK_CONFIG.servers) { execute *app.logs }
+      on(MRSK_CONFIG.hosts) { execute *app.logs }
     end
 
     desc "Remove app containers and images from servers"
     task remove: %i[ stop ] do
-      on(MRSK_CONFIG.servers) do
+      on(MRSK_CONFIG.hosts) do
         execute *app.remove_containers
         execute *app.remove_images
       end

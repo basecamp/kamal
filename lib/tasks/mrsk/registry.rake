@@ -7,12 +7,12 @@ namespace :mrsk do
     desc "Login to the registry locally and remotely"
     task :login do
       run_locally             { execute *registry.login }
-      on(MRSK_CONFIG.servers) { execute *registry.login }
+      on(MRSK_CONFIG.hosts) { execute *registry.login }
     end
 
     desc "Logout of the registry remotely"
     task :logout do
-      on(MRSK_CONFIG.servers) { execute *registry.logout }
+      on(MRSK_CONFIG.hosts) { execute *registry.logout }
     end
   end
 end

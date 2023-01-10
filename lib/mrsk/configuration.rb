@@ -17,8 +17,9 @@ class Mrsk::Configuration
     ensure_required_keys_present
   end
 
-  def servers
-    ENV["SERVERS"] || config.servers
+  def hosts
+    ENV["HOSTS"] || config.servers
+  end
   end
 
   def version
