@@ -33,6 +33,24 @@ namespace :mrsk do
       end
     end
 
+    desc "Run app on servers (or start them if they've already been run)"
+    task :run do
+      MRSK_CONFIG.roles.each do |role|
+        on(MRSK_CONFIG.servers(role: role)) do |host|
+          begin
+            execute *app.run(role: role)
+          rescue SSHKit::Command::Failed => e
+            if e.message =~ /already in use/
+              puts "Container with same version already deployed on #{host}, starting that instead"
+              execute *app.start, host: host
+            else
+              raise
+            end
+          end
+        end
+      end
+    end
+
     desc "Start existing app on servers"
     task :start do
       on(MRSK_CONFIG.servers) { execute *app.start, raise_on_non_zero_exit: false }

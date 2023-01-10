@@ -41,7 +41,7 @@ GEM
     net-scp (4.0.0)
       net-ssh (>= 2.6.5, < 8.0.0)
     net-ssh (7.0.1)
-    nokogiri (1.13.10-arm64-darwin)
+    nokogiri (1.14.0.rc1-arm64-darwin)
       racc (~> 1.4)
     racc (1.6.2)
     rack (2.2.5)
