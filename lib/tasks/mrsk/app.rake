@@ -35,7 +35,7 @@ namespace :mrsk do
       end
     end
 
-    desc "Start existing app on servers"
+    desc "Start existing app on servers (use VERSION=<git-hash> to designate which version)"
     task :start do
       on(MRSK_CONFIG.hosts) { execute *app.start, raise_on_non_zero_exit: false }
     end
