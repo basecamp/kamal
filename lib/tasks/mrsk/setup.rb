@@ -14,3 +14,12 @@ else
   # MRSK is missing config/deploy.yml – run 'rake mrsk:init'
   MRSK_CONFIG = Mrsk::Configuration.new({}, validate: false)
 end
+
+# Set a different verbosity level for the duration of the yield
+def verbosity(level) 
+  old_level = SSHKit.config.output_verbosity
+  SSHKit.config.output_verbosity = level
+  yield
+ensure
+  SSHKit.config.output_verbosity = old_level
+end
