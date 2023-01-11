@@ -14,6 +14,7 @@ env:
   # Remember never to put passwords or tokens directly into this file, use encrypted credentials
   # REDIS_URL: redis://x/y
 
+# Where your images will be hosted
 registry:
   # Specify the registry server, if you're not using Docker Hub
   # server: registry.digitalocean.com / ghcr.io / ...
