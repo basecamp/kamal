@@ -11,6 +11,7 @@ namespace :mrsk do
     task :push do
       run_locally do 
         begin
+          info "Building multi-architecture images may take a while (run with VERBOSE=1 for progress logging)"
           execute *app.push
         rescue SSHKit::Command::Failed => e
           error "Missing compatible buildx builder, so creating a new one first"
