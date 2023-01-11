@@ -5,9 +5,9 @@ service: my-app
 # Name of the container image
 image: user/chat
 
-# All the servers targeted for deploy. You can reference a single server for a command by using SERVERS=xxx.xxx.xxx.xxx
+# All the servers targeted for deploy. You can reference a single server for a command by using SERVERS=192.168.0.1
 servers:
-  - xxx.xxx.xxx.xxx
+  - 192.168.0.1
 
 # The following envs are made available to the container when started
 env:
