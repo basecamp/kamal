@@ -17,5 +17,7 @@ env:
 registry:
   # Specify the registry server, if you're not using Docker Hub
   # server: registry.digitalocean.com / ghcr.io / ...
+
+  # Set credentials with rake credentials:edit
   username: <%= Rails.application.credentials.registry["username"] %>
   password: <%= Rails.application.credentials.registry["password"] %>
