@@ -1,7 +1,7 @@
 require_relative "setup"
 
 PRUNE_IMAGES_AFTER     = 30.days.in_hours.to_i
-PRUNE_CONTAINERS_AFTER = 3.days.in_hours.to_i
+PRUNE_CONTAINERS_AFTER =  3.days.in_hours.to_i
 
 namespace :mrsk do
   desc "Prune unused images and stopped containers"
