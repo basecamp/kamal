@@ -19,5 +19,5 @@ registry:
   # server: registry.digitalocean.com / ghcr.io / ...
 
   # Set credentials with rake credentials:edit
-  username: <%= Rails.application.credentials.registry["username"] %>
-  password: <%= Rails.application.credentials.registry["password"] %>
+  username: my-user
+  password: my-password-should-go-in-credentials
