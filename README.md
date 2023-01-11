@@ -117,6 +117,10 @@ database: storage/production.sqlite3
 Current version: 20221231233303
 ```
 
+### Running a Rails console on the primary host
+
+If you need to interact with the production console for the app, you can use `rake mrsk:app:console`, which will start a Rails console session on the primary host. Be mindful that this is a live wire! Any changes made to the production database will take effect immeditately.
+
 ### Inspecting
 
 You can see the state of your servers by running `rake mrsk:info`. It'll show something like this:
