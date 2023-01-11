@@ -3,7 +3,7 @@
 service: my-app
 
 # Name of the container image
-image: user/chat
+image: user/my-app
 
 # All the servers targeted for deploy. You can reference a single server for a command by using SERVERS=192.168.0.1
 servers:
