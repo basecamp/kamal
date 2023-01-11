@@ -23,7 +23,6 @@ namespace :mrsk do
 
       puts "Created configuration file in config/deploy.yml"
     end
-      
   end
 
   desc "Remove Traefik, app, and registry session from servers"
