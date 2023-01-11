@@ -39,8 +39,9 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
     [ "docker ps -q #{service_filter.join(" ")} | xargs docker logs -f" ]
   end
 
-  def exec(*command)
-    docker :exec, 
+  def exec(*command, interactive: false)
+    docker :exec,
+      ("-it" if interactive),
       "-e", redact("RAILS_MASTER_KEY=#{config.master_key}"),
       *config.env_args,
       config.service_with_version,
@@ -48,7 +49,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
   end
 
   def console
-    "ssh -t #{config.ssh_user}@#{config.primary_host} 'docker exec -it -e RAILS_MASTER_KEY=#{config.master_key} #{config.env_args.join(" ")} #{config.service_with_version} bin/rails c'"
+    "ssh -t #{config.ssh_user}@#{config.primary_host} '#{exec("bin/rails", "c", interactive: true).join(" ")}'"
   end
 
   def list_containers
