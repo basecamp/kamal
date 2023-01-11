@@ -9,12 +9,12 @@ namespace :mrsk do
   namespace :prune do
     desc "Prune unused images older than 30 days"
     task :images do
-      on(MRSK_CONFIG.hosts) { execute *prune.images }
+      on(MRSK_CONFIG.hosts) { verbosity(:debug) { execute *prune.images } }
     end
 
     desc "Prune stopped containers for the service older than 3 days"
     task :containers do
-      on(MRSK_CONFIG.hosts) { execute *prune.containers }
+      on(MRSK_CONFIG.hosts) { verbosity(:debug) { execute *prune.containers } }
     end
   end
 end
