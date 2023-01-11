@@ -9,7 +9,15 @@ namespace :mrsk do
 
     desc "Build locally and push app image to registry"
     task :push do
-      run_locally { execute *app.push } unless ENV["VERSION"]
+      run_locally do 
+        begin
+          execute *app.push
+        rescue SSHKit::Command::Failed => e
+          error "Missing compatible buildx builder, so creating a new one first"
+          execute *app.create_new_builder
+          execute *app.push
+        end
+      end unless ENV["VERSION"]
     end
 
     desc "Pull app image from the registry onto servers"

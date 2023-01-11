@@ -29,7 +29,7 @@ registry:
   password: real-password
 ```
 
-Now you're ready to deploy a multi-arch image (FIXME: currently you need to manually run `docker buildx create --use` once first):
+Now you're ready to deploy a multi-arch image:
 
 ```
 rake mrsk:deploy

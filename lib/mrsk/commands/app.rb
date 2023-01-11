@@ -1,7 +1,5 @@
 class Mrsk::Commands::App < Mrsk::Commands::Base
   def push
-    # TODO: Run 'docker buildx create --use' when needed
-    # TODO: Make multiarch an option so Linux users can enjoy speedier builds
     docker :buildx, :build, "--push", "--platform linux/amd64,linux/arm64", "-t", config.absolute_image, "."
   end
 
@@ -62,6 +60,10 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
 
   def remove_images
     docker :image, :prune, "-a", "-f", *service_filter
+  end
+
+  def create_new_builder
+    docker :buildx, :create, "--use", "--name", config.service
   end
 
   private
