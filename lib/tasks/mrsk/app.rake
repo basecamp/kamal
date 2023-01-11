@@ -25,7 +25,7 @@ namespace :mrsk do
             execute *app.run(role: role.name)
           rescue SSHKit::Command::Failed => e
             if e.message =~ /already in use/
-              puts "Container with same version already deployed on #{host}, starting that instead"
+              error "Container with same version already deployed on #{host}, starting that instead"
               execute *app.start, host: host
             else
               raise
