@@ -15,11 +15,15 @@ namespace :mrsk do
 
   desc "Create config stub in config/deploy.yml"
   task :init do
-    require "fileutils"
-    FileUtils.cp_r \
-      Pathname.new(File.expand_path("templates/deploy.yml", __dir__)),
-      Rails.root.join("config/deploy.yml")
-    info "Created configuration file in config/deploy.yml"
+    if (deploy_file = Rails.root.join("config/deploy.yml")).exist?
+      puts "Config file already exists in config/deploy.yml (remove first to create a new one)"
+    else
+      require "fileutils"
+      FileUtils.cp_r Pathname.new(File.expand_path("templates/deploy.yml", __dir__)), deploy_file
+
+      puts "Created configuration file in config/deploy.yml"
+    end
+      
   end
 
   desc "Remove Traefik, app, and registry session from servers"
