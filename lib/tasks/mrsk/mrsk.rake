@@ -19,6 +19,7 @@ namespace :mrsk do
     FileUtils.cp_r \
       Pathname.new(File.expand_path("templates/deploy.yml", __dir__)),
       Rails.root.join("config/deploy.yml")
+    info "Created configuration file in config/deploy.yml"
   end
 
   desc "Remove Traefik, app, and registry session from servers"
