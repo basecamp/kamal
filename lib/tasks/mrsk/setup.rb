@@ -15,6 +15,9 @@ else
   MRSK_CONFIG = Mrsk::Configuration.new({}, validate: false)
 end
 
+# Allow easy full verbosity mode
+SSHKit.config.output_verbosity = :debug if ENV["VERBOSE"]
+
 # Set a different verbosity level for the duration of the yield
 def verbosity(level) 
   old_level = SSHKit.config.output_verbosity
