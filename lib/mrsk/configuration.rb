@@ -75,7 +75,11 @@ class Mrsk::Configuration
 
 
   def env_args
-    self.class.argumentize "-e", config.env if config.env.present?
+    if config.env.present?
+      self.class.argumentize "-e", config.env
+    else
+      []
+    end
   end
 
   def ssh_user
