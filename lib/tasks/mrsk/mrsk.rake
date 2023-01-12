@@ -15,13 +15,20 @@ namespace :mrsk do
 
   desc "Create config stub in config/deploy.yml"
   task :init do
+    require "fileutils"
+
     if (deploy_file = Rails.root.join("config/deploy.yml")).exist?
       puts "Config file already exists in config/deploy.yml (remove first to create a new one)"
     else
-      require "fileutils"
       FileUtils.cp_r Pathname.new(File.expand_path("templates/deploy.yml", __dir__)), deploy_file
-
       puts "Created configuration file in config/deploy.yml"
+    end
+
+    if (binstub = Rails.root.join("bin/mrsk")).exist?
+      puts "Binstub already exists in bin/mrsk (remove first to create a new one)"
+    else
+      FileUtils.cp_r Pathname.new(File.expand_path("templates/mrsk", __dir__)), binstub
+      puts "Created binstub file in bin/mrsk"
     end
   end
 

@@ -28,7 +28,7 @@ registry:
 Now you're ready to deploy a multi-arch image to the servers:
 
 ```
-rake mrsk:deploy
+./bin/mrsk deploy
 ```
 
 This will:
@@ -125,11 +125,11 @@ servers:
 
 ### Remote execution
 
-If you need to execute commands inside the Rails containers, you can use `rake mrsk:app:exec`, `rake mrsk:app:exec:once`, `rake mrsk:app:exec:rails`, and `rake mrsk:app:exec:once:rails`. Examples:
+If you need to execute commands inside the Rails containers, you can use `./bin/mrsk app:exec`, `./bin/mrsk app:exec:once`, `./bin/mrsk app:exec:rails`, and `./bin/mrsk app:exec:once:rails`. Examples:
 
 ```bash
 # Runs command on all servers
-rake mrsk:app:exec CMD='ruby -v'
+./bin/mrsk app:exec CMD='ruby -v'
 App Host: xxx.xxx.xxx.xxx
 ruby 3.1.3p185 (2022-11-24 revision 1a6b16756e) [x86_64-linux]
 
@@ -137,11 +137,11 @@ App Host: xxx.xxx.xxx.xxx
 ruby 3.1.3p185 (2022-11-24 revision 1a6b16756e) [x86_64-linux]
 
 # Runs command on first server
-rake mrsk:app:exec:once CMD='cat .ruby-version'
+./bin/mrsk app:exec:once CMD='cat .ruby-version'
 3.1.3
 
 # Runs Rails command on all servers
-rake mrsk:app:exec:rails CMD=about
+./bin/mrsk app:exec:rails CMD=about
 App Host: xxx.xxx.xxx.xxx
 About your application's environment
 Rails version             7.1.0.alpha
@@ -167,18 +167,18 @@ Database adapter          sqlite3
 Database schema version   20221231233303
 
 # Runs Rails command on first server
-rake mrsk:app:exec:once:rails CMD='db:version'
+./bin/mrsk app:exec:once:rails CMD='db:version'
 database: storage/production.sqlite3
 Current version: 20221231233303
 ```
 
 ### Running a Rails console on the primary host
 
-If you need to interact with the production console for the app, you can use `rake mrsk:app:console`, which will start a Rails console session on the primary host. Be mindful that this is a live wire! Any changes made to the production database will take effect immeditately.
+If you need to interact with the production console for the app, you can use `./bin/mrsk app:console`, which will start a Rails console session on the primary host. Be mindful that this is a live wire! Any changes made to the production database will take effect immeditately.
 
 ### Inspecting
 
-You can see the state of your servers by running `rake mrsk:info`. It'll show something like this:
+You can see the state of your servers by running `./bin/mrsk info`. It'll show something like this:
 
 ```
 Traefik Host: xxx.xxx.xxx.xxx
@@ -198,11 +198,11 @@ CONTAINER ID   IMAGE                                                            
 1d3c91ed1f55   registry.digitalocean.com/user/app:6ef8a6a84c525b123c5245345a8483f86d05a123   "/rails/bin/docker-e…"   13 minutes ago   Up 13 minutes   3000/tcp   chat-6ef8a6a84c525b123c5245345a8483f86d05a123
 ```
 
-You can also see just info for app containers with `rake mrsk:app:info` or just for Traefik with `rake mrsk:traefik:info`.
+You can also see just info for app containers with `./bin/mrsk app:info` or just for Traefik with `./bin/mrsk traefik:info`.
 
 ### Rollback
 
-If you've discovered a bad deploy, you can quickly rollback by reactivating the old, paused container image. You can see what old containers are available for rollback by running `rake mrsk:app:containers`. It'll give you a presentation similar to `rake mrsk:app:info`, but include all the old containers as well. Showing something like this:
+If you've discovered a bad deploy, you can quickly rollback by reactivating the old, paused container image. You can see what old containers are available for rollback by running `./bin/mrsk app:containers`. It'll give you a presentation similar to `./bin/mrsk app:info`, but include all the old containers as well. Showing something like this:
 
 ```
 App Host: 164.92.105.119
@@ -216,20 +216,19 @@ badb1aa51db4   registry.digitalocean.com/user/app:6ef8a6a84c525b123c5245345a8483
 6f170d1172ae   registry.digitalocean.com/user/app:e5d9d7c2b898289dfbc5f7f1334140d984eedae4   "/rails/bin/docker-e…"   31 minutes ago   Exited (1) 27 minutes ago              chat-e5d9d7c2b898289dfbc5f7f1334140d984eedae4
 ```
 
-From the example above, we can see that `e5d9d7c2b898289dfbc5f7f1334140d984eedae4` was the last version, so it's available as a rollback target. We can perform this rollback by running `rake mrsk:rollback VERSION=e5d9d7c2b898289dfbc5f7f1334140d984eedae4`. That'll stop `6ef8a6a84c525b123c5245345a8483f86d05a123` and then start `e5d9d7c2b898289dfbc5f7f1334140d984eedae4`. Because the old container is still available, this is very quick. Nothing to download from the registry.
+From the example above, we can see that `e5d9d7c2b898289dfbc5f7f1334140d984eedae4` was the last version, so it's available as a rollback target. We can perform this rollback by running `./bin/mrsk rollback VERSION=e5d9d7c2b898289dfbc5f7f1334140d984eedae4`. That'll stop `6ef8a6a84c525b123c5245345a8483f86d05a123` and then start `e5d9d7c2b898289dfbc5f7f1334140d984eedae4`. Because the old container is still available, this is very quick. Nothing to download from the registry.
 
-Note that by default old containers are pruned after 3 days when you run `rake mrsk:deploy`.
+Note that by default old containers are pruned after 3 days when you run `./bin/mrsk deploy`.
 
 ### Removing
 
-If you wish to remove the entire application, including Traefik, containers, images, and registry session, you can run `rake mrsk:remove`. This will leave the servers clean.
+If you wish to remove the entire application, including Traefik, containers, images, and registry session, you can run `./bin/mrsk remove`. This will leave the servers clean.
 
 ## Stage of development
 
 This is alpha software. Lots of stuff is missing. Here are some of the areas we seek to improve:
 
 - Adapterize commands to work with Podman and other container runners
-- Possibly switching to a bin/mrsk command rather than raw rake
 - Integrate with cloud CI pipelines
 
 ## License
