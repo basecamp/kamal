@@ -103,6 +103,7 @@ labels:
 ```
 
 This allows you to run multiple applications on the same server sharing the same Traefik instance and port.
+See https://doc.traefik.io/traefik/routing/routers/#rule for a full list of available routing rules.
 
 The labels can even be applied on a per-role basis:
 
