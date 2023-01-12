@@ -26,7 +26,7 @@ Then ensure your encrypted credentials have the registry username + password by 
 ```
 registry:
   username: real-user-name
-  password: real-password
+  password: real-registry-password-or-token
 ```
 
 Now you're ready to deploy a multi-arch image:
