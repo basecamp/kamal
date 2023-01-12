@@ -28,10 +28,10 @@ class Mrsk::Commands::Builder < Mrsk::Commands::Base
 
 
   def create_with_context(arch)
-    docker :buildx, :create, "--use", "--name", "mrsk", "mrsk-#{arch}"
+    docker :buildx, :create, "--use", "--name", "mrsk", "mrsk-#{arch}", "--platform", "linux/#{arch}"
   end
 
   def append_context(arch)
-    docker :buildx, :create, "--append", "--name", "mrsk", "mrsk-#{arch}"
+    docker :buildx, :create, "--append", "--name", "mrsk", "mrsk-#{arch}", "--platform", "linux/#{arch}"
   end
 end
