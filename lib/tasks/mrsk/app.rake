@@ -1,7 +1,5 @@
 require_relative "setup"
 
-app = Mrsk::Commands::App.new(MRSK_CONFIG)
-
 namespace :mrsk do
   namespace :app do
     desc "Deliver a newly built app image to servers"
@@ -12,30 +10,30 @@ namespace :mrsk do
       run_locally do 
         begin
           info "Building multi-architecture images may take a while (run with VERBOSE=1 for progress logging)"
-          execute *app.push
+          execute *MRSK.app.push
         rescue SSHKit::Command::Failed => e
           error "Missing compatible buildx builder, so creating a new one first"
-          execute *app.create_new_builder
-          execute *app.push
+          execute *MRSK.app.create_new_builder
+          execute *MRSK.app.push
         end
       end unless ENV["VERSION"]
     end
 
     desc "Pull app image from the registry onto servers"
     task :pull do
-      on(MRSK_CONFIG.hosts) { execute *app.pull }
+      on(MRSK.config.hosts) { execute *MRSK.app.pull }
     end
 
     desc "Run app on servers (or start them if they've already been run)"
     task :run do
-      MRSK_CONFIG.roles.each do |role|
+      MRSK.config.roles.each do |role|
         on(role.hosts) do |host|
           begin
-            execute *app.run(role: role.name)
+            execute *MRSK.app.run(role: role.name)
           rescue SSHKit::Command::Failed => e
             if e.message =~ /already in use/
               error "Container with same version already deployed on #{host}, starting that instead"
-              execute *app.start, host: host
+              execute *MRSK.app.start, host: host
             else
               raise
             end
@@ -46,12 +44,12 @@ namespace :mrsk do
 
     desc "Start existing app on servers (use VERSION=<git-hash> to designate which version)"
     task :start do
-      on(MRSK_CONFIG.hosts) { execute *app.start, raise_on_non_zero_exit: false }
+      on(MRSK.config.hosts) { execute *MRSK.app.start, raise_on_non_zero_exit: false }
     end
 
     desc "Stop app on servers"
     task :stop do
-      on(MRSK_CONFIG.hosts) { execute *app.stop, raise_on_non_zero_exit: false }
+      on(MRSK.config.hosts) { execute *MRSK.app.stop, raise_on_non_zero_exit: false }
     end
 
     desc "Start app on servers (use VERSION=<git-hash> to designate which version)"
@@ -59,54 +57,54 @@ namespace :mrsk do
 
     desc "Display information about app containers"
     task :info do
-      on(MRSK_CONFIG.hosts) { |host| puts "App Host: #{host}\n" + capture(*app.info) + "\n\n" }
+      on(MRSK.config.hosts) { |host| puts "App Host: #{host}\n" + capture(*MRSK.app.info) + "\n\n" }
     end
 
     desc "Execute a custom task on servers passed in as CMD='bin/rake some:task'"
     task :exec do
-      on(MRSK_CONFIG.hosts) { |host| puts "App Host: #{host}\n" + capture(*app.exec(ENV["CMD"])) + "\n\n" }
+      on(MRSK.config.hosts) { |host| puts "App Host: #{host}\n" + capture(*MRSK.app.exec(ENV["CMD"])) + "\n\n" }
     end
 
     desc "Start Rails Console on primary host"
     task :console do
-      puts "Launching Rails console on #{MRSK_CONFIG.primary_host}..."
+      puts "Launching Rails console on #{MRSK.config.primary_host}..."
       exec app.console
     end
 
     namespace :exec do
       desc "Execute Rails command on servers, like CMD='runner \"puts %(Hello World)\""
       task :rails do
-        on(MRSK_CONFIG.hosts) { |host| puts "App Host: #{host}\n" + capture(*app.exec("bin/rails", ENV["CMD"])) + "\n\n" }
+        on(MRSK.config.hosts) { |host| puts "App Host: #{host}\n" + capture(*MRSK.app.exec("bin/rails", ENV["CMD"])) + "\n\n" }
       end
 
       desc "Execute a custom task on the first defined server"
       task :once do
-        on(MRSK_CONFIG.primary_host) { puts capture(*app.exec(ENV["CMD"])) }
+        on(MRSK.config.primary_host) { puts capture(*MRSK.app.exec(ENV["CMD"])) }
       end
 
       namespace :once do
         desc "Execute Rails command on the first defined server, like CMD='runner \"puts %(Hello World)\""
         task :rails do
-          on(MRSK_CONFIG.primary_host) { puts capture(*app.exec("bin/rails", ENV["CMD"])) }
+          on(MRSK.config.primary_host) { puts capture(*MRSK.app.exec("bin/rails", ENV["CMD"])) }
         end
       end
     end
 
     desc "List all the app containers currently on servers"
     task :containers do
-      on(MRSK_CONFIG.hosts) { |host| puts "App Host: #{host}\n" + capture(*app.list_containers) + "\n\n" }
+      on(MRSK.config.hosts) { |host| puts "App Host: #{host}\n" + capture(*MRSK.app.list_containers) + "\n\n" }
     end
 
     desc "Tail logs from app containers"
     task :logs do
-      on(MRSK_CONFIG.hosts) { execute *app.logs }
+      on(MRSK.config.hosts) { execute *MRSK.app.logs }
     end
 
     desc "Remove app containers and images from servers"
     task remove: %i[ stop ] do
-      on(MRSK_CONFIG.hosts) do
-        execute *app.remove_containers
-        execute *app.remove_images
+      on(MRSK.config.hosts) do
+        execute *MRSK.app.remove_containers
+        execute *MRSK.app.remove_images
       end
     end
   end

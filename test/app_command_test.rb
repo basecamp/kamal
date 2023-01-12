@@ -1,6 +1,6 @@
 require "test_helper"
 require "mrsk/configuration"
-require "mrsk/commands"
+require "mrsk/commands/app"
 
 ENV["VERSION"] = "123"
 ENV["RAILS_MASTER_KEY"] = "456"
