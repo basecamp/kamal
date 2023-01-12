@@ -65,7 +65,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
   end
 
   def create_new_builder
-    docker :buildx, :create, "--use", "--name", config.service
+    docker :buildx, :create, "--use", "--name", "mrsk"
   end
 
   private
