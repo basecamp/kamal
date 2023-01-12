@@ -1,3 +1,7 @@
+require "mrsk/commands/base"
+require "active_support/duration"
+require "active_support/core_ext/numeric/time"
+
 class Mrsk::Commands::Prune < Mrsk::Commands::Base
   PRUNE_IMAGES_AFTER     = 30.days.in_hours.to_i
   PRUNE_CONTAINERS_AFTER =  3.days.in_hours.to_i

@@ -1,3 +1,5 @@
+require "mrsk/commands/base"
+
 class Mrsk::Commands::Traefik < Mrsk::Commands::Base
   def run
     docker :run, "--name traefik",
