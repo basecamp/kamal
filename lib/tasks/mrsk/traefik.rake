@@ -25,6 +25,11 @@ namespace :mrsk do
       on(MRSK.config.role(:web).hosts) { |host| puts "Traefik Host: #{host}\n" + capture(*MRSK.traefik.info) + "\n\n" }
     end
 
+    desc "Show last 100 log lines from Traefik on servers"
+    task :logs do
+      on(MRSK.config.hosts) { |host| puts "Traefik Host: #{host}\n" + capture(*MRSK.traefik.logs) + "\n\n" }
+    end
+
     desc "Remove Traefik container and image from servers"
     task remove: %i[ stop ] do
       on(MRSK.config.role(:web).hosts) do

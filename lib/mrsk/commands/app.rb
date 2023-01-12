@@ -36,7 +36,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
   end
 
   def logs
-    [ "docker ps -q #{service_filter.join(" ")} | xargs docker logs -f" ]
+    [ "docker ps -q #{service_filter.join(" ")} | xargs docker logs -n 100 -t" ]
   end
 
   def exec(*command, interactive: false)

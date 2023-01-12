@@ -24,7 +24,7 @@ class Mrsk::Commands::Traefik < Mrsk::Commands::Base
   end
 
   def logs
-    docker :logs, "traefik"
+    docker :logs, "traefik", "-n", "100", "-t"
   end
 
   def remove_container

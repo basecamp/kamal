@@ -95,9 +95,9 @@ namespace :mrsk do
       on(MRSK.config.hosts) { |host| puts "App Host: #{host}\n" + capture(*MRSK.app.list_containers) + "\n\n" }
     end
 
-    desc "Tail logs from app containers"
+    desc "Show last 100 log lines from app on servers"
     task :logs do
-      on(MRSK.config.hosts) { execute *MRSK.app.logs }
+      on(MRSK.config.hosts) { |host| puts "App Host: #{host}\n" + capture(*MRSK.app.logs) + "\n\n" }
     end
 
     desc "Remove app containers and images from servers"
