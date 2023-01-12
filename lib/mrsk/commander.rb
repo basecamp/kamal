@@ -15,6 +15,7 @@ class Mrsk::Commander
     @config ||= Mrsk::Configuration.load_file(config_file).tap { |config| setup_with(config) }
   end
 
+
   def app
     @app ||= Mrsk::Commands::App.new(config)
   end
@@ -26,6 +27,11 @@ class Mrsk::Commander
   def registry
     @registry ||= Mrsk::Commands::Registry.new(config)
   end
+
+  def prune
+    @prune ||= Mrsk::Commands::Prune.new(config)
+  end
+
 
   def verbosity(level) 
     old_level = SSHKit.config.output_verbosity
