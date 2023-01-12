@@ -11,6 +11,14 @@ class Mrsk::Configuration::Role
     @hosts ||= extract_hosts_from_config
   end
 
+  def labels
+    if name.web?
+      default_labels.merge(traefik_labels).merge(custom_labels)
+    else
+      default_labels.merge(custom_labels)
+    end
+  end
+
   def label_args
     argumentize "--label", labels
   end
@@ -31,14 +39,6 @@ class Mrsk::Configuration::Role
       end
     end
 
-    def labels
-      if name.web?
-        default_labels.merge(traefik_labels) 
-      else
-        default_labels
-      end
-    end
-
     def default_labels
       { "service" => config.service, "role" => name }
     end
@@ -51,6 +51,13 @@ class Mrsk::Configuration::Role
         "traefik.http.middlewares.#{config.service}.retry.attempts" => "3",
         "traefik.http.middlewares.#{config.service}.retry.initialinterval" => "500ms"
       }
+    end
+
+    def custom_labels
+      Hash.new.tap do |labels|
+        labels.merge!(config.labels) if config.labels.present?
+        labels.merge!(specializations["labels"]) if specializations["labels"].present?
+      end
     end
 
     def specializations

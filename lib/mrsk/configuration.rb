@@ -3,7 +3,7 @@ require "active_support/core_ext/string/inquiry"
 require "erb"
 
 class Mrsk::Configuration
-  delegate :service, :image, :servers, :env, :registry, to: :config, allow_nil: true
+  delegate :service, :image, :servers, :env, :labels, :registry, to: :config, allow_nil: true
 
   class << self
     def load_file(file)

@@ -93,6 +93,33 @@ servers:
 
 Traefik will only be installed and run on the servers in the `web` role (and on all servers if no roles are defined).
 
+### Adding custom container labels
+
+You can specialize the default Traefik rules by setting custom labels on the containers that are being started:
+
+```
+labels:
+  traefik.http.routers.hey.rule: 'Host(`app.hey.com`)'
+```
+
+This allows you to run multiple applications on the same server sharing the same Traefik instance and port.
+
+The labels can even be applied on a per-role basis:
+
+```yaml
+servers:
+  web:
+    - 192.168.0.1
+    - 192.168.0.2
+  job:
+    hosts:
+      - 192.168.0.3
+      - 192.168.0.4
+    cmd: bin/jobs
+    labels:
+      my-custom-label: "50"
+```
+
 ## Commands
 
 ### Remote execution
