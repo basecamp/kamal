@@ -101,10 +101,21 @@ namespace :mrsk do
     end
 
     desc "Remove app containers and images from servers"
-    task remove: %i[ stop ] do
-      on(MRSK.config.hosts) do
-        execute *MRSK.app.remove_containers
-        execute *MRSK.app.remove_images
+    task remove: %w[ remove:containers remove:images ]
+
+    namespace :remove do
+      desc "Remove app containers from servers"
+      task :containers do
+        on(MRSK.config.hosts) do
+          execute *MRSK.app.remove_containers
+        end
+      end
+      
+      desc "Remove app images from servers"
+      task :images do
+        on(MRSK.config.hosts) do
+          execute *MRSK.app.remove_images
+        end        
       end
     end
   end
