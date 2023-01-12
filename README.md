@@ -1,10 +1,10 @@
 # MRSK
 
-MRSK ships zero-downtime deploys of Rails apps packed as containers to any host. It uses the dynamic reverse-proxy Traefik to hold requests while the new application container is started and the old one is wound down. It works across multiple hosts at the same time, using SSHKit to execute commands.
+MRSK ships zero-downtime deploys of Rails apps packed as containers to any host. It uses the dynamic reverse-proxy Traefik to hold requests while the new application container is started and the old one is wound down. It works seamlessly across multiple hosts, using SSHKit to execute commands.
 
 ## Installation
 
-Add the gem with `bundle add mrsk`, then run `rake mrsk:init`, and then edit the new file in `config/deploy.yml` to use the proper service name, image reference, servers to deploy on, and so on. It could look as simple as this:
+Add the gem with `bundle add mrsk`, then run `rake mrsk:init`, and then edit the new file in `config/deploy.yml`. It could look as simple as this:
 
 ```yaml
 service: hey
@@ -44,7 +44,7 @@ This will:
 
 Voila! All the servers are now serving the app on port 80. If you're just running a single server, you're ready to go. If you're running multiple servers, you need to put a load balancer in front of them.
 
-## Additional configuration
+## Configuration
 
 ### Using another registry than Docker Hub
 
@@ -75,27 +75,27 @@ env:
   REDIS_URL: redis://redis1:6379/1
 ```
 
-## Operations
+### Splitting servers into different roles
 
-### Running job hosts separately
-
-If your application uses separate job running hosts, or other roles beyond the default web running, you can specify these hosts and their custom command like so:
+If your application uses separate hosts for running jobs or other roles beyond the default web running, you can specify these hosts and their custom entrypoint command like so:
 
 ```yaml
 servers:
   web:
-    - xxx.xxx.xxx.xxx
-    - xxx.xxx.xxx.xxx
+    - 192.168.0.1
+    - 192.168.0.2
   job:
     hosts:
-      - xxx.xxx.xxx.xxx
-      - xxx.xxx.xxx.xxx
+      - 192.168.0.3
+      - 192.168.0.4
     cmd: bin/jobs
 ```
 
-The application will be deployed to all hosts, but only those in the `web` role will be labeled to run under traefik. If you want to run custom commands on all hosts in a role, you can use `rake mrsk:app:exec:rails CMD=about ROLES=job`.
+Traefik will only be installed and run on the servers in the `web` role (and on all servers if no roles are defined).
 
-### Executing commands
+## Commands
+
+### Remote execution
 
 If you need to execute commands inside the Rails containers, you can use `rake mrsk:app:exec`, `rake mrsk:app:exec:once`, `rake mrsk:app:exec:rails`, and `rake mrsk:app:exec:once:rails`. Examples:
 
