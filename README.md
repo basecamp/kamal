@@ -4,19 +4,15 @@ MRSK ships zero-downtime deploys of Rails apps packed as containers to any host.
 
 ## Installation
 
-Add the gem with `bundle add mrsk`, then run `rake mrsk:init`, and then edit the new file in `config/deploy.yml` to use the proper service name, image reference, servers to deploy on, and so on. It could look something like this:
+Add the gem with `bundle add mrsk`, then run `rake mrsk:init`, and then edit the new file in `config/deploy.yml` to use the proper service name, image reference, servers to deploy on, and so on. It could look as simple as this:
 
 ```yaml
 service: hey
 image: 37s/hey
 servers:
-  - xxx.xxx.xxx.xxx
-  - xxx.xxx.xxx.xxx
-env:
-  DATABASE_URL: mysql2://db1/hey_production/
-  REDIS_URL: redis://redis1:6379/1
+  - 192.168.0.1
+  - 192.168.0.2
 registry:
-  server: registry.digitalocean.com
   username: <%= Rails.application.credentials.registry["username"] %>
   password: <%= Rails.application.credentials.registry["password"] %>
 ```
@@ -29,7 +25,7 @@ registry:
   password: real-registry-password-or-token
 ```
 
-Now you're ready to deploy a multi-arch image:
+Now you're ready to deploy a multi-arch image to the servers:
 
 ```
 rake mrsk:deploy
@@ -47,6 +43,37 @@ This will:
 8. Prune unused images and stopped containers to ensure servers don't fill up.
 
 Voila! All the servers are now serving the app on port 80. If you're just running a single server, you're ready to go. If you're running multiple servers, you need to put a load balancer in front of them.
+
+## Additional configuration
+
+### Using another registry than Docker Hub
+
+The default registry for Docker is Docker Hub. If you'd like to use a different one, just configure the server, like so:
+
+```yaml
+registry:
+  server: registry.digitalocean.com
+  username: <%= Rails.application.credentials.registry["username"] %>
+  password: <%= Rails.application.credentials.registry["password"] %>
+```
+
+### Using a different SSH user than root
+
+The default SSH user is root, but you can change it using `ssh_user`:
+
+```yaml
+ssh_user: app
+```
+
+### Adding custom env variables
+
+You can inject custom env variables into the app containers using `env`:
+
+```yaml
+env:
+  DATABASE_URL: mysql2://db1/hey_production/
+  REDIS_URL: redis://redis1:6379/1
+```
 
 ## Operations
 
