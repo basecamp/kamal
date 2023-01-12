@@ -97,6 +97,7 @@ namespace :mrsk do
 
     desc "Show last 100 log lines from app on servers"
     task :logs do
+      # FIXME: Catch when app containers aren't running
       on(MRSK.config.hosts) { |host| puts "App Host: #{host}\n" + capture(*MRSK.app.logs) + "\n\n" }
     end
 
