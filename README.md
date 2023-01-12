@@ -139,7 +139,7 @@ builder:
     host: ssh://root@192.168.0.1
 ```
 
-Note that you must have Docker running on the remote host, and you must also be logged into the registry there.
+Note: You must have Docker running on the remote host being used as a builder.
 
 With that configuration in place, you can setup the local/remote configuration using `./bin/mrsk build:remote:create`. If you wish to remove the contexts and buildx instances again, you can run `./bin/mrsk build:remote:remove`. If you had already built using the standard emulation setup, run `./bin/mrsk build:remove` before doing `./bin/mrsk build:remote:create`.
 
