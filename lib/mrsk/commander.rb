@@ -1,5 +1,6 @@
 require "mrsk/configuration"
 require "mrsk/commands/app"
+require "mrsk/commands/builder"
 require "mrsk/commands/prune"
 require "mrsk/commands/traefik"
 require "mrsk/commands/registry"
@@ -18,6 +19,10 @@ class Mrsk::Commander
 
   def app
     @app ||= Mrsk::Commands::App.new(config)
+  end
+
+  def builder
+    @builder ||= Mrsk::Commands::Builder.new(config)
   end
 
   def traefik

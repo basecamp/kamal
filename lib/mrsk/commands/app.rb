@@ -1,14 +1,6 @@
 require "mrsk/commands/base"
 
 class Mrsk::Commands::App < Mrsk::Commands::Base
-  def push
-    docker :buildx, :build, "--push", "--platform linux/amd64,linux/arm64", "-t", config.absolute_image, "."
-  end
-
-  def pull
-    docker :pull, config.absolute_image
-  end
-
   def run(role: :web)
     role = config.role(role)
 
@@ -62,10 +54,6 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
 
   def remove_images
     docker :image, :prune, "-a", "-f", *service_filter
-  end
-
-  def create_new_builder
-    docker :buildx, :create, "--use", "--name", "mrsk"
   end
 
   private
