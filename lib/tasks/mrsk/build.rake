@@ -1,7 +1,7 @@
 require_relative "setup"
 
 namespace :mrsk do
-  namespace :builder do
+  namespace :build do
     desc "Deliver a newly built app image to servers"
     task deliver: %i[ push pull ]
 
