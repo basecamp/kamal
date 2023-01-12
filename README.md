@@ -123,6 +123,26 @@ servers:
       my-custom-label: "50"
 ```
 
+### Configuring remote builder for native multi-arch
+
+If you're developing on ARM64 (like Apple Silicon), but you want to deploy on AMD64 (x86 64-bit), you have to use multi-archecture images. By default, MRSK will setup a local buildx configuration that allows for this through QEMU emulation. This can be slow, especially on the first build.
+
+If you want to speed up this process by using a remote AMD64 host to natively build the AMD64 part of the image, while natively building the ARM64 part locally, you can do so using builder options like follows:
+
+```yaml
+builder:
+  local:
+    arch: arm64
+    host: unix:///Users/dhh/.docker/run/docker.sock
+  remote:
+    arch: amd64
+    host: ssh://root@192.168.0.1
+```
+
+Note that you must have Docker running on the remote host, and you must also be logged into the registry there.
+
+With that configuration in place, you can setup the local/remote configuration using `./bin/mrsk build:remote:create`. If you wish to remove the contexts and buildx instances again, you can run `./bin/mrsk build:remote:remove`. If you had already built using the standard emulation setup, run `./bin/mrsk build:remove` before doing `./bin/mrsk build:remote:create`.
+
 ## Commands
 
 ### Remote execution
