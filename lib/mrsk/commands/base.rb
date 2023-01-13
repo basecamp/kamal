@@ -9,6 +9,12 @@ module Mrsk::Commands
     end
 
     private
+      def combine(*commands)
+        commands
+          .collect { |command| command + [ "&&" ] }.flatten # Join commands with &&
+          .tap     { |commands| commands.pop } # Remove trailing &&
+      end
+
       def docker(*args)
         args.compact.unshift :docker
       end

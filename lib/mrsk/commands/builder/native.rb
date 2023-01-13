@@ -10,7 +10,9 @@ class Mrsk::Commands::Builder::Native < Mrsk::Commands::Base
   end
 
   def push
-    docker :build, "--push", "-t", config.absolute_image, "."
+    combine \
+      docker(:build, "-t", config.absolute_image, "."),
+      docker(:push, config.absolute_image)
   end
 
   def pull
