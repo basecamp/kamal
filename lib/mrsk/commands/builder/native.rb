@@ -2,11 +2,11 @@ require "mrsk/commands/base"
 
 class Mrsk::Commands::Builder::Native < Mrsk::Commands::Base
   def create
-    # No op on native
+    # No-op on native
   end
 
   def remove
-    # No op on native
+    # No-op on native
   end
 
   def push
