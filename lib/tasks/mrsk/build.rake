@@ -9,10 +9,10 @@ namespace :mrsk do
     task :push do
       run_locally do 
         begin
-          info "Building multi-architecture images may take a while (run with VERBOSE=1 for progress logging)"
+          info "Building images may take a while [#{MRSK.builder.name}] (run with VERBOSE=1 for progress logging)"
           execute *MRSK.builder.push
         rescue SSHKit::Command::Failed => e
-          error "Missing compatible buildx builder, so creating a new one first"
+          error "Missing compatible builder, so creating a new one first"
           Rake::Task["mrsk:build:create"].invoke
           execute *MRSK.builder.push
         end
