@@ -1,8 +1,8 @@
 require_relative "setup"
 
 namespace :mrsk do
-  desc "Deploy app for the first time to a fresh server"
-  task fresh: %w[ server:bootstrap deploy ]
+  desc "Ship the app to servers that will have Docker installed if missing"
+  task ship: %w[ server:bootstrap deploy ]
 
   desc "Push the latest version of the app, ensure Traefik is running, then restart app"
   task deploy: %w[ registry:login build:deliver traefik:run app:stop app:run prune ]
