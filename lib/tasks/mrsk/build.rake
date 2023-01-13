@@ -40,5 +40,12 @@ namespace :mrsk do
         execute *MRSK.builder.remove
       end
     end
+
+    desc "Show the name of the configured builder"
+    task :info do
+      run_locally do
+        puts "Builder: #{MRSK.builder.name} (#{MRSK.builder.target.class.name})"
+      end
+    end
   end
 end
