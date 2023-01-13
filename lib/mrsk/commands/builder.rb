@@ -1,37 +1,39 @@
 require "mrsk/commands/base"
 
 class Mrsk::Commands::Builder < Mrsk::Commands::Base
-  def create
-    docker :buildx, :create, "--use", "--name", "mrsk"
+  delegate :create, :remove, :push, :pull, to: :target
+  delegate :native?, :multiarch?, :remote?, to: :name
+
+  def name
+    target.class.to_s.demodulize.downcase.inquiry
   end
 
-  def remove
-    docker :buildx, :rm, "mrsk"
+  def target
+    case
+    when config.builder.nil?
+      multiarch
+    when config.builder["multiarch"] == false
+      native
+    when config.builder["local"] && config.builder["local"]
+      multiarch_remote
+    else
+      raise ArgumentError, "Builder configuration incorrect: #{config.builder.inspect}"
+    end
   end
 
-  def push
-    docker :buildx, :build, "--push", "--platform linux/amd64,linux/arm64", "-t", config.absolute_image, "."
+  def native
+    @native ||= Mrsk::Commands::Builder::Native.new(config)
   end
 
-  def pull
-    docker :pull, config.absolute_image
+  def multiarch
+    @multiarch ||= Mrsk::Commands::Builder::Multiarch.new(config)
   end
 
-
-  def create_context(arch, host)
-    docker :context, :create, "mrsk-#{arch}", "--description", "'MRSK #{arch} Native Host'", "--docker", "'host=#{host}'"
-  end
-
-  def remove_context(arch)
-    docker :context, :rm, "mrsk-#{arch}"
-  end
-
-
-  def create_with_context(arch)
-    docker :buildx, :create, "--use", "--name", "mrsk", "mrsk-#{arch}", "--platform", "linux/#{arch}"
-  end
-
-  def append_context(arch)
-    docker :buildx, :create, "--append", "--name", "mrsk", "mrsk-#{arch}", "--platform", "linux/#{arch}"
+  def multiarch_remote
+    @multiarch_remote ||= Mrsk::Commands::Builder::Multiarch::Remote.new(config)
   end
 end
+
+require "mrsk/commands/builder/native"
+require "mrsk/commands/builder/multiarch"
+require "mrsk/commands/builder/multiarch/remote"

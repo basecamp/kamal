@@ -13,7 +13,7 @@ namespace :mrsk do
           execute *MRSK.builder.push
         rescue SSHKit::Command::Failed => e
           error "Missing compatible buildx builder, so creating a new one first"
-          execute *MRSK.builder.create
+          Rake::Task["mrsk:build:create"].invoke
           execute *MRSK.builder.push
         end
       end unless ENV["VERSION"]
@@ -24,17 +24,25 @@ namespace :mrsk do
       on(MRSK.config.hosts) { execute *MRSK.builder.pull }
     end
 
-    desc "Create a local buildx setup to produce multi-arch images"
+    desc "Create a local build setup"
     task :create do
       run_locally do
-        execute *MRSK.builder.create
+        if MRSK.builder.remote?
+          Rake::Task["mrsk:build:remote:create"].invoke
+        else
+          execute *MRSK.builder.create
+        end
       end
     end
 
-    desc "Remove local buildx setup"
+    desc "Remove local build setup"
     task :remove do
       run_locally do
-        execute *MRSK.builder.remove
+        if MRSK.builder.remote?
+          Rake::Task["mrsk:build:remote:create"].invoke
+        else
+          execute *MRSK.builder.remove
+        end
       end
     end
 
@@ -44,28 +52,16 @@ namespace :mrsk do
 
       namespace :create do
         task :context do
-          if MRSK.config.builder && 
-              (local = MRSK.config.builder["local"]) &&
-              (remote = MRSK.config.builder["remote"])
-            run_locally do
-              execute *MRSK.builder.create_context(local["arch"], local["host"])
-              execute *MRSK.builder.create_context(remote["arch"], remote["host"])
-            end
-          else
-            error "Missing configuration of builder:local/remote in config"
+          run_locally do
+            execute *MRSK.builder.create_context(local["arch"], local["host"])
+            execute *MRSK.builder.create_context(remote["arch"], remote["host"])
           end
         end
 
         task :buildx do
-          if MRSK.config.builder && 
-              (local = MRSK.config.builder["local"]) &&
-              (remote = MRSK.config.builder["remote"])
-            run_locally do
-              execute *MRSK.builder.create_with_context(local["arch"])
-              execute *MRSK.builder.append_context(remote["arch"])
-            end
-          else
-            error "Missing configuration of builder:local/remote in config"
+          run_locally do
+            execute *MRSK.builder.create_with_context(local["arch"])
+            execute *MRSK.builder.append_context(remote["arch"])
           end
         end
       end
@@ -76,15 +72,9 @@ namespace :mrsk do
 
       namespace :remove do
         task :context do
-          if MRSK.config.builder && 
-              (local = MRSK.config.builder["local"]) &&
-              (remote = MRSK.config.builder["remote"])
-            run_locally do
-              execute *MRSK.builder.remove_context(local["arch"])
-              execute *MRSK.builder.remove_context(remote["arch"])
-            end
-          else
-            error "Missing configuration of builder:local/remote in config"
+          run_locally do
+            execute *MRSK.builder.remove_context(local["arch"])
+            execute *MRSK.builder.remove_context(remote["arch"])
           end
         end
       end
