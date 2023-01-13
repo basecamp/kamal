@@ -10,7 +10,7 @@ namespace :mrsk do
       run_locally do 
         begin
           debug "Using builder: #{MRSK.builder.name}"
-          info "Building images may take a while (run with VERBOSE=1 for progress logging)"
+          info "Building image may take a while (run with VERBOSE=1 for progress logging)"
           execute *MRSK.builder.push
         rescue SSHKit::Command::Failed => e
           error "Missing compatible builder, so creating a new one first"
