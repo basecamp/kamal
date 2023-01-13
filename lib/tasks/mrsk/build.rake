@@ -45,6 +45,7 @@ namespace :mrsk do
     task :info do
       run_locally do
         puts "Builder: #{MRSK.builder.name} (#{MRSK.builder.target.class.name})"
+        puts capture(*MRSK.builder.info)
       end
     end
   end

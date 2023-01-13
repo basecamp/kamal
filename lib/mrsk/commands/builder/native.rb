@@ -18,4 +18,8 @@ class Mrsk::Commands::Builder::Native < Mrsk::Commands::Base
   def pull
     docker :pull, config.absolute_image
   end
+
+  def info
+    # No-op on native
+  end
 end

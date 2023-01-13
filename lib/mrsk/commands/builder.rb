@@ -1,7 +1,7 @@
 require "mrsk/commands/base"
 
 class Mrsk::Commands::Builder < Mrsk::Commands::Base
-  delegate :create, :remove, :push, :pull, to: :target
+  delegate :create, :remove, :push, :pull, :info, to: :target
   delegate :native?, :multiarch?, :remote?, to: :name
 
   def name

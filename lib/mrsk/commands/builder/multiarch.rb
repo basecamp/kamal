@@ -16,4 +16,10 @@ class Mrsk::Commands::Builder::Multiarch < Mrsk::Commands::Base
   def pull
     docker :pull, config.absolute_image
   end
+
+  def info
+    combine \
+      docker(:context, :ls),
+      docker(:buildx, :ls)
+  end
 end
