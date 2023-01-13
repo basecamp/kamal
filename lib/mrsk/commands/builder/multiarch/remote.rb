@@ -16,11 +16,11 @@ class Mrsk::Commands::Builder::Multiarch::Remote < Mrsk::Commands::Builder::Mult
 
   private
     def create_local_buildx
-      docker :buildx, :create, "--use", "--name", "mrsk", "mrsk-#{local["arch"]}", "--platform", "linux/#{local["arch"]}"
+      docker :buildx, :create, "--use", "--name", builder_name, builder_name_with_arch(local["arch"]), "--platform", "linux/#{local["arch"]}"
     end
 
     def append_remote_buildx
-      docker :buildx, :create, "--append", "--name", "mrsk", "mrsk-#{remote["arch"]}", "--platform", "linux/#{remote["arch"]}"
+      docker :buildx, :create, "--append", "--name", builder_name, builder_name_with_arch(remote["arch"]), "--platform", "linux/#{remote["arch"]}"
     end
 
     def create_contexts
@@ -30,7 +30,7 @@ class Mrsk::Commands::Builder::Multiarch::Remote < Mrsk::Commands::Builder::Mult
     end
 
     def create_context(arch, host)
-      docker :context, :create, "mrsk-#{arch}", "--description", "'MRSK #{arch} Native Host'", "--docker", "'host=#{host}'"
+      docker :context, :create, builder_name_with_arch(arch), "--description", "'#{builder_name} #{arch} native host'", "--docker", "'host=#{host}'"
     end
 
     def remove_contexts
@@ -40,7 +40,7 @@ class Mrsk::Commands::Builder::Multiarch::Remote < Mrsk::Commands::Builder::Mult
     end
 
     def remove_context(arch)
-      docker :context, :rm, "mrsk-#{arch}"
+      docker :context, :rm, builder_name_with_arch(arch)
     end
 
     def local
@@ -50,4 +50,9 @@ class Mrsk::Commands::Builder::Multiarch::Remote < Mrsk::Commands::Builder::Mult
     def remote
       config.builder["remote"]
     end
+
+    private
+      def builder_name_with_arch(arch)
+        "#{builder_name}-#{arch}"
+      end
 end

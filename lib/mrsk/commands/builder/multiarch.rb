@@ -2,11 +2,11 @@ require "mrsk/commands/base"
 
 class Mrsk::Commands::Builder::Multiarch < Mrsk::Commands::Base
   def create
-    docker :buildx, :create, "--use", "--name", "mrsk"
+    docker :buildx, :create, "--use", "--name", builder_name
   end
 
   def remove
-    docker :buildx, :rm, "mrsk"
+    docker :buildx, :rm, builder_name
   end
 
   def push
@@ -22,4 +22,9 @@ class Mrsk::Commands::Builder::Multiarch < Mrsk::Commands::Base
       docker(:context, :ls),
       docker(:buildx, :ls)
   end
+
+  private
+    def builder_name
+      "mrsk-#{config.service}"
+    end
 end
