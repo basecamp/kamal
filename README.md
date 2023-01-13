@@ -143,6 +143,15 @@ Note: You must have Docker running on the remote host being used as a builder.
 
 With that configuration in place, you can setup the local/remote configuration using `./bin/mrsk build:remote:create`. If you wish to remove the contexts and buildx instances again, you can run `./bin/mrsk build:remote:remove`. If you had already built using the standard emulation setup, run `./bin/mrsk build:remove` before doing `./bin/mrsk build:remote:create`.
 
+### Configuring native builder when multi-arch isn't needed
+
+If you're developing on the same architecture as the one you're deploying on, you can speed up the build a lot by forgoing a multi-arch image. This can be done by configuring the builder like so:
+
+```yaml
+builder:
+  multiarch: false
+```
+
 ## Commands
 
 ### Remote execution
