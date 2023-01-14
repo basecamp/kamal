@@ -24,7 +24,7 @@ class Mrsk::Cli::Traefik < Mrsk::Cli::Base
 
   desc "details", "Display details about Traefik containers from servers"
   def details
-    on(MRSK.config.role(:web).hosts) { |host| puts "Traefik Host: #{host}\n" + capture(*MRSK.traefik.info) + "\n\n" }
+    on(MRSK.config.role(:web).hosts) { |host| puts "Traefik Host: #{host}\n" + capture(*MRSK.traefik.info, verbosity: Logger::INFO) + "\n\n" }
   end
 
   desc "logs", "Show last 100 log lines from Traefik on servers"
