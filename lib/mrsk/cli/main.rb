@@ -71,6 +71,11 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
     invoke "mrsk:cli:registry:logout"
   end
 
+  desc "version", "Display the MRSK version"
+  def version
+    puts Mrsk::VERSION
+  end
+
   desc "app", "Manage the application"
   subcommand "app", Mrsk::Cli::App
 
