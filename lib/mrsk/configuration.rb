@@ -105,9 +105,13 @@ class Mrsk::Configuration
         raise ArgumentError, "Missing required configuration for #{key}" unless config[key].present?
       end
 
-      %w[ username password ].each do |key|
-        raise ArgumentError, "Missing required configuration for registry/#{key}" unless config.registry[key].present?
+      if config.registry["username"].blank?
+        raise ArgumentError, "You must specify a username for the registry in config/deploy.yml"
       end      
+
+      if config.registry["password"].blank?
+        raise ArgumentError, "You must specify a password for the registry in config/deploy.yml (or set the ENV variable if that's used)"
+      end
     end
 
     def role_names
