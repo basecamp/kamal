@@ -20,6 +20,7 @@ registry:
 Now you're ready to deploy a multi-arch image to the servers:
 
 ```
+export MRSK_REGISTRY_PASSWORD=your-real-registry-pw
 mrsk deploy
 ```
 
