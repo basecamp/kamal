@@ -14,7 +14,7 @@ class Mrsk::Commands::Builder < Mrsk::Commands::Base
       multiarch
     when config.builder["multiarch"] == false
       native
-    when config.builder["local"] && config.builder["local"]
+    when config.builder["local"] && config.builder["remote"]
       multiarch_remote
     else
       raise ArgumentError, "Builder configuration incorrect: #{config.builder.inspect}"
