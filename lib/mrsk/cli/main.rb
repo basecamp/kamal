@@ -8,8 +8,8 @@ require "mrsk/cli/server"
 require "mrsk/cli/traefik"
 
 class Mrsk::Cli::Main < Mrsk::Cli::Base
-  desc "ship", "Ship the app to servers"
-  def ship
+  desc "deploy", "Deploy the app to servers"
+  def deploy
     print_runtime do
       invoke "mrsk:cli:server:bootstrap"
       invoke "mrsk:cli:registry:login"
@@ -21,8 +21,8 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
     end
   end
 
-  desc "reship", "Ship new version of the app to servers (without bootstrapping servers, starting Traefik, pruning, and registry login)"
-  def reship
+  desc "redeploy", "Deploy new version of the app to servers (without bootstrapping servers, starting Traefik, pruning, and registry login)"
+  def redeploy
     print_runtime do
       invoke "mrsk:cli:build:deliver"
       invoke "mrsk:cli:app:stop"
