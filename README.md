@@ -14,7 +14,7 @@ servers:
   - 192.168.0.2
 registry:
   username: registry-user-name
-  password: registry-user-password-needs-more-secure-option
+  password: <%= ENV["MRSK_REGISTRY_PASSWORD"] %>
 ```
 
 Now you're ready to deploy a multi-arch image to the servers:
@@ -47,7 +47,7 @@ The default registry for Docker is Docker Hub. If you'd like to use a different 
 registry:
   server: registry.digitalocean.com
   username: registry-user-name
-  password: registry-user-password-needs-more-secure-option
+  password: <%= ENV["MRSK_REGISTRY_PASSWORD"] %>
 ```
 
 ### Using a different SSH user than root
