@@ -2,8 +2,9 @@ PATH
   remote: .
   specs:
     mrsk (0.0.3)
-      railties (>= 7.0.0)
+      activesupport (>= 7.0)
       sshkit (~> 1.21)
+      thor (~> 1.2)
 
 GEM
   remote: https://rubygems.org/
@@ -46,11 +47,11 @@ GEM
     net-scp (4.0.0)
       net-ssh (>= 2.6.5, < 8.0.0)
     net-ssh (7.0.1)
-    nokogiri (1.14.0.rc1-arm64-darwin)
+    nokogiri (1.14.0-arm64-darwin)
       racc (~> 1.4)
-    nokogiri (1.14.0.rc1-x86_64-darwin)
+    nokogiri (1.14.0-x86_64-darwin)
       racc (~> 1.4)
-    nokogiri (1.14.0.rc1-x86_64-linux)
+    nokogiri (1.14.0-x86_64-linux)
       racc (~> 1.4)
     racc (1.6.2)
     rack (2.2.5)
@@ -90,6 +91,7 @@ PLATFORMS
 DEPENDENCIES
   debug
   mrsk!
+  railties
 
 BUNDLED WITH
    2.4.3

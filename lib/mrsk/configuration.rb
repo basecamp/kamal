@@ -1,5 +1,7 @@
 require "active_support/ordered_options"
 require "active_support/core_ext/string/inquiry"
+require "active_support/core_ext/module/delegation"
+require "pathname"
 require "erb"
 
 class Mrsk::Configuration
@@ -91,7 +93,7 @@ class Mrsk::Configuration
   end
 
   def master_key
-    ENV["RAILS_MASTER_KEY"] || File.read(Rails.root.join("config/master.key"))
+    ENV["RAILS_MASTER_KEY"] || File.read(Pathname.new(File.expand_path("config/master.key")))
   end
 
 

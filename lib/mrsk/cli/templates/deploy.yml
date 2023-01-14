@@ -1,0 +1,17 @@
+# Name of your application. Used to uniquely configuring Traefik and app containers.
+# Your Dockerfile should set LABEL service=the-same-value to ensure image pruning works.
+service: my-app
+
+# Name of the container image.
+image: user/my-app
+
+# Deploy to these servers.
+servers:
+  - 192.168.0.1
+
+# Credentials for your image host.
+registry:
+  # Specify the registry server, if you're not using Docker Hub
+  # server: registry.digitalocean.com / ghcr.io / ...
+  username: my-user
+  password: my-password-should-go-somewhere-safe
