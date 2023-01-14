@@ -55,10 +55,15 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
     end
   end
   
-  desc "console [HOST]", "Start Rails Console on primary host (or designated HOST)"
-  def console(host = MRSK.config.primary_host)
-    puts "Launching Rails console on #{host}..."
-    exec MRSK.app.console(host: host)
+  desc "console", "Start Rails Console on primary host"
+  option :host, desc: "Start console on a different host"
+  def console
+    host = options[:host] || MRSK.config.primary_host
+
+    run_locally do
+      puts "Launching Rails console on #{host}..."
+      exec MRSK.app.console(host: host)        
+    end
   end
 
   desc "runner [EXPRESSION]", "Execute Rails runner with given expression"
