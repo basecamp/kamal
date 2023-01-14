@@ -78,7 +78,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
 
   desc "containers", "List all the app containers currently on servers"
   def containers
-    on(MRSK.config.hosts) { |host| puts "App Host: #{host}\n" + capture(*MRSK.app.list_containers) + "\n\n" }
+    on(MRSK.config.hosts) { |host| puts "App Host: #{host}\n" + capture(*MRSK.app.list_containers, verbosity: Logger::INFO) + "\n\n" }
   end
   
   desc "logs", "Show last 100 log lines from app on servers"
