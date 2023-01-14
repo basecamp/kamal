@@ -15,8 +15,8 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
       role.cmd
   end
 
-  def start
-    docker :start, config.service_with_version
+  def start(version: config.version)
+    docker :start, "#{config.service}-#{version}"
   end
 
   def stop
@@ -40,8 +40,8 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
       *command
   end
 
-  def console
-    "ssh -t #{config.ssh_user}@#{config.primary_host} '#{exec("bin/rails", "c", interactive: true).join(" ")}'"
+  def console(host: config.primary_host)
+    "ssh -t #{config.ssh_user}@#{host} '#{exec("bin/rails", "c", interactive: true).join(" ")}'"
   end
 
   def list_containers

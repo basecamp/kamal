@@ -10,7 +10,9 @@ Gem::Specification.new do |spec|
   spec.license     = "MIT"
 
   spec.files = Dir["lib/**/*", "MIT-LICENSE", "README.md"]
+  spec.executables = %w[ mrsk ]
 
-  spec.add_dependency "railties", ">= 7.0.0"
+  spec.add_dependency "activesupport", ">= 7.0"
   spec.add_dependency "sshkit", "~> 1.21"
+  spec.add_dependency "thor", "~> 1.2"
 end

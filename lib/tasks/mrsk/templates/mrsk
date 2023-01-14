@@ -1,8 +1,0 @@
-#!/bin/bash
-
-if [ "${*}" == "" ]; then
-  # Improve so list matches
-  exec bin/rake -T mrsk
-else
-  exec bin/rake "mrsk:$@"
-fi
