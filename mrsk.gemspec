@@ -6,7 +6,7 @@ Gem::Specification.new do |spec|
   spec.authors     = [ "David Heinemeier Hansson" ]
   spec.email       = "dhh@hey.com"
   spec.homepage    = "https://github.com/rails/mrsk"
-  spec.summary     = "Deploy Docker containers with zero downtime to any host."
+  spec.summary     = "Deploy Rails apps in containers to servers running Docker with zero downtime."
   spec.license     = "MIT"
 
   spec.files = Dir["lib/**/*", "MIT-LICENSE", "README.md"]
