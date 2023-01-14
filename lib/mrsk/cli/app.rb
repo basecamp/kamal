@@ -23,7 +23,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
   option :version, desc: "Defaults to the most recent git-hash in local repository"
   def start
     if (version = options[:version]).present?
-      on(MRSK.config.hosts) { execute *MRSK.app.start(version: version), raise_on_non_zero_exit: false }
+      on(MRSK.config.hosts) { execute *MRSK.app.start(version: version) }
     else
       on(MRSK.config.hosts) { execute *MRSK.app.start, raise_on_non_zero_exit: false }
     end
