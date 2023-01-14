@@ -23,7 +23,7 @@ class Mrsk::Configuration
 
   def initialize(config, validate: true)
     @config = ActiveSupport::InheritableOptions.new(config)
-    ensure_required_keys_present if validate
+    validate_configuration if validate
   end
 
 
@@ -58,7 +58,6 @@ class Mrsk::Configuration
     role(:web).hosts.first
   end
 
-
   def version
     @version ||= ENV["VERSION"] || `git rev-parse HEAD`.strip
   end
@@ -74,7 +73,6 @@ class Mrsk::Configuration
   def service_with_version
     "#{service}-#{version}"
   end
-
 
   def env_args
     if config.env.present?
@@ -100,18 +98,12 @@ class Mrsk::Configuration
   private
     attr_accessor :config
 
-    def ensure_required_keys_present
-      %i[ service image registry ].each do |key|
-        raise ArgumentError, "Missing required configuration for #{key}" unless config[key].present?
-      end
-
-      if config.registry["username"].blank?
-        raise ArgumentError, "You must specify a username for the registry in config/deploy.yml"
-      end      
-
-      if config.registry["password"].blank?
-        raise ArgumentError, "You must specify a password for the registry in config/deploy.yml (or set the ENV variable if that's used)"
-      end
+    def validate_configuration
+      validator = Mrsk::Configuration::Validator.new config
+      errors = validator.validate
+      puts "\e[34m-----> MRSC has #{errors.size} #{'error'.pluralize(errors.size)} \e[0m" if errors.any?
+      errors.each { |err| puts; raise ArgumentError, "\n\n #{err} \n\n" }
+      abort unless errors.empty?
     end
 
     def role_names
@@ -120,3 +112,4 @@ class Mrsk::Configuration
 end
 
 require "mrsk/configuration/role"
+require "mrsk/configuration/validator"
