@@ -34,12 +34,6 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
     on(MRSK.config.hosts) { execute *MRSK.app.stop, raise_on_non_zero_exit: false }
   end
   
-  desc "restart", "Start app on servers (use VERSION=<git-hash> to designate which version)"
-  def restart
-    invoke :stop
-    invoke :start
-  end
-  
   desc "details", "Display details about app containers"
   def details
     on(MRSK.config.hosts) { |host| puts "App Host: #{host}\n" + capture(*MRSK.app.info, verbosity: Logger::INFO) + "\n\n" }
