@@ -2,6 +2,8 @@ require "sshkit"
 
 module Mrsk::Commands
   class Base
+    delegate :redact, to: Mrsk::Utils
+
     attr_accessor :config
 
     def initialize(config)
