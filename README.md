@@ -153,7 +153,7 @@ Some images might need an argument passed in during build time, like a GITHUB_TO
 ```yaml
 builder:
   args:
-    GITHUB_TOKEN: <create-a-new-token-from-github>
+    GITHUB_TOKEN: <%= ENV["GITHUB_TOKEN"] %>
 ```
 
 This build arg can then be used in the Dockerfile:
