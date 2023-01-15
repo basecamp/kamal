@@ -8,7 +8,7 @@ class Mrsk::Commands::Builder::Base < Mrsk::Commands::Base
   end
 
   def build_args
-    argumentize "--build-args", args
+    argumentize "--build-arg", args
   end
 
   private
