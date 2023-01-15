@@ -41,14 +41,17 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
   
   desc "exec [CMD]", "Execute a custom task on servers passed in as CMD='bin/rake some:task'"
   option :once, type: :boolean, default: false
+  option :run, type: :boolean, default: false
   def exec(cmd)
+    runner = options[:run] ? :run_exec : :exec
+
     if options[:once]
-      on(MRSK.config.primary_host) { puts capture(*MRSK.app.exec(cmd), verbosity: Logger::INFO) }
+      on(MRSK.config.primary_host) { puts capture(*MRSK.app.send(runner, cmd), verbosity: Logger::INFO) }
     else
-      on(MRSK.config.hosts) { |host| puts "App Host: #{host}\n" + capture(*MRSK.app.exec(cmd), verbosity: Logger::INFO) + "\n\n" }
+      on(MRSK.config.hosts) { |host| puts "App Host: #{host}\n" + capture(*MRSK.app.send(runner, cmd), verbosity: Logger::INFO) + "\n\n" }
     end
   end
-  
+
   desc "console", "Start Rails Console on primary host"
   option :host, desc: "Start console on a different host"
   def console

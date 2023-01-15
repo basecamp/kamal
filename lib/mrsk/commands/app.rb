@@ -40,6 +40,16 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
       *command
   end
 
+  def run_exec(*command)
+    docker :run,
+      "-it",
+      "--rm",
+      *rails_master_key_arg,
+      *config.env_args,
+      config.absolute_image,
+      *command
+  end
+
   def console(host: config.primary_host)
     "ssh -t #{config.ssh_user}@#{host} '#{exec("bin/rails", "c", interactive: true).join(" ")}'"
   end
