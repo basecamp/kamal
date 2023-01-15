@@ -1,6 +1,6 @@
-require "mrsk/commands/base"
+require "mrsk/commands/builder/base"
 
-class Mrsk::Commands::Builder::Native < Mrsk::Commands::Base
+class Mrsk::Commands::Builder::Native < Mrsk::Commands::Builder::Base
   def create
     # No-op on native
   end
@@ -11,12 +11,8 @@ class Mrsk::Commands::Builder::Native < Mrsk::Commands::Base
 
   def push
     combine \
-      docker(:build, "-t", config.absolute_image, "."),
+      docker(:build, "-t", *build_args, config.absolute_image, "."),
       docker(:push, config.absolute_image)
-  end
-
-  def pull
-    docker :pull, config.absolute_image
   end
 
   def info

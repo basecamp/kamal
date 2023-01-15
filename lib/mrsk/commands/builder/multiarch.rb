@@ -1,6 +1,6 @@
-require "mrsk/commands/base"
+require "mrsk/commands/builder/base"
 
-class Mrsk::Commands::Builder::Multiarch < Mrsk::Commands::Base
+class Mrsk::Commands::Builder::Multiarch < Mrsk::Commands::Builder::Base
   def create
     docker :buildx, :create, "--use", "--name", builder_name
   end
@@ -10,11 +10,7 @@ class Mrsk::Commands::Builder::Multiarch < Mrsk::Commands::Base
   end
 
   def push
-    docker :buildx, :build, "--push", "--platform linux/amd64,linux/arm64", "-t", config.absolute_image, "."
-  end
-
-  def pull
-    docker :pull, config.absolute_image
+    docker :buildx, :build, "--push", "--platform linux/amd64,linux/arm64", "-t", config.absolute_image, *build_args, "."
   end
 
   def info

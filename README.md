@@ -146,6 +146,28 @@ builder:
   multiarch: false
 ```
 
+### Configuring build args for new images
+
+Some images might need an argument passed in during build time, like a GITHUB_TOKEN to give access to private gem repositories. This can be done like so:
+
+```yaml
+builder:
+  args:
+    GITHUB_TOKEN: <create-a-new-token-from-github>
+```
+
+This build arg can then be used in the Dockerfile:
+
+```
+# Private repositories need an access token during the build
+ARG GITHUB_TOKEN
+ENV BUNDLE_GITHUB__COM=x-access-token:$GITHUB_TOKEN
+
+# Install application gems
+COPY Gemfile Gemfile.lock ./
+RUN bundle install
+```
+
 ## Commands
 
 ### Remote execution
