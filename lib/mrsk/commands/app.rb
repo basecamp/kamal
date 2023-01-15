@@ -42,7 +42,6 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
 
   def run_exec(*command)
     docker :run,
-      "-it",
       "--rm",
       *rails_master_key_arg,
       *config.env_args,

@@ -18,7 +18,7 @@ class AppCommandTest < ActiveSupport::TestCase
 
   test "run with" do
     assert_equal \
-      [ :docker, :run, "-it", "--rm", "-e", "RAILS_MASTER_KEY=456", "dhh/app:123", "bin/rails", "db:setup" ],
+      [ :docker, :run, "--rm", "-e", "RAILS_MASTER_KEY=456", "dhh/app:123", "bin/rails", "db:setup" ],
       @app.run_exec("bin/rails", "db:setup")
   end
 end
