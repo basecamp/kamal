@@ -8,7 +8,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
       "-d",
       "--restart unless-stopped",
       "--name", config.service_with_version,
-      "-e", redact("RAILS_MASTER_KEY=#{config.master_key}"),
+      "-e", Mrsk::Utils.redact("RAILS_MASTER_KEY=#{config.master_key}"),
       *config.env_args,
       *role.label_args,
       config.absolute_image,
@@ -34,7 +34,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
   def exec(*command, interactive: false)
     docker :exec,
       ("-it" if interactive),
-      "-e", redact("RAILS_MASTER_KEY=#{config.master_key}"),
+      "-e", Mrsk::Utils.redact("RAILS_MASTER_KEY=#{config.master_key}"),
       *config.env_args,
       config.service_with_version,
       *command

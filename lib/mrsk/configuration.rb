@@ -3,6 +3,7 @@ require "active_support/core_ext/string/inquiry"
 require "active_support/core_ext/module/delegation"
 require "pathname"
 require "erb"
+require "mrsk/utils"
 
 class Mrsk::Configuration
   delegate :service, :image, :servers, :env, :labels, :registry, :builder, to: :config, allow_nil: true
@@ -16,8 +17,8 @@ class Mrsk::Configuration
       end
     end
 
-    def argumentize(argument, attributes)
-      attributes.flat_map { |k, v| [ argument, "#{k}=#{v}" ] }
+    def argumentize(argument, attributes, redacted: false)
+      attributes.flat_map { |k, v| [ argument, redacted ? Mrsk::Utils.redact("#{k}=#{v}") : "#{k}=#{v}" ] }
     end
   end
 
