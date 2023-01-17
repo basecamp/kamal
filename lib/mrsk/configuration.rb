@@ -9,17 +9,32 @@ class Mrsk::Configuration
   delegate :service, :image, :servers, :env, :labels, :registry, :builder, to: :config, allow_nil: true
 
   class << self
-    def load_file(file)
-      if file.exist?
-        new YAML.load(ERB.new(IO.read(file)).result).symbolize_keys
-      else
-        raise "Configuration file not found in #{file}"
-      end
+    def create_from(base_config_file, destination: nil)
+      new(load_config_file(base_config_file).tap do |config|
+        if destination
+          config.merge! \
+            load_config_file destination_config_file(base_config_file, destination)
+        end
+      end)
     end
 
     def argumentize(argument, attributes, redacted: false)
       attributes.flat_map { |k, v| [ argument, redacted ? Mrsk::Utils.redact("#{k}=#{v}") : "#{k}=#{v}" ] }
     end
+
+    private
+      def load_config_file(file)
+        if file.exist?
+          YAML.load(ERB.new(IO.read(file)).result).symbolize_keys
+        else
+          raise "Configuration file not found in #{file}"
+        end
+      end
+
+      def destination_config_file(base_config_file, destination)
+        dir, basename = base_config_file.split
+        dir.join basename.to_s.remove(".yml") + ".#{destination}.yml"
+      end
   end
 
   def initialize(config, validate: true)

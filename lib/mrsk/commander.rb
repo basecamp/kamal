@@ -6,15 +6,14 @@ require "mrsk/commands/traefik"
 require "mrsk/commands/registry"
 
 class Mrsk::Commander
-  attr_reader :config
-  attr_accessor :verbose
+  attr_accessor :config_file, :destination, :verbose
 
-  def initialize(config_file:)
-    @config_file = config_file
+  def initialize(config_file: nil, destination: nil, verbose: false)
+    @config_file, @destination, @verbose = config_file, destination, verbose
   end
 
   def config
-    @config ||= Mrsk::Configuration.load_file(@config_file).tap { |config| setup_with(config) }
+    @config ||= Mrsk::Configuration.create_from(config_file, destination: destination).tap { |config| setup_with(config) }
   end
 
 

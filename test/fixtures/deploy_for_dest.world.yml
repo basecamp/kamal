@@ -1,0 +1,5 @@
+servers:
+  - 1.1.1.1
+  - 1.1.1.2
+env:
+  REDIS_URL: redis://x/y

@@ -111,7 +111,25 @@ class ConfigurationTest < ActiveSupport::TestCase
 
 
   test "erb evaluation of yml config" do
-    config = Mrsk::Configuration.load_file Pathname.new(File.expand_path("fixtures/deploy.erb.yml", __dir__))
+    config = Mrsk::Configuration.create_from Pathname.new(File.expand_path("fixtures/deploy.erb.yml", __dir__))
     assert_equal "my-user", config.registry["username"]
+  end
+
+  test "destination yml config merge" do
+    dest_config_file = Pathname.new(File.expand_path("fixtures/deploy_for_dest.yml", __dir__))
+
+    config = Mrsk::Configuration.create_from dest_config_file, destination: "world"
+    assert_equal "1.1.1.1", config.hosts.first
+
+    config = Mrsk::Configuration.create_from dest_config_file, destination: "mars"
+    assert_equal "1.1.1.3", config.hosts.first
+  end
+
+  test "destination yml config file missing" do
+    dest_config_file = Pathname.new(File.expand_path("fixtures/deploy_for_dest.yml", __dir__))
+
+    assert_raises(RuntimeError) do
+      config = Mrsk::Configuration.create_from dest_config_file, destination: "missing"
+    end
   end
 end

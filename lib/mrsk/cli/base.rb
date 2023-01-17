@@ -10,12 +10,23 @@ module Mrsk::Cli
 
     class_option :verbose, type: :boolean, aliases: "-v", desc: "Detailed logging"
 
+    class_option :config_file, aliases: "-c", default: "config/deploy.yml", desc: "Path to config file (default: config/deploy.yml)"
+    class_option :destination, aliases: "-d", desc: "Specify destination to be used for config file (west -> deploy.west.yml)"
+
     def initialize(*)
       super
-      MRSK.verbose = options[:verbose]
+      initialize_commander(options)
     end
 
     private
+      def initialize_commander(options)
+        MRSK.tap do |commander|
+          commander.config_file = Pathname.new(File.expand_path(options[:config_file]))
+          commander.destination = options[:destination]
+          commander.verbose     = options[:verbose]
+        end
+      end
+
       def print_runtime
         started_at = Time.now
         yield
