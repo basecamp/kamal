@@ -79,8 +79,8 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
   end
   
   desc "logs", "Show last 100 log lines from app on servers"
-  option :lines, type: :numeric, default: 100, desc: "Number of log lines to pull from each server"
-  option :grep, desc: "Show lines with grep match only (use this to fetch specific requests by id)"
+  option :lines, type: :numeric, aliases: "-n", default: 1000, desc: "Number of log lines to pull from each server"
+  option :grep, aliases: "-g", desc: "Show lines with grep match only (use this to fetch specific requests by id)"
   def logs
     # FIXME: Catch when app containers aren't running
     lines = options[:lines]
