@@ -9,10 +9,12 @@ class Mrsk::Cli::Build < Mrsk::Cli::Base
 
   desc "push", "Build locally and push app image to registry"
   def push
+    verbose = options[:verbose]
+
     run_locally do 
       begin
         debug "Using builder: #{MRSK.builder.name}"
-        info "Building image may take a while (run with --verbose for progress logging)" unless options[:verbose]
+        info "Building image may take a while (run with --verbose for progress logging)" unless verbose
         execute *MRSK.builder.push
       rescue SSHKit::Command::Failed => e
         error "Missing compatible builder, so creating a new one first"
