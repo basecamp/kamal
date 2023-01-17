@@ -40,8 +40,8 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
   end
   
   desc "exec [CMD]", "Execute a custom task on servers passed in as CMD='bin/rake some:task'"
-  option :once, type: :boolean, default: false
-  option :run, type: :boolean, default: false
+  option :once, type: :boolean, default: false, desc: "Only perform command on primary host"
+  option :run, type: :boolean, default: false, desc: "Start a new container to run the command rather than reusing existing"
   def exec(cmd)
     runner = options[:run] ? :run_exec : :exec
 
@@ -64,7 +64,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
   end
 
   desc "runner [EXPRESSION]", "Execute Rails runner with given expression"
-  option :once, type: :boolean, default: false, desc: 
+  option :once, type: :boolean, default: false, desc: "Only perform runner on primary host"
   def runner(expression)
     if options[:once]
       on(MRSK.config.primary_host) { puts capture(*MRSK.app.exec("bin/rails", "runner", "'#{expression}'"), verbosity: Logger::INFO) }
