@@ -79,9 +79,19 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
   end
   
   desc "logs", "Show last 100 log lines from app on servers"
+  option :lines, type: :numeric, default: 100, desc: "Number of log lines to pull from each server"
+  option :grep, desc: "Show lines with grep match only (use this to fetch specific requests by id)"
   def logs
     # FIXME: Catch when app containers aren't running
-    on(MRSK.config.hosts) { |host| puts "App Host: #{host}\n" + capture(*MRSK.app.logs) + "\n\n" }
+    lines = options[:lines]
+    grep  = options[:grep]
+    on(MRSK.config.hosts) do |host|
+      begin
+        puts "App Host: #{host}\n" + capture(*MRSK.app.logs(lines: lines, grep: grep), verbosity: Logger::INFO) + "\n\n"
+      rescue SSHKit::Command::Failed
+        puts "App Host: #{host}\nNothing found\n\n"
+      end
+    end
   end
   
   desc "remove", "Remove app containers and images from servers"

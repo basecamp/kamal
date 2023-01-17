@@ -27,8 +27,10 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
     docker :ps, *service_filter
   end
 
-  def logs
-    [ "docker ps -q #{service_filter.join(" ")} | xargs docker logs -n 100 -t" ]
+  def logs(lines: 100, grep: nil)
+    [ "docker ps -q #{service_filter.join(" ")} | xargs docker logs -n #{lines} -t" ].tap do |command|
+      command.first << " | grep #{grep}" if grep
+    end
   end
 
   def exec(*command, interactive: false)
