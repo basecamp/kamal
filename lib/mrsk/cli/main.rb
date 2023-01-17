@@ -44,6 +44,13 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
     invoke "mrsk:cli:app:details"
   end
 
+  desc "config", "Show combined config"
+  def config
+    run_locally do
+      pp MRSK.config.to_h
+    end
+  end
+
   desc "install", "Create config stub in config/deploy.yml and binstub in bin/mrsk"
   option :skip_binstub, type: :boolean, default: false, desc: "Skip adding MRSK to the Gemfile and creating bin/mrsk binstub"
   def install

@@ -112,6 +112,20 @@ class Mrsk::Configuration
     ENV["RAILS_MASTER_KEY"] || File.read(Pathname.new(File.expand_path("config/master.key")))
   end
 
+  def to_h
+    {
+      roles: role_names,
+      hosts: hosts,
+      primary_host: primary_host,
+      version: version,
+      repository: repository,
+      absolute_image: absolute_image,
+      service_with_version: service_with_version,
+      env_args: env_args,
+      ssh_options: ssh_options
+    }
+  end
+
 
   private
     attr_accessor :config
