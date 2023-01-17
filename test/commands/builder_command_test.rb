@@ -2,7 +2,7 @@ require "test_helper"
 require "mrsk/configuration"
 require "mrsk/commands/builder"
 
-class BuilderCommandTest < ActiveSupport::TestCase
+class CommandsBuilderTest < ActiveSupport::TestCase
   setup do
     @config = { service: "app", image: "dhh/app", registry: { "username" => "dhh", "password" => "secret" }, servers: [ "1.1.1.1" ] }
   end

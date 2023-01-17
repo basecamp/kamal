@@ -5,7 +5,7 @@ require "mrsk/commands/app"
 ENV["VERSION"] = "123"
 ENV["RAILS_MASTER_KEY"] = "456"
 
-class AppCommandTest < ActiveSupport::TestCase
+class CommandsAppTest < ActiveSupport::TestCase
   setup do
     @config = { service: "app", image: "dhh/app", registry: { "username" => "dhh", "password" => "secret" }, servers: [ "1.1.1.1" ] }
     @app = Mrsk::Commands::App.new Mrsk::Configuration.new(@config)
