@@ -131,7 +131,7 @@ class Mrsk::Configuration
     attr_accessor :config
 
     def ensure_required_keys_present
-      %i[ service image registry ].each do |key|
+      %i[ service image registry servers ].each do |key|
         raise ArgumentError, "Missing required configuration for #{key}" unless config[key].present?
       end
 
