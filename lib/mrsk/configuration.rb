@@ -22,6 +22,10 @@ class Mrsk::Configuration
       attributes.flat_map { |k, v| [ argument, redacted ? Mrsk::Utils.redact("#{k}=#{v}") : "#{k}=#{v}" ] }
     end
 
+    def simple_secretize(secret, attributes, redacted: false)
+      attributes.flat_map { |k, v| [ secret, redacted ? Mrsk::Utils.redact("id=#{k}") : "id=#{k}" ] }
+    end
+
     private
       def load_config_file(file)
         if file.exist?
@@ -137,7 +141,7 @@ class Mrsk::Configuration
 
       if config.registry["username"].blank?
         raise ArgumentError, "You must specify a username for the registry in config/deploy.yml"
-      end      
+      end
 
       if config.registry["password"].blank?
         raise ArgumentError, "You must specify a password for the registry in config/deploy.yml (or set the ENV variable if that's used)"
