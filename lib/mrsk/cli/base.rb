@@ -1,6 +1,5 @@
 require "thor"
-require "sshkit"
-require "sshkit/dsl"
+require "mrsk/sshkit_with_ext"
 
 module Mrsk::Cli
   class Base < Thor

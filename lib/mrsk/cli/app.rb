@@ -36,7 +36,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
   
   desc "details", "Display details about app containers"
   def details
-    on(MRSK.config.hosts) { |host| puts "App Host: #{host}\n" + capture(*MRSK.app.info, verbosity: Logger::INFO) + "\n\n" }
+    on(MRSK.config.hosts) { |host| puts_by_host host, capture(*MRSK.app.info, verbosity: Logger::INFO) }
   end
   
   desc "exec [CMD]", "Execute a custom task on servers passed in as CMD='bin/rake some:task'"
@@ -48,7 +48,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
     if options[:once]
       on(MRSK.config.primary_host) { puts capture(*MRSK.app.send(runner, cmd), verbosity: Logger::INFO) }
     else
-      on(MRSK.config.hosts) { |host| puts "App Host: #{host}\n" + capture(*MRSK.app.send(runner, cmd), verbosity: Logger::INFO) + "\n\n" }
+      on(MRSK.config.hosts) { |host| puts_by_host host, capture(*MRSK.app.send(runner, cmd), verbosity: Logger::INFO) }
     end
   end
 
@@ -80,18 +80,18 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
     if options[:once]
       on(MRSK.config.primary_host) { puts capture(*MRSK.app.exec("bin/rails", "runner", "'#{expression}'"), verbosity: Logger::INFO) }
     else
-      on(MRSK.config.hosts) { |host| puts "App Host: #{host}\n" + capture(*MRSK.app.exec("bin/rails", "runner", "'#{expression}'"), verbosity: Logger::INFO) + "\n\n" }
+      on(MRSK.config.hosts) { |host| puts_by_host host, capture(*MRSK.app.exec("bin/rails", "runner", "'#{expression}'"), verbosity: Logger::INFO) }
     end
   end
 
   desc "containers", "List all the app containers currently on servers"
   def containers
-    on(MRSK.config.hosts) { |host| puts "App Host: #{host}\n" + capture(*MRSK.app.list_containers, verbosity: Logger::INFO) + "\n\n" }
+    on(MRSK.config.hosts) { |host| puts_by_host host, capture(*MRSK.app.list_containers, verbosity: Logger::INFO) }
   end
 
   desc "current", "Return the current running container ID"
   def current
-    on(MRSK.config.hosts) { |host| puts "App Host: #{host}\n" + capture(*MRSK.app.current_container_id, verbosity: Logger::INFO) + "\n\n" }
+    on(MRSK.config.hosts) { |host| puts_by_host host, capture(*MRSK.app.current_container_id, verbosity: Logger::INFO) }
   end
   
   desc "logs", "Show last 100 log lines from app on servers"
@@ -107,9 +107,9 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
 
     on(MRSK.config.hosts) do |host|
       begin
-        puts "App Host: #{host}\n" + capture(*MRSK.app.logs(since: since, lines: lines, grep: grep), verbosity: Logger::INFO) + "\n\n"
+        puts_by_host host, capture(*MRSK.app.logs(since: since, lines: lines, grep: grep), verbosity: Logger::INFO)
       rescue SSHKit::Command::Failed
-        puts "App Host: #{host}\nNothing found\n\n"
+        puts_by_host host, "Nothing found"
       end
     end
   end

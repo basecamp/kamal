@@ -1,5 +1,3 @@
-require "sshkit"
-
 module Mrsk::Commands
   class Base
     delegate :redact, to: Mrsk::Utils
