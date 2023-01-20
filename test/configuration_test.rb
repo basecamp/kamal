@@ -70,6 +70,14 @@ class ConfigurationTest < ActiveSupport::TestCase
     assert_equal "1.1.1.1", @config_with_roles.primary_host
   end
 
+  test "traefik hosts" do
+    assert_equal [ "1.1.1.1", "1.1.1.2" ], @config_with_roles.traefik_hosts
+
+    @deploy_with_roles[:servers]["workers"]["traefik"] = true
+    config = Mrsk::Configuration.new(@deploy_with_roles)
+
+    assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3", "1.1.1.4" ], config.traefik_hosts
+  end
 
   test "version" do
     assert_equal "123", @config.version

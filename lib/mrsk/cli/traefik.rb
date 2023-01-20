@@ -3,17 +3,17 @@ require "mrsk/cli/base"
 class Mrsk::Cli::Traefik < Mrsk::Cli::Base
   desc "boot", "Boot Traefik on servers"
   def boot
-    on(MRSK.config.role(:web).hosts) { execute *MRSK.traefik.run, raise_on_non_zero_exit: false }
+    on(MRSK.config.traefik_hosts) { execute *MRSK.traefik.run, raise_on_non_zero_exit: false }
   end
 
   desc "start", "Start existing Traefik on servers"
   def start
-    on(MRSK.config.role(:web).hosts) { execute *MRSK.traefik.start, raise_on_non_zero_exit: false }
+    on(MRSK.config.traefik_hosts) { execute *MRSK.traefik.start, raise_on_non_zero_exit: false }
   end
 
   desc "stop", "Stop Traefik on servers"
   def stop
-    on(MRSK.config.role(:web).hosts) { execute *MRSK.traefik.stop, raise_on_non_zero_exit: false }
+    on(MRSK.config.traefik_hosts) { execute *MRSK.traefik.stop, raise_on_non_zero_exit: false }
   end
 
   desc "restart", "Restart Traefik on servers"
@@ -24,7 +24,7 @@ class Mrsk::Cli::Traefik < Mrsk::Cli::Base
 
   desc "details", "Display details about Traefik containers from servers"
   def details
-    on(MRSK.config.role(:web).hosts) { |host| puts "Traefik Host: #{host}\n" + capture(*MRSK.traefik.info, verbosity: Logger::INFO) + "\n\n" }
+    on(MRSK.config.traefik_hosts) { |host| puts "Traefik Host: #{host}\n" + capture(*MRSK.traefik.info, verbosity: Logger::INFO) + "\n\n" }
   end
 
   desc "logs", "Show last 100 log lines from Traefik on servers"
@@ -36,7 +36,7 @@ class Mrsk::Cli::Traefik < Mrsk::Cli::Base
   def remove
     invoke :stop
 
-    on(MRSK.config.role(:web).hosts) do
+    on(MRSK.config.traefik_hosts) do
       execute *MRSK.traefik.remove_container
       execute *MRSK.traefik.remove_image
     end

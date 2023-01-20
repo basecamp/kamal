@@ -31,6 +31,10 @@ class Mrsk::Configuration::Role
     specializations["cmd"]
   end
 
+  def running_traefik?
+    name.web? || specializations["traefik"]
+  end
+
   private
     attr_accessor :config
 
@@ -59,10 +63,6 @@ class Mrsk::Configuration::Role
       else
         {}
       end
-    end
-
-    def running_traefik?
-      name.web? || specializations["traefik"]
     end
 
     def custom_labels

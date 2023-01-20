@@ -71,6 +71,10 @@ class Mrsk::Configuration
     role(:web).hosts.first
   end
 
+  def traefik_hosts
+    roles.select(&:running_traefik?).flat_map(&:hosts)
+  end
+
 
   def version
     @version ||= ENV["VERSION"] || `git rev-parse HEAD`.strip
