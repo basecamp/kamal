@@ -146,26 +146,44 @@ builder:
   multiarch: false
 ```
 
+### Configuring build secrets for new images
+
+Some images need a secret passed in during build time, like a GITHUB_TOKEN to give access to private gem repositories. This can be done by having the secret in ENV, then referencing it like so in the configuration:
+
+```yaml
+builder:
+  secrets:
+    - GITHUB_TOKEN
+```
+
+This build secret can then be used in the Dockerfile:
+
+```
+# Install application gems
+COPY Gemfile Gemfile.lock ./
+
+# Private repositories need an access token during the build
+RUN --mount=type=secret,id=GITHUB_TOKEN \
+  BUNDLE_GITHUB__COM=x-access-token:$(cat /run/secrets/GITHUB_TOKEN) \
+  bundle install
+```
+
 ### Configuring build args for new images
 
-Some images might need an argument passed in during build time, like a GITHUB_TOKEN to give access to private gem repositories. This can be done like so:
+Build arguments that aren't secret can be configured like so:
 
 ```yaml
 builder:
   args:
-    GITHUB_TOKEN: <%= ENV["GITHUB_TOKEN"] %>
+    RUBY_VERSION: 3.2.0
 ```
 
-This build arg can then be used in the Dockerfile:
+This build argument can then be used in the Dockerfile:
 
 ```
 # Private repositories need an access token during the build
-ARG GITHUB_TOKEN
-ENV BUNDLE_GITHUB__COM=x-access-token:$GITHUB_TOKEN
-
-# Install application gems
-COPY Gemfile Gemfile.lock ./
-RUN bundle install
+ARG RUBY_VERSION
+FROM ruby:$RUBY_VERSION-slim as base
 ```
 
 ## Commands

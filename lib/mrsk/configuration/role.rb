@@ -1,5 +1,5 @@
 class Mrsk::Configuration::Role
-  delegate :argumentize, to: Mrsk::Configuration
+  delegate :argumentize, to: Mrsk::Utils
 
   attr_accessor :name
 

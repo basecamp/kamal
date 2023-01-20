@@ -1,7 +1,7 @@
 require "mrsk/commands/base"
 
 class Mrsk::Commands::Builder::Base < Mrsk::Commands::Base
-  delegate :argumentize, to: Mrsk::Configuration
+  delegate :argumentize, to: Mrsk::Utils
 
   def pull
     docker :pull, config.absolute_image
@@ -11,8 +11,16 @@ class Mrsk::Commands::Builder::Base < Mrsk::Commands::Base
     argumentize "--build-arg", args, redacted: true
   end
 
+  def build_secrets
+    argumentize "--secret", secrets.collect { |secret| [ "id", secret ] }
+  end
+
   private
     def args
       config.builder["args"] || {}
+    end
+
+    def secrets
+      config.builder["secrets"] || []
     end
 end
