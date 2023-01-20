@@ -84,15 +84,19 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
   end
   
   desc "logs", "Show last 100 log lines from app on servers"
-  option :lines, type: :numeric, aliases: "-n", default: 1000, desc: "Number of log lines to pull from each server"
+  option :since, aliases: "-s", default: "5m", desc: "Show logs since timestamp (e.g. 2013-01-02T13:23:37Z) or relative (e.g. 42m for 42 minutes)"
+  option :lines, type: :numeric, aliases: "-n", desc: "Number of log lines to pull from each server"
   option :grep, aliases: "-g", desc: "Show lines with grep match only (use this to fetch specific requests by id)"
   def logs
     # FIXME: Catch when app containers aren't running
+
+    since = options[:since]
     lines = options[:lines]
     grep  = options[:grep]
+
     on(MRSK.config.hosts) do |host|
       begin
-        puts "App Host: #{host}\n" + capture(*MRSK.app.logs(lines: lines, grep: grep), verbosity: Logger::INFO) + "\n\n"
+        puts "App Host: #{host}\n" + capture(*MRSK.app.logs(since: since, lines: lines, grep: grep), verbosity: Logger::INFO) + "\n\n"
       rescue SSHKit::Command::Failed
         puts "App Host: #{host}\nNothing found\n\n"
       end

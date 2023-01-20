@@ -31,10 +31,10 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
     docker :ps, *service_filter
   end
 
-  def logs(lines: 1000, grep: nil)
+  def logs(since: "5m", lines: nil, grep: nil)
     pipe \
       current_container_id,
-      "xargs docker logs -n #{lines} -t",
+      "xargs docker logs --since #{since} -n #{lines} -t 2>&1",
       ("grep #{grep}" if grep)
   end
 
