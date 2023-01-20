@@ -148,7 +148,7 @@ builder:
 
 ### Configuring build secrets for new images
 
-Some images might need an secret passed in during build time, like a GITHUB_TOKEN to give access to private gem repositories, but you don't want it exposed in the resulting image. This can be done like so:
+Some images need a secret passed in during build time, like a GITHUB_TOKEN to give access to private gem repositories. This can be done by having the secret in ENV, then referencing it like so in the configuration:
 
 ```yaml
 builder:
@@ -168,28 +168,22 @@ RUN --mount=type=secret,id=GITHUB_TOKEN \
   bundle install
 ```
 
-> Note: This only supports simple secret configurations, and not the full gamut of options presented by the [buildx command --secret option](https://docs.docker.com/engine/reference/commandline/buildx_build/#secret).
-
 ### Configuring build args for new images
 
-Some images might need an argument passed in during build time, like a GITHUB_TOKEN to give access to private gem repositories. This is less secure than a docker secret, but works on older versions of docker. This will also expose your value in the final image. This can be done like so:
+Build arguments that aren't secret can be configured like so:
 
 ```yaml
 builder:
   args:
-    GITHUB_TOKEN: <%= ENV["GITHUB_TOKEN"] %>
+    RUBY_VERSION: 3.2.0
 ```
 
-This build arg can then be used in the Dockerfile:
+This build argument can then be used in the Dockerfile:
 
 ```
 # Private repositories need an access token during the build
-ARG GITHUB_TOKEN
-ENV BUNDLE_GITHUB__COM=x-access-token:$GITHUB_TOKEN
-
-# Install application gems
-COPY Gemfile Gemfile.lock ./
-RUN bundle install
+ARG RUBY_VERSION
+FROM ruby:$RUBY_VERSION-slim as base
 ```
 
 ## Commands
