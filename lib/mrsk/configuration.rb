@@ -7,6 +7,7 @@ require "mrsk/utils"
 
 class Mrsk::Configuration
   delegate :service, :image, :servers, :env, :labels, :registry, :builder, to: :config, allow_nil: true
+  delegate :argumentize, to: Mrsk::Utils
 
   class << self
     def create_from(base_config_file, destination: nil)
@@ -16,10 +17,6 @@ class Mrsk::Configuration
             load_config_file destination_config_file(base_config_file, destination)
         end
       end)
-    end
-
-    def argumentize(argument, attributes, redacted: false)
-      attributes.flat_map { |k, v| [ argument, redacted ? Mrsk::Utils.redact("#{k}=#{v}") : "#{k}=#{v}" ] }
     end
 
     private
@@ -94,7 +91,7 @@ class Mrsk::Configuration
 
   def env_args
     if config.env.present?
-      self.class.argumentize "-e", config.env
+      argumentize "-e", config.env
     else
       []
     end

@@ -1,8 +1,7 @@
 require "mrsk/commands/base"
 
 class Mrsk::Commands::Builder::Base < Mrsk::Commands::Base
-  delegate :argumentize, :secretize, to: Mrsk::Configuration
-  delegate :secretize, to: Mrsk::Utils
+  delegate :argumentize, to: Mrsk::Utils
 
   def pull
     docker :pull, config.absolute_image
