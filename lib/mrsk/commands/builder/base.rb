@@ -21,6 +21,6 @@ class Mrsk::Commands::Builder::Base < Mrsk::Commands::Base
     end
 
     def secrets
-      config.builder["secrets"] || {}
+      config.builder["secrets"] || []
     end
 end
