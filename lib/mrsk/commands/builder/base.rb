@@ -1,8 +1,7 @@
 require "mrsk/commands/base"
 
 class Mrsk::Commands::Builder::Base < Mrsk::Commands::Base
-  delegate :argumentize, to: Mrsk::Configuration
-  delegate :simple_secretize, to: Mrsk::Configuration
+  delegate :argumentize, :secretize, to: Mrsk::Configuration
 
   def pull
     docker :pull, config.absolute_image
@@ -13,7 +12,7 @@ class Mrsk::Commands::Builder::Base < Mrsk::Commands::Base
   end
 
   def build_secrets
-    simple_secretize "--secret", secrets, redacted: true
+    secretize "--secret", secrets
   end
 
   private

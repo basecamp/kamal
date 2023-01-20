@@ -22,8 +22,8 @@ class Mrsk::Configuration
       attributes.flat_map { |k, v| [ argument, redacted ? Mrsk::Utils.redact("#{k}=#{v}") : "#{k}=#{v}" ] }
     end
 
-    def simple_secretize(secret, attributes, redacted: false)
-      attributes.flat_map { |k, v| [ secret, redacted ? Mrsk::Utils.redact("id=#{k}") : "id=#{k}" ] }
+    def secretize(secret, attributes)
+      attributes.flat_map { |k, v| [ secret, "id=#{k}" ] }
     end
 
     private
