@@ -47,8 +47,9 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
       *command
   end
 
-  def run_exec(*command)
+  def run_exec(*command, interactive: false)
     docker :run,
+      ("-it" if interactive),
       "--rm",
       *rails_master_key_arg,
       *config.env_args,
@@ -57,7 +58,11 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
   end
 
   def console(host: config.primary_host)
-    "ssh -t #{config.ssh_user}@#{host} '#{exec("bin/rails", "c", interactive: true).join(" ")}'"
+    exec_over_ssh "bin/rails", "c", host: host
+  end
+
+  def bash(host: config.primary_host)
+    exec_over_ssh "bash", host: host
   end
 
   def list_containers
@@ -73,6 +78,10 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
   end
 
   private
+    def exec_over_ssh(*command, host:)
+      "ssh -t #{config.ssh_user}@#{host} '#{run_exec(*command, interactive: true).join(" ")}'"
+    end
+
     def service_filter
       [ "--filter", "label=service=#{config.service}" ]
     end

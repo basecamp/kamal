@@ -63,6 +63,17 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
     end
   end
 
+  desc "bash", "Start a bash session on primary host"
+  option :host, desc: "Start bash on a different host"
+  def bash
+    host = options[:host] || MRSK.config.primary_host
+
+    run_locally do
+      puts "Launching bash session on #{host}..."
+      exec MRSK.app.bash(host: host)        
+    end
+  end
+
   desc "runner [EXPRESSION]", "Execute Rails runner with given expression"
   option :once, type: :boolean, default: false, desc: "Only perform runner on primary host"
   def runner(expression)
