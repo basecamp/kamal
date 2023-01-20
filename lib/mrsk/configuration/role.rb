@@ -76,7 +76,7 @@ class Mrsk::Configuration::Role
       if config.servers.is_a?(Array) || config.servers[name].is_a?(Array)
         { }
       else
-        config.servers[name].without("hosts")
+        config.servers[name].except("hosts")
       end
     end
 end
