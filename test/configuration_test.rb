@@ -1,7 +1,6 @@
 require "test_helper"
 require "mrsk/configuration"
 
-ENV["VERSION"] = "123"
 ENV["RAILS_MASTER_KEY"] = "456"
 
 class ConfigurationTest < ActiveSupport::TestCase
@@ -63,7 +62,8 @@ class ConfigurationTest < ActiveSupport::TestCase
   end
 
   test "version" do
-    assert_equal "123", @config.version
+    assert_equal "missing", @config.version
+    assert_equal "123", Mrsk::Configuration.new(@deploy, version: "123").version
   end
 
   test "repository" do
@@ -74,14 +74,14 @@ class ConfigurationTest < ActiveSupport::TestCase
   end
 
   test "absolute image" do
-    assert_equal "dhh/app:123", @config.absolute_image
+    assert_equal "dhh/app:missing", @config.absolute_image
 
     config = Mrsk::Configuration.new(@deploy.tap { |c| c[:registry].merge!({ "server" => "ghcr.io" }) })
-    assert_equal "ghcr.io/dhh/app:123", config.absolute_image
+    assert_equal "ghcr.io/dhh/app:missing", config.absolute_image
   end
 
   test "service with version" do
-    assert_equal "app-123", @config.service_with_version
+    assert_equal "app-missing", @config.service_with_version
   end
 
 
@@ -125,6 +125,6 @@ class ConfigurationTest < ActiveSupport::TestCase
   end
 
   test "to_h" do
-    assert_equal({ :roles=>["web"], :hosts=>["1.1.1.1", "1.1.1.2"], :primary_host=>"1.1.1.1", :version=>"123", :repository=>"dhh/app", :absolute_image=>"dhh/app:123", :service_with_version=>"app-123", :env_args=>["-e", "REDIS_URL=redis://x/y"], :ssh_options=>{:user=>"root", :auth_methods=>["publickey"]} }, @config.to_h)
+    assert_equal({ :roles=>["web"], :hosts=>["1.1.1.1", "1.1.1.2"], :primary_host=>"1.1.1.1", :version=>"missing", :repository=>"dhh/app", :absolute_image=>"dhh/app:missing", :service_with_version=>"app-missing", :env_args=>["-e", "REDIS_URL=redis://x/y"], :ssh_options=>{:user=>"root", :auth_methods=>["publickey"]} }, @config.to_h)
   end
 end

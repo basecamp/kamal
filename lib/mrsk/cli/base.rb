@@ -9,6 +9,8 @@ module Mrsk::Cli
 
     class_option :verbose, type: :boolean, aliases: "-v", desc: "Detailed logging"
 
+    class_option :version, desc: "Run commands against a specific app version"
+
     class_option :primary, type: :boolean, aliases: "-p", desc: "Run commands only on primary host instead of all"
     class_option :hosts, aliases: "-h", desc: "Run commands on these hosts instead of all (separate by comma)"
     class_option :roles, aliases: "-r", desc: "Run commands on these roles instead of all (separate by comma)"
@@ -27,6 +29,7 @@ module Mrsk::Cli
           commander.config_file = Pathname.new(File.expand_path(options[:config_file]))
           commander.destination = options[:destination]
           commander.verbose     = options[:verbose]
+          commander.version     = options[:version]
 
           commander.specific_hosts    = options[:hosts]&.split(",")
           commander.specific_roles    = options[:roles]&.split(",")

@@ -10,13 +10,13 @@ class Mrsk::Configuration
   delegate :argumentize, to: Mrsk::Utils
 
   class << self
-    def create_from(base_config_file, destination: nil)
+    def create_from(base_config_file, destination: nil, version: "missing")
       new(load_config_file(base_config_file).tap do |config|
         if destination
           config.merge! \
             load_config_file destination_config_file(base_config_file, destination)
         end
-      end)
+      end, version: version)
     end
 
     private
@@ -34,8 +34,9 @@ class Mrsk::Configuration
       end
   end
 
-  def initialize(config, validate: true)
+  def initialize(config, version: "missing", validate: true)
     @config = ActiveSupport::InheritableOptions.new(config)
+    @version = version
     ensure_required_keys_present if validate
   end
 
@@ -62,7 +63,7 @@ class Mrsk::Configuration
 
 
   def version
-    @version ||= ENV["VERSION"] || `git rev-parse HEAD`.strip
+    @version
   end
 
   def repository

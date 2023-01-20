@@ -8,14 +8,17 @@ require "mrsk/commands/traefik"
 require "mrsk/commands/registry"
 
 class Mrsk::Commander
-  attr_accessor :config_file, :destination, :verbose
+  attr_accessor :config_file, :destination, :verbose, :version
 
   def initialize(config_file: nil, destination: nil, verbose: false)
     @config_file, @destination, @verbose = config_file, destination, verbose
   end
 
   def config
-    @config ||= Mrsk::Configuration.create_from(config_file, destination: destination).tap { |config| setup_with(config) }
+    @config ||= \
+      Mrsk::Configuration
+        .create_from(config_file, destination: destination, version: cascading_version)
+        .tap { |config| configure_sshkit_with(config) }
   end
 
   attr_accessor :specific_hosts
@@ -71,8 +74,12 @@ class Mrsk::Commander
   end
 
   private
+    def cascading_version
+      version.presence || ENV["VERSION"] || `git rev-parse HEAD`.strip
+    end
+
     # Lazy setup of SSHKit
-    def setup_with(config)
+    def configure_sshkit_with(config)
       SSHKit::Backend::Netssh.configure { |ssh| ssh.ssh_options = config.ssh_options }
       SSHKit.config.command_map[:docker] = "docker" # No need to use /usr/bin/env, just clogs up the logs
       SSHKit.config.output_verbosity = :debug if verbose

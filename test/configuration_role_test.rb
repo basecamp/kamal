@@ -1,8 +1,6 @@
 require "test_helper"
 require "mrsk/configuration"
 
-ENV["VERSION"] = "123"
-
 class ConfigurationRoleTest < ActiveSupport::TestCase
   setup do
     @deploy = {
