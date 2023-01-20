@@ -11,7 +11,7 @@ class Mrsk::Commands::Builder::Native < Mrsk::Commands::Builder::Base
 
   def push
     combine \
-      docker(:build, "-t", *build_args, config.absolute_image, "."),
+      docker(:build, "-t", *build_args, *build_secrets, config.absolute_image, "."),
       docker(:push, config.absolute_image)
   end
 

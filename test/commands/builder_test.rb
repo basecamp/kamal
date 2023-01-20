@@ -41,4 +41,9 @@ class CommandsBuilderTest < ActiveSupport::TestCase
     builder = Mrsk::Commands::Builder.new(Mrsk::Configuration.new(@config.merge({ builder: { "args" => { "a" => 1, "b" => 2 } } })))
     assert_equal [ :docker, :buildx, :build, "--push", "--platform linux/amd64,linux/arm64", "-t", "dhh/app:123", "--build-arg", "a=1", "--build-arg", "b=2", "." ], builder.push
   end
+
+  test "native push with with build secrets" do
+    builder = Mrsk::Commands::Builder.new(Mrsk::Configuration.new(@config.merge({ builder: { "multiarch" => false, "secrets" => [ "a", "b" ] } })))
+    assert_equal [ :docker, :build, "-t", "--secret", "id=a", "--secret", "id=b", "dhh/app:123", ".", "&&", :docker, :push, "dhh/app:123" ], builder.push
+  end
 end

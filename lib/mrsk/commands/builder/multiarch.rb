@@ -10,7 +10,13 @@ class Mrsk::Commands::Builder::Multiarch < Mrsk::Commands::Builder::Base
   end
 
   def push
-    docker :buildx, :build, "--push", "--platform linux/amd64,linux/arm64", "-t", config.absolute_image, *build_args, "."
+    docker :buildx, :build,
+      "--push",
+      "--platform linux/amd64,linux/arm64",
+      "-t", config.absolute_image,
+      *build_args,
+      *build_secrets,
+      "."
   end
 
   def info
