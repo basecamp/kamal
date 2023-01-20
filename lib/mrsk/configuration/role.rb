@@ -23,6 +23,14 @@ class Mrsk::Configuration::Role
     argumentize "--label", labels
   end
 
+  def env
+    (config.env || {}).merge(specializations["env"] || {})
+  end
+
+  def env_args
+    argumentize "-e", env
+  end
+
   def cmd
     specializations["cmd"]
   end

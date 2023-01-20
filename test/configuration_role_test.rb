@@ -7,7 +7,8 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
   setup do
     @deploy = {
       service: "app", image: "dhh/app", registry: { "username" => "dhh", "password" => "secret" },
-      servers: [ "1.1.1.1", "1.1.1.2" ]
+      servers: [ "1.1.1.1", "1.1.1.2" ],
+      env: { "REDIS_URL" => "redis://x/y" }
     }
 
     @config = Mrsk::Configuration.new(@deploy)
@@ -17,7 +18,11 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
         "web" => [ "1.1.1.1", "1.1.1.2" ],
         "workers" => {
           "hosts" => [ "1.1.1.3", "1.1.1.4" ],
-          "cmd" => "bin/jobs"
+          "cmd" => "bin/jobs",
+          "env" => {
+            "REDIS_URL" => "redis://a/b",
+            "WEB_CONCURRENCY" => 4
+          }
         }
       }
     })
@@ -57,5 +62,10 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
   test "overwriting default traefik label" do
     @deploy[:labels] = { "traefik.http.routers.app.rule" => "'Host(`example.com`) || (Host(`example.org`) && Path(`/traefik`))'" }
     assert_equal "'Host(`example.com`) || (Host(`example.org`) && Path(`/traefik`))'", @config.role(:web).labels["traefik.http.routers.app.rule"]
+  end
+
+  test "env overwritten by role" do
+    assert_equal "redis://a/b", @config_with_roles.role(:workers).env["REDIS_URL"]
+    assert_equal ["-e", "REDIS_URL=redis://a/b", "-e", "WEB_CONCURRENCY=4"], @config_with_roles.role(:workers).env_args
   end
 end

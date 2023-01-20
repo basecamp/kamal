@@ -9,7 +9,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
       "--restart unless-stopped",
       "--name", config.service_with_version,
       *rails_master_key_arg,
-      *config.env_args,
+      *role.env_args,
       *role.label_args,
       config.absolute_image,
       role.cmd
