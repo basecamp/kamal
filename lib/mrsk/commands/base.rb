@@ -11,10 +11,15 @@ module Mrsk::Commands
     end
 
     private
-      def combine(*commands)
+      def combine(*commands, by: "&&")
         commands
-          .collect { |command| command + [ "&&" ] }.flatten # Join commands with &&
-          .tap     { |commands| commands.pop } # Remove trailing &&
+          .compact
+          .collect { |command| Array(command) + [ by ] }.flatten # Join commands
+          .tap     { |commands| commands.pop } # Remove trailing combiner
+      end
+
+      def pipe(*commands)
+        combine *commands, by: "|"
       end
 
       def docker(*args)

@@ -24,7 +24,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
   end
 
   def stop
-    [ "docker ps -q #{service_filter.join(" ")} | xargs docker stop" ]
+    pipe current_container_id, "xargs docker stop"
   end
 
   def info
@@ -32,9 +32,10 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
   end
 
   def logs(lines: 1000, grep: nil)
-    [ "docker ps -q #{service_filter.join(" ")} | xargs docker logs -n #{lines} -t" ].tap do |command|
-      command.first << " | grep #{grep}" if grep
-    end
+    pipe \
+      current_container_id,
+      "xargs docker logs -n #{lines} -t",
+      ("grep #{grep}" if grep)
   end
 
   def exec(*command, interactive: false)
