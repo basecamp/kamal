@@ -77,6 +77,11 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
   def containers
     on(MRSK.config.hosts) { |host| puts "App Host: #{host}\n" + capture(*MRSK.app.list_containers, verbosity: Logger::INFO) + "\n\n" }
   end
+
+  desc "current", "Return the current running container ID"
+  def current
+    on(MRSK.config.hosts) { |host| puts "App Host: #{host}\n" + capture(*MRSK.app.current_container_id, verbosity: Logger::INFO) + "\n\n" }
+  end
   
   desc "logs", "Show last 100 log lines from app on servers"
   option :lines, type: :numeric, aliases: "-n", default: 1000, desc: "Number of log lines to pull from each server"

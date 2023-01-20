@@ -19,6 +19,10 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
     docker :start, "#{config.service}-#{version}"
   end
 
+  def current_container_id
+    docker :ps, "-q", service_filter
+  end
+
   def stop
     [ "docker ps -q #{service_filter.join(" ")} | xargs docker stop" ]
   end
