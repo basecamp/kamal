@@ -64,6 +64,14 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
     assert_equal "'Host(`example.com`) || (Host(`example.org`) && Path(`/traefik`))'", @config.role(:web).labels["traefik.http.routers.app.rule"]
   end
 
+  test "default traefik label on non-web role" do
+    config = Mrsk::Configuration.new(@deploy_with_roles.tap { |c| 
+      c[:servers]["beta"] = { "traefik" => "true", "hosts" => [ "1.1.1.5" ] }
+    })
+
+    assert_equal [ "--label", "service=app", "--label", "role=beta", "--label", "traefik.http.routers.app.rule='PathPrefix(`/`)'", "--label", "traefik.http.services.app.loadbalancer.healthcheck.path=/up", "--label", "traefik.http.services.app.loadbalancer.healthcheck.interval=1s", "--label", "traefik.http.middlewares.app.retry.attempts=3", "--label", "traefik.http.middlewares.app.retry.initialinterval=500ms" ], config.role(:beta).label_args
+  end
+
   test "env overwritten by role" do
     assert_equal "redis://a/b", @config_with_roles.role(:workers).env["REDIS_URL"]
     assert_equal ["-e", "REDIS_URL=redis://a/b", "-e", "WEB_CONCURRENCY=4"], @config_with_roles.role(:workers).env_args

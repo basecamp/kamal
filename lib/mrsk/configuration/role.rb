@@ -12,11 +12,7 @@ class Mrsk::Configuration::Role
   end
 
   def labels
-    if name.web?
-      default_labels.merge(traefik_labels).merge(custom_labels)
-    else
-      default_labels.merge(custom_labels)
-    end
+    default_labels.merge(traefik_labels).merge(custom_labels)
   end
 
   def label_args
@@ -52,13 +48,21 @@ class Mrsk::Configuration::Role
     end
 
     def traefik_labels
-      {
-        "traefik.http.routers.#{config.service}.rule" => "'PathPrefix(`/`)'",
-        "traefik.http.services.#{config.service}.loadbalancer.healthcheck.path" => "/up",
-        "traefik.http.services.#{config.service}.loadbalancer.healthcheck.interval" => "1s",
-        "traefik.http.middlewares.#{config.service}.retry.attempts" => "3",
-        "traefik.http.middlewares.#{config.service}.retry.initialinterval" => "500ms"
-      }
+      if running_traefik?
+        {
+          "traefik.http.routers.#{config.service}.rule" => "'PathPrefix(`/`)'",
+          "traefik.http.services.#{config.service}.loadbalancer.healthcheck.path" => "/up",
+          "traefik.http.services.#{config.service}.loadbalancer.healthcheck.interval" => "1s",
+          "traefik.http.middlewares.#{config.service}.retry.attempts" => "3",
+          "traefik.http.middlewares.#{config.service}.retry.initialinterval" => "500ms"
+        }
+      else
+        {}
+      end
+    end
+
+    def running_traefik?
+      name.web? || specializations["traefik"]
     end
 
     def custom_labels
