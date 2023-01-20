@@ -39,49 +39,33 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
     on(MRSK.hosts) { |host| puts_by_host host, capture_with_info(*MRSK.app.info) }
   end
   
-  desc "exec [CMD]", "Execute a custom task on servers passed in as CMD='bin/rake some:task'"
-  option :once, type: :boolean, default: false, desc: "Only perform command on primary host"
+  desc "exec [CMD]", "Execute a custom command on servers"
   option :run, type: :boolean, default: false, desc: "Start a new container to run the command rather than reusing existing"
   def exec(cmd)
     runner = options[:run] ? :run_exec : :exec
-
-    if options[:once]
-      on(MRSK.config.primary_host) { puts capture_with_info(*MRSK.app.send(runner, cmd)) }
-    else
-      on(MRSK.hosts) { |host| puts_by_host host, capture_with_info(*MRSK.app.send(runner, cmd)) }
-    end
+    on(MRSK.hosts) { |host| puts_by_host host, capture_with_info(*MRSK.app.send(runner, cmd)) }
   end
 
-  desc "console", "Start Rails Console on primary host"
-  option :host, desc: "Start console on a different host"
+  desc "console", "Start Rails Console on primary host (or specific host set by --hosts)"
   def console
-    host = options[:host] || MRSK.config.primary_host
-
     run_locally do
-      puts "Launching Rails console on #{host}..."
-      exec MRSK.app.console(host: host)        
+      puts "Launching Rails console on #{MRSK.primary_host}..."
+      exec MRSK.app.console(host: MRSK.primary_host)        
     end
   end
 
   desc "bash", "Start a bash session on primary host"
   option :host, desc: "Start bash on a different host"
   def bash
-    host = options[:host] || MRSK.config.primary_host
-
     run_locally do
-      puts "Launching bash session on #{host}..."
-      exec MRSK.app.bash(host: host)        
+      puts "Launching bash session on #{MRSK.primary_host}..."
+      exec MRSK.app.bash(host: MRSK.primary_host)        
     end
   end
 
   desc "runner [EXPRESSION]", "Execute Rails runner with given expression"
-  option :once, type: :boolean, default: false, desc: "Only perform runner on primary host"
   def runner(expression)
-    if options[:once]
-      on(MRSK.config.primary_host) { puts capture_with_info(*MRSK.app.exec("bin/rails", "runner", "'#{expression}'")) }
-    else
-      on(MRSK.hosts) { |host| puts_by_host host, capture_with_info(*MRSK.app.exec("bin/rails", "runner", "'#{expression}'")) }
-    end
+    on(MRSK.hosts) { |host| puts_by_host host, capture_with_info(*MRSK.app.exec("bin/rails", "runner", "'#{expression}'")) }
   end
 
   desc "containers", "List all the app containers currently on servers"

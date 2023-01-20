@@ -52,7 +52,7 @@ class Mrsk::Configuration
     roles.flat_map(&:hosts)
   end
 
-  def primary_host
+  def primary_web_host
     role(:web).hosts.first
   end
 
@@ -101,8 +101,8 @@ class Mrsk::Configuration
   def to_h
     {
       roles: role_names,
-      hosts: hosts,
-      primary_host: primary_host,
+      hosts: all_hosts,
+      primary_host: primary_web_host,
       version: version,
       repository: repository,
       absolute_image: absolute_image,

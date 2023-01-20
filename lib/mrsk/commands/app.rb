@@ -57,11 +57,11 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
       *command
   end
 
-  def console(host: config.primary_host)
+  def console(host:)
     exec_over_ssh "bin/rails", "c", host: host
   end
 
-  def bash(host: config.primary_host)
+  def bash(host:)
     exec_over_ssh "bash", host: host
   end
 

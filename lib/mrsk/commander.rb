@@ -1,3 +1,5 @@
+require "active_support/core_ext/enumerable"
+
 require "mrsk/configuration"
 require "mrsk/commands/app"
 require "mrsk/commands/builder"
@@ -16,20 +18,26 @@ class Mrsk::Commander
     @config ||= Mrsk::Configuration.create_from(config_file, destination: destination).tap { |config| setup_with(config) }
   end
 
-  def hosts=(hosts)
-    @hosts = hosts if hosts.present?
+  attr_accessor :specific_hosts
+
+  def specific_primary!
+    self.specific_hosts = [ config.primary_web_host ]
   end
 
-  def roles=(role_names)
-    @hosts = config.roles.select { |r| role_names.include?(r.name) }.flat_map(&:hosts) if role_names.present?
+  def specific_roles=(role_names)
+    self.specific_hosts = config.roles.select { |r| role_names.include?(r.name) }.flat_map(&:hosts) if role_names.present?
+  end
+
+  def primary_host
+    specific_hosts&.sole || config.primary_web_host
   end
 
   def hosts
-    @hosts || config.all_hosts
+    specific_hosts || config.all_hosts
   end
 
   def traefik_hosts
-    @hosts || config.traefik_hosts
+    specific_hosts || config.traefik_hosts
   end
 
 
