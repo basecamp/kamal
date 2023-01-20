@@ -22,10 +22,6 @@ class Mrsk::Configuration
       attributes.flat_map { |k, v| [ argument, redacted ? Mrsk::Utils.redact("#{k}=#{v}") : "#{k}=#{v}" ] }
     end
 
-    def secretize(secret, keys)
-      keys.flat_map { |key| [ secret, "id=#{key}" ] }
-    end
-
     private
       def load_config_file(file)
         if file.exist?
