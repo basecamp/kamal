@@ -24,12 +24,12 @@ class Mrsk::Cli::Traefik < Mrsk::Cli::Base
 
   desc "details", "Display details about Traefik containers from servers"
   def details
-    on(MRSK.config.traefik_hosts) { |host| puts "Traefik Host: #{host}\n" + capture(*MRSK.traefik.info, verbosity: Logger::INFO) + "\n\n" }
+    on(MRSK.config.traefik_hosts) { |host| puts_by_host host, capture_with_info(*MRSK.traefik.info), type: "Traefik" }
   end
 
   desc "logs", "Show last 100 log lines from Traefik on servers"
   def logs
-    on(MRSK.config.hosts) { |host| puts "Traefik Host: #{host}\n" + capture(*MRSK.traefik.logs) + "\n\n" }
+    on(MRSK.config.hosts) { |host| puts_by_host host, capture(*MRSK.traefik.logs), type: "Traefik" }
   end
 
   desc "remove", "Remove Traefik container and image from servers"
