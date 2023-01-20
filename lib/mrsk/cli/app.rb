@@ -23,20 +23,20 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
   option :version, desc: "Defaults to the most recent git-hash in local repository"
   def start
     if (version = options[:version]).present?
-      on(MRSK.config.hosts) { execute *MRSK.app.start(version: version) }
+      on(MRSK.hosts) { execute *MRSK.app.start(version: version) }
     else
-      on(MRSK.config.hosts) { execute *MRSK.app.start, raise_on_non_zero_exit: false }
+      on(MRSK.hosts) { execute *MRSK.app.start, raise_on_non_zero_exit: false }
     end
   end
   
   desc "stop", "Stop app on servers"
   def stop
-    on(MRSK.config.hosts) { execute *MRSK.app.stop, raise_on_non_zero_exit: false }
+    on(MRSK.hosts) { execute *MRSK.app.stop, raise_on_non_zero_exit: false }
   end
   
   desc "details", "Display details about app containers"
   def details
-    on(MRSK.config.hosts) { |host| puts_by_host host, capture_with_info(*MRSK.app.info) }
+    on(MRSK.hosts) { |host| puts_by_host host, capture_with_info(*MRSK.app.info) }
   end
   
   desc "exec [CMD]", "Execute a custom task on servers passed in as CMD='bin/rake some:task'"
@@ -48,7 +48,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
     if options[:once]
       on(MRSK.config.primary_host) { puts capture_with_info(*MRSK.app.send(runner, cmd)) }
     else
-      on(MRSK.config.hosts) { |host| puts_by_host host, capture_with_info(*MRSK.app.send(runner, cmd)) }
+      on(MRSK.hosts) { |host| puts_by_host host, capture_with_info(*MRSK.app.send(runner, cmd)) }
     end
   end
 
@@ -80,18 +80,18 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
     if options[:once]
       on(MRSK.config.primary_host) { puts capture_with_info(*MRSK.app.exec("bin/rails", "runner", "'#{expression}'")) }
     else
-      on(MRSK.config.hosts) { |host| puts_by_host host, capture_with_info(*MRSK.app.exec("bin/rails", "runner", "'#{expression}'")) }
+      on(MRSK.hosts) { |host| puts_by_host host, capture_with_info(*MRSK.app.exec("bin/rails", "runner", "'#{expression}'")) }
     end
   end
 
   desc "containers", "List all the app containers currently on servers"
   def containers
-    on(MRSK.config.hosts) { |host| puts_by_host host, capture_with_info(*MRSK.app.list_containers) }
+    on(MRSK.hosts) { |host| puts_by_host host, capture_with_info(*MRSK.app.list_containers) }
   end
 
   desc "current", "Return the current running container ID"
   def current
-    on(MRSK.config.hosts) { |host| puts_by_host host, capture_with_info(*MRSK.app.current_container_id) }
+    on(MRSK.hosts) { |host| puts_by_host host, capture_with_info(*MRSK.app.current_container_id) }
   end
   
   desc "logs", "Show last 100 log lines from app on servers"
@@ -105,7 +105,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
     lines = options[:lines]
     grep  = options[:grep]
 
-    on(MRSK.config.hosts) do |host|
+    on(MRSK.hosts) do |host|
       begin
         puts_by_host host, capture_with_info(*MRSK.app.logs(since: since, lines: lines, grep: grep))
       rescue SSHKit::Command::Failed
@@ -119,12 +119,12 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
   def remove
     case options[:only]
     when "containers"
-      on(MRSK.config.hosts) { execute *MRSK.app.remove_containers }
+      on(MRSK.hosts) { execute *MRSK.app.remove_containers }
     when "images"
-      on(MRSK.config.hosts) { execute *MRSK.app.remove_images }
+      on(MRSK.hosts) { execute *MRSK.app.remove_images }
     else
-      on(MRSK.config.hosts) { execute *MRSK.app.remove_containers }
-      on(MRSK.config.hosts) { execute *MRSK.app.remove_images }
+      on(MRSK.hosts) { execute *MRSK.app.remove_containers }
+      on(MRSK.hosts) { execute *MRSK.app.remove_images }
     end
   end
 end

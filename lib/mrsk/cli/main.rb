@@ -32,7 +32,7 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
 
   desc "rollback [VERSION]", "Rollback the app to VERSION (that must already be on servers)"
   def rollback(version)
-    on(MRSK.config.hosts) do
+    on(MRSK.hosts) do
       execute *MRSK.app.stop, raise_on_non_zero_exit: false
       execute *MRSK.app.start(version: version)
     end

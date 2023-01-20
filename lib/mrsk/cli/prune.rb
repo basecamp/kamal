@@ -9,11 +9,11 @@ class Mrsk::Cli::Prune < Mrsk::Cli::Base
 
   desc "images", "Prune unused images older than 30 days"
   def images
-    on(MRSK.config.hosts) { execute *MRSK.prune.images }
+    on(MRSK.hosts) { execute *MRSK.prune.images }
   end
 
   desc "containers", "Prune stopped containers for the service older than 3 days"
   def containers
-    on(MRSK.config.hosts) { execute *MRSK.prune.containers }
+    on(MRSK.hosts) { execute *MRSK.prune.containers }
   end
 end

@@ -16,6 +16,22 @@ class Mrsk::Commander
     @config ||= Mrsk::Configuration.create_from(config_file, destination: destination).tap { |config| setup_with(config) }
   end
 
+  def hosts=(hosts)
+    @hosts = hosts if hosts.present?
+  end
+
+  def roles=(role_names)
+    @hosts = config.roles.select { |r| role_names.include?(r.name) }.flat_map(&:hosts) if role_names.present?
+  end
+
+  def hosts
+    @hosts || config.all_hosts
+  end
+
+  def traefik_hosts
+    @hosts || config.traefik_hosts
+  end
+
 
   def app
     @app ||= Mrsk::Commands::App.new(config)

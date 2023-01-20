@@ -48,23 +48,8 @@ class Mrsk::Configuration
     roles.detect { |r| r.name == name.to_s }
   end
 
-  def hosts
-    hosts =
-      case
-      when ENV["HOSTS"]
-        ENV["HOSTS"].split(",")
-      when ENV["ROLES"]
-        role_names = ENV["ROLES"].split(",")
-        roles.select { |r| role_names.include?(r.name) }.flat_map(&:hosts)
-      else
-        roles.flat_map(&:hosts)
-      end
-
-      if hosts.any?
-        hosts
-      else
-        raise ArgumentError, "No hosts found"
-      end
+  def all_hosts
+    roles.flat_map(&:hosts)
   end
 
   def primary_host

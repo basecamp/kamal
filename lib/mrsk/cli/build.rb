@@ -26,7 +26,7 @@ class Mrsk::Cli::Build < Mrsk::Cli::Base
 
   desc "pull", "Pull app image from the registry onto servers"
   def pull
-    on(MRSK.config.hosts) { execute *MRSK.builder.pull }
+    on(MRSK.hosts) { execute *MRSK.builder.pull }
   end
 
   desc "create", "Create a local build setup"

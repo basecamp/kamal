@@ -43,26 +43,9 @@ class ConfigurationTest < ActiveSupport::TestCase
     assert_nil @config.role(:missing)
   end
 
-  test "hosts" do
-    assert_equal [ "1.1.1.1", "1.1.1.2"], @config.hosts
-    assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3", "1.1.1.4" ], @config_with_roles.hosts
-  end
-
-  test "hosts from ENV" do
-    ENV["HOSTS"] = "1.1.1.5,1.1.1.6"
-    assert_equal [ "1.1.1.5", "1.1.1.6"], @config.hosts
-  ensure
-    ENV["HOSTS"] = nil
-  end
-
-  test "hosts from ENV roles" do
-    ENV["ROLES"] = "web,workers"
-    assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3", "1.1.1.4" ], @config_with_roles.hosts
-
-    ENV["ROLES"] = "workers"
-    assert_equal [ "1.1.1.3", "1.1.1.4" ], @config_with_roles.hosts
-  ensure
-    ENV["ROLES"] = nil
+  test "all hosts" do
+    assert_equal [ "1.1.1.1", "1.1.1.2"], @config.all_hosts
+    assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3", "1.1.1.4" ], @config_with_roles.all_hosts
   end
 
   test "primary host" do
@@ -127,10 +110,10 @@ class ConfigurationTest < ActiveSupport::TestCase
     dest_config_file = Pathname.new(File.expand_path("fixtures/deploy_for_dest.yml", __dir__))
 
     config = Mrsk::Configuration.create_from dest_config_file, destination: "world"
-    assert_equal "1.1.1.1", config.hosts.first
+    assert_equal "1.1.1.1", config.all_hosts.first
 
     config = Mrsk::Configuration.create_from dest_config_file, destination: "mars"
-    assert_equal "1.1.1.3", config.hosts.first
+    assert_equal "1.1.1.3", config.all_hosts.first
   end
 
   test "destination yml config file missing" do
