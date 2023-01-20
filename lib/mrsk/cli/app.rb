@@ -54,8 +54,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
     end
   end
 
-  desc "bash", "Start a bash session on primary host"
-  option :host, desc: "Start bash on a different host"
+  desc "bash", "Start a bash session on primary host (or specific host set by --hosts)"
   def bash
     run_locally do
       puts "Launching bash session on #{MRSK.primary_host}..."
