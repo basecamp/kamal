@@ -20,7 +20,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
   end
 
   def current_container_id
-    docker :ps, "-q", service_filter
+    docker :ps, "-q", *service_filter
   end
 
   def stop
