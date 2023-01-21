@@ -10,6 +10,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
       "--name", config.service_with_version,
       *rails_master_key_arg,
       *role.env_args,
+      *config.volumes,
       *role.label_args,
       config.absolute_image,
       role.cmd
@@ -43,6 +44,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
       ("-it" if interactive),
       *rails_master_key_arg,
       *config.env_args,
+      *config.volumes,
       config.service_with_version,
       *command
   end
@@ -53,6 +55,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
       "--rm",
       *rails_master_key_arg,
       *config.env_args,
+      *config.volumes,
       config.absolute_image,
       *command
   end

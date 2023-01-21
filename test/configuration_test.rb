@@ -9,7 +9,8 @@ class ConfigurationTest < ActiveSupport::TestCase
       service: "app", image: "dhh/app",
       registry: { "username" => "dhh", "password" => "secret" },
       env: { "REDIS_URL" => "redis://x/y" },
-      servers: [ "1.1.1.1", "1.1.1.2" ]
+      servers: [ "1.1.1.1", "1.1.1.2" ],
+      volumes: ["/local/path:/container/path"]
     }
 
     @config = Mrsk::Configuration.new(@deploy)
@@ -84,15 +85,14 @@ class ConfigurationTest < ActiveSupport::TestCase
     assert_equal "app-missing", @config.service_with_version
   end
 
-
   test "env args" do
     assert_equal [ "-e", "REDIS_URL=redis://x/y" ], @config.env_args
   end
 
   test "env args with clear and secrets" do
     ENV["PASSWORD"] = "secret123"
-    config = Mrsk::Configuration.new(@deploy.tap { |c| c.merge!({ 
-      env: { "clear" => { "PORT" => "3000" }, "secret" => [ "PASSWORD" ] } 
+    config = Mrsk::Configuration.new(@deploy.tap { |c| c.merge!({
+      env: { "clear" => { "PORT" => "3000" }, "secret" => [ "PASSWORD" ] }
     }) })
 
     assert_equal [ "-e", "PASSWORD=secret123", "-e", "PORT=3000" ], config.env_args
@@ -103,8 +103,8 @@ class ConfigurationTest < ActiveSupport::TestCase
 
   test "env args with only secrets" do
     ENV["PASSWORD"] = "secret123"
-    config = Mrsk::Configuration.new(@deploy.tap { |c| c.merge!({ 
-      env: { "secret" => [ "PASSWORD" ] } 
+    config = Mrsk::Configuration.new(@deploy.tap { |c| c.merge!({
+      env: { "secret" => [ "PASSWORD" ] }
     }) })
 
     assert_equal [ "-e", "PASSWORD=secret123" ], config.env_args
@@ -114,8 +114,8 @@ class ConfigurationTest < ActiveSupport::TestCase
   end
 
   test "env args with missing secret" do
-    config = Mrsk::Configuration.new(@deploy.tap { |c| c.merge!({ 
-      env: { "secret" => [ "PASSWORD" ] } 
+    config = Mrsk::Configuration.new(@deploy.tap { |c| c.merge!({
+      env: { "secret" => [ "PASSWORD" ] }
     }) })
 
     assert_raises(KeyError) do
@@ -134,6 +134,9 @@ class ConfigurationTest < ActiveSupport::TestCase
     assert_equal "456", @config.master_key
   end
 
+  test "volumes" do
+    assert_equal ["--volume /local/path:/container/path"], @config.volumes
+  end
 
   test "erb evaluation of yml config" do
     config = Mrsk::Configuration.create_from Pathname.new(File.expand_path("fixtures/deploy.erb.yml", __dir__))
@@ -159,6 +162,6 @@ class ConfigurationTest < ActiveSupport::TestCase
   end
 
   test "to_h" do
-    assert_equal({ :roles=>["web"], :hosts=>["1.1.1.1", "1.1.1.2"], :primary_host=>"1.1.1.1", :version=>"missing", :repository=>"dhh/app", :absolute_image=>"dhh/app:missing", :service_with_version=>"app-missing", :env_args=>["-e", "REDIS_URL=redis://x/y"], :ssh_options=>{:user=>"root", :auth_methods=>["publickey"]} }, @config.to_h)
+    assert_equal({ :roles=>["web"], :hosts=>["1.1.1.1", "1.1.1.2"], :primary_host=>"1.1.1.1", :version=>"missing", :repository=>"dhh/app", :absolute_image=>"dhh/app:missing", :service_with_version=>"app-missing", :env_args=>["-e", "REDIS_URL=redis://x/y"], :ssh_options=>{:user=>"root", :auth_methods=>["publickey"]}, :volumes=>["--volume /local/path:/container/path"] }, @config.to_h)
   end
 end

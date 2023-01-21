@@ -96,6 +96,15 @@ If the referenced secret ENVs are missing, the configuration will be halted with
 Note: Marking an ENV as secret currently only redacts its value in the output for MRSK. The ENV is still injected in the clear into the container at runtime.
 
 
+### Adding volumes
+
+You can add custom volumes into the app containers using `volumes`:
+
+```yaml
+volumes:
+  - "/local/path:/container/path"
+```
+
 ### Splitting servers into different roles
 
 If your application uses separate hosts for running jobs or other roles beyond the default web running, you can specify these hosts and their custom entrypoint command like so:
