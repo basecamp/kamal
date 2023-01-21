@@ -29,7 +29,7 @@ class Mrsk::Cli::Traefik < Mrsk::Cli::Base
 
   desc "logs", "Show last 100 log lines from Traefik on servers"
   def logs
-    on(MRSK.hosts) { |host| puts_by_host host, capture(*MRSK.traefik.logs), type: "Traefik" }
+    on(MRSK.traefik_hosts) { |host| puts_by_host host, capture(*MRSK.traefik.logs), type: "Traefik" }
   end
 
   desc "remove", "Remove Traefik container and image from servers"
