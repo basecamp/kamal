@@ -109,8 +109,9 @@ class Mrsk::Configuration
       absolute_image: absolute_image,
       service_with_version: service_with_version,
       env_args: env_args,
-      ssh_options: ssh_options
-    }
+      ssh_options: ssh_options,
+      builder: config.builder
+    }.compact
   end
 
 
