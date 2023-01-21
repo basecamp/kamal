@@ -23,8 +23,12 @@ class Mrsk::Commands::Traefik < Mrsk::Commands::Base
     docker :ps, "--filter", "name=traefik"
   end
 
-  def logs
-    docker :logs, "traefik", "-n", "100", "-t"
+  def logs(since: nil, lines: nil)
+    docker :logs, "traefik",
+      (" --since #{since}" if since),
+      (" -n #{lines}" if lines),
+      "-t",
+      "2>&1"
   end
 
   def remove_container

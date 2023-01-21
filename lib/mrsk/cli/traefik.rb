@@ -27,9 +27,14 @@ class Mrsk::Cli::Traefik < Mrsk::Cli::Base
     on(MRSK.traefik_hosts) { |host| puts_by_host host, capture_with_info(*MRSK.traefik.info), type: "Traefik" }
   end
 
-  desc "logs", "Show last 100 log lines from Traefik on servers"
+  desc "logs", "Show log lines from Traefik on servers"
+  option :since, aliases: "-s", desc: "Show logs since timestamp (e.g. 2013-01-02T13:23:37Z) or relative (e.g. 42m for 42 minutes)"
+  option :lines, type: :numeric, aliases: "-n", desc: "Number of log lines to pull from each server"
   def logs
-    on(MRSK.traefik_hosts) { |host| puts_by_host host, capture(*MRSK.traefik.logs), type: "Traefik" }
+    since = options[:since]
+    lines = options[:lines]
+
+    on(MRSK.traefik_hosts) { |host| puts_by_host host, capture(*MRSK.traefik.logs(since: since, lines: lines)), type: "Traefik" }
   end
 
   desc "remove", "Remove Traefik container and image from servers"
