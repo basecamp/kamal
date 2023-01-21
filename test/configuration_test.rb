@@ -89,6 +89,30 @@ class ConfigurationTest < ActiveSupport::TestCase
     assert_equal [ "-e", "REDIS_URL=redis://x/y" ], @config.env_args
   end
 
+  test "env args with clear and secrets" do
+    ENV["PASSWORD"] = "secret123"
+    config = Mrsk::Configuration.new(@deploy.tap { |c| c.merge!({ 
+      env: { "clear" => { "PORT" => "3000" }, "secret" => [ "PASSWORD" ] } 
+    }) })
+
+    assert_equal [ "-e", "PASSWORD=secret123", "-e", "PORT=3000" ], config.env_args
+    assert config.env_args[1].is_a?(SSHKit::Redaction)
+  ensure
+    ENV["PASSWORD"] = nil
+  end
+
+  test "env args with only secrets" do
+    ENV["PASSWORD"] = "secret123"
+    config = Mrsk::Configuration.new(@deploy.tap { |c| c.merge!({ 
+      env: { "secret" => [ "PASSWORD" ] } 
+    }) })
+
+    assert_equal [ "-e", "PASSWORD=secret123" ], config.env_args
+    assert config.env_args[1].is_a?(SSHKit::Redaction)
+  ensure
+    ENV["PASSWORD"] = nil
+  end
+
   test "ssh options" do
     assert_equal "root", @config.ssh_options[:user]
 

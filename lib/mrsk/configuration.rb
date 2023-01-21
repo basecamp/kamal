@@ -81,7 +81,11 @@ class Mrsk::Configuration
 
   def env_args
     if config.env.present?
-      argumentize "-e", config.env
+      if config.env["secret"].present?
+        argumentize("-e", expand_env_secrets, redacted: true) + argumentize("-e", config.env["clear"])
+      else
+        argumentize "-e", config.env
+      end
     else
       []
     end
@@ -133,6 +137,10 @@ class Mrsk::Configuration
 
     def role_names
       config.servers.is_a?(Array) ? [ "web" ] : config.servers.keys.sort
+    end
+
+    def expand_env_secrets
+      config.env["secret"].to_h { |key| [ key, ENV[key] ] }
     end
 end
 
