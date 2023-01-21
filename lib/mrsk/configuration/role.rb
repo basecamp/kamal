@@ -1,5 +1,5 @@
 class Mrsk::Configuration::Role
-  delegate :argumentize, to: Mrsk::Utils
+  delegate :argumentize, :argumentize_env_with_secrets, to: Mrsk::Utils
 
   attr_accessor :name
 
@@ -20,11 +20,15 @@ class Mrsk::Configuration::Role
   end
 
   def env
-    (config.env || {}).merge(specializations["env"] || {})
+    if config.env && config.env["secret"]
+      merged_env_with_secrets
+    else
+      merged_env
+    end
   end
 
   def env_args
-    argumentize "-e", env
+    argumentize_env_with_secrets env
   end
 
   def cmd
@@ -77,6 +81,22 @@ class Mrsk::Configuration::Role
         { }
       else
         config.servers[name].except("hosts")
+      end
+    end
+
+    def specialized_env
+      specializations["env"] || {}
+    end
+
+    def merged_env
+      config.env&.merge(specialized_env) || {}
+    end
+
+    # Secrets are stored in an array, which won't merge by default, so have to do it by hand.
+    def merged_env_with_secrets
+      merged_env.tap do |new_env|
+        new_env["secret"] = Array(config.env["secret"]) + Array(specialized_env["secret"])
+        new_env["clear"]  = (Array(config.env["clear"] || config.env) + Array(specialized_env["clear"] || specialized_env)).uniq
       end
     end
 end

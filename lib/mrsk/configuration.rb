@@ -7,7 +7,7 @@ require "mrsk/utils"
 
 class Mrsk::Configuration
   delegate :service, :image, :servers, :env, :labels, :registry, :builder, to: :config, allow_nil: true
-  delegate :argumentize, to: Mrsk::Utils
+  delegate :argumentize_env_with_secrets, to: Mrsk::Utils
 
   class << self
     def create_from(base_config_file, destination: nil, version: "missing")
@@ -81,11 +81,7 @@ class Mrsk::Configuration
 
   def env_args
     if config.env.present?
-      if config.env["secret"].present?
-        argumentize("-e", expand_env_secrets, redacted: true) + argumentize("-e", config.env["clear"])
-      else
-        argumentize "-e", config.env
-      end
+      argumentize_env_with_secrets(config.env)
     else
       []
     end
@@ -137,10 +133,6 @@ class Mrsk::Configuration
 
     def role_names
       config.servers.is_a?(Array) ? [ "web" ] : config.servers.keys.sort
-    end
-
-    def expand_env_secrets
-      config.env["secret"].to_h { |key| [ key, ENV.fetch(key) ] }
     end
 end
 

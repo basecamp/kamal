@@ -74,4 +74,68 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
     assert_equal "redis://a/b", @config_with_roles.role(:workers).env["REDIS_URL"]
     assert_equal ["-e", "REDIS_URL=redis://a/b", "-e", "WEB_CONCURRENCY=4"], @config_with_roles.role(:workers).env_args
   end
+
+  test "env secret overwritten by role" do
+    @deploy_with_roles[:env] = {
+      "clear" => {
+        "REDIS_URL" => "redis://a/b"
+      },
+      "secret" => [
+        "REDIS_PASSWORD"
+      ]
+    }
+
+    @deploy_with_roles[:servers]["workers"]["env"] = {
+      "clear" => {
+        "REDIS_URL" => "redis://a/b",
+        "WEB_CONCURRENCY" => 4
+      },
+      "secret" => [
+        "DB_PASSWORD"
+      ]
+    }
+
+    ENV["REDIS_PASSWORD"] = "secret456"
+    ENV["DB_PASSWORD"] = "secret123"
+    
+    assert_equal ["-e", "REDIS_PASSWORD=secret456", "-e", "DB_PASSWORD=secret123", "-e", "REDIS_URL=redis://a/b", "-e", "WEB_CONCURRENCY=4"], @config_with_roles.role(:workers).env_args
+  ensure
+    ENV["REDIS_PASSWORD"] = nil
+    ENV["DB_PASSWORD"] = nil
+  end
+
+  test "env secrets only in role" do
+    @deploy_with_roles[:servers]["workers"]["env"] = {
+      "clear" => {
+        "REDIS_URL" => "redis://a/b",
+        "WEB_CONCURRENCY" => 4
+      },
+      "secret" => [
+        "DB_PASSWORD"
+      ]
+    }
+
+    ENV["DB_PASSWORD"] = "secret123"
+    
+    assert_equal ["-e", "DB_PASSWORD=secret123", "-e", "REDIS_URL=redis://a/b", "-e", "WEB_CONCURRENCY=4"], @config_with_roles.role(:workers).env_args
+  ensure
+    ENV["DB_PASSWORD"] = nil
+  end
+
+  test "env secrets only at top level" do
+    @deploy_with_roles[:env] = {
+      "clear" => {
+        "REDIS_URL" => "redis://a/b"
+      },
+      "secret" => [
+        "REDIS_PASSWORD"
+      ]
+    }
+
+    ENV["REDIS_PASSWORD"] = "secret456"
+    
+    assert_equal ["-e", "REDIS_PASSWORD=secret456", "-e", "REDIS_URL=redis://a/b", "-e", "WEB_CONCURRENCY=4"], @config_with_roles.role(:workers).env_args
+  ensure
+    ENV["REDIS_PASSWORD"] = nil
+  end
 end
