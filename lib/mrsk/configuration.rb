@@ -140,7 +140,7 @@ class Mrsk::Configuration
     end
 
     def expand_env_secrets
-      config.env["secret"].to_h { |key| [ key, ENV[key] ] }
+      config.env["secret"].to_h { |key| [ key, ENV.fetch(key) ] }
     end
 end
 

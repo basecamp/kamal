@@ -91,6 +91,8 @@ env:
 
 The list of secret env variables will be expanded at run time from your local machine. So a reference to a secret `DATABASE_PASSWORD` will look for `ENV["DATABASE_PASSWORD"]` on the machine running MRSK. Just like with build secrets.
 
+If the referenced secret ENVs are missing, the configuration will be halted with a `KeyError` exception.
+
 Note: Marking an ENV as secret currently only redacts its value in the output for MRSK. The ENV is still injected in the clear into the container at runtime.
 
 
