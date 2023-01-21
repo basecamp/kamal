@@ -40,6 +40,7 @@ class Mrsk::Configuration
     ensure_required_keys_present if validate
   end
 
+
   def roles
     @roles ||= role_names.collect { |role_name| Role.new(role_name, config: self) }
   end
@@ -60,6 +61,7 @@ class Mrsk::Configuration
     roles.select(&:running_traefik?).flat_map(&:hosts)
   end
 
+
   def version
     @version
   end
@@ -76,6 +78,7 @@ class Mrsk::Configuration
     "#{service}-#{version}"
   end
 
+
   def env_args
     if config.env.present?
       argumentize_env_with_secrets(config.env)
@@ -85,9 +88,11 @@ class Mrsk::Configuration
   end
 
   def volumes
-    return unless config.volumes.present?
-
-    config.volumes.map { |volume| "--volume #{volume}" }
+    if config.volumes.present?
+      config.volumes.map { |volume| "--volume #{volume}" }
+    else
+      []
+    end
   end
 
   def ssh_user
@@ -117,6 +122,7 @@ class Mrsk::Configuration
       volumes: volumes
     }.compact
   end
+
 
   private
     attr_accessor :config
