@@ -95,6 +95,14 @@ If the referenced secret ENVs are missing, the configuration will be halted with
 
 Note: Marking an ENV as secret currently only redacts its value in the output for MRSK. The ENV is still injected in the clear into the container at runtime.
 
+### Using volumes
+
+You can add custom volumes into the app containers using `volumes`:
+
+```yaml
+volumes:
+  - "/local/path:/container/path"
+```
 
 ### Using different roles for servers
 
