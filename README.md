@@ -54,7 +54,7 @@ The default registry for Docker is Docker Hub. If you'd like to use a different 
 registry:
   server: registry.digitalocean.com
   username: registry-user-name
-  password: <%= ENV["MRSK_REGISTRY_PASSWORD"] %>
+  password: <%= ENV.fetch("MRSK_REGISTRY_PASSWORD") %>
 ```
 
 ### Using a different SSH user than root
