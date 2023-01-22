@@ -15,8 +15,16 @@ class Mrsk::Commands::Builder::Multiarch::Remote < Mrsk::Commands::Builder::Mult
   end
 
   private
+    def builder_name
+      super + "-remote"
+    end
+
+    def builder_name_with_arch(arch)
+      "#{builder_name}-#{arch}"
+    end
+
     def create_local_buildx
-      docker :buildx, :create, "--use", "--name", builder_name, builder_name_with_arch(local["arch"]), "--platform", "linux/#{local["arch"]}"
+      docker :buildx, :create, "--name", builder_name, builder_name_with_arch(local["arch"]), "--platform", "linux/#{local["arch"]}"
     end
 
     def append_remote_buildx
@@ -50,9 +58,4 @@ class Mrsk::Commands::Builder::Multiarch::Remote < Mrsk::Commands::Builder::Mult
     def remote
       config.builder["remote"]
     end
-
-    private
-      def builder_name_with_arch(arch)
-        "#{builder_name}-#{arch}"
-      end
 end

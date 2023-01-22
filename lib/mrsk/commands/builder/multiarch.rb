@@ -12,7 +12,8 @@ class Mrsk::Commands::Builder::Multiarch < Mrsk::Commands::Builder::Base
   def push
     docker :buildx, :build,
       "--push",
-      "--platform linux/amd64,linux/arm64",
+      "--platform", "linux/amd64,linux/arm64",
+      "--builder", builder_name,
       "-t", config.absolute_image,
       *build_args,
       *build_secrets,
@@ -27,6 +28,6 @@ class Mrsk::Commands::Builder::Multiarch < Mrsk::Commands::Builder::Base
 
   private
     def builder_name
-      "mrsk-#{config.service}"
+      "mrsk-#{config.service}-multiarch"
     end
 end

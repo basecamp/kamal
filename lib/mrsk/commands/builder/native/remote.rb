@@ -17,6 +17,7 @@ class Mrsk::Commands::Builder::Native::Remote < Mrsk::Commands::Builder::Native
     docker :buildx, :build,
       "--push",
       "--platform", platform,
+      "--builder", builder_name,
       "-t", config.absolute_image,
       *build_args,
       *build_secrets,
@@ -40,7 +41,7 @@ class Mrsk::Commands::Builder::Native::Remote < Mrsk::Commands::Builder::Native
     end
 
     def builder_name
-      "mrsk-#{config.service}"
+      "mrsk-#{config.service}-native-remote"
     end
 
     def builder_name_with_arch
@@ -61,8 +62,7 @@ class Mrsk::Commands::Builder::Native::Remote < Mrsk::Commands::Builder::Native
     end
 
     def create_buildx
-      docker :buildx, :create,
-        "--use", "--name", builder_name, builder_name_with_arch, "--platform", platform
+      docker :buildx, :create, "--name", builder_name, builder_name_with_arch, "--platform", platform
     end
 
     def remove_buildx
