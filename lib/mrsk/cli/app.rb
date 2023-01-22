@@ -49,16 +49,16 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
   desc "console", "Start Rails Console on primary host (or specific host set by --hosts)"
   def console
     run_locally do
-      puts "Launching Rails console on #{MRSK.primary_host}..."
-      exec MRSK.app.console(host: MRSK.primary_host)        
+      info "Launching Rails console on #{MRSK.primary_host}"
+      exec MRSK.app.console(host: MRSK.primary_host)
     end
   end
 
   desc "bash", "Start a bash session on primary host (or specific host set by --hosts)"
   def bash
     run_locally do
-      puts "Launching bash session on #{MRSK.primary_host}..."
-      exec MRSK.app.bash(host: MRSK.primary_host)        
+      info "Launching bash session on #{MRSK.primary_host}"
+      exec MRSK.app.bash(host: MRSK.primary_host)
     end
   end
 
