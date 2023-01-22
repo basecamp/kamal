@@ -262,9 +262,9 @@ accessories:
     volumes:
       - /var/lib/mysql:/var/lib/mysql
   redis:
-    image: redis:8.0
+    image: redis:latest
     host: 1.1.1.4
-    port: 6379
+    port: "36379:6379"
     volumes:
       - /var/lib/redis:/data
 ```
