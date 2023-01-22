@@ -32,13 +32,10 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
     invoke :start, [ name ]
   end
 
-  desc "details", "Display details about all accessory containers on hosts"
-  def details
-    MRSK.config.accessories.each do |accessory|
-      on(accessory.host) do |host|
-        puts_by_host host, capture_with_info(*accessory.info), type: "Accessory: #{accessory.name}"
-      end
-    end
+  desc "details [NAME]", "Display details about accessory on host"
+  def details(name)
+    accessory = MRSK.accessory(name)
+    on(accessory.host) { puts capture_with_info(*accessory.info) }
   end
 
   desc "logs [NAME]", "Show log lines from accessory on host"
