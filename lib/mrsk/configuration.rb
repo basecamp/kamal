@@ -6,8 +6,10 @@ require "erb"
 require "mrsk/utils"
 
 class Mrsk::Configuration
-  delegate :service, :image, :servers, :env, :labels, :registry, :builder, to: :config, allow_nil: true
-  delegate :argumentize_env_with_secrets, to: Mrsk::Utils
+  delegate :service, :image, :servers, :env, :labels, :registry, :builder, to: :raw_config, allow_nil: true
+  delegate :argumentize, :argumentize_env_with_secrets, to: Mrsk::Utils
+
+  attr_accessor :raw_config
 
   class << self
     def create_from(base_config_file, destination: nil, version: "missing")
@@ -34,8 +36,8 @@ class Mrsk::Configuration
       end
   end
 
-  def initialize(config, version: "missing", validate: true)
-    @config = ActiveSupport::InheritableOptions.new(config)
+  def initialize(raw_config, version: "missing", validate: true)
+    @raw_config = ActiveSupport::InheritableOptions.new(raw_config)
     @version = version
     ensure_required_keys_present if validate
   end
@@ -48,6 +50,15 @@ class Mrsk::Configuration
   def role(name)
     roles.detect { |r| r.name == name.to_s }
   end
+
+  def accessories
+    @accessories ||= raw_config.accessories.keys.collect { |name| Mrsk::Configuration::Assessory.new(name, config: self) }
+  end
+
+  def accessory(name)
+    accessories.detect { |a| a.name == name.to_s }
+  end
+
 
   def all_hosts
     roles.flat_map(&:hosts)
@@ -67,7 +78,7 @@ class Mrsk::Configuration
   end
 
   def repository
-    [ config.registry["server"], image ].compact.join("/")
+    [ raw_config.registry["server"], image ].compact.join("/")
   end
 
   def absolute_image
@@ -80,23 +91,23 @@ class Mrsk::Configuration
 
 
   def env_args
-    if config.env.present?
-      argumentize_env_with_secrets(config.env)
+    if raw_config.env.present?
+      argumentize_env_with_secrets(raw_config.env)
     else
       []
     end
   end
 
   def volume_args
-    if config.volumes.present?
-      config.volumes.map { |volume| "--volume #{volume}" }
+    if raw_config.volumes.present?
+      argumentize "--volume", raw_config.volumes
     else
       []
     end
   end
 
   def ssh_user
-    config.ssh_user || "root"
+    raw_config.ssh_user || "root"
   end
 
   def ssh_options
@@ -117,33 +128,32 @@ class Mrsk::Configuration
       absolute_image: absolute_image,
       service_with_version: service_with_version,
       env_args: env_args,
+      volume_args: volume_args,
       ssh_options: ssh_options,
-      builder: config.builder,
-      volume_args: volume_args
+      builder: raw_config.builder
     }.compact
   end
 
 
   private
-    attr_accessor :config
-
     def ensure_required_keys_present
       %i[ service image registry servers ].each do |key|
-        raise ArgumentError, "Missing required configuration for #{key}" unless config[key].present?
+        raise ArgumentError, "Missing required configuration for #{key}" unless raw_config[key].present?
       end
 
-      if config.registry["username"].blank?
+      if raw_config.registry["username"].blank?
         raise ArgumentError, "You must specify a username for the registry in config/deploy.yml"
       end
 
-      if config.registry["password"].blank?
+      if raw_config.registry["password"].blank?
         raise ArgumentError, "You must specify a password for the registry in config/deploy.yml (or set the ENV variable if that's used)"
       end
     end
 
     def role_names
-      config.servers.is_a?(Array) ? [ "web" ] : config.servers.keys.sort
+      raw_config.servers.is_a?(Array) ? [ "web" ] : raw_config.servers.keys.sort
     end
 end
 
 require "mrsk/configuration/role"
+require "mrsk/configuration/accessory"

@@ -2,14 +2,14 @@ require "test_helper"
 require "active_support/testing/stream"
 require "mrsk/cli"
 
-class CommandsAppTest < ActiveSupport::TestCase
+class CliMainTest < ActiveSupport::TestCase
   include ActiveSupport::Testing::Stream
 
   setup do
   end
 
   test "version" do
-    version = capture(:stdout) { Mrsk::Cli::Main.new.version }.strip
+    version = stdouted { Mrsk::Cli::Main.new.version }
     assert_equal Mrsk::VERSION, version
   end
 end

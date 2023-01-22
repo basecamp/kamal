@@ -1,9 +1,15 @@
 module Mrsk::Utils
   extend self
 
-  # Return a list of shell arguments using the same named argument against the passed attributes.
+  # Return a list of shell arguments using the same named argument against the passed attributes (hash or array).
   def argumentize(argument, attributes, redacted: false)
-    Array(attributes).flat_map { |k, v| [ argument, redacted ? redact("#{k}=#{v}") : "#{k}=#{v}" ] }
+    Array(attributes).flat_map do |k, v|
+      if v.present?
+        [ argument, redacted ? redact("#{k}=#{v}") : "#{k}=#{v}" ]
+      else
+        [ argument, k ]
+      end
+    end
   end
 
   # Return a list of shell arguments using the same named argument against the passed attributes,

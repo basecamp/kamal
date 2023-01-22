@@ -1,6 +1,7 @@
 require "active_support/core_ext/enumerable"
 
 require "mrsk/configuration"
+require "mrsk/commands/accessory"
 require "mrsk/commands/app"
 require "mrsk/commands/builder"
 require "mrsk/commands/prune"
@@ -43,6 +44,10 @@ class Mrsk::Commander
     specific_hosts || config.traefik_hosts
   end
 
+  def accessory_hosts
+    specific_hosts || config.accessories.collect(&:host)
+  end
+
 
   def app
     @app ||= Mrsk::Commands::App.new(config)
@@ -62,6 +67,10 @@ class Mrsk::Commander
 
   def prune
     @prune ||= Mrsk::Commands::Prune.new(config)
+  end
+
+  def accessory(name)
+    (@accessories ||= {})[name] ||= Mrsk::Commands::Accessory.new(config, name: name)
   end
 
 
