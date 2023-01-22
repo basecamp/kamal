@@ -8,7 +8,8 @@ class Mrsk::Commands::Traefik < Mrsk::Commands::Base
       "-p 80:80",
       "-v /var/run/docker.sock:/var/run/docker.sock",
       "traefik",
-      "--providers.docker"
+      "--providers.docker",
+      "--log.level=DEBUG"
   end
 
   def start
