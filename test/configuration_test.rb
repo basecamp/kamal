@@ -134,8 +134,8 @@ class ConfigurationTest < ActiveSupport::TestCase
     assert_equal "456", @config.master_key
   end
 
-  test "volumes" do
-    assert_equal ["--volume /local/path:/container/path"], @config.volumes
+  test "volume_args" do
+    assert_equal ["--volume /local/path:/container/path"], @config.volume_args
   end
 
   test "erb evaluation of yml config" do
@@ -162,6 +162,6 @@ class ConfigurationTest < ActiveSupport::TestCase
   end
 
   test "to_h" do
-    assert_equal({ :roles=>["web"], :hosts=>["1.1.1.1", "1.1.1.2"], :primary_host=>"1.1.1.1", :version=>"missing", :repository=>"dhh/app", :absolute_image=>"dhh/app:missing", :service_with_version=>"app-missing", :env_args=>["-e", "REDIS_URL=redis://x/y"], :ssh_options=>{:user=>"root", :auth_methods=>["publickey"]}, :volumes=>["--volume /local/path:/container/path"] }, @config.to_h)
+    assert_equal({ :roles=>["web"], :hosts=>["1.1.1.1", "1.1.1.2"], :primary_host=>"1.1.1.1", :version=>"missing", :repository=>"dhh/app", :absolute_image=>"dhh/app:missing", :service_with_version=>"app-missing", :env_args=>["-e", "REDIS_URL=redis://x/y"], :ssh_options=>{:user=>"root", :auth_methods=>["publickey"]}, :volume_args=>["--volume /local/path:/container/path"] }, @config.to_h)
   end
 end

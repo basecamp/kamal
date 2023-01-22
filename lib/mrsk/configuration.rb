@@ -87,7 +87,7 @@ class Mrsk::Configuration
     end
   end
 
-  def volumes
+  def volume_args
     if config.volumes.present?
       config.volumes.map { |volume| "--volume #{volume}" }
     else
@@ -119,7 +119,7 @@ class Mrsk::Configuration
       env_args: env_args,
       ssh_options: ssh_options,
       builder: config.builder,
-      volumes: volumes
+      volume_args: volume_args
     }.compact
   end
 
