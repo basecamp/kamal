@@ -13,13 +13,11 @@ class Mrsk::Cli::Build < Mrsk::Cli::Base
 
     run_locally do 
       begin
-        debug "Using builder: #{MRSK.builder.name}"
-        info "Building image may take a while (run with --verbose for progress logging)" unless verbose
-        execute *MRSK.builder.push
+        MRSK.verbosity(:debug) { execute *MRSK.builder.push }
       rescue SSHKit::Command::Failed => e
         error "Missing compatible builder, so creating a new one first"
         execute *MRSK.builder.create
-        execute *MRSK.builder.push
+        MRSK.verbosity(:debug) { execute *MRSK.builder.push }
       end
     end
   end
