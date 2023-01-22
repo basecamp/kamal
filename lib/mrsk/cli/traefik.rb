@@ -6,7 +6,7 @@ class Mrsk::Cli::Traefik < Mrsk::Cli::Base
     on(MRSK.traefik_hosts) { execute *MRSK.traefik.run, raise_on_non_zero_exit: false }
   end
 
-  desc "reboot", "Reboot Traefik on servers"
+  desc "reboot", "Reboot Traefik on servers (stop container, remove container, start new container)"
   def reboot
     invoke :stop
     invoke :remove_container
