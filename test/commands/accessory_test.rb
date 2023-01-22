@@ -44,11 +44,15 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
   end
 
   test "run" do
-    assert_equal \
-      [:docker, :run, "--name", "app-mysql", "-d", "--restart", "unless-stopped", "-p", "3306:3306", "--label", "service=app-mysql", "mysql:8.0"], @mysql.run
+    ENV["MYSQL_ROOT_PASSWORD"] = "secret123"
 
     assert_equal \
-      [:docker, :run, "--name", "app-redis", "-d", "--restart", "unless-stopped", "-p", "6379:6379", "--volume", "/var/lib/redis:/data", "--label", "service=app-redis", "--label", "cache=true", "redis:latest"], @redis.run
+      [:docker, :run, "--name", "app-mysql", "-d", "--restart", "unless-stopped", "-p", "3306:3306", "-e", "MYSQL_ROOT_PASSWORD=secret123", "-e", "MYSQL_ROOT_HOST=%", "--label", "service=app-mysql", "mysql:8.0"], @mysql.run
+
+    assert_equal \
+      [:docker, :run, "--name", "app-redis", "-d", "--restart", "unless-stopped", "-p", "6379:6379", "-e", "SOMETHING=else", "--volume", "/var/lib/redis:/data", "--label", "service=app-redis", "--label", "cache=true", "redis:latest"], @redis.run
+  ensure
+    ENV["MYSQL_ROOT_PASSWORD"] = nil
   end
 
   test "start" do
@@ -60,7 +64,7 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
   end
 
   test "info" do
-    assert_equal [:docker, :ps, "--filter", "name=app-mysql"], @mysql.info
+    assert_equal [:docker, :ps, "--filter", "label=service=app-mysql"], @mysql.info
   end
 
   test "logs" do
@@ -73,10 +77,10 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
   end
 
   test "remove container" do
-    assert_equal [:docker, :container, :prune, "-f", "--filter", "label=name=app-mysql"], @mysql.remove_container
+    assert_equal [:docker, :container, :prune, "-f", "--filter", "label=service=app-mysql"], @mysql.remove_container
   end
 
   test "remove image" do
-    assert_equal [:docker, :image, :prune, "-a", "-f", "--filter", "label=name=app-mysql"], @mysql.remove_image
+    assert_equal [:docker, :image, :prune, "-a", "-f", "--filter", "label=service=app-mysql"], @mysql.remove_image
   end
 end
