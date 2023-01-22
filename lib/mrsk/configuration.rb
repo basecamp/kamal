@@ -7,7 +7,7 @@ require "mrsk/utils"
 
 class Mrsk::Configuration
   delegate :service, :image, :servers, :env, :labels, :registry, :builder, to: :raw_config, allow_nil: true
-  delegate :argumentize_env_with_secrets, to: Mrsk::Utils
+  delegate :argumentize, :argumentize_env_with_secrets, to: Mrsk::Utils
 
   attr_accessor :raw_config
 
@@ -99,8 +99,8 @@ class Mrsk::Configuration
   end
 
   def volume_args
-    if config.volumes.present?
-      config.volumes.map { |volume| "--volume #{volume}" }
+    if raw_config.volumes.present?
+      argumentize "--volume", raw_config.volumes
     else
       []
     end
