@@ -48,7 +48,7 @@ class Mrsk::Cli::Build < Mrsk::Cli::Base
   desc "details", "Show the name of the configured builder"
   def details
     run_locally do
-      puts "Builder: #{MRSK.builder.name} (#{MRSK.builder.target.class.name})"
+      puts "Builder: #{MRSK.builder.name}"
       puts capture(*MRSK.builder.info)
     end
   end
