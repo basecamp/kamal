@@ -236,6 +236,33 @@ ARG RUBY_VERSION
 FROM ruby:$RUBY_VERSION-slim as base
 ```
 
+### Using accessories for database, cache, search services
+
+You can manage your accessory services via MRSK as well. The services will build off public images, and will not be automatically updated when you deploy:
+
+```yaml
+accessories:
+  mysql:
+    image: mysql:5.7
+    host: 1.1.1.3
+    port: 3306
+    env:
+      clear:
+        MYSQL_ROOT_HOST: '%'
+      secret:
+        - MYSQL_ROOT_PASSWORD
+    volumes:
+      - /var/lib/mysql:/var/lib/mysql
+  redis:
+    image: redis:8.0
+    host: 1.1.1.4
+    port: 6379
+    volumes:
+      - /var/lib/redis:/data
+```
+
+Now run `mrsk accessory start mysql` to start the MySQL server on 1.1.1.3. See `mrsk accessory` for all the commands possible.
+
 ## Commands
 
 ### Running remote execution and runners
