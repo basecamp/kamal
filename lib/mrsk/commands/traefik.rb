@@ -8,7 +8,8 @@ class Mrsk::Commands::Traefik < Mrsk::Commands::Base
       "-p 80:80",
       "-v /var/run/docker.sock:/var/run/docker.sock",
       "traefik",
-      "--providers.docker"
+      "--providers.docker",
+      "--log.level=DEBUG"
   end
 
   def start
@@ -23,8 +24,17 @@ class Mrsk::Commands::Traefik < Mrsk::Commands::Base
     docker :ps, "--filter", "name=traefik"
   end
 
-  def logs
-    docker :logs, "traefik", "-n", "100", "-t"
+  def logs(since: nil, lines: nil, grep: nil)
+    pipe \
+      docker(:logs, "traefik", (" --since #{since}" if since), (" -n #{lines}" if lines), "-t", "2>&1"),
+      ("grep '#{grep}'" if grep)
+  end
+
+  def follow_logs(host:, grep: nil)
+    run_over_ssh pipe(
+      docker(:logs, "traefik", "-t", "-n", "10", "-f", "2>&1"),
+      ("grep '#{grep}'" if grep)
+    ).join(" "), host: host
   end
 
   def remove_container

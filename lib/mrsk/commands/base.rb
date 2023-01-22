@@ -23,5 +23,9 @@ module Mrsk::Commands
       def docker(*args)
         args.compact.unshift :docker
       end
+
+      def run_over_ssh(command, host:)
+        "ssh -t #{config.ssh_user}@#{host} '#{command}'"
+      end
   end
 end

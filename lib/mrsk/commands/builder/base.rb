@@ -17,10 +17,10 @@ class Mrsk::Commands::Builder::Base < Mrsk::Commands::Base
 
   private
     def args
-      config.builder["args"] || {}
+      (config.builder && config.builder["args"]) || {}
     end
 
     def secrets
-      config.builder["secrets"] || []
+      (config.builder && config.builder["secrets"]) || []
     end
 end
