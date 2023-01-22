@@ -26,15 +26,16 @@ mrsk deploy
 
 This will:
 
-1. Install Docker on any server that might be missing it (using apt-get)
-2. Log into the registry both locally and remotely
-3. Build the image using the standard Dockerfile in the root of the application.
-4. Push the image to the registry.
-5. Pull the image from the registry on the servers.
-6. Ensure Traefik is running and accepting traffic on port 80.
-7. Stop any containers running a previous versions of the app.
-8. Start a new container with the version of the app that matches the current git version hash.
-9. Prune unused images and stopped containers to ensure servers don't fill up.
+1. Connect to the servers over SSH (using root by default, authenticated by your loaded ssh key)
+2. Install Docker on any server that might be missing it (using apt-get)
+3. Log into the registry both locally and remotely
+4. Build the image using the standard Dockerfile in the root of the application.
+5. Push the image to the registry.
+6. Pull the image from the registry on the servers.
+7. Ensure Traefik is running and accepting traffic on port 80.
+8. Stop any containers running a previous versions of the app.
+9. Start a new container with the version of the app that matches the current git version hash.
+10. Prune unused images and stopped containers to ensure servers don't fill up.
 
 Voila! All the servers are now serving the app on port 80. If you're just running a single server, you're ready to go. If you're running multiple servers, you need to put a load balancer in front of them.
 
