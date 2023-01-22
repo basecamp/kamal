@@ -57,6 +57,14 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
       *command
   end
 
+  def follow_logs(host:, grep: nil)
+    run_over_ssh pipe(
+      current_container_id,
+      "xargs docker logs -t -n 10 -f 2>&1",
+      ("grep '#{grep}'" if grep)
+    ).join(" "), host: host
+  end
+
   def console(host:)
     exec_over_ssh "bin/rails", "c", host: host
   end
@@ -79,7 +87,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
 
   private
     def exec_over_ssh(*command, host:)
-      "ssh -t #{config.ssh_user}@#{host} '#{run_exec(*command, interactive: true).join(" ")}'"
+      run_over_ssh run_exec(*command, interactive: true).join(" "), host: host
     end
 
     def service_filter

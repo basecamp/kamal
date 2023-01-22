@@ -81,22 +81,32 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
   option :since, aliases: "-s", desc: "Show logs since timestamp (e.g. 2013-01-02T13:23:37Z) or relative (e.g. 42m for 42 minutes)"
   option :lines, type: :numeric, aliases: "-n", desc: "Number of log lines to pull from each server"
   option :grep, aliases: "-g", desc: "Show lines with grep match only (use this to fetch specific requests by id)"
+  option :follow, aliases: "-f", desc: "Follow logs on primary server (or specific host set by --hosts)"
   def logs
     # FIXME: Catch when app containers aren't running
 
-    since = options[:since]
-    lines = options[:lines]
-    grep  = options[:grep]
+    grep = options[:grep]
 
-    on(MRSK.hosts) do |host|
-      begin
-        puts_by_host host, capture_with_info(*MRSK.app.logs(since: since, lines: lines, grep: grep))
-      rescue SSHKit::Command::Failed
-        puts_by_host host, "Nothing found"
+    if options[:follow]
+      run_locally do
+        info "Following logs on #{MRSK.primary_host}..."
+        info MRSK.app.follow_logs(host: MRSK.primary_host, grep: grep)
+        exec MRSK.app.follow_logs(host: MRSK.primary_host, grep: grep)
+      end
+    else
+      since = options[:since]
+      lines = options[:lines]
+
+      on(MRSK.hosts) do |host|
+        begin
+          puts_by_host host, capture_with_info(*MRSK.app.logs(since: since, lines: lines, grep: grep))
+        rescue SSHKit::Command::Failed
+          puts_by_host host, "Nothing found"
+        end
       end
     end
   end
-  
+
   desc "remove", "Remove app containers and images from servers"
   option :only, default: "", desc: "Use 'containers' or 'images'"
   def remove

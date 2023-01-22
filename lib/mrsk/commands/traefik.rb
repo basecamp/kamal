@@ -24,12 +24,17 @@ class Mrsk::Commands::Traefik < Mrsk::Commands::Base
     docker :ps, "--filter", "name=traefik"
   end
 
-  def logs(since: nil, lines: nil)
-    docker :logs, "traefik",
-      (" --since #{since}" if since),
-      (" -n #{lines}" if lines),
-      "-t",
-      "2>&1"
+  def logs(since: nil, lines: nil, grep: nil)
+    pipe \
+      docker(:logs, "traefik", (" --since #{since}" if since), (" -n #{lines}" if lines), "-t", "2>&1"),
+      ("grep '#{grep}'" if grep)
+  end
+
+  def follow_logs(host:, grep: nil)
+    run_over_ssh pipe(
+      docker(:logs, "traefik", "-t", "-n", "10", "-f", "2>&1"),
+      ("grep '#{grep}'" if grep)
+    ).join(" "), host: host
   end
 
   def remove_container

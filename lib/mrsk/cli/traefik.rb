@@ -37,11 +37,25 @@ class Mrsk::Cli::Traefik < Mrsk::Cli::Base
   desc "logs", "Show log lines from Traefik on servers"
   option :since, aliases: "-s", desc: "Show logs since timestamp (e.g. 2013-01-02T13:23:37Z) or relative (e.g. 42m for 42 minutes)"
   option :lines, type: :numeric, aliases: "-n", desc: "Number of log lines to pull from each server"
+  option :grep, aliases: "-g", desc: "Show lines with grep match only (use this to fetch specific requests by id)"
+  option :follow, aliases: "-f", desc: "Follow logs on primary server (or specific host set by --hosts)"
   def logs
-    since = options[:since]
-    lines = options[:lines]
+    grep = options[:grep]
 
-    on(MRSK.traefik_hosts) { |host| puts_by_host host, capture(*MRSK.traefik.logs(since: since, lines: lines)), type: "Traefik" }
+    if options[:follow]
+      run_locally do
+        info "Following logs on #{MRSK.primary_host}..."
+        info MRSK.traefik.follow_logs(host: MRSK.primary_host, grep: grep)
+        exec MRSK.traefik.follow_logs(host: MRSK.primary_host, grep: grep)
+      end
+    else
+      since = options[:since]
+      lines = options[:lines]
+
+      on(MRSK.traefik_hosts) do |host|
+        puts_by_host host, capture(*MRSK.traefik.logs(since: since, lines: lines, grep: grep)), type: "Traefik"
+      end
+    end
   end
 
   desc "remove", "Remove Traefik container and image from servers"
