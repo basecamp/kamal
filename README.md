@@ -48,7 +48,7 @@ Kubernetes is a beast. Running it yourself on your own hardware is not for the f
 
 ### Using another registry than Docker Hub
 
-The default registry for Docker is Docker Hub. If you'd like to use a different one, just configure the server, like so:
+The default registry is Docker Hub, but you can change it using `registry/server`:
 
 ```yaml
 registry:
@@ -98,7 +98,7 @@ Note: Marking an ENV as secret currently only redacts its value in the output fo
 
 ### Using different roles for servers
 
-If your application uses separate hosts for running jobs or other roles beyond the default web running, you can specify these hosts and their overwritten entrypoint command like so:
+If your application uses separate hosts for running jobs or other roles beyond the default web running, you can specify these hosts in a dedicated role with a new entrypoint command like so:
 
 ```yaml
 servers:
@@ -112,7 +112,7 @@ servers:
     cmd: bin/jobs
 ```
 
-Traefik will only be installed default and run on the servers in the `web` role (and on all servers if no roles are defined). If you need Traefik on hosts in other roles than `web`, add `traefik: true`, like:
+Note: Traefik will only by default be installed and run on the servers in the `web` role (and on all servers if no roles are defined). If you need Traefik on hosts in other roles than `web`, add `traefik: true`:
 
 ```yaml
 servers:
@@ -135,12 +135,12 @@ labels:
   traefik.http.routers.hey.rule: '''Host(`app.hey.com`)'''
 ```
 
-(Note: The extra quotes are needed to ensure the rule is passed in correctly!)
+Note: The extra quotes are needed to ensure the rule is passed in correctly!
 
 This allows you to run multiple applications on the same server sharing the same Traefik instance and port.
 See https://doc.traefik.io/traefik/routing/routers/#rule for a full list of available routing rules.
 
-The labels can even be applied on a per-role basis:
+The labels can also be applied on a per-role basis:
 
 ```yaml
 servers:
@@ -158,21 +158,21 @@ servers:
 
 ### Using remote builder for native multi-arch
 
-If you're developing on ARM64 (like Apple Silicon), but you want to deploy on AMD64 (x86 64-bit), you have to use multi-archecture images. By default, MRSK will setup a local buildx configuration that allows for this through QEMU emulation. This can be slow, especially on the first build.
+If you're developing on ARM64 (like Apple Silicon), but you want to deploy on AMD64 (x86 64-bit), you can use multi-archecture images. By default, MRSK will setup a local buildx configuration that does this through QEMU emulation. But this can be quite slow, especially on the first build.
 
-If you want to speed up this process by using a remote AMD64 host to natively build the AMD64 part of the image, while natively building the ARM64 part locally, you can do so using builder options like follows:
+If you want to speed up this process by using a remote AMD64 host to natively build the AMD64 part of the image, while natively building the ARM64 part locally, you can do so using builder options:
 
 ```yaml
 builder:
   local:
     arch: arm64
-    host: unix:///Users/dhh/.docker/run/docker.sock
+    host: unix:///Users/<%= `whoami`.strip %>/.docker/run/docker.sock
   remote:
     arch: amd64
     host: ssh://root@192.168.0.1
 ```
 
-Note: You must have Docker running on the remote host being used as a builder.
+Note: You must have Docker running on the remote host being used as a builder. This instance should only be shared for builds using the same registry and credentials.
 
 ### Using remote builder for single-arch
 
@@ -185,20 +185,20 @@ builder:
     host: ssh://root@192.168.0.1
 ```
 
-Note: You must have Docker running on the remote host being used as a builder.
-
 ### Using native builder when multi-arch isn't needed
 
-If you're developing on the same architecture as the one you're deploying on, you can speed up the build a lot by forgoing a multi-arch image. This can be done by configuring the builder like so:
+If you're developing on the same architecture as the one you're deploying on, you can speed up the build by forgoing both multi-arch and remote building:
 
 ```yaml
 builder:
   multiarch: false
 ```
 
+This is also a good option if you're running MRSK from a CI server that shares architecture with the deployment servers.
+
 ### Using build secrets for new images
 
-Some images need a secret passed in during build time, like a GITHUB_TOKEN to give access to private gem repositories. This can be done by having the secret in ENV, then referencing it like so in the configuration:
+Some images need a secret passed in during build time, like a GITHUB_TOKEN to give access to private gem repositories. This can be done by having the secret in ENV, then referencing it in the builder configuration:
 
 ```yaml
 builder:
@@ -206,13 +206,13 @@ builder:
     - GITHUB_TOKEN
 ```
 
-This build secret can then be used in the Dockerfile:
+This build secret can then be referenced in the Dockerfile:
 
 ```
-# Install application gems
+# Copy Gemfiles
 COPY Gemfile Gemfile.lock ./
 
-# Private repositories need an access token during the build
+# Install dependencies, including private repositories via access token
 RUN --mount=type=secret,id=GITHUB_TOKEN \
   BUNDLE_GITHUB__COM=x-access-token:$(cat /run/secrets/GITHUB_TOKEN) \
   bundle install
@@ -220,7 +220,7 @@ RUN --mount=type=secret,id=GITHUB_TOKEN \
 
 ### Configuring build args for new images
 
-Build arguments that aren't secret can be configured like so:
+Build arguments that aren't secret can also be configured:
 
 ```yaml
 builder:
@@ -238,7 +238,7 @@ FROM ruby:$RUBY_VERSION-slim as base
 
 ## Commands
 
-### Remote execution
+### Running remote execution and runners
 
 If you need to execute commands inside the Rails containers, you can use `mrsk app exec` and `mrsk app runner`. Examples:
 
@@ -282,18 +282,18 @@ Environment               production
 Database adapter          sqlite3
 Database schema version   20221231233303
 
-# Runs Rails runner on primary server
+# Run Rails runner on primary server
 mrsk app runner -p 'puts Rails.application.config.time_zone'
 UTC
 ```
 
-### Running a Rails console on the primary host
+### Running a Rails console
 
 If you need to interact with the production console for the app, you can use `mrsk app console`, which will start a Rails console session on the primary host. You can start the console on a different host using `mrsk app console --host 192.168.0.2`. Be mindful that this is a live wire! Any changes made to the production database will take effect immeditately.
 
-### Inspecting
+### Running details to see state of containers
 
-You can see the state of your servers by running `mrsk details`. It'll show something like this:
+You can see the state of your servers by running `mrsk details`:
 
 ```
 Traefik Host: 192.168.0.1
@@ -315,7 +315,7 @@ CONTAINER ID   IMAGE                                                            
 
 You can also see just info for app containers with `mrsk app details` or just for Traefik with `mrsk traefik details`.
 
-### Rollback
+### Running rollback to fix a bad deploy
 
 If you've discovered a bad deploy, you can quickly rollback by reactivating the old, paused container image. You can see what old containers are available for rollback by running `mrsk app containers`. It'll give you a presentation similar to `mrsk app details`, but include all the old containers as well. Showing something like this:
 
@@ -335,7 +335,7 @@ From the example above, we can see that `e5d9d7c2b898289dfbc5f7f1334140d984eedae
 
 Note that by default old containers are pruned after 3 days when you run `mrsk deploy`.
 
-### Removing
+### Running removal to clean up servers
 
 If you wish to remove the entire application, including Traefik, containers, images, and registry session, you can run `mrsk remove`. This will leave the servers clean.
 
