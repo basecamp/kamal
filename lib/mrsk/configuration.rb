@@ -131,7 +131,6 @@ class Mrsk::Configuration
       volume_args: volume_args,
       ssh_options: ssh_options,
       builder: raw_config.builder
-      builder: config.builder
     }.compact
   end
 
