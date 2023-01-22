@@ -6,6 +6,13 @@ class Mrsk::Cli::Traefik < Mrsk::Cli::Base
     on(MRSK.traefik_hosts) { execute *MRSK.traefik.run, raise_on_non_zero_exit: false }
   end
 
+  desc "reboot", "Reboot Traefik on servers"
+  def reboot
+    invoke :stop
+    invoke :remove_container
+    invoke :boot
+  end
+
   desc "start", "Start existing Traefik on servers"
   def start
     on(MRSK.traefik_hosts) { execute *MRSK.traefik.start, raise_on_non_zero_exit: false }
@@ -40,10 +47,17 @@ class Mrsk::Cli::Traefik < Mrsk::Cli::Base
   desc "remove", "Remove Traefik container and image from servers"
   def remove
     invoke :stop
+    invoke :remove_container
+    invoke :remove_image
+  end
 
-    on(MRSK.traefik_hosts) do
-      execute *MRSK.traefik.remove_container
-      execute *MRSK.traefik.remove_image
-    end
+  desc "remove_container", "Remove Traefik container from servers"
+  def remove_container
+    on(MRSK.traefik_hosts) { execute *MRSK.traefik.remove_container }
+  end
+
+  desc "remove_container", "Remove Traefik image from servers"
+  def remove_image
+    on(MRSK.traefik_hosts) { execute *MRSK.traefik.remove_image }
   end
 end
