@@ -233,24 +233,25 @@ FROM ruby:$RUBY_VERSION-slim as base
 
 ### Remote execution
 
-If you need to execute commands inside the Rails containers, you can use `mrsk app exec`, `mrsk app exec --once`, `mrsk app runner`, and `mrsk app runner --once`. Examples:
+If you need to execute commands inside the Rails containers, you can use `mrsk app exec` and `mrsk app runner`. Examples:
 
 ```bash
 # Runs command on all servers
 mrsk app exec 'ruby -v'
-App Host: xxx.xxx.xxx.xxx
+App Host: 192.168.0.1
 ruby 3.1.3p185 (2022-11-24 revision 1a6b16756e) [x86_64-linux]
 
-App Host: xxx.xxx.xxx.xxx
+App Host: 192.168.0.2
 ruby 3.1.3p185 (2022-11-24 revision 1a6b16756e) [x86_64-linux]
 
-# Runs command on first server
-mrsk app exec --once 'cat .ruby-version'
+# Runs command on primary server
+mrsk app exec --primary 'cat .ruby-version'
+App Host: 192.168.0.1
 3.1.3
 
 # Runs Rails command on all servers
 mrsk app exec 'bin/rails about'
-App Host: xxx.xxx.xxx.xxx
+App Host: 192.168.0.1
 About your application's environment
 Rails version             7.1.0.alpha
 Ruby version              ruby 3.1.3p185 (2022-11-24 revision 1a6b16756e) [x86_64-linux]
@@ -262,7 +263,7 @@ Environment               production
 Database adapter          sqlite3
 Database schema version   20221231233303
 
-App Host: xxx.xxx.xxx.xxx
+App Host: 192.168.0.2
 About your application's environment
 Rails version             7.1.0.alpha
 Ruby version              ruby 3.1.3p185 (2022-11-24 revision 1a6b16756e) [x86_64-linux]
@@ -274,8 +275,8 @@ Environment               production
 Database adapter          sqlite3
 Database schema version   20221231233303
 
-# Runs Rails runner on first server
-mrsk app runner 'puts Rails.application.config.time_zone'
+# Runs Rails runner on primary server
+mrsk app runner -p 'puts Rails.application.config.time_zone'
 UTC
 ```
 
@@ -288,19 +289,19 @@ If you need to interact with the production console for the app, you can use `mr
 You can see the state of your servers by running `mrsk details`. It'll show something like this:
 
 ```
-Traefik Host: xxx.xxx.xxx.xxx
+Traefik Host: 192.168.0.1
 CONTAINER ID   IMAGE     COMMAND                  CREATED          STATUS          PORTS                               NAMES
 6195b2a28c81   traefik   "/entrypoint.sh --pr…"   30 minutes ago   Up 19 minutes   0.0.0.0:80->80/tcp, :::80->80/tcp   traefik
 
-Traefik Host: 164.92.105.119
+Traefik Host: 192.168.0.2
 CONTAINER ID   IMAGE     COMMAND                  CREATED          STATUS          PORTS                               NAMES
 de14a335d152   traefik   "/entrypoint.sh --pr…"   30 minutes ago   Up 19 minutes   0.0.0.0:80->80/tcp, :::80->80/tcp   traefik
 
-App Host: 164.90.145.60
+App Host: 192.168.0.1
 CONTAINER ID   IMAGE                                                                         COMMAND                  CREATED          STATUS          PORTS      NAMES
 badb1aa51db3   registry.digitalocean.com/user/app:6ef8a6a84c525b123c5245345a8483f86d05a123   "/rails/bin/docker-e…"   13 minutes ago   Up 13 minutes   3000/tcp   chat-6ef8a6a84c525b123c5245345a8483f86d05a123
 
-App Host: 164.92.105.119
+App Host: 192.168.0.2
 CONTAINER ID   IMAGE                                                                         COMMAND                  CREATED          STATUS          PORTS      NAMES
 1d3c91ed1f55   registry.digitalocean.com/user/app:6ef8a6a84c525b123c5245345a8483f86d05a123   "/rails/bin/docker-e…"   13 minutes ago   Up 13 minutes   3000/tcp   chat-6ef8a6a84c525b123c5245345a8483f86d05a123
 ```
@@ -312,12 +313,12 @@ You can also see just info for app containers with `mrsk app details` or just fo
 If you've discovered a bad deploy, you can quickly rollback by reactivating the old, paused container image. You can see what old containers are available for rollback by running `mrsk app containers`. It'll give you a presentation similar to `mrsk app details`, but include all the old containers as well. Showing something like this:
 
 ```
-App Host: 164.92.105.119
+App Host: 192.168.0.1
 CONTAINER ID   IMAGE                                                                         COMMAND                  CREATED          STATUS                      PORTS      NAMES
 1d3c91ed1f51   registry.digitalocean.com/user/app:6ef8a6a84c525b123c5245345a8483f86d05a123   "/rails/bin/docker-e…"   19 minutes ago   Up 19 minutes               3000/tcp   chat-6ef8a6a84c525b123c5245345a8483f86d05a123
 539f26b28369   registry.digitalocean.com/user/app:e5d9d7c2b898289dfbc5f7f1334140d984eedae4   "/rails/bin/docker-e…"   31 minutes ago   Exited (1) 27 minutes ago              chat-e5d9d7c2b898289dfbc5f7f1334140d984eedae4
 
-App Host: 164.90.145.60
+App Host: 192.168.0.2
 CONTAINER ID   IMAGE                                                                         COMMAND                  CREATED          STATUS                      PORTS      NAMES
 badb1aa51db4   registry.digitalocean.com/user/app:6ef8a6a84c525b123c5245345a8483f86d05a123   "/rails/bin/docker-e…"   19 minutes ago   Up 19 minutes               3000/tcp   chat-6ef8a6a84c525b123c5245345a8483f86d05a123
 6f170d1172ae   registry.digitalocean.com/user/app:e5d9d7c2b898289dfbc5f7f1334140d984eedae4   "/rails/bin/docker-e…"   31 minutes ago   Exited (1) 27 minutes ago              chat-e5d9d7c2b898289dfbc5f7f1334140d984eedae4
