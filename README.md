@@ -65,9 +65,9 @@ The default SSH user is root, but you can change it using `ssh_user`:
 ssh_user: app
 ```
 
-### Using custom env variables
+### Using env variables
 
-You can inject custom env variables into the app containers using `env`:
+You can inject env variables into the app containers using `env`:
 
 ```yaml
 env:
@@ -75,9 +75,9 @@ env:
   REDIS_URL: redis://redis1:6379/1
 ```
 
-### Using secret custom env variables
+### Using secret env variables
 
-If you have custom env variables that are secret, you can divide the `env` block into `clear` and `secret`:
+If you have env variables that are secret, you can divide the `env` block into `clear` and `secret`:
 
 ```yaml
 env:
@@ -98,7 +98,7 @@ Note: Marking an ENV as secret currently only redacts its value in the output fo
 
 ### Using different roles for servers
 
-If your application uses separate hosts for running jobs or other roles beyond the default web running, you can specify these hosts and their custom entrypoint command like so:
+If your application uses separate hosts for running jobs or other roles beyond the default web running, you can specify these hosts and their overwritten entrypoint command like so:
 
 ```yaml
 servers:
@@ -126,9 +126,9 @@ servers:
       - 192.168.0.4
 ```
 
-### Using custom container labels
+### Using container labels
 
-You can specialize the default Traefik rules by setting custom labels on the containers that are being started:
+You can specialize the default Traefik rules by setting labels on the containers that are being started:
 
 ```
 labels:
@@ -153,7 +153,7 @@ servers:
       - 192.168.0.4
     cmd: bin/jobs
     labels:
-      my-custom-label: "50"
+      my-label: "50"
 ```
 
 ### Using remote builder for native multi-arch
