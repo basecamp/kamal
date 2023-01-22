@@ -14,7 +14,7 @@ servers:
   - 192.168.0.2
 registry:
   username: registry-user-name
-  password: <%= ENV["MRSK_REGISTRY_PASSWORD"] %>
+  password: <%= ENV.fetch("MRSK_REGISTRY_PASSWORD") %>
 ```
 
 Now you're ready to deploy a multi-arch image to the servers:
