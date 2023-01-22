@@ -61,8 +61,8 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
       since = options[:since]
       lines = options[:lines]
 
-      on(accessory.host) do 
-        capture(*MRSK.traefik.logs(since: since, lines: lines, grep: grep))
+      on(accessory.host) do
+        puts capture_with_info(*accessory.logs(since: since, lines: lines, grep: grep))
       end
     end
   end
