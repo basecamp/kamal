@@ -10,7 +10,7 @@ class CommandsBuilderTest < ActiveSupport::TestCase
   test "target multiarch by default" do
     builder = new_builder_command
     assert_equal "multiarch", builder.name
-    assert_equal [:docker, :buildx, :build, "--push", "--platform linux/amd64,linux/arm64", "-t", "dhh/app:123", "."], builder.push
+    assert_equal [:docker, :buildx, :build, "--push", "--platform", "linux/amd64,linux/arm64", "--builder", "mrsk-app-multiarch", "-t", "dhh/app:123", "."], builder.push
   end
 
   test "target native when multiarch is off" do
@@ -22,13 +22,13 @@ class CommandsBuilderTest < ActiveSupport::TestCase
   test "target multiarch remote when local and remote is set" do
     builder = new_builder_command(builder: { "local" => { }, "remote" => { } })
     assert_equal "multiarch/remote", builder.name
-    assert_equal [:docker, :buildx, :build, "--push", "--platform linux/amd64,linux/arm64", "-t", "dhh/app:123", "."], builder.push
+    assert_equal [:docker, :buildx, :build, "--push", "--platform", "linux/amd64,linux/arm64", "--builder", "mrsk-app-multiarch-remote", "-t", "dhh/app:123", "."], builder.push
   end
 
   test "target native remote when only remote is set" do
     builder = new_builder_command(builder: { "remote" => { "arch" => "amd64" } })
     assert_equal "native/remote", builder.name
-    assert_equal [:docker, :buildx, :build, "--push", "--platform", "linux/amd64", "-t", "dhh/app:123", "."], builder.push
+    assert_equal [:docker, :buildx, :build, "--push", "--platform", "linux/amd64", "--builder", "mrsk-app-native-remote", "-t", "dhh/app:123", "."], builder.push
   end
 
   test "build args" do
@@ -48,7 +48,7 @@ class CommandsBuilderTest < ActiveSupport::TestCase
 
   test "multiarch push with build args" do
     builder = new_builder_command(builder: { "args" => { "a" => 1, "b" => 2 } })
-    assert_equal [ :docker, :buildx, :build, "--push", "--platform linux/amd64,linux/arm64", "-t", "dhh/app:123", "--build-arg", "a=1", "--build-arg", "b=2", "." ], builder.push
+    assert_equal [ :docker, :buildx, :build, "--push", "--platform", "linux/amd64,linux/arm64", "--builder", "mrsk-app-multiarch", "-t", "dhh/app:123", "--build-arg", "a=1", "--build-arg", "b=2", "." ], builder.push
   end
 
   test "native push with with build secrets" do
