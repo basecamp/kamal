@@ -164,6 +164,21 @@ Note: You must have Docker running on the remote host being used as a builder.
 
 With that configuration in place, you can setup the local/remote configuration using `mrsk build create`. If you wish to remove the contexts and buildx instances again, you can run `mrsk build remove`. If you had already built using the standard emulation setup, run `mrsk build remove` before doing `mrsk build remote`.
 
+### Configuring remote builder for single-arch
+
+If you're developing on ARM64 (like Apple Silicon), want to deploy on AMD64 (x86 64-bit), but don't need to run the image locally (or on other ARM64 hosts), you can configure a remote builder that just targets AMD64. This is a bit faster than building with multi-arch, as there's nothing to build locally.
+
+```yaml
+builder:
+  remote:
+    arch: amd64
+    host: ssh://root@192.168.0.1
+```
+
+Note: You must have Docker running on the remote host being used as a builder.
+
+With that configuration in place, you can setup the remote configuration using `mrsk build create`. If you wish to remove the contexts and buildx instances again, you can run `mrsk build remove`. If you had already built using the standard emulation setup, run `mrsk build remove` before doing `mrsk build remote`.
+
 ### Configuring native builder when multi-arch isn't needed
 
 If you're developing on the same architecture as the one you're deploying on, you can speed up the build a lot by forgoing a multi-arch image. This can be done by configuring the builder like so:

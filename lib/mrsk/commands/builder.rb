@@ -2,10 +2,9 @@ require "mrsk/commands/base"
 
 class Mrsk::Commands::Builder < Mrsk::Commands::Base
   delegate :create, :remove, :push, :pull, :info, to: :target
-  delegate :native?, :multiarch?, :remote?, to: :name
 
   def name
-    target.class.to_s.demodulize.downcase.inquiry
+    target.class.to_s.remove("Mrsk::Commands::Builder::").underscore
   end
 
   def target
@@ -14,6 +13,8 @@ class Mrsk::Commands::Builder < Mrsk::Commands::Base
       native
     when config.builder && config.builder["local"] && config.builder["remote"]
       multiarch_remote
+    when config.builder && config.builder["remote"]
+      native_remote
     else
       multiarch
     end
@@ -21,6 +22,10 @@ class Mrsk::Commands::Builder < Mrsk::Commands::Base
 
   def native
     @native ||= Mrsk::Commands::Builder::Native.new(config)
+  end
+
+  def native_remote
+    @native ||= Mrsk::Commands::Builder::Native::Remote.new(config)
   end
 
   def multiarch
@@ -33,5 +38,6 @@ class Mrsk::Commands::Builder < Mrsk::Commands::Base
 end
 
 require "mrsk/commands/builder/native"
+require "mrsk/commands/builder/native/remote"
 require "mrsk/commands/builder/multiarch"
 require "mrsk/commands/builder/multiarch/remote"
