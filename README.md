@@ -112,7 +112,19 @@ servers:
     cmd: bin/jobs
 ```
 
-Traefik will only be installed and run on the servers in the `web` role (and on all servers if no roles are defined).
+Traefik will only be installed default and run on the servers in the `web` role (and on all servers if no roles are defined). If you need Traefik on hosts in other roles than `web`, add `traefik: true`, like:
+
+```yaml
+servers:
+  web:
+    - 192.168.0.1
+    - 192.168.0.2
+  web2:
+    traefik: true
+    hosts:
+      - 192.168.0.3
+      - 192.168.0.4
+```
 
 ### Adding custom container labels
 
