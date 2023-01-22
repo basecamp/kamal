@@ -65,7 +65,7 @@ The default SSH user is root, but you can change it using `ssh_user`:
 ssh_user: app
 ```
 
-### Adding custom env variables
+### Using custom env variables
 
 You can inject custom env variables into the app containers using `env`:
 
@@ -75,7 +75,7 @@ env:
   REDIS_URL: redis://redis1:6379/1
 ```
 
-### Adding secret custom env variables
+### Using secret custom env variables
 
 If you have custom env variables that are secret, you can divide the `env` block into `clear` and `secret`:
 
@@ -96,7 +96,7 @@ If the referenced secret ENVs are missing, the configuration will be halted with
 Note: Marking an ENV as secret currently only redacts its value in the output for MRSK. The ENV is still injected in the clear into the container at runtime.
 
 
-### Splitting servers into different roles
+### Using different roles for servers
 
 If your application uses separate hosts for running jobs or other roles beyond the default web running, you can specify these hosts and their custom entrypoint command like so:
 
@@ -126,7 +126,7 @@ servers:
       - 192.168.0.4
 ```
 
-### Adding custom container labels
+### Using custom container labels
 
 You can specialize the default Traefik rules by setting custom labels on the containers that are being started:
 
@@ -156,7 +156,7 @@ servers:
       my-custom-label: "50"
 ```
 
-### Configuring remote builder for native multi-arch
+### Using remote builder for native multi-arch
 
 If you're developing on ARM64 (like Apple Silicon), but you want to deploy on AMD64 (x86 64-bit), you have to use multi-archecture images. By default, MRSK will setup a local buildx configuration that allows for this through QEMU emulation. This can be slow, especially on the first build.
 
@@ -174,7 +174,7 @@ builder:
 
 Note: You must have Docker running on the remote host being used as a builder.
 
-### Configuring remote builder for single-arch
+### Using remote builder for single-arch
 
 If you're developing on ARM64 (like Apple Silicon), want to deploy on AMD64 (x86 64-bit), but don't need to run the image locally (or on other ARM64 hosts), you can configure a remote builder that just targets AMD64. This is a bit faster than building with multi-arch, as there's nothing to build locally.
 
@@ -187,7 +187,7 @@ builder:
 
 Note: You must have Docker running on the remote host being used as a builder.
 
-### Configuring native builder when multi-arch isn't needed
+### Using native builder when multi-arch isn't needed
 
 If you're developing on the same architecture as the one you're deploying on, you can speed up the build a lot by forgoing a multi-arch image. This can be done by configuring the builder like so:
 
@@ -196,7 +196,7 @@ builder:
   multiarch: false
 ```
 
-### Configuring build secrets for new images
+### Using build secrets for new images
 
 Some images need a secret passed in during build time, like a GITHUB_TOKEN to give access to private gem repositories. This can be done by having the secret in ENV, then referencing it like so in the configuration:
 
