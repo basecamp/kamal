@@ -30,7 +30,7 @@ class Mrsk::Commands::Accessory < Mrsk::Commands::Base
   end
 
   def info
-    docker :ps, "--filter", "name=#{service_name}"
+    docker :ps, *service_filter
   end
 
   def logs(since: nil, lines: nil, grep: nil)
@@ -47,10 +47,15 @@ class Mrsk::Commands::Accessory < Mrsk::Commands::Base
   end
 
   def remove_container
-    docker :container, :prune, "-f", "--filter", "label=name=#{service_name}"
+    docker :container, :prune, "-f", *service_filter
   end
 
   def remove_image
-    docker :image, :prune, "-a", "-f", "--filter", "label=name=#{service_name}"
+    docker :image, :prune, "-a", "-f", *service_filter
   end
+
+  private
+    def service_filter
+      [ "--filter", "label=service=#{service_name}" ]
+    end
 end
