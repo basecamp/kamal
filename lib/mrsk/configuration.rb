@@ -87,6 +87,14 @@ class Mrsk::Configuration
     end
   end
 
+  def volume_args
+    if config.volumes.present?
+      config.volumes.map { |volume| "--volume #{volume}" }
+    else
+      []
+    end
+  end
+
   def ssh_user
     config.ssh_user || "root"
   end
@@ -110,7 +118,8 @@ class Mrsk::Configuration
       service_with_version: service_with_version,
       env_args: env_args,
       ssh_options: ssh_options,
-      builder: config.builder
+      builder: config.builder,
+      volume_args: volume_args
     }.compact
   end
 
