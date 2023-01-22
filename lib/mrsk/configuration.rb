@@ -51,6 +51,15 @@ class Mrsk::Configuration
     roles.detect { |r| r.name == name.to_s }
   end
 
+  def accessories
+    @accessories ||= raw_config.accessories.keys.collect { |name| Mrsk::Configuration::Assessory.new(name, config: self) }
+  end
+
+  def accessory(name)
+    accessories.detect { |a| a.name == name.to_s }
+  end
+
+
   def all_hosts
     roles.flat_map(&:hosts)
   end
@@ -138,3 +147,4 @@ class Mrsk::Configuration
 end
 
 require "mrsk/configuration/role"
+require "mrsk/configuration/accessory"

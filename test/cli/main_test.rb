@@ -9,7 +9,7 @@ class CliMainTest < ActiveSupport::TestCase
   end
 
   test "version" do
-    version = capture(:stdout) { Mrsk::Cli::Main.new.version }.strip
+    version = stdouted { Mrsk::Cli::Main.new.version }
     assert_equal Mrsk::VERSION, version
   end
 end

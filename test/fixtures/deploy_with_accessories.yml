@@ -1,0 +1,27 @@
+service: app
+image: dhh/app
+servers:
+  - 1.1.1.1
+  - 1.1.1.2
+registry:
+  username: user
+  password: pw
+
+accessories:
+  mysql:
+    image: mysql:5.7
+    host: 1.1.1.3
+    port: 3306
+    env:
+      clear:
+        MYSQL_ROOT_HOST: '%'
+      secret:
+        - MYSQL_ROOT_PASSWORD
+    volumes:
+      - /var/lib/mysql:/var/lib/mysql
+  redis:
+    image: redis:8.0
+    host: 1.1.1.4
+    port: 6379
+    volumes:
+      - /var/lib/redis:/data

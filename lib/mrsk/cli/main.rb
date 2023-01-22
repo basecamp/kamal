@@ -1,5 +1,6 @@
 require "mrsk/cli/base"
 
+require "mrsk/cli/accessory"
 require "mrsk/cli/app"
 require "mrsk/cli/build"
 require "mrsk/cli/prune"
@@ -85,6 +86,9 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
   def version
     puts Mrsk::VERSION
   end
+
+  desc "accessory", "Manage the accessories"
+  subcommand "accessory", Mrsk::Cli::Accessory
 
   desc "app", "Manage the application"
   subcommand "app", Mrsk::Cli::App
