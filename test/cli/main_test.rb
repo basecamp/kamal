@@ -2,7 +2,7 @@ require "test_helper"
 require "active_support/testing/stream"
 require "mrsk/cli"
 
-class CommandsAppTest < ActiveSupport::TestCase
+class CliMainTest < ActiveSupport::TestCase
   include ActiveSupport::Testing::Stream
 
   setup do
