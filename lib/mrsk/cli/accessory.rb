@@ -94,7 +94,7 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
     on(accessory.host) { execute *accessory.remove_container }
   end
 
-  desc "remove_container [NAME]", "Remove accessory image from servers"
+  desc "remove_container [NAME]", "Remove accessory image from host"
   def remove_image(name)
     accessory = MRSK.accessory(name)
     on(accessory.host) { execute *accessory.remove_image }
