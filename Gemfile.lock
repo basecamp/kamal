@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    mrsk (0.1.0)
+    mrsk (0.2.0)
       activesupport (>= 7.0)
       sshkit (~> 1.21)
       thor (~> 1.2)
