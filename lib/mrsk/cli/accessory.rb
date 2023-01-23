@@ -49,10 +49,14 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
     start(name)
   end
 
-  desc "details [NAME]", "Display details about accessory on host"
+  desc "details [NAME]", "Display details about accessory on host (use NAME=all to boot all accessories)"
   def details(name)
-    accessory = MRSK.accessory(name)
-    on(accessory.host) { puts capture_with_info(*accessory.info) }
+    if name == "all"
+      MRSK.accessory_names.each { |accessory_name| details(accessory_name) }
+    else
+      accessory = MRSK.accessory(name)
+      on(accessory.host) { puts capture_with_info(*accessory.info) }
+    end
   end
 
   desc "logs [NAME]", "Show log lines from accessory on host"
