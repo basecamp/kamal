@@ -3,8 +3,25 @@ require "mrsk/cli/base"
 class Mrsk::Cli::Accessory < Mrsk::Cli::Base
   desc "boot [NAME]", "Boot accessory service on host"
   def boot(name)
+    invoke :upload, [ name ]
+
     accessory = MRSK.accessory(name)
     on(accessory.host) { execute *accessory.run }
+  end
+
+  desc "upload [NAME]", "Upload accessory files to host"
+  def upload(name)
+    accessory = MRSK.accessory(name)
+    on(accessory.host) do
+      accessory.files.each do |(local, remote)|
+        if Pathname.new(local).exist?
+          execute :mkdir, "-p", Pathname.new(remote).dirname.to_s
+          upload! local.to_s, remote.to_s
+        else
+          raise "Missing file: #{local}"
+        end
+      end
+    end
   end
 
   desc "reboot [NAME]", "Reboot accessory on host (stop container, remove container, start new container)"

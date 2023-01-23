@@ -43,8 +43,15 @@ class Mrsk::Configuration::Assessory
     argumentize_env_with_secrets env
   end
 
+  def files
+    specifics["files"]&.to_h do |local_to_remote_mapping|
+      local_file, remote_file = local_to_remote_mapping.split(":")
+      [ expand_local_file_path(local_file), expand_remote_file_path(remote_file) ]
+    end || {}
+  end
+
   def volumes
-    specifics["volumes"] || []
+    (specifics["volumes"] || []) + remote_files_as_volumes
   end
 
   def volume_args
@@ -56,5 +63,20 @@ class Mrsk::Configuration::Assessory
 
     def default_labels
       { "service" => service_name }
+    end
+
+    def expand_local_file_path(local_file)
+      Pathname.new(File.expand_path(local_file))
+    end
+
+    def expand_remote_file_path(remote_file)
+      service_name + remote_file
+    end
+
+    def remote_files_as_volumes
+      specifics["files"]&.collect do |local_to_remote_mapping|
+        _, remote_file = local_to_remote_mapping.split(":")
+        "#{expand_remote_file_path(remote_file)}:#{remote_file}"
+      end || []
     end
 end

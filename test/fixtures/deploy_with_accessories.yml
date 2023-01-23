@@ -19,6 +19,8 @@ accessories:
         - MYSQL_ROOT_PASSWORD
     volumes:
       - /var/lib/mysql:/var/lib/mysql
+    files:
+      - test/fixtures/files/my.cnf:/etc/mysql/my.cnf
   redis:
     image: redis:latest
     host: 1.1.1.4

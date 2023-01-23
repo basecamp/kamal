@@ -18,8 +18,12 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
             },
             "secret" => [
               "MYSQL_ROOT_PASSWORD"
-            ]
-          }
+            ],
+          },
+          "files" => [
+            "config/mysql/my.cnf:/etc/mysql/my.cnf",
+            "db/structure.sql:/docker-entrypoint-initdb.d/structure.sql"
+          ]
         },
         "redis" => {
           "image" => "redis:latest",
@@ -83,7 +87,7 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
   end
 
   test "volume args" do
-    assert_equal [], @config.accessory(:mysql).volume_args
+    assert_equal ["--volume", "app-mysql/etc/mysql/my.cnf:/etc/mysql/my.cnf", "--volume", "app-mysql/docker-entrypoint-initdb.d/structure.sql:/docker-entrypoint-initdb.d/structure.sql"], @config.accessory(:mysql).volume_args
     assert_equal ["--volume", "/var/lib/redis:/data"], @config.accessory(:redis).volume_args
   end
 end
