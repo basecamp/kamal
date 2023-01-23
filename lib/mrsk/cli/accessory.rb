@@ -54,7 +54,7 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
   desc "stop [NAME]", "Stop accessory on host"
   def stop(name)
     accessory = MRSK.accessory(name)
-    on(accessory.host) { execute *accessory.stop }
+    on(accessory.host) { execute *accessory.stop, raise_on_non_zero_exit: false }
   end
 
   desc "restart [NAME]", "Restart accessory on host"
