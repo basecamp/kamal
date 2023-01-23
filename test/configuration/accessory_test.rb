@@ -87,7 +87,7 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
   end
 
   test "volume args" do
-    assert_equal ["--volume", "app-mysql/etc/mysql/my.cnf:/etc/mysql/my.cnf", "--volume", "app-mysql/docker-entrypoint-initdb.d/structure.sql:/docker-entrypoint-initdb.d/structure.sql"], @config.accessory(:mysql).volume_args
+    assert_equal ["--volume", "$PWD/app-mysql/etc/mysql/my.cnf:/etc/mysql/my.cnf", "--volume", "$PWD/app-mysql/docker-entrypoint-initdb.d/structure.sql:/docker-entrypoint-initdb.d/structure.sql"], @config.accessory(:mysql).volume_args
     assert_equal ["--volume", "/var/lib/redis:/data"], @config.accessory(:redis).volume_args
   end
 end
