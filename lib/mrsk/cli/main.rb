@@ -9,6 +9,15 @@ require "mrsk/cli/server"
 require "mrsk/cli/traefik"
 
 class Mrsk::Cli::Main < Mrsk::Cli::Base
+  desc "setup", "Setup all accessories and deploy the app to servers"
+  def setup
+    print_runtime do
+      invoke "mrsk:cli:server:bootstrap"
+      invoke "mrsk:cli:accessory:boot", [ "all" ]
+      deploy
+    end
+  end
+
   desc "deploy", "Deploy the app to servers"
   def deploy
     print_runtime do
