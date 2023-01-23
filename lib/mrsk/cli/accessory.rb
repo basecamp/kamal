@@ -59,6 +59,25 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
     end
   end
 
+  desc "exec [NAME] [CMD]", "Execute a custom command on accessory host"
+  option :run, type: :boolean, default: false, desc: "Start a new container to run the command rather than reusing existing"
+  def exec(name, cmd)
+    accessory = MRSK.accessory(name)
+
+    runner = options[:run] ? :run_exec : :exec
+    on(accessory.host) { |host| puts_by_host host, capture_with_info(*accessory.send(runner, cmd)) }
+  end
+
+  desc "bash [NAME]", "Start a bash session on primary host (or specific host set by --hosts)"
+  def bash(name)
+    accessory = MRSK.accessory(name)
+
+    run_locally do
+      info "Launching bash session on #{accessory.host}"
+      exec accessory.bash(host: accessory.host)
+    end
+  end
+
   desc "logs [NAME]", "Show log lines from accessory on host"
   option :since, aliases: "-s", desc: "Show logs since timestamp (e.g. 2013-01-02T13:23:37Z) or relative (e.g. 42m for 42 minutes)"
   option :lines, type: :numeric, aliases: "-n", desc: "Number of log lines to pull from each server"

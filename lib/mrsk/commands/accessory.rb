@@ -50,6 +50,29 @@ class Mrsk::Commands::Accessory < Mrsk::Commands::Base
     if Pathname.new(local).exist?
       [ :mkdir, "-p", Pathname.new(remote).dirname.to_s ]
     else
+  def exec(*command, interactive: false)
+    docker :exec,
+      ("-it" if interactive),
+      *env_args,
+      *volume_args,
+      service_name,
+      *command
+  end
+
+  def run_exec(*command, interactive: false)
+    docker :run,
+      ("-it" if interactive),
+      "--rm",
+      *env_args,
+      *volume_args,
+      image,
+      *command
+  end
+
+  def bash(host:)
+    exec_over_ssh "bash", host: host
+  end
+
       raise "Missing file: #{local}"
     end
   end
@@ -67,6 +90,10 @@ class Mrsk::Commands::Accessory < Mrsk::Commands::Base
   end
 
   private
+    def exec_over_ssh(*command, host:)
+      run_over_ssh run_exec(*command, interactive: true).join(" "), host: host
+    end
+
     def service_filter
       [ "--filter", "label=service=#{service_name}" ]
     end
