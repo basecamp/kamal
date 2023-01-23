@@ -46,7 +46,7 @@ class Mrsk::Configuration::Assessory
   def files
     specifics["files"]&.to_h do |local_to_remote_mapping|
       local_file, remote_file = local_to_remote_mapping.split(":")
-      [ expand_local_file_path(local_file), expand_remote_file_path(remote_file) ]
+      [ expand_local_file(local_file), expand_remote_file(remote_file) ]
     end || {}
   end
 
@@ -65,18 +65,26 @@ class Mrsk::Configuration::Assessory
       { "service" => service_name }
     end
 
-    def expand_local_file_path(local_file)
-      Pathname.new(File.expand_path(local_file)).to_s
+    def expand_local_file(local_file)
+      if local_file.end_with?("erb")
+        read_dynamic_file(local_file)
+      else
+        Pathname.new(File.expand_path(local_file)).to_s
+      end
     end
 
-    def expand_remote_file_path(remote_file)
+    def expand_remote_file(remote_file)
       service_name + remote_file
     end
 
     def remote_files_as_volumes
       specifics["files"]&.collect do |local_to_remote_mapping|
         _, remote_file = local_to_remote_mapping.split(":")
-        "$PWD/#{expand_remote_file_path(remote_file)}:#{remote_file}"
+        "$PWD/#{expand_remote_file(remote_file)}:#{remote_file}"
       end || []
+    end
+
+    def read_dynamic_file(local_file)
+      StringIO.new(ERB.new(IO.read(local_file)).result)
     end
 end

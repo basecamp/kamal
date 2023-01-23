@@ -90,4 +90,11 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
     assert_equal ["--volume", "$PWD/app-mysql/etc/mysql/my.cnf:/etc/mysql/my.cnf", "--volume", "$PWD/app-mysql/docker-entrypoint-initdb.d/structure.sql:/docker-entrypoint-initdb.d/structure.sql"], @config.accessory(:mysql).volume_args
     assert_equal ["--volume", "/var/lib/redis:/data"], @config.accessory(:redis).volume_args
   end
+
+  test "dynamic file expansion" do
+    @deploy[:accessories]["mysql"]["files"] << "test/fixtures/files/structure.sql.erb:/docker-entrypoint-initdb.d/structure.sql"
+    @config = Mrsk::Configuration.new(@deploy)
+
+    assert_equal "This was dynamically expanded", @config.accessory(:mysql).files.keys[2].read
+  end
 end

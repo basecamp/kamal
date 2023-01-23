@@ -18,7 +18,8 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
     accessory = MRSK.accessory(name)
     on(accessory.host) do
       accessory.files.each do |(local, remote)|
-        execute *accessory.make_directory_for(local, remote)
+        accessory.ensure_local_file_present(local)
+        execute *accessory.make_directory_for(remote)
         upload! local, remote
         execute :chmod, "755", remote
       end

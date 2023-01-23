@@ -46,10 +46,6 @@ class Mrsk::Commands::Accessory < Mrsk::Commands::Base
     ).join(" "), host: host
   end
 
-  def make_directory_for(local, remote)
-    if Pathname.new(local).exist?
-      [ :mkdir, "-p", Pathname.new(remote).dirname.to_s ]
-    else
   def exec(*command, interactive: false)
     docker :exec,
       ("-it" if interactive),
@@ -73,8 +69,14 @@ class Mrsk::Commands::Accessory < Mrsk::Commands::Base
     exec_over_ssh "bash", host: host
   end
 
+  def ensure_local_file_present(local)
+    if !local.is_a?(StringIO) && !Pathname.new(local).exist?
       raise "Missing file: #{local}"
     end
+  end
+
+  def make_directory_for(remote)
+    [ :mkdir, "-p", Pathname.new(remote).dirname.to_s ]
   end
 
   def remove_files
