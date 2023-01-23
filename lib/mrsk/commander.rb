@@ -48,6 +48,10 @@ class Mrsk::Commander
     specific_hosts || config.accessories.collect(&:host)
   end
 
+  def accessory_names
+    config.accessories.collect(&:name)
+  end
+
 
   def app
     @app ||= Mrsk::Commands::App.new(config)

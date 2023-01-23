@@ -1,12 +1,16 @@
 require "mrsk/cli/base"
 
 class Mrsk::Cli::Accessory < Mrsk::Cli::Base
-  desc "boot [NAME]", "Boot accessory service on host"
+  desc "boot [NAME]", "Boot accessory service on host (use NAME=all to boot all accessories)"
   def boot(name)
-    invoke :upload, [ name ]
+    if name == "all"
+      MRSK.accessory_names.each { |accessory_name| boot(accessory_name) }
+    else
+      upload(name)
 
-    accessory = MRSK.accessory(name)
-    on(accessory.host) { execute *accessory.run }
+      accessory = MRSK.accessory(name)
+      on(accessory.host) { execute *accessory.run }
+    end
   end
 
   desc "upload [NAME]", "Upload accessory files to host"
@@ -77,12 +81,16 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
     end
   end
 
-  desc "remove [NAME]", "Remove accessory container and image from host"
+  desc "remove [NAME]", "Remove accessory container and image from host (use NAME=all to boot all accessories)"
   def remove(name)
-    invoke :stop, [ name ]
-    invoke :remove_container, [ name ]
-    invoke :remove_image, [ name ]
-    invoke :remove_files, [ name ]
+    if name == "all"
+      MRSK.accessory_names.each { |accessory_name| remove(accessory_name) }
+    else
+      stop(name)
+      remove_container(name)
+      remove_image(name)
+      remove_files(name)
+    end
   end
 
   desc "remove_container [NAME]", "Remove accessory container from host"
