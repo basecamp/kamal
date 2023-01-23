@@ -76,7 +76,7 @@ class Mrsk::Configuration::Assessory
     def remote_files_as_volumes
       specifics["files"]&.collect do |local_to_remote_mapping|
         _, remote_file = local_to_remote_mapping.split(":")
-        "#{expand_remote_file_path(remote_file)}:#{remote_file}"
+        "$PWD/#{expand_remote_file_path(remote_file)}:#{remote_file}"
       end || []
     end
 end
