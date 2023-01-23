@@ -104,6 +104,6 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
   desc "remove_files [NAME]", "Remove accessory directory used for uploaded files from host"
   def remove_files(name)
     accessory = MRSK.accessory(name)
-    on(accessory.host) { execute :rm, "-rf", accessory.service_name }
+    on(accessory.host) { execute *accessory.remove_files }
   end
 end

@@ -46,6 +46,10 @@ class Mrsk::Commands::Accessory < Mrsk::Commands::Base
     ).join(" "), host: host
   end
 
+  def remove_files
+    [ :rm, "-rf", service_name ]
+  end
+
   def remove_container
     docker :container, :prune, "-f", *service_filter
   end
