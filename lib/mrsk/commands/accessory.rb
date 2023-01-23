@@ -69,14 +69,14 @@ class Mrsk::Commands::Accessory < Mrsk::Commands::Base
     exec_over_ssh "bash", host: host
   end
 
-  def ensure_local_file_present(local)
-    if !local.is_a?(StringIO) && !Pathname.new(local).exist?
-      raise "Missing file: #{local}"
+  def ensure_local_file_present(local_file)
+    if !local_file.is_a?(StringIO) && !Pathname.new(local_file).exist?
+      raise "Missing file: #{local_file}"
     end
   end
 
-  def make_directory_for(remote)
-    [ :mkdir, "-p", Pathname.new(remote).dirname.to_s ]
+  def make_directory_for(remote_file)
+    [ :mkdir, "-p", Pathname.new(remote_file).dirname.to_s ]
   end
 
   def remove_files
