@@ -15,7 +15,7 @@ class Mrsk::Configuration
     def create_from(base_config_file, destination: nil, version: "missing")
       new(load_config_file(base_config_file).tap do |config|
         if destination
-          config.merge! \
+          config.deep_merge! \
             load_config_file destination_config_file(base_config_file, destination)
         end
       end, version: version)
