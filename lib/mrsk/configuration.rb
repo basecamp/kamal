@@ -130,7 +130,8 @@ class Mrsk::Configuration
       env_args: env_args,
       volume_args: volume_args,
       ssh_options: ssh_options,
-      builder: raw_config.builder
+      builder: raw_config.builder,
+      accessories: raw_config.accessories
     }.compact
   end
 
