@@ -86,6 +86,7 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
     invoke :stop, [ name ]
     invoke :remove_container, [ name ]
     invoke :remove_image, [ name ]
+    invoke :remove_files, [ name ]
   end
 
   desc "remove_container [NAME]", "Remove accessory container from host"
@@ -98,5 +99,11 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
   def remove_image(name)
     accessory = MRSK.accessory(name)
     on(accessory.host) { execute *accessory.remove_image }
+  end
+
+  desc "remove_files [NAME]", "Remove accessory directory used for uploaded files from host"
+  def remove_files(name)
+    accessory = MRSK.accessory(name)
+    on(accessory.host) { execute :rm, "-rf", accessory.service_name }
   end
 end
