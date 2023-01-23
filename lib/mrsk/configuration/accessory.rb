@@ -66,7 +66,7 @@ class Mrsk::Configuration::Assessory
     end
 
     def expand_local_file_path(local_file)
-      Pathname.new(File.expand_path(local_file))
+      Pathname.new(File.expand_path(local_file)).to_s
     end
 
     def expand_remote_file_path(remote_file)

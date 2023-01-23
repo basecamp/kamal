@@ -46,6 +46,14 @@ class Mrsk::Commands::Accessory < Mrsk::Commands::Base
     ).join(" "), host: host
   end
 
+  def make_directory_for(local, remote)
+    if Pathname.new(local).exist?
+      [ :mkdir, "-p", Pathname.new(remote).dirname.to_s ]
+    else
+      raise "Missing file: #{local}"
+    end
+  end
+
   def remove_files
     [ :rm, "-rf", service_name ]
   end

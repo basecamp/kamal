@@ -14,12 +14,8 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
     accessory = MRSK.accessory(name)
     on(accessory.host) do
       accessory.files.each do |(local, remote)|
-        if Pathname.new(local).exist?
-          execute :mkdir, "-p", Pathname.new(remote).dirname.to_s
-          upload! local.to_s, remote.to_s
-        else
-          raise "Missing file: #{local}"
-        end
+        execute *accessory.make_directory_for(local, remote)
+        upload! local, remote
       end
     end
   end
