@@ -22,9 +22,9 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
 
   desc "reboot [NAME]", "Reboot accessory on host (stop container, remove container, start new container)"
   def reboot(name)
-    invoke :stop, [ name ]
-    invoke :remove_container, [ name ]
-    invoke :boot, [ name ]
+    stop(name)
+    remove_container(name)
+    boot(name)
   end
 
   desc "start [NAME]", "Start existing accessory on host"
@@ -41,8 +41,8 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
 
   desc "restart [NAME]", "Restart accessory on host"
   def restart(name)
-    invoke :stop, [ name ]
-    invoke :start, [ name ]
+    stop(name)
+    start(name)
   end
 
   desc "details [NAME]", "Display details about accessory on host"
