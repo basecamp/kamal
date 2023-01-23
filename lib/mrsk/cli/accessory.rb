@@ -20,6 +20,7 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
       accessory.files.each do |(local, remote)|
         execute *accessory.make_directory_for(local, remote)
         upload! local, remote
+        execute :chmod, "755", remote
       end
     end
   end
