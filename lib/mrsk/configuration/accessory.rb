@@ -50,8 +50,15 @@ class Mrsk::Configuration::Assessory
     end || {}
   end
 
+  def directories
+    specifics["directories"]&.to_h do |host_to_container_mapping|
+      host_relative_path, container_path = host_to_container_mapping.split(":")
+      [ expand_host_path(host_relative_path), container_path ]
+    end || {}
+  end
+
   def volumes
-    (specifics["volumes"] || []) + remote_files_as_volumes
+    specific_volumes + remote_files_as_volumes + remote_directories_as_volumes
   end
 
   def volume_args
@@ -73,18 +80,37 @@ class Mrsk::Configuration::Assessory
       end
     end
 
+    def read_dynamic_file(local_file)
+      StringIO.new(ERB.new(IO.read(local_file)).result)
+    end
+
     def expand_remote_file(remote_file)
       service_name + remote_file
+    end
+
+    def specific_volumes
+      specifics["volumes"] || []
     end
 
     def remote_files_as_volumes
       specifics["files"]&.collect do |local_to_remote_mapping|
         _, remote_file = local_to_remote_mapping.split(":")
-        "$PWD/#{expand_remote_file(remote_file)}:#{remote_file}"
+        "#{service_data_directory + remote_file}:#{remote_file}"
       end || []
     end
 
-    def read_dynamic_file(local_file)
-      StringIO.new(ERB.new(IO.read(local_file)).result)
+    def remote_directories_as_volumes
+      specifics["directories"]&.collect do |host_to_container_mapping|
+        host_relative_path, container_path = host_to_container_mapping.split(":")
+        [ expand_host_path(host_relative_path), container_path ].join(":")
+      end || []
+    end
+
+    def expand_host_path(host_relative_path)
+      "#{service_data_directory}/#{host_relative_path}"
+    end
+
+    def service_data_directory
+      "$PWD/#{service_name}"
     end
 end

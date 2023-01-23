@@ -6,6 +6,7 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
     if name == "all"
       MRSK.accessory_names.each { |accessory_name| boot(accessory_name) }
     else
+      directories(name)
       upload(name)
 
       accessory = MRSK.accessory(name)
@@ -19,9 +20,20 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
     on(accessory.host) do
       accessory.files.each do |(local, remote)|
         accessory.ensure_local_file_present(local)
+
         execute *accessory.make_directory_for(remote)
         upload! local, remote
         execute :chmod, "755", remote
+      end
+    end
+  end
+
+  desc "directories [NAME]", "Create accessory directories on host"
+  def directories(name)
+    accessory = MRSK.accessory(name)
+    on(accessory.host) do
+      accessory.directories.keys.each do |host_path|
+        execute *accessory.make_directory(host_path)
       end
     end
   end
@@ -114,7 +126,7 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
       stop(name)
       remove_container(name)
       remove_image(name)
-      remove_files(name)
+      remove_service_directory(name)
     end
   end
 
@@ -130,9 +142,9 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
     on(accessory.host) { execute *accessory.remove_image }
   end
 
-  desc "remove_files [NAME]", "Remove accessory directory used for uploaded files from host"
-  def remove_files(name)
+  desc "remove_service_directory [NAME]", "Remove accessory directory used for uploaded files and data directories from host"
+  def remove_service_directory(name)
     accessory = MRSK.accessory(name)
-    on(accessory.host) { execute *accessory.remove_files }
+    on(accessory.host) { execute *accessory.remove_service_directory }
   end
 end

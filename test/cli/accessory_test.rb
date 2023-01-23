@@ -14,9 +14,21 @@ class CliAccessoryTest < ActiveSupport::TestCase
     assert_match "test/fixtures/files/my.cnf app-mysql/etc/mysql/my.cnf", command
   end
 
+  test "directories" do
+    command = stdouted { Mrsk::Cli::Accessory.start(["directories", "mysql", "-c", "test/fixtures/deploy_with_accessories.yml"]) }
+    
+    assert_match "mkdir -p $PWD/app-mysql/data", command
+  end
+
+  test "remove service direcotry" do
+    command = stdouted { Mrsk::Cli::Accessory.start(["remove_service_directory", "mysql", "-c", "test/fixtures/deploy_with_accessories.yml"]) }
+    
+    assert_match "rm -rf app-mysql", command
+  end
+
   test "boot" do
     command = stdouted { Mrsk::Cli::Accessory.start(["boot", "mysql", "-c", "test/fixtures/deploy_with_accessories.yml"]) }
     
-    assert_match "Running docker run --name app-mysql -d --restart unless-stopped -p 3306:3306 -e [REDACTED] -e MYSQL_ROOT_HOST=% --volume /var/lib/mysql:/var/lib/mysql --volume $PWD/app-mysql/etc/mysql/my.cnf:/etc/mysql/my.cnf --label service=app-mysql mysql:5.7 on 1.1.1.3", command
+    assert_match "Running docker run --name app-mysql -d --restart unless-stopped -p 3306:3306 -e [REDACTED] -e MYSQL_ROOT_HOST=% --volume $PWD/app-mysql/etc/mysql/my.cnf:/etc/mysql/my.cnf --volume $PWD/app-mysql/data:/var/lib/mysql --label service=app-mysql mysql:5.7 on 1.1.1.3", command
   end
 end

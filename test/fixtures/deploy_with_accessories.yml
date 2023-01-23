@@ -17,13 +17,13 @@ accessories:
         MYSQL_ROOT_HOST: '%'
       secret:
         - MYSQL_ROOT_PASSWORD
-    volumes:
-      - /var/lib/mysql:/var/lib/mysql
     files:
       - test/fixtures/files/my.cnf:/etc/mysql/my.cnf
+    directories:
+      - data:/var/lib/mysql
   redis:
     image: redis:latest
     host: 1.1.1.4
     port: 6379
-    volumes:
-      - /var/lib/redis:/data
+    directories:
+      - data:/data

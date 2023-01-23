@@ -2,7 +2,7 @@ require "mrsk/commands/base"
 
 class Mrsk::Commands::Accessory < Mrsk::Commands::Base
   attr_reader :accessory_config
-  delegate :service_name, :image, :host, :port, :files, :env_args, :volume_args, :label_args, to: :accessory_config
+  delegate :service_name, :image, :host, :port, :files, :directories, :env_args, :volume_args, :label_args, to: :accessory_config
 
   def initialize(config, name:)
     super(config)
@@ -76,10 +76,14 @@ class Mrsk::Commands::Accessory < Mrsk::Commands::Base
   end
 
   def make_directory_for(remote_file)
-    [ :mkdir, "-p", Pathname.new(remote_file).dirname.to_s ]
+    make_directory Pathname.new(remote_file).dirname.to_s
   end
 
-  def remove_files
+  def make_directory(path)
+    [ :mkdir, "-p", path ]
+  end
+
+  def remove_service_directory
     [ :rm, "-rf", service_name ]
   end
 
