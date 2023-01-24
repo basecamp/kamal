@@ -98,6 +98,10 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
     end
 
     def rails_master_key_arg
-      [ "-e", redact("RAILS_MASTER_KEY=#{config.master_key}") ]
+      if master_key = config.master_key
+        [ "-e", redact("RAILS_MASTER_KEY=#{master_key}") ]
+      else
+        []
+      end
     end
 end

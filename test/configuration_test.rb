@@ -1,10 +1,10 @@
 require "test_helper"
 require "mrsk/configuration"
 
-ENV["RAILS_MASTER_KEY"] = "456"
-
 class ConfigurationTest < ActiveSupport::TestCase
   setup do
+    ENV["RAILS_MASTER_KEY"] = "456"
+
     @deploy = {
       service: "app", image: "dhh/app",
       registry: { "username" => "dhh", "password" => "secret" },
@@ -19,6 +19,10 @@ class ConfigurationTest < ActiveSupport::TestCase
       servers: { "web" => [ "1.1.1.1", "1.1.1.2" ], "workers" => { "hosts" => [ "1.1.1.3", "1.1.1.4" ] } } })
 
     @config_with_roles = Mrsk::Configuration.new(@deploy_with_roles)
+  end
+
+  teardown do
+    ENV["RAILS_MASTER_KEY"] = nil
   end
 
   test "ensure valid keys" do
@@ -132,6 +136,11 @@ class ConfigurationTest < ActiveSupport::TestCase
 
   test "master key" do
     assert_equal "456", @config.master_key
+  end
+
+  test "skip master key" do
+    config = Mrsk::Configuration.new(@deploy.tap { |c| c[:skip_master_key] = true })
+    assert_nil @config.master_key
   end
 
   test "volume_args" do

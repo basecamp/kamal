@@ -244,6 +244,14 @@ ARG RUBY_VERSION
 FROM ruby:$RUBY_VERSION-slim as base
 ```
 
+### Using without RAILS_MASTER_KEY
+
+If you're using MRSK with older Rails apps that predate RAILS_MASTER_KEY, or with a non-Rails app, you can skip the default usage and reference:
+
+```yaml
+skip_master_key: true
+```
+
 ### Using accessories for database, cache, search services
 
 You can manage your accessory services via MRSK as well. The services will build off public images, and will not be automatically updated when you deploy:

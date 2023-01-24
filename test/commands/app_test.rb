@@ -2,12 +2,16 @@ require "test_helper"
 require "mrsk/configuration"
 require "mrsk/commands/app"
 
-ENV["RAILS_MASTER_KEY"] = "456"
-
 class CommandsAppTest < ActiveSupport::TestCase
   setup do
+    ENV["RAILS_MASTER_KEY"] = "456"
+
     @config = { service: "app", image: "dhh/app", registry: { "username" => "dhh", "password" => "secret" }, servers: [ "1.1.1.1" ] }
     @app = Mrsk::Commands::App.new Mrsk::Configuration.new(@config)
+  end
+
+  teardown do
+    ENV["RAILS_MASTER_KEY"] = nil
   end
 
   test "run" do
@@ -26,5 +30,12 @@ class CommandsAppTest < ActiveSupport::TestCase
     assert_equal \
       [ :docker, :run, "--rm", "-e", "RAILS_MASTER_KEY=456", "dhh/app:missing", "bin/rails", "db:setup" ],
       @app.run_exec("bin/rails", "db:setup")
+  end
+
+  test "run without master key" do
+    ENV["RAILS_MASTER_KEY"] = nil
+    @app = Mrsk::Commands::App.new Mrsk::Configuration.new(@config.tap { |c| c[:skip_master_key] = true })
+
+    assert @app.run.exclude?("RAILS_MASTER_KEY=456")
   end
 end
