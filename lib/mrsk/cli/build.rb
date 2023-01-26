@@ -15,9 +15,13 @@ class Mrsk::Cli::Build < Mrsk::Cli::Base
       begin
         MRSK.verbosity(:debug) { execute *MRSK.builder.push }
       rescue SSHKit::Command::Failed => e
-        error "Missing compatible builder, so creating a new one first"
-        execute *MRSK.builder.create
-        MRSK.verbosity(:debug) { execute *MRSK.builder.push }
+        if e.message =~ /no such file or directory/
+          error "Missing compatible builder, so creating a new one first"
+          execute *MRSK.builder.create
+          MRSK.verbosity(:debug) { execute *MRSK.builder.push }
+        else
+          raise
+        end
       end
     end
   end
