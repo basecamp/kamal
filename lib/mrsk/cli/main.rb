@@ -57,7 +57,7 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
   desc "config", "Show combined config"
   def config
     run_locally do
-      pp MRSK.config.to_h
+      puts MRSK.config.to_h.to_yaml
     end
   end
 
