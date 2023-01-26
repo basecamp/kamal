@@ -40,10 +40,24 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
   end
   
   desc "exec [CMD]", "Execute a custom command on servers"
-  option :run, type: :boolean, default: false, desc: "Start a new container to run the command rather than reusing existing"
+  option :method, aliases: "-m", default: "exec", desc: "Execution method: [exec] perform inside app container / [run] perform in new container / [ssh] perform over ssh"
   def exec(cmd)
-    runner = options[:run] ? :run_exec : :exec
-    on(MRSK.hosts) { |host| puts_by_host host, capture_with_info(*MRSK.app.send(runner, cmd)) }
+    runner = \
+      case options[:method]
+      when "exec" then "exec"
+      when "run"  then "run_exec"
+      when "ssh"  then "exec_over_ssh"
+      else raise "Unknown method: #{options[:method]}"
+      end.inquiry
+
+    if runner.exec_over_ssh?
+      run_locally do
+        info "Launching command on #{MRSK.primary_host}"
+        exec MRSK.app.exec_over_ssh(cmd, host: MRSK.primary_host)
+      end
+    else
+      on(MRSK.hosts) { |host| puts_by_host host, capture_with_info(*MRSK.app.send(runner, cmd)) }
+    end
   end
 
   desc "console", "Start Rails Console on primary host (or specific host set by --hosts)"

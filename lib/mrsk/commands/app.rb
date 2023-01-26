@@ -60,6 +60,10 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
       *command
   end
 
+  def exec_over_ssh(*command, host:)
+    run_over_ssh run_exec(*command, interactive: true).join(" "), host: host
+  end
+
   def follow_logs(host:, grep: nil)
     run_over_ssh pipe(
       current_container_id,
@@ -89,10 +93,6 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
   end
 
   private
-    def exec_over_ssh(*command, host:)
-      run_over_ssh run_exec(*command, interactive: true).join(" "), host: host
-    end
-
     def service_filter
       [ "--filter", "label=service=#{config.service}" ]
     end
