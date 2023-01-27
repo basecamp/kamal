@@ -74,7 +74,7 @@ class Mrsk::Commander
   end
 
   def accessory(name)
-    config.accessories.detect { |a| a.name == name }
+    Mrsk::Commands::Accessory.new(config, name: name)
   end
 
 
