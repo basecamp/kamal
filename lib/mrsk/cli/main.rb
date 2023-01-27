@@ -52,6 +52,7 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
   def details
     invoke "mrsk:cli:traefik:details"
     invoke "mrsk:cli:app:details"
+    invoke "mrsk:cli:accessory:details", [ "all" ]
   end
 
   desc "config", "Show combined config"
