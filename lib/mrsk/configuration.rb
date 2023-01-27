@@ -4,6 +4,7 @@ require "active_support/core_ext/module/delegation"
 require "pathname"
 require "erb"
 require "mrsk/utils"
+require "net/ssh/proxy/jump"
 
 class Mrsk::Configuration
   delegate :service, :image, :servers, :env, :labels, :registry, :builder, to: :raw_config, allow_nil: true
@@ -104,11 +105,33 @@ class Mrsk::Configuration
   end
 
   def ssh_user
-    raw_config.ssh_user || "root"
+    if raw_config.ssh.present?
+      raw_config.ssh["user"] || "root"
+    else
+      "root"
+    end
   end
 
   def ssh_options
-    { user: ssh_user, auth_methods: [ "publickey" ] }
+    options = { user: ssh_user, auth_methods: [ "publickey" ] }
+
+    options[:proxy] = ::Net::SSH::Proxy::Jump.new(ssh_proxy_host) if ssh_proxy_host
+
+    options
+  end
+
+  def ssh_proxy_host
+    if raw_config.ssh && raw_config.ssh["proxy_host"]
+      "#{ssh_user_proxy_host}@#{raw_config.ssh['proxy_host']}"
+    end
+  end
+
+  def ssh_user_proxy_host
+    if raw_config.ssh.present?
+      raw_config.ssh["user_proxy_host"] || "root"
+    else
+      "root"
+    end
   end
 
   def master_key

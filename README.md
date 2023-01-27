@@ -68,10 +68,21 @@ registry:
 
 ### Using a different SSH user than root
 
-The default SSH user is root, but you can change it using `ssh_user`:
+The default SSH user is root, but you can change it using `ssh/user`:
 
 ```yaml
-ssh_user: app
+ssh:
+  user: app
+```
+
+### Using a bastion/proxy/jump SSH host
+
+If you need to connect to server through a bastion host, you can use `ssh/proxy_host`:
+
+```yaml
+ssh:
+  proxy_host: 192.168.0.1
+  user_proxy_host: app # defaults to root
 ```
 
 ### Using env variables
