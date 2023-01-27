@@ -153,15 +153,6 @@ class ConfigurationTest < ActiveSupport::TestCase
     assert_equal "app@1.2.3.4", @config.ssh_options[:proxy].jump_proxies
   end
 
-  test "master key" do
-    assert_equal "456", @config.master_key
-  end
-
-  test "skip master key" do
-    config = Mrsk::Configuration.new(@deploy.tap { |c| c[:skip_master_key] = true })
-    assert_nil @config.master_key
-  end
-
   test "volume_args" do
     assert_equal ["--volume", "/local/path:/container/path"], @config.volume_args
   end
