@@ -2,13 +2,13 @@ require "mrsk/commands/builder/native"
 
 class Mrsk::Commands::Builder::Native::Remote < Mrsk::Commands::Builder::Native
   def create
-    combine \
+    chain \
       create_context,
       create_buildx
   end
 
   def remove
-    combine \
+    chain \
       remove_context,
       remove_buildx
   end
@@ -25,7 +25,7 @@ class Mrsk::Commands::Builder::Native::Remote < Mrsk::Commands::Builder::Native
   end
 
   def info
-    combine \
+    chain \
       docker(:context, :ls),
       docker(:buildx, :ls)
   end

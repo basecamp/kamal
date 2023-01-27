@@ -16,6 +16,10 @@ module Mrsk::Commands
           .tap     { |commands| commands.pop } # Remove trailing combiner
       end
 
+      def chain(*commands)
+        combine *commands, by: ";"
+      end
+
       def pipe(*commands)
         combine *commands, by: "|"
       end
