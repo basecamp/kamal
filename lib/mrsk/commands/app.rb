@@ -44,7 +44,6 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
       ("-it" if interactive),
       *rails_master_key_arg,
       *config.env_args,
-      *config.volume_args,
       config.service_with_version,
       *command
   end
