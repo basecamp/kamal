@@ -49,7 +49,7 @@ class Mrsk::Commander
   end
 
   def accessory_names
-    config.accessories.collect(&:name)
+    config.accessories&.collect(&:name) || []
   end
 
 
@@ -74,7 +74,7 @@ class Mrsk::Commander
   end
 
   def accessory(name)
-    (@accessories ||= {})[name] ||= Mrsk::Commands::Accessory.new(config, name: name)
+    config.accessories.detect { |a| a.name == name }
   end
 
 
