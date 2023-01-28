@@ -105,6 +105,14 @@ class ConfigurationTest < ActiveSupport::TestCase
     ENV["PASSWORD"] = nil
   end
 
+  test "env args with only clear" do
+    config = Mrsk::Configuration.new(@deploy.tap { |c| c.merge!({
+      env: { "clear" => { "PORT" => "3000" } }
+    }) })
+
+    assert_equal [ "-e", "PORT=3000" ], config.env_args
+  end
+
   test "env args with only secrets" do
     ENV["PASSWORD"] = "secret123"
     config = Mrsk::Configuration.new(@deploy.tap { |c| c.merge!({

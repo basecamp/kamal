@@ -18,7 +18,7 @@ module Mrsk::Utils
     if (secrets = env["secret"]).present?
       argumentize("-e", secrets.to_h { |key| [ key, ENV.fetch(key) ] }, redacted: true) + argumentize("-e", env["clear"])
     else
-      argumentize "-e", env
+      argumentize "-e", env.fetch("clear", env)
     end
   end
 
