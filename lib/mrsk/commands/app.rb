@@ -11,6 +11,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
       *rails_master_key_arg,
       *role.env_args,
       *config.volume_args,
+      *config.loggin_driver_args,
       *role.label_args,
       config.absolute_image,
       role.cmd

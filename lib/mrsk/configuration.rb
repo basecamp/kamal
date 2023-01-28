@@ -106,6 +106,14 @@ class Mrsk::Configuration
     end
   end
 
+  def loggin_driver_args
+    all_logging_args = []
+    all_logging_args << argumentize("--log-driver", raw_config.logging['driver']) if raw_config.logging&.dig('driver').present?
+    all_logging_args << argumentize("--log-opt", raw_config.logging['options']) if raw_config.logging&.dig('options').present?
+
+    all_logging_args.flatten
+  end
+
   def ssh_user
     raw_config.ssh_user || "root"
   end

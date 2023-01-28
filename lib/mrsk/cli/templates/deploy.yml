@@ -15,3 +15,11 @@ registry:
   # server: registry.digitalocean.com / ghcr.io / ...
   username: my-user
   password: my-password-should-go-somewhere-safe
+
+#logging:
+#  driver: 'json-file'
+#  options:
+#    max-size: 10m
+#    max-file: 3
+#    labels: "my-app"
+#    env: "app"
