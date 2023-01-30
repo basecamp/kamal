@@ -35,7 +35,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
   def logs(since: nil, lines: nil, grep: nil)
     pipe \
       current_container_id,
-      "xargs docker logs#{" --since #{since}" if since}#{" -n #{lines}" if lines} -t 2>&1",
+      "xargs docker logs#{" --since #{since}" if since}#{" -n #{lines}" if lines} 2>&1",
       ("grep '#{grep}'" if grep)
   end
 
