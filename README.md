@@ -46,6 +46,15 @@ Kubernetes is a beast. Running it yourself on your own hardware is not for the f
 
 ## Configuration
 
+### Using .env to load required environment variables
+
+MRSK uses [dotenv](https://github.com/bkeepers/dotenv) to automatically load environment variables set in the `.env` file present in the application root. This file can be used to set variables like `MRSK_REGISTRY_PASSWORD` or database passwords. But for this reason you must ensure that .env files are not checked into Git or included in your Dockerfile! The format is just key-value like:
+
+```bash
+MRSK_REGISTRY_PASSWORD=pw
+DB_PASSWORD=secret123
+```
+
 ### Using another registry than Docker Hub
 
 The default registry is Docker Hub, but you can change it using `registry/server`:
