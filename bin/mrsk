@@ -10,4 +10,7 @@ begin
 rescue SSHKit::Runner::ExecuteError => e
   puts "  \e[31mERROR (#{e.cause.class}): #{e.cause.message}\e[0m"
   puts e.cause.backtrace if ENV["VERBOSE"]
+rescue => e
+  puts "  \e[31mERROR (#{e.class}): #{e.message}\e[0m"
+  puts e.backtrace if ENV["VERBOSE"]
 end
