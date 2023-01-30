@@ -50,7 +50,7 @@ class Mrsk::Cli::Traefik < Mrsk::Cli::Base
       end
     else
       since = options[:since]
-      lines = options[:lines]
+      lines = options[:lines].presence || ((since || grep) ? nil : 100) # Default to 100 lines if since or grep isn't set
 
       on(MRSK.traefik_hosts) do |host|
         puts_by_host host, capture(*MRSK.traefik.logs(since: since, lines: lines, grep: grep)), type: "Traefik"

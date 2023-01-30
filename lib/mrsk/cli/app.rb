@@ -109,7 +109,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
       end
     else
       since = options[:since]
-      lines = options[:lines]
+      lines = options[:lines].presence || ((since || grep) ? nil : 100) # Default to 100 lines if since or grep isn't set
 
       on(MRSK.hosts) do |host|
         begin

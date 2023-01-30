@@ -118,7 +118,7 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
         end
       else
         since = options[:since]
-        lines = options[:lines]
+        lines = options[:lines].presence || ((since || grep) ? nil : 100) # Default to 100 lines if since or grep isn't set
 
         on(accessory.host) do
           puts capture_with_info(*accessory.logs(since: since, lines: lines, grep: grep))
