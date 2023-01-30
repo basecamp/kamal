@@ -28,12 +28,16 @@ module Mrsk::Cli
         MRSK.tap do |commander|
           commander.config_file = Pathname.new(File.expand_path(options[:config_file]))
           commander.destination = options[:destination]
-          commander.verbose     = options[:verbose]
           commander.version     = options[:version]
 
           commander.specific_hosts    = options[:hosts]&.split(",")
           commander.specific_roles    = options[:roles]&.split(",")
           commander.specific_primary! if options[:primary]
+
+          if options[:verbose]
+            commander.verbose = true
+            ENV["VERBOSE"]    = "1" # For backtraces via cli/start
+          end
         end
       end
 
