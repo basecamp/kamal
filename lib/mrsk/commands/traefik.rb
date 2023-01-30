@@ -9,7 +9,8 @@ class Mrsk::Commands::Traefik < Mrsk::Commands::Base
       "-v /var/run/docker.sock:/var/run/docker.sock",
       "traefik",
       "--providers.docker",
-      "--log.level=DEBUG"
+      "--log.level=DEBUG",
+      *config.traefik_args
   end
 
   def start

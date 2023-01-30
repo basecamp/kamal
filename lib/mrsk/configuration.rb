@@ -72,6 +72,12 @@ class Mrsk::Configuration
     roles.select(&:running_traefik?).flat_map(&:hosts)
   end
 
+  def traefik_args
+    if raw_config.traefik.present?
+      raw_config.traefik
+    end
+  end
+
 
   def version
     @version
@@ -137,6 +143,7 @@ class Mrsk::Configuration
       service_with_version: service_with_version,
       env_args: env_args,
       volume_args: volume_args,
+      traefik_args: traefik_args,
       ssh_options: ssh_options,
       builder: raw_config.builder,
       accessories: raw_config.accessories
