@@ -39,7 +39,7 @@ class Mrsk::Configuration
   def initialize(raw_config, version: "missing", validate: true)
     @raw_config = ActiveSupport::InheritableOptions.new(raw_config)
     @version = version
-    ensure_required_keys_present if validate
+    valid? if validate
   end
 
 
@@ -120,6 +120,12 @@ class Mrsk::Configuration
     end
   end
 
+
+  def valid?
+    ensure_required_keys_present && ensure_env_available
+  end
+
+
   def to_h
     {
       roles: role_names,
@@ -139,6 +145,7 @@ class Mrsk::Configuration
 
 
   private
+    # Will raise ArgumentError if any required config keys are missing
     def ensure_required_keys_present
       %i[ service image registry servers ].each do |key|
         raise ArgumentError, "Missing required configuration for #{key}" unless raw_config[key].present?
@@ -151,6 +158,16 @@ class Mrsk::Configuration
       if raw_config.registry["password"].blank?
         raise ArgumentError, "You must specify a password for the registry in config/deploy.yml (or set the ENV variable if that's used)"
       end
+
+      true
+    end
+
+    # Will raise KeyError if any secret ENVs are missing
+    def ensure_env_available
+      env_args
+      roles.each(&:env_args)
+
+      true
     end
 
     def role_names

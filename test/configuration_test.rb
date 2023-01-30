@@ -126,13 +126,15 @@ class ConfigurationTest < ActiveSupport::TestCase
   end
 
   test "env args with missing secret" do
-    config = Mrsk::Configuration.new(@deploy.tap { |c| c.merge!({
-      env: { "secret" => [ "PASSWORD" ] }
-    }) })
-
     assert_raises(KeyError) do
-      assert_equal [ "-e", "PASSWORD=secret123" ], config.env_args
+      config = Mrsk::Configuration.new(@deploy.tap { |c| c.merge!({
+        env: { "secret" => [ "PASSWORD" ] }
+      }) })
     end
+  end
+
+  test "valid config" do
+    assert @config.valid?
   end
 
   test "ssh options" do
