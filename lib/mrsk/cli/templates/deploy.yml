@@ -15,3 +15,5 @@ registry:
   # server: registry.digitalocean.com / ghcr.io / ...
   username: my-user
   password: my-password-should-go-somewhere-safe
+
+#keep_releases: 5

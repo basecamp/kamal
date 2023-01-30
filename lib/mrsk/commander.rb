@@ -4,7 +4,8 @@ require "mrsk/configuration"
 require "mrsk/commands/accessory"
 require "mrsk/commands/app"
 require "mrsk/commands/builder"
-require "mrsk/commands/prune"
+require "mrsk/commands/image"
+require "mrsk/commands/container"
 require "mrsk/commands/traefik"
 require "mrsk/commands/registry"
 
@@ -69,8 +70,12 @@ class Mrsk::Commander
     @registry ||= Mrsk::Commands::Registry.new(config)
   end
 
-  def prune
-    @prune ||= Mrsk::Commands::Prune.new(config)
+  def image
+    @image ||= Mrsk::Commands::Image.new(config)
+  end
+
+  def container
+    @container ||= Mrsk::Commands::Container.new(config)
   end
 
   def accessory(name)

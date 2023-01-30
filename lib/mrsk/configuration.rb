@@ -89,6 +89,9 @@ class Mrsk::Configuration
     "#{service}-#{version}"
   end
 
+  def keep_releases
+    raw_config.keep_releases || 5
+  end
 
   def env_args
     if raw_config.env.present?
