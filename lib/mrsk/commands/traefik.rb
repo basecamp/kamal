@@ -33,7 +33,7 @@ class Mrsk::Commands::Traefik < Mrsk::Commands::Base
   def follow_logs(host:, grep: nil)
     run_over_ssh pipe(
       docker(:logs, "traefik", "-t", "-n", "10", "-f", "2>&1"),
-      ("grep '#{grep}'" if grep)
+      (%(grep "#{grep}") if grep)
     ).join(" "), host: host
   end
 

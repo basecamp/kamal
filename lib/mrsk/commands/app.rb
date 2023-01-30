@@ -67,7 +67,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
     run_over_ssh pipe(
       current_container_id,
       "xargs docker logs -t -n 10 -f 2>&1",
-      ("grep '#{grep}'" if grep)
+      (%(grep "#{grep}") if grep)
     ).join(" "), host: host
   end
 

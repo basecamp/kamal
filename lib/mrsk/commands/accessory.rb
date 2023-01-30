@@ -42,7 +42,7 @@ class Mrsk::Commands::Accessory < Mrsk::Commands::Base
   def follow_logs(grep: nil)
     run_over_ssh pipe(
       docker(:logs, service_name, "-t", "-n", "10", "-f", "2>&1"),
-      ("grep '#{grep}'" if grep)
+      (%(grep "#{grep}") if grep)
     ).join(" "), host: host
   end
 
