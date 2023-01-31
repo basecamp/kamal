@@ -9,7 +9,8 @@ class Mrsk::Commands::Traefik < Mrsk::Commands::Base
       "-v /var/run/docker.sock:/var/run/docker.sock",
       "traefik",
       "--providers.docker",
-      "--log.level=DEBUG"
+      "--log.level=DEBUG",
+      *cmd_args
   end
 
   def start
@@ -44,4 +45,9 @@ class Mrsk::Commands::Traefik < Mrsk::Commands::Base
   def remove_image
     docker :image, :prune, "-a", "-f", "--filter", "label=org.opencontainers.image.title=Traefik"
   end
+
+  private
+    def cmd_args
+      (config.raw_config.dig(:traefik, "args") || { }).collect { |(key, value)| [ "--#{key}", value ] }.flatten
+    end
 end

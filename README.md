@@ -235,6 +235,18 @@ RUN --mount=type=secret,id=GITHUB_TOKEN \
   bundle install
 ```
 
+### Using command arguments for Traefik
+
+You can customize the traefik command line:
+
+```yaml
+traefik:
+  accesslog: true
+  accesslog.format: json
+  metrics.prometheus: true
+  metrics.prometheus.buckets: 0.1,0.3,1.2,5.0
+```
+
 ### Configuring build args for new images
 
 Build arguments that aren't secret can also be configured:
