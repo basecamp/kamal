@@ -145,8 +145,13 @@ class ConfigurationTest < ActiveSupport::TestCase
   end
 
   test "ssh options with proxy host" do
-    config = Mrsk::Configuration.new(@deploy.tap { |c| c.merge!(ssh: { "proxy_host" => "1.2.3.4" }) })
+    config = Mrsk::Configuration.new(@deploy.tap { |c| c.merge!(ssh: { "proxy" => "1.2.3.4" }) })
     assert_equal "root@1.2.3.4", @config.ssh_options[:proxy].jump_proxies
+  end
+
+  test "ssh options with proxy host and user" do
+    config = Mrsk::Configuration.new(@deploy.tap { |c| c.merge!(ssh: { "proxy" => "app@1.2.3.4" }) })
+    assert_equal "app@1.2.3.4", @config.ssh_options[:proxy].jump_proxies
   end
 
   test "master key" do

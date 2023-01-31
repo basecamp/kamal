@@ -75,14 +75,20 @@ ssh:
   user: app
 ```
 
-### Using a bastion/proxy/jump SSH host
+### Using a proxy SSH host
 
-If you need to connect to server through a bastion host, you can use `ssh/proxy_host`:
+If you need to connect to server through a proxy host, you can use `ssh/proxy`:
 
 ```yaml
 ssh:
-  proxy_host: 192.168.0.1
-  user_proxy_host: app # defaults to root
+  proxy: "192.168.0.1" # defaults to root as the user
+```
+
+Or with specific user:
+
+```yaml
+ssh:
+  proxy: "app@192.168.0.1"
 ```
 
 ### Using env variables

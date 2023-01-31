@@ -112,26 +112,15 @@ class Mrsk::Configuration
     end
   end
 
+  def ssh_proxy
+    if raw_config.ssh.present? && raw_config.ssh["proxy"]
+      Net::SSH::Proxy::Jump.new \
+        raw_config.ssh["proxy"].include?("@") ? raw_config.ssh["proxy"] : "root@#{raw_config.ssh["proxy"]}"
+    end
+  end
+
   def ssh_options
-    options = { user: ssh_user, auth_methods: [ "publickey" ] }
-
-    options[:proxy] = ::Net::SSH::Proxy::Jump.new(ssh_proxy_host) if ssh_proxy_host
-
-    options
-  end
-
-  def ssh_proxy_host
-    if raw_config.ssh && raw_config.ssh["proxy_host"]
-      "#{ssh_user_proxy_host}@#{raw_config.ssh['proxy_host']}"
-    end
-  end
-
-  def ssh_user_proxy_host
-    if raw_config.ssh.present?
-      raw_config.ssh["user_proxy_host"] || "root"
-    else
-      "root"
-    end
+    { user: ssh_user, proxy: ssh_proxy, auth_methods: [ "publickey" ] }.compact
   end
 
   def master_key
