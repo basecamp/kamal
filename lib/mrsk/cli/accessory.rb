@@ -99,7 +99,7 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
         exec accessory.exec_over_ssh(cmd, host: accessory.host)
       end
     else
-      on(accessory.host) { puts capture_with_info(*accessory.send(runner, cmd) }
+      on(accessory.host) { puts capture_with_info(*accessory.send(runner, cmd)) }
     end
   end
 
