@@ -63,12 +63,12 @@ class Mrsk::Commands::Accessory < Mrsk::Commands::Base
       *command
   end
 
-  def exec_over_ssh(*command, host:)
+  def exec_over_ssh(*command)
     run_over_ssh run_exec(*command, interactive: true).join(" "), host: host
   end
 
-  def bash(host:)
-    exec_over_ssh "bash", host: host
+  def bash
+    exec_over_ssh "bash"
   end
 
   def ensure_local_file_present(local_file)

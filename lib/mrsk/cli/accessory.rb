@@ -110,7 +110,7 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
     with_accessory(name) do |accessory|
       run_locally do
         info "Launching bash session on #{accessory.host}"
-        exec accessory.bash(host: accessory.host)
+        exec accessory.bash
       end
     end
   end
