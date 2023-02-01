@@ -63,6 +63,10 @@ class Mrsk::Commands::Accessory < Mrsk::Commands::Base
       *command
   end
 
+  def exec_over_ssh(*command, host:)
+    run_over_ssh run_exec(*command, interactive: true).join(" "), host: host
+  end
+
   def bash(host:)
     exec_over_ssh "bash", host: host
   end
@@ -94,10 +98,6 @@ class Mrsk::Commands::Accessory < Mrsk::Commands::Base
   end
 
   private
-    def exec_over_ssh(*command, host:)
-      run_over_ssh run_exec(*command, interactive: true).join(" "), host: host
-    end
-
     def service_filter
       [ "--filter", "label=service=#{service_name}" ]
     end

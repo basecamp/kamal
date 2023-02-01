@@ -83,11 +83,23 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
   end
 
   desc "exec [NAME] [CMD]", "Execute a custom command on accessory host"
-  option :run, type: :boolean, default: false, desc: "Start a new container to run the command rather than reusing existing"
+  option :method, aliases: "-m", default: "exec", desc: "Execution method: [exec] perform inside container / [run] perform in new container / [ssh] perform over ssh"
   def exec(name, cmd)
-    with_accessory(name) do |accessory|
-      runner = options[:run] ? :run_exec : :exec
-      on(accessory.host) { |host| puts_by_host host, capture_with_info(*accessory.send(runner, cmd)) }
+    runner = \
+      case options[:method]
+      when "exec" then "exec"
+      when "run"  then "run_exec"
+      when "ssh"  then "exec_over_ssh"
+      else raise "Unknown method: #{options[:method]}"
+      end.inquiry
+
+    if runner.exec_over_ssh?
+      run_locally do
+        info "Launching command on #{accessory.host}"
+        exec accessory.exec_over_ssh(cmd, host: accessory.host)
+      end
+    else
+      on(accessory.host) { puts capture_with_info(*accessory.send(runner, cmd) }
     end
   end
 
