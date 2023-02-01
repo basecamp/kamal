@@ -42,8 +42,6 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
   def exec(*command, interactive: false)
     docker :exec,
       ("-it" if interactive),
-      *rails_master_key_arg,
-      *config.env_args,
       config.service_with_version,
       *command
   end

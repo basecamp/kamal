@@ -49,7 +49,6 @@ class Mrsk::Commands::Accessory < Mrsk::Commands::Base
   def exec(*command, interactive: false)
     docker :exec,
       ("-it" if interactive),
-      *env_args,
       service_name,
       *command
   end
