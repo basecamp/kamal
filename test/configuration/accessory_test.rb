@@ -98,7 +98,8 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
     @deploy[:accessories]["mysql"]["files"] << "test/fixtures/files/structure.sql.erb:/docker-entrypoint-initdb.d/structure.sql"
     @config = Mrsk::Configuration.new(@deploy)
 
-    assert_equal "This was dynamically expanded", @config.accessory(:mysql).files.keys[2].read
+    assert_match "This was dynamically expanded", @config.accessory(:mysql).files.keys[2].read
+    assert_match "%", @config.accessory(:mysql).files.keys[2].read
   end
 
   test "directories" do

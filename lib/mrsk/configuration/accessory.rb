@@ -74,10 +74,17 @@ class Mrsk::Configuration::Assessory
 
     def expand_local_file(local_file)
       if local_file.end_with?("erb")
-        read_dynamic_file(local_file)
+        with_clear_env_loaded { read_dynamic_file(local_file) }
       else
         Pathname.new(File.expand_path(local_file)).to_s
       end
+    end
+
+    def with_clear_env_loaded
+      (env["clear"] || env).each { |k, v| ENV[k] = v }
+      yield
+    ensure
+      (env["clear"] || env).each { |k, v| ENV.delete(k) }
     end
 
     def read_dynamic_file(local_file)
