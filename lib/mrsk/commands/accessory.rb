@@ -43,7 +43,7 @@ class Mrsk::Commands::Accessory < Mrsk::Commands::Base
     run_over_ssh pipe(
       docker(:logs, service_name, "-t", "-n", "10", "-f", "2>&1"),
       (%(grep "#{grep}") if grep)
-    ).join(" "), host: host
+    ).join(" ")
   end
 
   def exec(*command, interactive: false)
@@ -68,7 +68,7 @@ class Mrsk::Commands::Accessory < Mrsk::Commands::Base
   end
 
   def exec_over_ssh(*command)
-    run_over_ssh run_exec(*command, interactive: true).join(" "), host: host
+    run_over_ssh run_exec(*command, interactive: true).join(" ")
   end
 
   def bash
