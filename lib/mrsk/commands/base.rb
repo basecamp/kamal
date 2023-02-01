@@ -8,6 +8,10 @@ module Mrsk::Commands
       @config = config
     end
 
+    def run_over_ssh(command, host:)
+      "ssh -t #{config.ssh_user}@#{host} '#{command}'"
+    end
+
     private
       def combine(*commands, by: "&&")
         commands
@@ -26,10 +30,6 @@ module Mrsk::Commands
 
       def docker(*args)
         args.compact.unshift :docker
-      end
-
-      def run_over_ssh(command, host:)
-        "ssh -t #{config.ssh_user}@#{host} '#{command}'"
       end
   end
 end

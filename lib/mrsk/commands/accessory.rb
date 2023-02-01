@@ -63,6 +63,10 @@ class Mrsk::Commands::Accessory < Mrsk::Commands::Base
       *command
   end
 
+  def run_over_ssh(command)
+    super command, host: host
+  end
+
   def exec_over_ssh(*command)
     run_over_ssh run_exec(*command, interactive: true).join(" "), host: host
   end

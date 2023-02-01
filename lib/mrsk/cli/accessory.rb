@@ -87,20 +87,24 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
   def exec(name, cmd)
     runner = \
       case options[:method]
-      when "exec" then "exec"
-      when "run"  then "run_exec"
-      when "ssh"  then "exec_over_ssh"
+      when "exec"     then "exec"
+      when "run"      then "run_exec"
+      when "ssh_exec" then "exec_over_ssh"
+      when "ssh_run"  then "run_over_ssh"
       else raise "Unknown method: #{options[:method]}"
       end.inquiry
 
     with_accessory(name) do |accessory|
-      if runner.exec_over_ssh?
+      if runner.exec_over_ssh? || runner.run_over_ssh?
         run_locally do
           info "Launching command on #{accessory.host}"
-          exec accessory.exec_over_ssh(cmd, host: accessory.host)
+          exec accessory.send(runner, cmd)
         end
       else
-        on(accessory.host) { puts capture_with_info(*accessory.send(runner, cmd)) }
+        on(accessory.host) do
+          info "Launching command on #{accessory.host}"
+          execute *accessory.send(runner, cmd)
+        end
       end
     end
   end
