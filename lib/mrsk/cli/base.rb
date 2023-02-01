@@ -8,6 +8,7 @@ module Mrsk::Cli
     def self.exit_on_failure?() true end
 
     class_option :verbose, type: :boolean, aliases: "-v", desc: "Detailed logging"
+    class_option :quiet, type: :boolean, aliases: "-q", desc: "Minimal logging"
 
     class_option :version, desc: "Run commands against a specific app version"
 
@@ -35,8 +36,12 @@ module Mrsk::Cli
           commander.specific_primary! if options[:primary]
 
           if options[:verbose]
-            commander.verbose = true
-            ENV["VERBOSE"]    = "1" # For backtraces via cli/start
+            ENV["VERBOSE"] = "1" # For backtraces via cli/start
+            commander.verbosity = :debug
+          end
+
+          if options[:quiet]
+            commander.verbosity = :error
           end
         end
       end

@@ -9,10 +9,10 @@ require "mrsk/commands/traefik"
 require "mrsk/commands/registry"
 
 class Mrsk::Commander
-  attr_accessor :config_file, :destination, :verbose, :version
+  attr_accessor :config_file, :destination, :verbosity, :version
 
-  def initialize(config_file: nil, destination: nil, verbose: false)
-    @config_file, @destination, @verbose = config_file, destination, verbose
+  def initialize(config_file: nil, destination: nil, verbosity: :info)
+    @config_file, @destination, @verbosity = config_file, destination, verbosity
   end
 
   def config
@@ -78,7 +78,7 @@ class Mrsk::Commander
   end
 
 
-  def verbosity(level) 
+  def with_verbosity(level) 
     old_level = SSHKit.config.output_verbosity
     SSHKit.config.output_verbosity = level
     yield
@@ -95,6 +95,6 @@ class Mrsk::Commander
     def configure_sshkit_with(config)
       SSHKit::Backend::Netssh.configure { |ssh| ssh.ssh_options = config.ssh_options }
       SSHKit.config.command_map[:docker] = "docker" # No need to use /usr/bin/env, just clogs up the logs
-      SSHKit.config.output_verbosity = :debug if verbose
+      SSHKit.config.output_verbosity = verbosity
     end
 end
