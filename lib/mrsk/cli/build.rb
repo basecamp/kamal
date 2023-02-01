@@ -9,7 +9,6 @@ class Mrsk::Cli::Build < Mrsk::Cli::Base
 
   desc "push", "Build locally and push app image to registry"
   def push
-    verbose = options[:verbose]
     cli = self
 
     run_locally do 
