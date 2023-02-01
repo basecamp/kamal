@@ -50,7 +50,6 @@ class Mrsk::Commands::Accessory < Mrsk::Commands::Base
     docker :exec,
       ("-it" if interactive),
       *env_args,
-      *volume_args,
       service_name,
       *command
   end
