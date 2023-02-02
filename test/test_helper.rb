@@ -9,8 +9,4 @@ ActiveSupport::LogSubscriber.logger = ActiveSupport::Logger.new(STDOUT) if ENV["
 SSHKit.config.backend = SSHKit::Backend::Printer
 
 class ActiveSupport::TestCase
-  private
-    def stdouted
-      capture(:stdout) { yield }.strip
-    end
 end

@@ -1,13 +1,6 @@
-require "test_helper"
-require "active_support/testing/stream"
-require "mrsk/cli"
+require_relative "cli_test_case"
 
-class CliMainTest < ActiveSupport::TestCase
-  include ActiveSupport::Testing::Stream
-
-  setup do
-  end
-
+class CliMainTest < CliTestCase
   test "version" do
     version = stdouted { Mrsk::Cli::Main.new.version }
     assert_equal Mrsk::VERSION, version
