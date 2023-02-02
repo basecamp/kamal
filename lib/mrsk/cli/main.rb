@@ -31,7 +31,7 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
     end
   end
 
-  desc "redeploy", "Deploy new version of the app to servers (without bootstrapping servers, starting Traefik, pruning, and registry login)"
+  desc "redeploy", "Deploy new tag of the app to servers (without bootstrapping servers, starting Traefik, pruning, and registry login)"
   def redeploy
     print_runtime do
       invoke "mrsk:cli:build:deliver"
@@ -40,11 +40,11 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
     end
   end
 
-  desc "rollback [VERSION]", "Rollback the app to VERSION (that must already be on servers)"
-  def rollback(version)
+  desc "rollback [TAG]", "Rollback the app to TAG (that must already be on servers)"
+  def rollback(tag)
     on(MRSK.hosts) do
       execute *MRSK.app.stop, raise_on_non_zero_exit: false
-      execute *MRSK.app.start(version: version)
+      execute *MRSK.app.start(tag: tag)
     end
   end
 

@@ -73,6 +73,6 @@ class CommandsTraefikTest < ActiveSupport::TestCase
 
   private
     def new_command
-      Mrsk::Commands::Traefik.new(Mrsk::Configuration.new(@config, version: "123"))
+      Mrsk::Commands::Traefik.new(Mrsk::Configuration.new(@config, tag: "123"))
     end
 end

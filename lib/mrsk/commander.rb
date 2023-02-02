@@ -9,7 +9,7 @@ require "mrsk/commands/traefik"
 require "mrsk/commands/registry"
 
 class Mrsk::Commander
-  attr_accessor :config_file, :destination, :verbosity, :version
+  attr_accessor :config_file, :destination, :verbosity, :tag
 
   def initialize(config_file: nil, destination: nil, verbosity: :info)
     @config_file, @destination, @verbosity = config_file, destination, verbosity
@@ -18,7 +18,7 @@ class Mrsk::Commander
   def config
     @config ||= \
       Mrsk::Configuration
-        .create_from(config_file, destination: destination, version: cascading_version)
+        .create_from(config_file, destination: destination, tag: cascading_tag)
         .tap { |config| configure_sshkit_with(config) }
   end
 
@@ -87,8 +87,8 @@ class Mrsk::Commander
   end
 
   private
-    def cascading_version
-      version.presence || ENV["VERSION"] || `git rev-parse HEAD`.strip
+    def cascading_tag
+      tag.presence || ENV["tag"] || `git rev-parse HEAD`.strip
     end
 
     # Lazy setup of SSHKit

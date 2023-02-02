@@ -66,9 +66,9 @@ class ConfigurationTest < ActiveSupport::TestCase
     assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3", "1.1.1.4" ], config.traefik_hosts
   end
 
-  test "version" do
-    assert_equal "missing", @config.version
-    assert_equal "123", Mrsk::Configuration.new(@deploy, version: "123").version
+  test "tag" do
+    assert_equal "missing", @config.tag
+    assert_equal "123", Mrsk::Configuration.new(@deploy, tag: "123").tag
   end
 
   test "repository" do
@@ -85,8 +85,8 @@ class ConfigurationTest < ActiveSupport::TestCase
     assert_equal "ghcr.io/dhh/app:missing", config.absolute_image
   end
 
-  test "service with version" do
-    assert_equal "app-missing", @config.service_with_version
+  test "service with tag" do
+    assert_equal "app-missing", @config.service_with_tag
   end
 
   test "env args" do
@@ -181,6 +181,6 @@ class ConfigurationTest < ActiveSupport::TestCase
   end
 
   test "to_h" do
-    assert_equal({ :roles=>["web"], :hosts=>["1.1.1.1", "1.1.1.2"], :primary_host=>"1.1.1.1", :version=>"missing", :repository=>"dhh/app", :absolute_image=>"dhh/app:missing", :service_with_version=>"app-missing", :env_args=>["-e", "REDIS_URL=redis://x/y"], :ssh_options=>{:user=>"root", :auth_methods=>["publickey"]}, :volume_args=>["--volume", "/local/path:/container/path"] }, @config.to_h)
+    assert_equal({ :roles=>["web"], :hosts=>["1.1.1.1", "1.1.1.2"], :primary_host=>"1.1.1.1", :tag=>"missing", :repository=>"dhh/app", :absolute_image=>"dhh/app:missing", :service_with_tag=>"app-missing", :env_args=>["-e", "REDIS_URL=redis://x/y"], :ssh_options=>{:user=>"root", :auth_methods=>["publickey"]}, :volume_args=>["--volume", "/local/path:/container/path"] }, @config.to_h)
   end
 end

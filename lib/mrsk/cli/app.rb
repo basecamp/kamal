@@ -9,7 +9,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
           execute *MRSK.app.run(role: role.name)
         rescue SSHKit::Command::Failed => e
           if e.message =~ /already in use/
-            error "Container with same version already deployed on #{host}, starting that instead"
+            error "Container with same tag already deployed on #{host}, starting that instead"
             execute *MRSK.app.start, host: host
           else
             raise
@@ -19,11 +19,11 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
     end
   end
   
-  desc "start", "Start existing app on servers (use --version=<git-hash> to designate specific version)"
-  option :version, desc: "Defaults to the most recent git-hash in local repository"
+  desc "start", "Start existing app on servers (use --tag=<git-hash> to designate specific tag)"
+  option :tag, desc: "Defaults to the most recent git-hash in local repository"
   def start
-    if (version = options[:version]).present?
-      on(MRSK.hosts) { execute *MRSK.app.start(version: version) }
+    if (tag = options[:tag]).present?
+      on(MRSK.hosts) { execute *MRSK.app.start(tag: tag) }
     else
       on(MRSK.hosts) { execute *MRSK.app.start, raise_on_non_zero_exit: false }
     end

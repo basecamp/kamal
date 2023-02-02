@@ -7,7 +7,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
     docker :run,
       "-d",
       "--restart unless-stopped",
-      "--name", config.service_with_version,
+      "--name", config.service_with_tag,
       *rails_master_key_arg,
       *role.env_args,
       *config.volume_args,
@@ -16,8 +16,8 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
       role.cmd
   end
 
-  def start(version: config.version)
-    docker :start, "#{config.service}-#{version}"
+  def start(tag: config.tag)
+    docker :start, "#{config.service}-#{tag}"
   end
 
   def current_container_id
@@ -42,7 +42,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
   def exec(*command, interactive: false)
     docker :exec,
       ("-it" if interactive),
-      config.service_with_version,
+      config.service_with_tag,
       *command
   end
 

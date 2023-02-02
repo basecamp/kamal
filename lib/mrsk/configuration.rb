@@ -12,13 +12,13 @@ class Mrsk::Configuration
   attr_accessor :raw_config
 
   class << self
-    def create_from(base_config_file, destination: nil, version: "missing")
+    def create_from(base_config_file, destination: nil, tag: "missing")
       new(load_config_file(base_config_file).tap do |config|
         if destination
           config.deep_merge! \
             load_config_file destination_config_file(base_config_file, destination)
         end
-      end, version: version)
+      end, tag: tag)
     end
 
     private
@@ -36,9 +36,9 @@ class Mrsk::Configuration
       end
   end
 
-  def initialize(raw_config, version: "missing", validate: true)
+  def initialize(raw_config, tag: "missing", validate: true)
     @raw_config = ActiveSupport::InheritableOptions.new(raw_config)
-    @version = version
+    @tag = tag
     valid? if validate
   end
 
@@ -73,8 +73,8 @@ class Mrsk::Configuration
   end
 
 
-  def version
-    @version
+  def tag
+    @tag
   end
 
   def repository
@@ -82,11 +82,11 @@ class Mrsk::Configuration
   end
 
   def absolute_image
-    "#{repository}:#{version}"
+    "#{repository}:#{tag}"
   end
 
-  def service_with_version
-    "#{service}-#{version}"
+  def service_with_tag
+    "#{service}-#{tag}"
   end
 
 
@@ -131,10 +131,10 @@ class Mrsk::Configuration
       roles: role_names,
       hosts: all_hosts,
       primary_host: primary_web_host,
-      version: version,
+      tag: tag,
       repository: repository,
       absolute_image: absolute_image,
-      service_with_version: service_with_version,
+      service_with_tag: service_with_tag,
       env_args: env_args,
       volume_args: volume_args,
       ssh_options: ssh_options,

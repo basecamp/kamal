@@ -58,6 +58,6 @@ class CommandsBuilderTest < ActiveSupport::TestCase
 
   private
     def new_builder_command(additional_config = {})
-      Mrsk::Commands::Builder.new(Mrsk::Configuration.new(@config.merge(additional_config), version: "123"))
+      Mrsk::Commands::Builder.new(Mrsk::Configuration.new(@config.merge(additional_config), tag: "123"))
     end
 end
