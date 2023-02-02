@@ -5,30 +5,36 @@ require "mrsk/cli"
 class CliAccessoryTest < ActiveSupport::TestCase
   include ActiveSupport::Testing::Stream
 
-  setup    { ENV["MYSQL_ROOT_PASSWORD"] = "secret123" }
-  teardown { ENV["MYSQL_ROOT_PASSWORD"] = nil }
+  setup do
+    ENV["VERSION"]             = "999"
+    ENV["RAILS_MASTER_KEY"]    = "123"
+    ENV["MYSQL_ROOT_PASSWORD"] = "secret123"
+  end
+
+  teardown do
+    ENV.delete("RAILS_MASTER_KEY")
+    ENV.delete("MYSQL_ROOT_PASSWORD")
+    ENV.delete("VERSION")
+  end
 
   test "upload" do
-    command = stdouted { Mrsk::Cli::Accessory.start(["upload", "mysql", "-c", "test/fixtures/deploy_with_accessories.yml"]) }
-    
-    assert_match "test/fixtures/files/my.cnf app-mysql/etc/mysql/my.cnf", command
+    assert_match "test/fixtures/files/my.cnf app-mysql/etc/mysql/my.cnf", run_command("upload", "mysql")
   end
 
   test "directories" do
-    command = stdouted { Mrsk::Cli::Accessory.start(["directories", "mysql", "-c", "test/fixtures/deploy_with_accessories.yml"]) }
-    
-    assert_match "mkdir -p $PWD/app-mysql/data", command
+    assert_match "mkdir -p $PWD/app-mysql/data", run_command("directories", "mysql")
   end
 
   test "remove service direcotry" do
-    command = stdouted { Mrsk::Cli::Accessory.start(["remove_service_directory", "mysql", "-c", "test/fixtures/deploy_with_accessories.yml"]) }
-    
-    assert_match "rm -rf app-mysql", command
+    assert_match "rm -rf app-mysql", run_command("remove_service_directory", "mysql")
   end
 
   test "boot" do
-    command = stdouted { Mrsk::Cli::Accessory.start(["boot", "mysql", "-c", "test/fixtures/deploy_with_accessories.yml"]) }
-    
-    assert_match "Running docker run --name app-mysql -d --restart unless-stopped -p 3306:3306 -e [REDACTED] -e MYSQL_ROOT_HOST=% --volume $PWD/app-mysql/etc/mysql/my.cnf:/etc/mysql/my.cnf --volume $PWD/app-mysql/data:/var/lib/mysql --label service=app-mysql mysql:5.7 on 1.1.1.3", command
+    assert_match "Running docker run --name app-mysql -d --restart unless-stopped -p 3306:3306 -e [REDACTED] -e MYSQL_ROOT_HOST=% --volume $PWD/app-mysql/etc/mysql/my.cnf:/etc/mysql/my.cnf --volume $PWD/app-mysql/data:/var/lib/mysql --label service=app-mysql mysql:5.7 on 1.1.1.3", run_command("boot", "mysql")
   end
+
+  private
+    def run_command(*command)
+      stdouted { Mrsk::Cli::Accessory.start([*command, "-c", "test/fixtures/deploy_with_accessories.yml"]) }
+    end
 end
