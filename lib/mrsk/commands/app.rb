@@ -1,6 +1,9 @@
 require "mrsk/commands/base"
+require "mrsk/commands/concerns/repository"
 
 class Mrsk::Commands::App < Mrsk::Commands::Base
+  include Mrsk::Commands::Concerns::Repository
+
   def run(role: :web)
     role = config.role(role)
 

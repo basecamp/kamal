@@ -9,6 +9,7 @@ class Mrsk::Configuration
   delegate :service, :image, :servers, :env, :labels, :registry, :builder, to: :raw_config, allow_nil: true
   delegate :argumentize, :argumentize_env_with_secrets, to: Mrsk::Utils
 
+  attr_accessor :version
   attr_accessor :raw_config
 
   class << self
@@ -72,10 +73,6 @@ class Mrsk::Configuration
     roles.select(&:running_traefik?).flat_map(&:hosts)
   end
 
-
-  def version
-    @version
-  end
 
   def repository
     [ raw_config.registry["server"], image ].compact.join("/")

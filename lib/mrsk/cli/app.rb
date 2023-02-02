@@ -3,16 +3,18 @@ require "mrsk/cli/base"
 class Mrsk::Cli::App < Mrsk::Cli::Base
   desc "boot", "Boot app on servers (or start them if they've already been booted)"
   def boot
-    MRSK.config.roles.each do |role|
-      on(role.hosts) do |host|
-        begin
-          execute *MRSK.app.run(role: role.name)
-        rescue SSHKit::Command::Failed => e
-          if e.message =~ /already in use/
-            error "Container with same version already deployed on #{host}, starting that instead"
-            execute *MRSK.app.start, host: host
-          else
-            raise
+    using_most_recent_version_available do
+      MRSK.config.roles.each do |role|
+        on(role.hosts) do |host|
+          begin
+            execute *MRSK.app.run(role: role.name)
+          rescue SSHKit::Command::Failed => e
+            if e.message =~ /already in use/
+              error "Container with same version already deployed on #{host}, starting that instead"
+              execute *MRSK.app.start, host: host
+            else
+              raise
+            end
           end
         end
       end
@@ -69,9 +71,15 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
 
   desc "console", "Start Rails Console on primary host (or specific host set by --hosts)"
   def console
-    run_locally do
-      info "Launching Rails console on #{MRSK.primary_host}"
-      exec MRSK.app.console(host: MRSK.primary_host)
+    using_most_recent_version_available do |version|
+      run_locally do
+        if version
+          info "Launching Rails console on #{MRSK.primary_host} [Version: #{version}]"
+          exec MRSK.app.console(host: MRSK.primary_host)
+        else
+          error "No image available for #{MRSK.config.repository}"
+        end
+      end
     end
   end
 
@@ -144,8 +152,41 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
     on(MRSK.hosts) { execute *MRSK.app.remove_containers }
   end
 
-  desc "remove_images [NAME]", "Remove app images from servers"
+  desc "remove_images", "Remove app images from servers"
   def remove_images
     on(MRSK.hosts) { execute *MRSK.app.remove_images }
   end
+
+  private
+    def using_most_recent_version_available(host: MRSK.primary_host)
+      using_version(most_recent_version_available(host: host)) do |version|
+        yield version
+      end
+    end
+
+    def using_current_running_version(host: MRSK.primary_host)
+      using_version(current_running_version(host: host)) do |version|
+        yield version
+      end
+    end
+
+    def using_version(new_version)
+      old_version = MRSK.config.version
+      MRSK.config.version = new_version
+      yield new_version
+    ensure
+      MRSK.config.version = old_version
+    end
+
+    def most_recent_version_available(host:)
+      version = nil
+      on(host) { version = capture_with_info(*MRSK.app.most_recent_version_from_available_images).strip }
+      version
+    end
+
+    def current_running_version(host:)
+      version = nil
+      on(host) { version = capture_with_info(*MRSK.app.current_running_version).strip }
+      version
+    end
 end
