@@ -85,6 +85,10 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
     docker :container, :prune, "-f", *service_filter
   end
 
+  def list_images
+    docker :image, :ls, config.repository
+  end
+
   def remove_images
     docker :image, :prune, "-a", "-f", *service_filter
   end

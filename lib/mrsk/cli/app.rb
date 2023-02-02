@@ -93,6 +93,11 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
     on(MRSK.hosts) { |host| puts_by_host host, capture_with_info(*MRSK.app.list_containers) }
   end
 
+  desc "images", "List all the app images currently on servers"
+  def images
+    on(MRSK.hosts) { |host| puts_by_host host, capture_with_info(*MRSK.app.list_images) }
+  end
+
   desc "current", "Return the current running container ID"
   def current
     on(MRSK.hosts) { |host| puts_by_host host, capture_with_info(*MRSK.app.current_container_id) }
