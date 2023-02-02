@@ -166,7 +166,7 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
     end
   end
 
-  desc "remove_container [NAME]", "Remove accessory image from host"
+  desc "remove_image [NAME]", "Remove accessory image from host"
   def remove_image(name)
     with_accessory(name) do |accessory|
       on(accessory.host) { execute *accessory.remove_image }
