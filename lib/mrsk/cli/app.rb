@@ -122,16 +122,18 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
   end
 
   desc "remove", "Remove app containers and images from servers"
-  option :only, default: "", desc: "Use 'containers' or 'images'"
   def remove
-    case options[:only]
-    when "containers"
-      on(MRSK.hosts) { execute *MRSK.app.remove_containers }
-    when "images"
-      on(MRSK.hosts) { execute *MRSK.app.remove_images }
-    else
-      on(MRSK.hosts) { execute *MRSK.app.remove_containers }
-      on(MRSK.hosts) { execute *MRSK.app.remove_images }
-    end
+    remove_container
+    remove_image
+  end
+
+  desc "remove_container", "Remove app container from servers"
+  def remove_container
+    on(MRSK.hosts) { execute *MRSK.app.remove_containers }
+  end
+
+  desc "remove_image [NAME]", "Remove app image from servers"
+  def remove_image
+    on(MRSK.hosts) { execute *MRSK.app.remove_images }
   end
 end
