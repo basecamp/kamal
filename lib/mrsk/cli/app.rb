@@ -19,10 +19,10 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
     end
   end
 
-  desc "reboot", "Reboot app on host (stop container, remove container, start new container)"
+  desc "reboot", "Reboot app on host (stop container, remove containers, start new container)"
   def reboot
     stop
-    remove_container
+    remove_containers
     boot
   end
 
@@ -130,17 +130,17 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
 
   desc "remove", "Remove app containers and images from servers"
   def remove
-    remove_container
-    remove_image
+    remove_containers
+    remove_images
   end
 
-  desc "remove_container", "Remove app container from servers"
-  def remove_container
+  desc "remove_containers", "Remove app containers from servers"
+  def remove_containers
     on(MRSK.hosts) { execute *MRSK.app.remove_containers }
   end
 
-  desc "remove_image [NAME]", "Remove app image from servers"
-  def remove_image
+  desc "remove_images [NAME]", "Remove app images from servers"
+  def remove_images
     on(MRSK.hosts) { execute *MRSK.app.remove_images }
   end
 end
