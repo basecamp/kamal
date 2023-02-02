@@ -22,7 +22,11 @@ class CliAppTest < ActiveSupport::TestCase
   end
 
   test "reboot" do
-    assert_equal "", run_command("reboot")
+    run_command("reboot").tap do |output|
+      assert_match /docker stop/, output
+      assert_match /docker container prune/, output
+      assert_match /docker run -d --restart unless-stopped --name app-999/, output
+    end
   end
 
   private
