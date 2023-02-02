@@ -1,4 +1,4 @@
-class Mrsk::Configuration::Assessory
+class Mrsk::Configuration::Accessory
   delegate :argumentize, :argumentize_env_with_secrets, to: Mrsk::Utils
 
   attr_accessor :name, :specifics
