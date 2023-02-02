@@ -52,7 +52,7 @@ class Mrsk::Configuration
   end
 
   def accessories
-    @accessories ||= raw_config.accessories&.keys&.collect { |name| Mrsk::Configuration::Assessory.new(name, config: self) } || []
+    @accessories ||= raw_config.accessories&.keys&.collect { |name| Mrsk::Configuration::Accessory.new(name, config: self) } || []
   end
 
   def accessory(name)
