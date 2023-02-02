@@ -18,7 +18,14 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
       end
     end
   end
-  
+
+  desc "reboot", "Reboot app on host (stop container, remove container, start new container)"
+  def reboot
+    stop
+    remove_container
+    boot
+  end
+
   desc "start", "Start existing app on servers (use --version=<git-hash> to designate specific version)"
   option :version, desc: "Defaults to the most recent git-hash in local repository"
   def start
