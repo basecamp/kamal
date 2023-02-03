@@ -1,9 +1,6 @@
 require "mrsk/commands/base"
-require "mrsk/commands/concerns"
 
 class Mrsk::Commands::App < Mrsk::Commands::Base
-  include Mrsk::Commands::Concerns::Executions
-
   def run(role: :web)
     role = config.role(role)
 
@@ -23,10 +20,6 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
     docker :start, service_with_version
   end
 
-  def current_container_id
-    docker :ps, "-q", *service_filter
-  end
-
   def stop
     pipe current_container_id, xargs(docker(:stop))
   end
@@ -34,6 +27,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
   def info
     docker :ps, *service_filter
   end
+
 
   def logs(since: nil, lines: nil, grep: nil)
     pipe \
@@ -48,6 +42,38 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
       "xargs docker logs -t -n 10 -f 2>&1",
       (%(grep "#{grep}") if grep)
     ).join(" "), host: host
+  end
+
+
+  def execute_in_existing_container(*command, interactive: false)
+    docker :exec,
+      ("-it" if interactive),
+      config.service_with_version,
+      *command
+  end
+
+  def execute_in_new_container(*command, interactive: false)
+    docker :run,
+      ("-it" if interactive),
+      "--rm",
+      *rails_master_key_arg,
+      *config.env_args,
+      *config.volume_args,
+      config.absolute_image,
+      *command
+  end
+
+  def execute_in_existing_container_over_ssh(*command, host:)
+    run_over_ssh execute_in_existing_container(*command, interactive: true).join(" "), host: host
+  end
+
+  def execute_in_new_container_over_ssh(*command, host:)
+    run_over_ssh execute_in_new_container(*command, interactive: true).join(" "), host: host
+  end
+
+
+  def current_container_id
+    docker :ps, "-q", *service_filter
   end
 
   def container_id_for(container_name:)
@@ -67,6 +93,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
       docker(:image, :ls, "--format", '"{{.Tag}}"', config.repository),
       "head -n 1"
   end
+
 
   def list_containers
     docker :container, :ls, "-a", *service_filter
@@ -89,6 +116,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
   def remove_images
     docker :image, :prune, "-a", "-f", *service_filter
   end
+
 
   private
     def service_with_version(version = nil)
