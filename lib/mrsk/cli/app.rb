@@ -68,14 +68,14 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
     when options[:reuse]
       say "Get current version of running container...", :magenta unless options[:version]
       using_version(options[:version] || current_running_version) do |version|
-        say "Launching command with version #{version} from existing container on #{MRSK.primary_host}", :magenta
+        say "Launching command with version #{version} from existing container on #{MRSK.primary_host}...", :magenta
         on(MRSK.hosts) { |host| puts_by_host host, capture_with_info(*MRSK.app.execute_in_existing_container(cmd)) }
       end
 
     else
       say "Get most recent version available as an image...", :magenta unless options[:version]
       using_version(options[:version] || most_recent_version_available) do |version|
-        say "Launching command with version #{version} from new container on #{MRSK.primary_host}", :magenta
+        say "Launching command with version #{version} from new container on #{MRSK.primary_host}...", :magenta
         on(MRSK.hosts) { |host| puts_by_host host, capture_with_info(*MRSK.app.execute_in_new_container(cmd)) }
       end
     end
