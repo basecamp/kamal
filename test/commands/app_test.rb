@@ -1,7 +1,6 @@
 require "test_helper"
 require "mrsk/configuration"
 require "mrsk/commands/app"
-require "minitest/autorun" # using stubs that take args
 
 class CommandsAppTest < ActiveSupport::TestCase
   setup do
