@@ -50,8 +50,13 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
     end
   end
 
-  desc "rollback", "Rollback the app to --version=X (that must already be on servers)"
-  def rollback
+  desc "rollback [VERSION]", "Rollback the app to VERSION"
+  def rollback(version)
+    MRSK.version = version
+
+    cli = self
+
+    cli.say "Stop current version, then start version #{version}...", :magenta
     on(MRSK.hosts) do
       execute *MRSK.app.stop, raise_on_non_zero_exit: false
       execute *MRSK.app.start
