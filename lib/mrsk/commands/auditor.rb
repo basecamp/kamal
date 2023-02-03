@@ -4,7 +4,7 @@ require "mrsk/commands/base"
 class Mrsk::Commands::Auditor < Mrsk::Commands::Base
   def record(line)
     append \
-      [ :echo, "'#{tags} #{line}'" ],
+      [ :echo, tagged_line(line) ],
       audit_log_file
   end
 
@@ -15,6 +15,10 @@ class Mrsk::Commands::Auditor < Mrsk::Commands::Base
   private
     def audit_log_file
       "mrsk-#{config.service}-audit.log"
+    end
+
+    def tagged_line(line)
+      "'#{tags} #{line}'"
     end
 
     def tags
