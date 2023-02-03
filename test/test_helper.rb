@@ -5,6 +5,7 @@ require "debug"
 require "mocha/minitest" # using #stubs that can alter returns
 require "minitest/autorun" # using #stub that take args
 require "sshkit"
+require "mrsk"
 
 ActiveSupport::LogSubscriber.logger = ActiveSupport::Logger.new(STDOUT) if ENV["VERBOSE"]
 

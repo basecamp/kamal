@@ -1,6 +1,4 @@
 require "test_helper"
-require "mrsk/configuration"
-require "mrsk/commands/app"
 
 class CommandsAppTest < ActiveSupport::TestCase
   setup do

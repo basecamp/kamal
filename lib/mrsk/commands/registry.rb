@@ -1,5 +1,3 @@
-require "mrsk/commands/base"
-
 class Mrsk::Commands::Registry < Mrsk::Commands::Base
   delegate :registry, to: :config
 

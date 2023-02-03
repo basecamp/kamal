@@ -1,5 +1,4 @@
 require "active_support/core_ext/time/conversions"
-require "mrsk/commands/base"
 
 class Mrsk::Commands::Auditor < Mrsk::Commands::Base
   def record(line)

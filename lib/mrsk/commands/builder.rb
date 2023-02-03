@@ -1,5 +1,3 @@
-require "mrsk/commands/base"
-
 class Mrsk::Commands::Builder < Mrsk::Commands::Base
   delegate :create, :remove, :push, :pull, :info, to: :target
 
@@ -36,8 +34,3 @@ class Mrsk::Commands::Builder < Mrsk::Commands::Base
     @multiarch_remote ||= Mrsk::Commands::Builder::Multiarch::Remote.new(config)
   end
 end
-
-require "mrsk/commands/builder/native"
-require "mrsk/commands/builder/native/remote"
-require "mrsk/commands/builder/multiarch"
-require "mrsk/commands/builder/multiarch/remote"

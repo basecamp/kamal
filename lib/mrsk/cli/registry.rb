@@ -1,5 +1,3 @@
-require "mrsk/cli/base"
-
 class Mrsk::Cli::Registry < Mrsk::Cli::Base
   desc "login", "Login to the registry locally and remotely"
   def login

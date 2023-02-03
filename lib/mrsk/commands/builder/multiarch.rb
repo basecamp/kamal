@@ -1,5 +1,3 @@
-require "mrsk/commands/builder/base"
-
 class Mrsk::Commands::Builder::Multiarch < Mrsk::Commands::Builder::Base
   def create
     docker :buildx, :create, "--use", "--name", builder_name

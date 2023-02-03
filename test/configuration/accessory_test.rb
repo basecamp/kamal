@@ -1,5 +1,4 @@
 require "test_helper"
-require "mrsk/configuration"
 
 class ConfigurationAccessoryTest < ActiveSupport::TestCase
   setup do
@@ -66,7 +65,7 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
   test "missing host" do
     @deploy[:accessories]["mysql"]["host"] = nil
     @config = Mrsk::Configuration.new(@deploy)
-    
+
     assert_raises(ArgumentError) do
       @config.accessory(:mysql).host
     end

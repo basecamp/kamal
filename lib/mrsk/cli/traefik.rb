@@ -1,5 +1,3 @@
-require "mrsk/cli/base"
-
 class Mrsk::Cli::Traefik < Mrsk::Cli::Base
   desc "boot", "Boot Traefik on servers"
   def boot

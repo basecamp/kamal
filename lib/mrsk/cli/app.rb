@@ -1,5 +1,3 @@
-require "mrsk/cli/base"
-
 class Mrsk::Cli::App < Mrsk::Cli::Base
   desc "boot", "Boot app on servers (or reboot app if already running)"
   def boot
@@ -40,7 +38,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
       execute *MRSK.app.start, raise_on_non_zero_exit: false
     end
   end
-  
+
   desc "stop", "Stop app on servers"
   def stop
     on(MRSK.hosts) do
@@ -48,12 +46,12 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
       execute *MRSK.app.stop, raise_on_non_zero_exit: false
     end
   end
-  
+
   desc "details", "Display details about app containers"
   def details
     on(MRSK.hosts) { |host| puts_by_host host, capture_with_info(*MRSK.app.info) }
   end
-  
+
   desc "exec [CMD]", "Execute a custom command on servers"
   option :interactive, aliases: "-i", type: :boolean, default: false, desc: "Execute command over ssh for an interactive shell (use for console/bash)"
   option :reuse, type: :boolean, default: false, desc: "Reuse currently running container instead of starting a new one"
@@ -110,7 +108,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
   def current
     on(MRSK.hosts) { |host| puts_by_host host, capture_with_info(*MRSK.app.current_container_id) }
   end
-  
+
   desc "logs", "Show lines from app on servers"
   option :since, aliases: "-s", desc: "Show logs since timestamp (e.g. 2013-01-02T13:23:37Z) or relative (e.g. 42m for 42 minutes)"
   option :lines, type: :numeric, aliases: "-n", desc: "Number of log lines to pull from each server"

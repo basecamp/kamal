@@ -1,5 +1,3 @@
-require "mrsk/commands/builder/base"
-
 class Mrsk::Commands::Builder::Native < Mrsk::Commands::Builder::Base
   def create
     # No-op on native

@@ -1,5 +1,4 @@
 require "test_helper"
-require "mrsk/configuration"
 
 class ConfigurationRoleTest < ActiveSupport::TestCase
   setup do
@@ -63,7 +62,7 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
   end
 
   test "default traefik label on non-web role" do
-    config = Mrsk::Configuration.new(@deploy_with_roles.tap { |c| 
+    config = Mrsk::Configuration.new(@deploy_with_roles.tap { |c|
       c[:servers]["beta"] = { "traefik" => "true", "hosts" => [ "1.1.1.5" ] }
     })
 
@@ -97,7 +96,7 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
 
     ENV["REDIS_PASSWORD"] = "secret456"
     ENV["DB_PASSWORD"] = "secret123"
-    
+
     assert_equal ["-e", "REDIS_PASSWORD=secret456", "-e", "DB_PASSWORD=secret123", "-e", "REDIS_URL=redis://a/b", "-e", "WEB_CONCURRENCY=4"], @config_with_roles.role(:workers).env_args
   ensure
     ENV["REDIS_PASSWORD"] = nil
@@ -116,7 +115,7 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
     }
 
     ENV["DB_PASSWORD"] = "secret123"
-    
+
     assert_equal ["-e", "DB_PASSWORD=secret123", "-e", "REDIS_URL=redis://a/b", "-e", "WEB_CONCURRENCY=4"], @config_with_roles.role(:workers).env_args
   ensure
     ENV["DB_PASSWORD"] = nil
@@ -133,7 +132,7 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
     }
 
     ENV["REDIS_PASSWORD"] = "secret456"
-    
+
     assert_equal ["-e", "REDIS_PASSWORD=secret456", "-e", "REDIS_URL=redis://a/b", "-e", "WEB_CONCURRENCY=4"], @config_with_roles.role(:workers).env_args
   ensure
     ENV["REDIS_PASSWORD"] = nil

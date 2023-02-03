@@ -1,5 +1,3 @@
-require "mrsk/commands/base"
-
 class Mrsk::Commands::Accessory < Mrsk::Commands::Base
   attr_reader :accessory_config
   delegate :service_name, :image, :host, :port, :files, :directories, :env_args, :volume_args, :label_args, to: :accessory_config
@@ -10,7 +8,7 @@ class Mrsk::Commands::Accessory < Mrsk::Commands::Base
   end
 
   def run
-    docker :run, 
+    docker :run,
       "--name", service_name,
       "-d",
       "--restart", "unless-stopped",

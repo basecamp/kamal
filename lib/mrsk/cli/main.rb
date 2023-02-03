@@ -1,13 +1,3 @@
-require "mrsk/cli/base"
-
-require "mrsk/cli/accessory"
-require "mrsk/cli/app"
-require "mrsk/cli/build"
-require "mrsk/cli/prune"
-require "mrsk/cli/registry"
-require "mrsk/cli/server"
-require "mrsk/cli/traefik"
-
 class Mrsk::Cli::Main < Mrsk::Cli::Base
   desc "setup", "Setup all accessories and deploy the app to servers"
   def setup

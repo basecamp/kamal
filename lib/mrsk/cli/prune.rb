@@ -1,5 +1,3 @@
-require "mrsk/cli/base"
-
 class Mrsk::Cli::Prune < Mrsk::Cli::Base
   desc "all", "Prune unused images and stopped containers"
   def all

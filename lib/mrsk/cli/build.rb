@@ -1,5 +1,3 @@
-require "mrsk/cli/base"
-
 class Mrsk::Cli::Build < Mrsk::Cli::Base
   desc "deliver", "Deliver a newly built app image to servers"
   def deliver
@@ -11,7 +9,7 @@ class Mrsk::Cli::Build < Mrsk::Cli::Base
   def push
     cli = self
 
-    run_locally do 
+    run_locally do
       begin
         MRSK.with_verbosity(:debug) { execute *MRSK.builder.push }
       rescue SSHKit::Command::Failed => e
