@@ -8,8 +8,10 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
     say "Ensure no other version of the app is running...", :magenta
     stop
 
+    say "Get most recent version available as an image...", :magenta
     using_version(options[:version] || most_recent_version_available) do |version|
       say "Start container with version #{version} (or reboot if already running)...", :magenta
+
       MRSK.config.roles.each do |role|
         on(role.hosts) do |host|
           begin
@@ -180,14 +182,12 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
 
     def most_recent_version_available(host: MRSK.primary_host)
       version = nil
-      say "Retrieve most recent version available as an image...", :magenta
       on(host) { version = capture_with_info(*MRSK.app.most_recent_version_from_available_images).strip }
       version.presence
     end
 
     def current_running_version(host: MRSK.primary_host)
       version = nil
-      say "Retrieve current running version...", :magenta
       on(host) { version = capture_with_info(*MRSK.app.current_running_version).strip }
       version.presence
     end
