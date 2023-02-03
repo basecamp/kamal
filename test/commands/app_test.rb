@@ -26,10 +26,10 @@ class CommandsAppTest < ActiveSupport::TestCase
       [:docker, :run, "-d", "--restart unless-stopped", "--name", "app-missing", "-e", "RAILS_MASTER_KEY=456", "--volume", "/local/path:/container/path", "--label", "service=app", "--label", "role=web", "--label", "traefik.http.routers.app.rule='PathPrefix(`/`)'", "--label", "traefik.http.services.app.loadbalancer.healthcheck.path=/up", "--label", "traefik.http.services.app.loadbalancer.healthcheck.interval=1s", "--label", "traefik.http.middlewares.app.retry.attempts=3", "--label", "traefik.http.middlewares.app.retry.initialinterval=500ms", "dhh/app:missing"], @app.run
   end
 
-  test "run with" do
+  test "execute in new container" do
     assert_equal \
       [ :docker, :run, "--rm", "-e", "RAILS_MASTER_KEY=456", "dhh/app:missing", "bin/rails", "db:setup" ],
-      @app.run_exec("bin/rails", "db:setup")
+      @app.execute_in_new_container("bin/rails", "db:setup")
   end
 
   test "run without master key" do

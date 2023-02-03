@@ -47,47 +47,38 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
   end
   
   desc "exec [CMD]", "Execute a custom command on servers"
-  option :method, aliases: "-m", default: "exec", desc: "Execution method: [exec] perform inside app container / [run] perform in new container / [ssh] perform over ssh"
+  option :interactive, aliases: "-i", type: :boolean, default: false, desc: "Execute command over ssh for an interactive shell (use for console/bash)"
+  option :reuse, type: :boolean, default: false, desc: "Reuse currently running container instead of starting a new one"
   def exec(cmd)
-    runner = \
-      case options[:method]
-      when "exec" then "exec"
-      when "run"  then "run_exec"
-      when "ssh"  then "exec_over_ssh"
-      else raise "Unknown method: #{options[:method]}"
-      end.inquiry
-
-    if runner.exec_over_ssh?
-      run_locally do
-        info "Launching command on #{MRSK.primary_host}"
-        exec MRSK.app.exec_over_ssh(cmd, host: MRSK.primary_host)
+    case
+    when options[:interactive] && options[:reuse]
+      say "Get current version of running container...", :magenta unless options[:version]
+      using_version(options[:version] || current_running_version) do |version|
+        say "Launching interactive command with version #{version} via SSH from existing container on #{MRSK.primary_host}...", :magenta
+        run_locally { exec MRSK.app.execute_in_existing_container_over_ssh(cmd, host: MRSK.primary_host) }
       end
+
+    when options[:interactive]
+      say "Get most recent version available as an image...", :magenta unless options[:version]
+      using_version(options[:version] || most_recent_version_available) do |version|
+        say "Launching interactive command with version #{version} via SSH from new container on #{MRSK.primary_host}...", :magenta
+        run_locally { exec MRSK.app.execute_in_new_container_over_ssh(cmd, host: MRSK.primary_host) }
+      end
+
+    when options[:reuse]
+      say "Get current version of running container...", :magenta unless options[:version]
+      using_version(options[:version] || current_running_version) do |version|
+        say "Launching command with version #{version} from existing container on #{MRSK.primary_host}", :magenta
+        on(MRSK.hosts) { |host| puts_by_host host, capture_with_info(*MRSK.app.execute_in_existing_container(cmd)) }
+      end
+
     else
-      on(MRSK.hosts) { |host| puts_by_host host, capture_with_info(*MRSK.app.send(runner, cmd)) }
+      say "Get most recent version available as an image...", :magenta unless options[:version]
+      using_version(options[:version] || most_recent_version_available) do |version|
+        say "Launching command with version #{version} from new container on #{MRSK.primary_host}", :magenta
+        on(MRSK.hosts) { |host| puts_by_host host, capture_with_info(*MRSK.app.execute_in_new_container(cmd)) }
+      end
     end
-  end
-
-  desc "console", "Start Rails Console on primary host (or specific host set by --hosts)"
-  def console
-    say "Get most recent version available as an image...", :magenta unless options[:version]
-    using_version(options[:version] || most_recent_version_available) do |version|
-      say "Launching Rails console of version #{version} on #{MRSK.primary_host}...", :magenta
-      run_locally { exec MRSK.app.console(host: MRSK.primary_host) }
-    end
-  end
-
-  desc "bash", "Start a bash session on primary host (or specific host set by --hosts)"
-  def bash
-    say "Get most recent version available as an image...", :magenta unless options[:version]
-    using_version(options[:version] || most_recent_version_available) do |version|
-      say "Launching bash session of version #{version} on #{MRSK.primary_host}...", :magenta
-      run_locally { exec MRSK.app.bash(host: MRSK.primary_host) }
-    end
-  end
-
-  desc "runner [EXPRESSION]", "Execute Rails runner with given expression"
-  def runner(expression)
-    on(MRSK.hosts) { |host| puts_by_host host, capture_with_info(*MRSK.app.exec("bin/rails", "runner", "'#{expression}'")) }
   end
 
   desc "containers", "List all the app containers currently on servers"

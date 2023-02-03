@@ -42,14 +42,14 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
       ("grep '#{grep}'" if grep)
   end
 
-  def exec(*command, interactive: false)
+  def execute_in_existing_container(*command, interactive: false)
     docker :exec,
       ("-it" if interactive),
       config.service_with_version,
       *command
   end
-
-  def run_exec(*command, interactive: false)
+  
+  def execute_in_new_container(*command, interactive: false)
     docker :run,
       ("-it" if interactive),
       "--rm",
@@ -60,8 +60,12 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
       *command
   end
 
-  def exec_over_ssh(*command, host:)
-    run_over_ssh run_exec(*command, interactive: true).join(" "), host: host
+  def execute_in_existing_container_over_ssh(*command, host:)
+    run_over_ssh execute_in_existing_container(*command, interactive: true).join(" "), host: host
+  end
+
+  def execute_in_new_container_over_ssh(*command, host:)
+    run_over_ssh execute_in_new_container(*command, interactive: true).join(" "), host: host
   end
 
   def follow_logs(host:, grep: nil)
@@ -70,14 +74,6 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
       "xargs docker logs -t -n 10 -f 2>&1",
       (%(grep "#{grep}") if grep)
     ).join(" "), host: host
-  end
-
-  def console(host:)
-    exec_over_ssh "bin/rails", "c", host: host
-  end
-
-  def bash(host:)
-    exec_over_ssh "bash", host: host
   end
 
   def list_containers
