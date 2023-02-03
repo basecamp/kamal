@@ -43,7 +43,7 @@ class CliAppTest < CliTestCase
 
   test "remove_container" do
     run_command("remove_container", "1234567").tap do |output|
-      assert_match /docker container ls -a -f name=app-1234567 -q | docker container rm/, output
+      assert_match /docker container ls -a -f name=app-1234567 -q \| xargs docker container rm/, output
     end
   end
 
