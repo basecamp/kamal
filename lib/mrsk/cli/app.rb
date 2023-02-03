@@ -1,11 +1,15 @@
 require "mrsk/cli/base"
 
 class Mrsk::Cli::App < Mrsk::Cli::Base
-  desc "boot", "Boot app on servers (or start them if they've already been booted)"
+  desc "boot", "Boot app on servers (or reboot app if already running)"
   def boot
     cli = self
 
+    say "Ensure no other version of the app is running...", :magenta
+    stop
+
     using_version(options[:version] || most_recent_version_available) do |version|
+      say "Start container with version #{version} (or reboot if already running)...", :magenta
       MRSK.config.roles.each do |role|
         on(role.hosts) do |host|
           begin
@@ -14,9 +18,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
             if e.message =~ /already in use/
               error "Rebooting container with same version already deployed on #{host}"
 
-              cli.stop
               cli.remove_container version
-
               execute *MRSK.app.run(role: role.name)
             else
               raise
@@ -25,15 +27,6 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
         end
       end
     end
-  end
-
-  desc "reboot", "Reboot app on host (stop container, remove container, start new container with latest image)"
-  def reboot
-    old_version = current_running_version
-
-    stop
-    remove_container old_version
-    boot
   end
 
   desc "start", "Start existing app on servers (use --version=<git-hash> to designate specific version)"
@@ -187,12 +180,14 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
 
     def most_recent_version_available(host: MRSK.primary_host)
       version = nil
+      say "Retrieve most recent version available as an image...", :magenta
       on(host) { version = capture_with_info(*MRSK.app.most_recent_version_from_available_images).strip }
       version.presence
     end
 
     def current_running_version(host: MRSK.primary_host)
       version = nil
+      say "Retrieve current running version...", :magenta
       on(host) { version = capture_with_info(*MRSK.app.current_running_version).strip }
       version.presence
     end
