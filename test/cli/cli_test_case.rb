@@ -15,6 +15,7 @@ class CliTestCase < ActiveSupport::TestCase
     ENV.delete("RAILS_MASTER_KEY")
     ENV.delete("MYSQL_ROOT_PASSWORD")
     ENV.delete("VERSION")
+    MRSK.reset
   end
 
   private

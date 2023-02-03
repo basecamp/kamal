@@ -86,6 +86,13 @@ class Mrsk::Commander
     SSHKit.config.output_verbosity = old_level
   end
 
+  # Test-induced damage!
+  def reset
+    @config = @config_file = @destination = @version = nil
+    @app = @builder = @traefik = @registry = @prune = nil
+    @verbosity = :info
+  end
+
   private
     def cascading_version
       version.presence || ENV["VERSION"] || `git rev-parse HEAD`.strip
