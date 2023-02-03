@@ -87,7 +87,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
   def remove_container(version:)
     pipe \
       container_id_for(container_name: service_with_version(version)),
-      docker(:container, :rm)
+      [ "xargs", docker(:container, :rm) ].flatten
   end
 
   def remove_containers
