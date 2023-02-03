@@ -33,6 +33,7 @@ class Mrsk::Commands::Accessory < Mrsk::Commands::Base
     docker :ps, *service_filter
   end
 
+
   def logs(since: nil, lines: nil, grep: nil)
     pipe \
       docker(:logs, service_name, (" --since #{since}" if since), (" -n #{lines}" if lines), "-t", "2>&1"),
@@ -46,14 +47,15 @@ class Mrsk::Commands::Accessory < Mrsk::Commands::Base
     ).join(" ")
   end
 
-  def exec(*command, interactive: false)
+
+  def execute_in_existing_container(*command, interactive: false)
     docker :exec,
       ("-it" if interactive),
       service_name,
       *command
   end
 
-  def run_exec(*command, interactive: false)
+  def execute_in_new_container(*command, interactive: false)
     docker :run,
       ("-it" if interactive),
       "--rm",
@@ -63,17 +65,18 @@ class Mrsk::Commands::Accessory < Mrsk::Commands::Base
       *command
   end
 
+  def execute_in_existing_container_over_ssh(*command)
+    run_over_ssh execute_in_existing_container(*command, interactive: true).join(" "), host: host
+  end
+
+  def execute_in_new_container_over_ssh(*command)
+    run_over_ssh execute_in_new_container(*command, interactive: true).join(" "), host: host
+  end
+
   def run_over_ssh(command)
     super command, host: host
   end
 
-  def exec_over_ssh(*command)
-    run_over_ssh run_exec(*command, interactive: true).join(" ")
-  end
-
-  def bash
-    exec_over_ssh "bash"
-  end
 
   def ensure_local_file_present(local_file)
     if !local_file.is_a?(StringIO) && !Pathname.new(local_file).exist?
