@@ -23,6 +23,24 @@ class CliAppTest < CliTestCase
     Thread.report_on_exception = true
   end
 
+  test "start" do
+    run_command("start").tap do |output|
+      assert_match /docker start app-999/, output
+    end
+  end
+
+  test "stop" do
+    run_command("stop").tap do |output|
+      assert_match /docker ps -q --filter label=service=app \| xargs docker stop/, output
+    end
+  end
+
+  test "details" do
+    run_command("details").tap do |output|
+      assert_match /docker ps --filter label=service=app/, output
+    end
+  end
+
   test "remove_container" do
     run_command("remove_container", "1234567").tap do |output|
       assert_match /docker container ls -a -f name=app-1234567 -q | docker container rm/, output
