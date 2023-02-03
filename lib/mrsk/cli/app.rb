@@ -8,7 +8,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
     say "Ensure no other version of the app is running...", :magenta
     stop
 
-    say "Get most recent version available as an image...", :magenta
+    say "Get most recent version available as an image...", :magenta unless options[:version]
     using_version(options[:version] || most_recent_version_available) do |version|
       say "Start container with version #{version} (or reboot if already running)...", :magenta
 
