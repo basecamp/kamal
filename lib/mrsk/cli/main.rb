@@ -25,7 +25,6 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
       invoke "mrsk:cli:registry:login"
       invoke "mrsk:cli:build:deliver"
       invoke "mrsk:cli:traefik:boot"
-      invoke "mrsk:cli:app:stop"
       invoke "mrsk:cli:app:boot"
       invoke "mrsk:cli:prune:all"
     end
@@ -35,7 +34,6 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
   def redeploy
     print_runtime do
       invoke "mrsk:cli:build:deliver"
-      invoke "mrsk:cli:app:stop"
       invoke "mrsk:cli:app:boot"
     end
   end
