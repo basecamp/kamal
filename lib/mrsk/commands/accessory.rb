@@ -66,11 +66,11 @@ class Mrsk::Commands::Accessory < Mrsk::Commands::Base
   end
 
   def execute_in_existing_container_over_ssh(*command)
-    run_over_ssh execute_in_existing_container(*command, interactive: true).join(" "), host: host
+    run_over_ssh execute_in_existing_container(*command, interactive: true).join(" ")
   end
 
   def execute_in_new_container_over_ssh(*command)
-    run_over_ssh execute_in_new_container(*command, interactive: true).join(" "), host: host
+    run_over_ssh execute_in_new_container(*command, interactive: true).join(" ")
   end
 
   def run_over_ssh(command)
