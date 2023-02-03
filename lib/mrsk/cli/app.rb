@@ -69,23 +69,19 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
 
   desc "console", "Start Rails Console on primary host (or specific host set by --hosts)"
   def console
-    using_version(options[:version] || most_recent_version_available) do
-      run_locally do
-        if version
-          info "Launching Rails console on #{MRSK.primary_host} [Version: #{version}]"
-          exec MRSK.app.console(host: MRSK.primary_host)
-        else
-          error "No image available for #{MRSK.config.repository}"
-        end
-      end
+    say "Get most recent version available as an image...", :magenta unless options[:version]
+    using_version(options[:version] || most_recent_version_available) do |version|
+      say "Launching Rails console of version #{version} on #{MRSK.primary_host}...", :magenta
+      run_locally { exec MRSK.app.console(host: MRSK.primary_host) }
     end
   end
 
   desc "bash", "Start a bash session on primary host (or specific host set by --hosts)"
   def bash
-    run_locally do
-      info "Launching bash session on #{MRSK.primary_host}"
-      exec MRSK.app.bash(host: MRSK.primary_host)
+    say "Get most recent version available as an image...", :magenta unless options[:version]
+    using_version(options[:version] || most_recent_version_available) do |version|
+      say "Launching bash session of version #{version} on #{MRSK.primary_host}...", :magenta
+      run_locally { exec MRSK.app.bash(host: MRSK.primary_host) }
     end
   end
 
