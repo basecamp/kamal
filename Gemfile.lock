@@ -46,6 +46,8 @@ GEM
       nokogiri (>= 1.5.9)
     method_source (1.0.0)
     minitest (5.17.0)
+    mocha (2.0.2)
+      ruby2_keywords (>= 0.0.5)
     net-scp (4.0.0)
       net-ssh (>= 2.6.5, < 8.0.0)
     net-ssh (7.0.1)
@@ -74,6 +76,7 @@ GEM
     rake (13.0.6)
     reline (0.3.2)
       io-console (~> 0.5)
+    ruby2_keywords (0.0.5)
     sshkit (1.21.3)
       net-scp (>= 1.1.2)
       net-ssh (>= 2.8.0)
@@ -92,6 +95,7 @@ PLATFORMS
 
 DEPENDENCIES
   debug
+  mocha
   mrsk!
   railties
 
