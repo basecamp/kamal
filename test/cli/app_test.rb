@@ -23,21 +23,6 @@ class CliAppTest < CliTestCase
     Thread.report_on_exception = true
   end
 
-  test "reboot to default version" do
-    run_command("reboot").tap do |output|
-      assert_match /docker ps --filter label=service=app/, output # Find current container
-      assert_match /docker stop/, output # Stop old container
-      assert_match /docker container rm/, output # Remove old container
-      assert_match /docker run -d --restart unless-stopped .* dhh\/app:999/, output # Start new container
-    end
-  end
-
-  test "reboot to specific version" do
-    run_command("reboot", "--version", "456").tap do |output|
-      assert_match /docker run -d --restart unless-stopped .* dhh\/app:456/, output
-    end
-  end
-
   test "remove_container" do
     run_command("remove_container", "1234567").tap do |output|
       assert_match /docker container ls -a -f name=app-1234567 -q | docker container rm/, output
