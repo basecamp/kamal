@@ -82,39 +82,27 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
     end
   end
 
-  desc "exec [NAME] [CMD]", "Execute a custom command on accessory host"
-  option :method, aliases: "-m", default: "exec", desc: "Execution method: [exec] perform inside container / [run] perform in new container / [ssh] perform over ssh"
+  desc "exec [NAME] [CMD]", "Execute a custom command on servers"
+  option :interactive, aliases: "-i", type: :boolean, default: false, desc: "Execute command over ssh for an interactive shell (use for console/bash)"
+  option :reuse, type: :boolean, default: false, desc: "Reuse currently running container instead of starting a new one"
   def exec(name, cmd)
-    runner = \
-      case options[:method]
-      when "exec"     then "exec"
-      when "run"      then "run_exec"
-      when "ssh_exec" then "exec_over_ssh"
-      when "ssh_run"  then "run_over_ssh"
-      else raise "Unknown method: #{options[:method]}"
-      end.inquiry
-
     with_accessory(name) do |accessory|
-      if runner.exec_over_ssh? || runner.run_over_ssh?
-        run_locally do
-          info "Launching command on #{accessory.host}"
-          exec accessory.send(runner, cmd)
-        end
+      case
+      when options[:interactive] && options[:reuse]
+        say "Launching interactive command with via SSH from existing container...", :magenta
+        run_locally { exec accessory.execute_in_existing_container_over_ssh(cmd) }
+
+      when options[:interactive]
+        say "Launching interactive command via SSH from new container...", :magenta
+        run_locally { exec accessory.execute_in_new_container_over_ssh(cmd) }
+
+      when options[:reuse]
+        say "Launching command from existing container...", :magenta
+        on(accessory.host) { capture_with_info(*accessory.execute_in_existing_container(cmd)) }
+
       else
-        on(accessory.host) do
-          info "Launching command on #{accessory.host}"
-          execute *accessory.send(runner, cmd)
-        end
-      end
-    end
-  end
-
-  desc "bash [NAME]", "Start a bash session on primary host (or specific host set by --hosts)"
-  def bash(name)
-    with_accessory(name) do |accessory|
-      run_locally do
-        info "Launching bash session on #{accessory.host}"
-        exec accessory.bash
+        say "Launching command from new container...", :magenta
+        on(accessory.host) { capture_with_info(*accessory.execute_in_new_container(cmd)) }
       end
     end
   end
