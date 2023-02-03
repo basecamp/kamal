@@ -3,7 +3,7 @@ require "mrsk/cli/base"
 class Mrsk::Cli::App < Mrsk::Cli::Base
   desc "boot", "Boot app on servers (or start them if they've already been booted)"
   def boot
-    using_most_recent_version_available do
+    using_version(options[:version] || most_recent_version_available) do
       MRSK.config.roles.each do |role|
         on(role.hosts) do |host|
           begin
@@ -73,7 +73,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
 
   desc "console", "Start Rails Console on primary host (or specific host set by --hosts)"
   def console
-    using_most_recent_version_available do |version|
+    using_version(options[:version] || most_recent_version_available) do
       run_locally do
         if version
           info "Launching Rails console on #{MRSK.primary_host} [Version: #{version}]"
@@ -159,36 +159,30 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
     on(MRSK.hosts) { execute *MRSK.app.remove_containers }
   end
 
-  desc "remove_images", "Remove app images from servers"
+  desc "remove_images", "Remove all app images from servers"
   def remove_images
     on(MRSK.hosts) { execute *MRSK.app.remove_images }
   end
 
   private
-    def using_most_recent_version_available(host: MRSK.primary_host)
-      using_version(most_recent_version_available(host: host)) do |version|
-        yield version
-      end
-    end
-
-    def using_current_running_version(host: MRSK.primary_host)
-      using_version(current_running_version(host: host)) do |version|
-        yield version
-      end
-    end
-
     def using_version(new_version)
-      old_version = MRSK.config.version
-      MRSK.config.version = new_version
-      yield new_version
-    ensure
-      MRSK.config.version = old_version
+      if new_version
+        begin
+          old_version = MRSK.config.version
+          MRSK.config.version = new_version
+          yield new_version
+        ensure
+          MRSK.config.version = old_version
+        end
+      else
+        yield MRSK.config.version
+      end
     end
 
-    def most_recent_version_available(host:)
+    def most_recent_version_available(host: MRSK.primary_host)
       version = nil
       on(host) { version = capture_with_info(*MRSK.app.most_recent_version_from_available_images).strip }
-      version
+      version.presence
     end
 
     def current_running_version(host: MRSK.primary_host)
