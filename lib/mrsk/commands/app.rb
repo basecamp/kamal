@@ -28,7 +28,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
   end
 
   def stop
-    pipe current_container_id, "xargs docker stop"
+    pipe current_container_id, xargs(docker(:stop))
   end
 
   def info
@@ -83,7 +83,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
   def remove_container(version:)
     pipe \
       container_id_for(container_name: service_with_version(version)),
-      [ "xargs", docker(:container, :rm) ].flatten
+      xargs(docker(:container, :rm))
   end
 
   def remove_containers
