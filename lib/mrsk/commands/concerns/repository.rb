@@ -8,7 +8,7 @@ module Mrsk::Commands::Concerns
       # FIXME: Find more graceful way to extract the version from "app-version" than using sed and tail!
       pipe \
         docker(:ps, "--filter", "label=service=#{config.service}", "--format", '"{{.Names}}"'),
-        "sed 's/-/\n/g'",
+        %(sed 's/-/\\n/g'),
         "tail -n 1"
     end
 
