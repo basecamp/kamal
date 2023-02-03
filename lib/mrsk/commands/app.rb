@@ -83,7 +83,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
   def current_running_version
     # FIXME: Find more graceful way to extract the version from "app-version" than using sed and tail!
     pipe \
-      docker(:ps, "--filter", "label=service=#{service_name}", "--format", '"{{.Names}}"'),
+      docker(:ps, "--filter", "label=service=#{config.service}", "--format", '"{{.Names}}"'),
       %(sed 's/-/\\n/g'),
       "tail -n 1"
   end
