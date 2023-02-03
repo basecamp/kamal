@@ -3,15 +3,21 @@ require "mrsk/cli/base"
 class Mrsk::Cli::App < Mrsk::Cli::Base
   desc "boot", "Boot app on servers (or start them if they've already been booted)"
   def boot
-    using_version(options[:version] || most_recent_version_available) do
+    cli = self
+
+    using_version(options[:version] || most_recent_version_available) do |version|
       MRSK.config.roles.each do |role|
         on(role.hosts) do |host|
           begin
             execute *MRSK.app.run(role: role.name)
           rescue SSHKit::Command::Failed => e
             if e.message =~ /already in use/
-              error "Container with same version already deployed on #{host}, starting that instead"
-              execute *MRSK.app.start, host: host
+              error "Rebooting container with same version already deployed on #{host}"
+
+              cli.stop
+              cli.remove_container version
+
+              execute *MRSK.app.run(role: role.name)
             else
               raise
             end
