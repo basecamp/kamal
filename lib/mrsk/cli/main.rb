@@ -21,11 +21,21 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
   desc "deploy", "Deploy the app to servers"
   def deploy
     print_runtime do
+      say "Ensure Docker is installed...", :magenta
       invoke "mrsk:cli:server:bootstrap"
+
+      say "Log into image registry...", :magenta
       invoke "mrsk:cli:registry:login"
+
+      say "Build and push app image...", :magenta
       invoke "mrsk:cli:build:deliver"
+
+      say "Ensure Traefik is running...", :magenta
       invoke "mrsk:cli:traefik:boot"
+
       invoke "mrsk:cli:app:boot"
+
+      say "Prune old containers and images...", :magenta
       invoke "mrsk:cli:prune:all"
     end
   end
@@ -33,7 +43,9 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
   desc "redeploy", "Deploy new version of the app to servers (without bootstrapping servers, starting Traefik, pruning, and registry login)"
   def redeploy
     print_runtime do
+      say "Build and push app image...", :magenta
       invoke "mrsk:cli:build:deliver"
+
       invoke "mrsk:cli:app:boot"
     end
   end
