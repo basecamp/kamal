@@ -38,4 +38,14 @@ class CommandsAppTest < ActiveSupport::TestCase
 
     assert @app.run.exclude?("RAILS_MASTER_KEY=456")
   end
+
+  test "exec_over_ssh" do
+    assert @app.exec_over_ssh("ls", host: '1.1.1.1').start_with?("ssh -t #{@app.config.ssh_user}@1.1.1.1")
+  end
+
+  test "exec_over_ssh with proxy" do
+    @app = Mrsk::Commands::App.new Mrsk::Configuration.new(@config.tap { |c| c[:ssh] = { "proxy" => 'root@2.2.2.2' } })
+
+    assert @app.exec_over_ssh("ls", host: '1.1.1.1').start_with?("ssh -J root@2.2.2.2 -t #{@app.config.ssh_user}@1.1.1.1")
+  end
 end

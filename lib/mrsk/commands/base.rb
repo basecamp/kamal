@@ -9,7 +9,13 @@ module Mrsk::Commands
     end
 
     def run_over_ssh(command, host:)
-      "ssh -t #{config.ssh_user}@#{host} '#{command}'"
+      ssh_command = "ssh"
+
+      if config.ssh_proxy
+        ssh_command << " -J #{config.ssh_proxy.jump_proxies}"
+      end
+
+      ssh_command << " -t #{config.ssh_user}@#{host} '#{command}'"
     end
 
     private
