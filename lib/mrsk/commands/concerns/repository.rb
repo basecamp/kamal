@@ -1,5 +1,9 @@
 module Mrsk::Commands::Concerns
   module Repository
+    def container_id_for(container_name:)
+      docker :container, :ls, "-a", "-f", "name=#{container_name}", "-q"
+    end
+
     def current_running_version
       # FIXME: Find more graceful way to extract the version from "app-version" than using sed and tail!
       pipe \

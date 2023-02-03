@@ -21,10 +21,12 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
     end
   end
 
-  desc "reboot", "Reboot app on host (stop container, remove containers, start new container)"
+  desc "reboot", "Reboot app on host (stop container, remove container, start new container with latest image)"
   def reboot
+    old_version = current_running_version
+
     stop
-    remove_containers
+    remove_container old_version
     boot
   end
 
@@ -147,7 +149,12 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
     remove_images
   end
 
-  desc "remove_containers", "Remove app containers from servers"
+  desc "remove_container [VERSION]", "Remove app container with given version from servers"
+  def remove_container(version)
+    on(MRSK.hosts) { execute *MRSK.app.remove_container(version: version) }
+  end
+
+  desc "remove_containers", "Remove all app containers from servers"
   def remove_containers
     on(MRSK.hosts) { execute *MRSK.app.remove_containers }
   end
@@ -184,9 +191,9 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
       version
     end
 
-    def current_running_version(host:)
+    def current_running_version(host: MRSK.primary_host)
       version = nil
       on(host) { version = capture_with_info(*MRSK.app.current_running_version).strip }
-      version
+      version.presence
     end
 end

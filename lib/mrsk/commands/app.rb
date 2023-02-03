@@ -10,7 +10,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
     docker :run,
       "-d",
       "--restart unless-stopped",
-      "--name", config.service_with_version,
+      "--name", service_with_version,
       *rails_master_key_arg,
       *role.env_args,
       *config.volume_args,
@@ -20,7 +20,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
   end
 
   def start(version: config.version)
-    docker :start, "#{config.service}-#{version}"
+    docker :start, service_with_version(version)
   end
 
   def current_container_id
@@ -84,6 +84,12 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
     docker :container, :ls, "-a", *service_filter
   end
 
+  def remove_container(version:)
+    pipe \
+      container_id_for(container_name: service_with_version(version)),
+      docker(:container, :rm)
+  end
+
   def remove_containers
     docker :container, :prune, "-f", *service_filter
   end
@@ -97,6 +103,14 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
   end
 
   private
+    def service_with_version(version = nil)
+      if version
+        "#{config.service}-#{version}"
+      else
+        config.service_with_version
+      end
+    end
+
     def service_filter
       [ "--filter", "label=service=#{config.service}" ]
     end
