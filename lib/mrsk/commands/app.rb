@@ -2,8 +2,7 @@ require "mrsk/commands/base"
 require "mrsk/commands/concerns"
 
 class Mrsk::Commands::App < Mrsk::Commands::Base
-  include Mrsk::Commands::Concerns::Executions,
-          Mrsk::Commands::Concerns::Repository
+  include Mrsk::Commands::Concerns::Executions
 
   def run(role: :web)
     role = config.role(role)
@@ -49,6 +48,24 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
       "xargs docker logs -t -n 10 -f 2>&1",
       (%(grep "#{grep}") if grep)
     ).join(" "), host: host
+  end
+
+  def container_id_for(container_name:)
+    docker :container, :ls, "-a", "-f", "name=#{container_name}", "-q"
+  end
+
+  def current_running_version
+    # FIXME: Find more graceful way to extract the version from "app-version" than using sed and tail!
+    pipe \
+      docker(:ps, "--filter", "label=service=#{service_name}", "--format", '"{{.Names}}"'),
+      %(sed 's/-/\\n/g'),
+      "tail -n 1"
+  end
+
+  def most_recent_version_from_available_images
+    pipe \
+      docker(:image, :ls, "--format", '"{{.Tag}}"', config.repository),
+      "head -n 1"
   end
 
   def list_containers
