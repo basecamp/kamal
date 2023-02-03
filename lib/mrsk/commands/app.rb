@@ -1,8 +1,9 @@
 require "mrsk/commands/base"
-require "mrsk/commands/concerns/repository"
+require "mrsk/commands/concerns"
 
 class Mrsk::Commands::App < Mrsk::Commands::Base
-  include Mrsk::Commands::Concerns::Repository
+  include Mrsk::Commands::Concerns::Executions,
+          Mrsk::Commands::Concerns::Repository
 
   def run(role: :web)
     role = config.role(role)
@@ -40,32 +41,6 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
       current_container_id,
       "xargs docker logs#{" --since #{since}" if since}#{" -n #{lines}" if lines} 2>&1",
       ("grep '#{grep}'" if grep)
-  end
-
-  def execute_in_existing_container(*command, interactive: false)
-    docker :exec,
-      ("-it" if interactive),
-      config.service_with_version,
-      *command
-  end
-  
-  def execute_in_new_container(*command, interactive: false)
-    docker :run,
-      ("-it" if interactive),
-      "--rm",
-      *rails_master_key_arg,
-      *config.env_args,
-      *config.volume_args,
-      config.absolute_image,
-      *command
-  end
-
-  def execute_in_existing_container_over_ssh(*command, host:)
-    run_over_ssh execute_in_existing_container(*command, interactive: true).join(" "), host: host
-  end
-
-  def execute_in_new_container_over_ssh(*command, host:)
-    run_over_ssh execute_in_new_container(*command, interactive: true).join(" "), host: host
   end
 
   def follow_logs(host:, grep: nil)

@@ -1,6 +1,7 @@
 require "test_helper"
 require "mrsk/configuration"
 require "mrsk/commands/app"
+require "minitest/autorun" # using stubs that take args
 
 class CommandsAppTest < ActiveSupport::TestCase
   setup do
@@ -30,6 +31,26 @@ class CommandsAppTest < ActiveSupport::TestCase
     assert_equal \
       [ :docker, :run, "--rm", "-e", "RAILS_MASTER_KEY=456", "dhh/app:missing", "bin/rails", "db:setup" ],
       @app.execute_in_new_container("bin/rails", "db:setup")
+  end
+
+  test "execute in existing container" do
+    assert_equal \
+      [ :docker, :exec, "app-missing", "bin/rails", "db:setup" ],
+      @app.execute_in_existing_container("bin/rails", "db:setup")
+  end
+
+  test "execute in new container over ssh" do
+    @app.stub(:run_over_ssh, ->(cmd, host:) { cmd }) do
+      assert_match %r|docker run -it --rm -e RAILS_MASTER_KEY=456 dhh/app:missing bin/rails c|,
+        @app.execute_in_new_container_over_ssh("bin/rails", "c", host: "app-1")
+    end
+  end
+
+  test "execute in existing container over ssh" do
+    @app.stub(:run_over_ssh, ->(cmd, host:) { cmd }) do
+      assert_match %r|docker exec -it app-missing bin/rails c|,
+        @app.execute_in_existing_container_over_ssh("bin/rails", "c", host: "app-1")
+    end
   end
 
   test "run without master key" do
