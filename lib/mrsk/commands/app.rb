@@ -19,8 +19,8 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
       role.cmd
   end
 
-  def start(version: config.version)
-    docker :start, service_with_version(version)
+  def start
+    docker :start, service_with_version
   end
 
   def current_container_id

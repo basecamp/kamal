@@ -31,13 +31,8 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
   end
 
   desc "start", "Start existing app on servers (use --version=<git-hash> to designate specific version)"
-  option :version, desc: "Defaults to the most recent git-hash in local repository"
   def start
-    if (version = options[:version]).present?
-      on(MRSK.hosts) { execute *MRSK.app.start(version: version) }
-    else
-      on(MRSK.hosts) { execute *MRSK.app.start, raise_on_non_zero_exit: false }
-    end
+    on(MRSK.hosts) { execute *MRSK.app.start, raise_on_non_zero_exit: false }
   end
   
   desc "stop", "Stop app on servers"
