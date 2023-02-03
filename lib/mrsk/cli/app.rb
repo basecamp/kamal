@@ -165,6 +165,11 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
     on(MRSK.hosts) { execute *MRSK.app.remove_images }
   end
 
+  desc "current_version", "Shows the version currently running"
+  def current_version
+    on(MRSK.hosts) { |host| puts_by_host host, capture_with_info(*MRSK.app.current_running_version).strip }
+  end
+
   private
     def using_version(new_version)
       if new_version
