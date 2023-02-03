@@ -70,6 +70,13 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
     invoke "mrsk:cli:accessory:details", [ "all" ]
   end
 
+  desc "audit", "Show audit log from servers"
+  def audit
+    on(MRSK.hosts) do |host|
+      puts_by_host host, capture_with_info(*MRSK.auditor.reveal)
+    end
+  end
+
   desc "config", "Show combined config"
   def config
     run_locally do

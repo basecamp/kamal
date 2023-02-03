@@ -14,6 +14,8 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
 
       MRSK.config.roles.each do |role|
         on(role.hosts) do |host|
+          execute *MRSK.auditor.record("app boot version #{version}"), verbosity: :debug
+
           begin
             execute *MRSK.app.run(role: role.name)
           rescue SSHKit::Command::Failed => e
@@ -33,12 +35,18 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
 
   desc "start", "Start existing app on servers (use --version=<git-hash> to designate specific version)"
   def start
-    on(MRSK.hosts) { execute *MRSK.app.start, raise_on_non_zero_exit: false }
+    on(MRSK.hosts) do
+      execute *MRSK.auditor.record("app start version #{MRSK.version}"), verbosity: :debug
+      execute *MRSK.app.start, raise_on_non_zero_exit: false
+    end
   end
   
   desc "stop", "Stop app on servers"
   def stop
-    on(MRSK.hosts) { execute *MRSK.app.stop, raise_on_non_zero_exit: false }
+    on(MRSK.hosts) do
+      execute *MRSK.auditor.record("app stop"), verbosity: :debug
+      execute *MRSK.app.stop, raise_on_non_zero_exit: false
+    end
   end
   
   desc "details", "Display details about app containers"
@@ -68,15 +76,22 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
     when options[:reuse]
       say "Get current version of running container...", :magenta unless options[:version]
       using_version(options[:version] || current_running_version) do |version|
-        say "Launching command with version #{version} from existing container on #{MRSK.primary_host}...", :magenta
-        on(MRSK.hosts) { |host| puts_by_host host, capture_with_info(*MRSK.app.execute_in_existing_container(cmd)) }
+        say "Launching command with version #{version} from existing container...", :magenta
+
+        on(MRSK.hosts) do |host|
+          execute *MRSK.auditor.record("app cmd '#{cmd}' with version #{version}"), verbosity: :debug
+          puts_by_host host, capture_with_info(*MRSK.app.execute_in_existing_container(cmd))
+        end
       end
 
     else
       say "Get most recent version available as an image...", :magenta unless options[:version]
       using_version(options[:version] || most_recent_version_available) do |version|
-        say "Launching command with version #{version} from new container on #{MRSK.primary_host}...", :magenta
-        on(MRSK.hosts) { |host| puts_by_host host, capture_with_info(*MRSK.app.execute_in_new_container(cmd)) }
+        say "Launching command with version #{version} from new container...", :magenta
+        on(MRSK.hosts) do |host|
+          execute *MRSK.auditor.record("app cmd '#{cmd}' with version #{version}"), verbosity: :debug
+          puts_by_host host, capture_with_info(*MRSK.app.execute_in_new_container(cmd))
+        end
       end
     end
   end
@@ -134,17 +149,26 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
 
   desc "remove_container [VERSION]", "Remove app container with given version from servers"
   def remove_container(version)
-    on(MRSK.hosts) { execute *MRSK.app.remove_container(version: version) }
+    on(MRSK.hosts) do
+      execute *MRSK.auditor.record("app remove container #{version}"), verbosity: :debug
+      execute *MRSK.app.remove_container(version: version)
+    end
   end
 
   desc "remove_containers", "Remove all app containers from servers"
   def remove_containers
-    on(MRSK.hosts) { execute *MRSK.app.remove_containers }
+    on(MRSK.hosts) do
+      execute *MRSK.auditor.record("app remove containers"), verbosity: :debug
+      execute *MRSK.app.remove_containers
+    end
   end
 
   desc "remove_images", "Remove all app images from servers"
   def remove_images
-    on(MRSK.hosts) { execute *MRSK.app.remove_images }
+    on(MRSK.hosts) do
+      execute *MRSK.auditor.record("app remove images"), verbosity: :debug
+      execute *MRSK.app.remove_images
+    end
   end
 
   desc "current_version", "Shows the version currently running"
