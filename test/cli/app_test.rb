@@ -15,8 +15,8 @@ class CliAppTest < CliTestCase
 
     run_command("boot").tap do |output|
       assert_match /Rebooting container with same version already deployed/, output # Can't start what's already running
-      assert_match /docker ps -q --filter label=service=app | xargs docker stop/, output # Stop what's running
-      assert_match /docker container ls -a -f name=app-999 -q | docker container rm/, output # Remove old container
+      assert_match /docker ps -q --filter label=service=app \| xargs docker stop/, output # Stop what's running
+      assert_match /docker container ls -a -f name=app-999 -q \| xargs docker container rm/, output # Remove old container
       assert_match /docker run/, output # Start new container
     end
   ensure
