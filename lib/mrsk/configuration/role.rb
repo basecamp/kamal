@@ -96,7 +96,11 @@ class Mrsk::Configuration::Role
     def merged_env_with_secrets
       merged_env.tap do |new_env|
         new_env["secret"] = Array(config.env["secret"]) + Array(specialized_env["secret"])
-        new_env["clear"]  = (Array(config.env["clear"] || config.env) + Array(specialized_env["clear"] || specialized_env)).uniq
+
+        clear_app_env  = config.env["secret"] ? Array(config.env["clear"]) : Array(config.env["clear"] || config.env)
+        clear_role_env = specialized_env["secret"] ? Array(specialized_env["clear"]) : Array(specialized_env["clear"] || specialized_env)
+
+        new_env["clear"] = (clear_app_env + clear_role_env).uniq
       end
     end
 end
