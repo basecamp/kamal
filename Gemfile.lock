@@ -29,6 +29,8 @@ GEM
       i18n (>= 1.6, < 2)
       minitest (>= 5.1)
       tzinfo (~> 2.0)
+    addressable (2.8.1)
+      public_suffix (>= 2.0.2, < 6.0)
     builder (3.2.4)
     concurrent-ruby (1.1.10)
     crass (1.0.6)
@@ -42,6 +44,8 @@ GEM
     io-console (0.6.0)
     irb (1.6.2)
       reline (>= 0.3.0)
+    json-schema (3.0.0)
+      addressable (>= 2.8)
     loofah (2.19.1)
       crass (~> 1.0.2)
       nokogiri (>= 1.5.9)
@@ -58,6 +62,7 @@ GEM
       racc (~> 1.4)
     nokogiri (1.14.0-x86_64-linux)
       racc (~> 1.4)
+    public_suffix (5.0.1)
     racc (1.6.2)
     rack (2.2.5)
     rack-test (2.0.2)
@@ -97,6 +102,7 @@ PLATFORMS
 
 DEPENDENCIES
   debug
+  json-schema
   mocha
   mrsk!
   railties

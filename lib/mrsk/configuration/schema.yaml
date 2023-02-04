@@ -1,0 +1,70 @@
+---
+type: object
+required:
+- service
+- image
+- servers
+- registry
+properties:
+  service:
+    type: string
+    description: Name of the service.
+  image:
+    type: string
+    description: Docker image name.
+  registry:
+    type: object
+    required:
+    - username
+    - password
+    properties:
+      server:
+        type: string
+        description: Docker registry server.
+      username:
+        type: string
+        description: Username for the Docker registry.
+      password:
+        type: string
+        description: Password for the Docker registry.
+  env:
+    anyOf:
+    - type: object
+      description: Environment variables for the service.
+      additionalProperties:
+        type: string
+    - type: object
+      description: Grouped by environment
+      properties:
+        clear:
+          type: object
+          description: Clear environment variables for the service.
+          additionalProperties:
+            type: string
+        secret:
+          type: array
+          description: Secret environment variables for the service.
+          items:
+            type: string
+  servers:
+    anyOf:
+    - type: array
+      description: List of servers.
+      items:
+        type: string
+    - type: object
+      description: Grouped by environment
+      required:
+        - web
+      properties:
+        web:
+          type: array
+          description: List of servers.
+          items:
+            type: string
+      patternProperties:
+        "^S_":
+          type: array
+          description: List of servers.
+          items:
+            type: string
