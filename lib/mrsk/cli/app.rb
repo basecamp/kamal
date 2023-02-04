@@ -104,11 +104,6 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
     on(MRSK.hosts) { |host| puts_by_host host, capture_with_info(*MRSK.app.list_images) }
   end
 
-  desc "current", "Return the current running container ID"
-  def current
-    on(MRSK.hosts) { |host| puts_by_host host, capture_with_info(*MRSK.app.current_container_id) }
-  end
-
   desc "logs", "Show lines from app on servers"
   option :since, aliases: "-s", desc: "Show logs since timestamp (e.g. 2013-01-02T13:23:37Z) or relative (e.g. 42m for 42 minutes)"
   option :lines, type: :numeric, aliases: "-n", desc: "Number of log lines to pull from each server"
