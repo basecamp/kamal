@@ -81,14 +81,14 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
   end
 
   test "execute in new container over ssh" do
-    @mysql.stub(:run_over_ssh, ->(cmd) { cmd }) do
+    @mysql.stub(:run_over_ssh, ->(cmd) { cmd.join(" ") }) do
       assert_match %r|docker run -it --rm -e MYSQL_ROOT_PASSWORD=secret123 -e MYSQL_ROOT_HOST=% mysql:8.0 mysql -u root|,
         @mysql.execute_in_new_container_over_ssh("mysql", "-u", "root")
     end
   end
 
   test "execute in existing container over ssh" do
-    @mysql.stub(:run_over_ssh, ->(cmd) { cmd }) do
+    @mysql.stub(:run_over_ssh, ->(cmd) { cmd.join(" ") }) do
       assert_match %r|docker exec -it app-mysql mysql -u root|,
         @mysql.execute_in_existing_container_over_ssh("mysql", "-u", "root")
     end

@@ -35,11 +35,13 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
   end
 
   def follow_logs(host:, grep: nil)
-    run_over_ssh pipe(
-      current_container_id,
-      "xargs docker logs -t -n 10 -f 2>&1",
-      (%(grep "#{grep}") if grep)
-    ).join(" "), host: host
+    run_over_ssh \
+      pipe(
+        current_container_id,
+        "xargs docker logs -t -n 10 -f 2>&1",
+        (%(grep "#{grep}") if grep)
+      ),
+      host: host
   end
 
 
@@ -62,11 +64,11 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
   end
 
   def execute_in_existing_container_over_ssh(*command, host:)
-    run_over_ssh execute_in_existing_container(*command, interactive: true).join(" "), host: host
+    run_over_ssh execute_in_existing_container(*command, interactive: true), host: host
   end
 
   def execute_in_new_container_over_ssh(*command, host:)
-    run_over_ssh execute_in_new_container(*command, interactive: true).join(" "), host: host
+    run_over_ssh execute_in_new_container(*command, interactive: true), host: host
   end
 
 

@@ -8,8 +8,8 @@ module Mrsk::Commands
       @config = config
     end
 
-    def run_over_ssh(command, host:)
-      "ssh -t #{config.ssh_user}@#{host} '#{command}'"
+    def run_over_ssh(*command, host:)
+      "ssh -t #{config.ssh_user}@#{host} '#{command.join(" ")}'"
     end
 
     private

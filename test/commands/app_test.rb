@@ -38,14 +38,14 @@ class CommandsAppTest < ActiveSupport::TestCase
   end
 
   test "execute in new container over ssh" do
-    @app.stub(:run_over_ssh, ->(cmd, host:) { cmd }) do
+    @app.stub(:run_over_ssh, ->(cmd, host:) { cmd.join(" ") }) do
       assert_match %r|docker run -it --rm -e RAILS_MASTER_KEY=456 dhh/app:missing bin/rails c|,
         @app.execute_in_new_container_over_ssh("bin/rails", "c", host: "app-1")
     end
   end
 
   test "execute in existing container over ssh" do
-    @app.stub(:run_over_ssh, ->(cmd, host:) { cmd }) do
+    @app.stub(:run_over_ssh, ->(cmd, host:) { cmd.join(" ") }) do
       assert_match %r|docker exec -it app-missing bin/rails c|,
         @app.execute_in_existing_container_over_ssh("bin/rails", "c", host: "app-1")
     end
