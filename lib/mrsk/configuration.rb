@@ -1,9 +1,3 @@
-require "active_support/ordered_options"
-require "active_support/core_ext/string/inquiry"
-require "active_support/core_ext/module/delegation"
-require "pathname"
-require "erb"
-require "mrsk/utils"
 require "net/ssh/proxy/jump"
 
 class Mrsk::Configuration
@@ -183,6 +177,3 @@ class Mrsk::Configuration
       raw_config.servers.is_a?(Array) ? [ "web" ] : raw_config.servers.keys.sort
     end
 end
-
-require "mrsk/configuration/role"
-require "mrsk/configuration/accessory"

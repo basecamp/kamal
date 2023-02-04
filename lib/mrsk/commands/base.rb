@@ -34,6 +34,14 @@ module Mrsk::Commands
         combine *commands, by: "|"
       end
 
+      def append(*commands)
+        combine *commands, by: ">>"
+      end
+
+      def xargs(command)
+        [ :xargs, command ].flatten
+      end
+
       def docker(*args)
         args.compact.unshift :docker
       end

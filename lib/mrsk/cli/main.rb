@@ -1,13 +1,3 @@
-require "mrsk/cli/base"
-
-require "mrsk/cli/accessory"
-require "mrsk/cli/app"
-require "mrsk/cli/build"
-require "mrsk/cli/prune"
-require "mrsk/cli/registry"
-require "mrsk/cli/server"
-require "mrsk/cli/traefik"
-
 class Mrsk::Cli::Main < Mrsk::Cli::Base
   desc "setup", "Setup all accessories and deploy the app to servers"
   def setup
@@ -21,12 +11,21 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
   desc "deploy", "Deploy the app to servers"
   def deploy
     print_runtime do
+      say "Ensure Docker is installed...", :magenta
       invoke "mrsk:cli:server:bootstrap"
+
+      say "Log into image registry...", :magenta
       invoke "mrsk:cli:registry:login"
+
+      say "Build and push app image...", :magenta
       invoke "mrsk:cli:build:deliver"
+
+      say "Ensure Traefik is running...", :magenta
       invoke "mrsk:cli:traefik:boot"
-      invoke "mrsk:cli:app:stop"
+
       invoke "mrsk:cli:app:boot"
+
+      say "Prune old containers and images...", :magenta
       invoke "mrsk:cli:prune:all"
     end
   end
@@ -34,17 +33,23 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
   desc "redeploy", "Deploy new version of the app to servers (without bootstrapping servers, starting Traefik, pruning, and registry login)"
   def redeploy
     print_runtime do
+      say "Build and push app image...", :magenta
       invoke "mrsk:cli:build:deliver"
-      invoke "mrsk:cli:app:stop"
+
       invoke "mrsk:cli:app:boot"
     end
   end
 
-  desc "rollback [VERSION]", "Rollback the app to VERSION (that must already be on servers)"
+  desc "rollback [VERSION]", "Rollback the app to VERSION"
   def rollback(version)
+    MRSK.version = version
+
+    cli = self
+
+    cli.say "Stop current version, then start version #{version}...", :magenta
     on(MRSK.hosts) do
       execute *MRSK.app.stop, raise_on_non_zero_exit: false
-      execute *MRSK.app.start(version: version)
+      execute *MRSK.app.start
     end
   end
 
@@ -53,6 +58,13 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
     invoke "mrsk:cli:traefik:details"
     invoke "mrsk:cli:app:details"
     invoke "mrsk:cli:accessory:details", [ "all" ]
+  end
+
+  desc "audit", "Show audit log from servers"
+  def audit
+    on(MRSK.hosts) do |host|
+      puts_by_host host, capture_with_info(*MRSK.auditor.reveal)
+    end
   end
 
   desc "config", "Show combined config"

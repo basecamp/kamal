@@ -1,4 +1,3 @@
-require "mrsk/commands/base"
 require "active_support/duration"
 require "active_support/core_ext/numeric/time"
 

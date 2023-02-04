@@ -319,9 +319,9 @@ Now run `mrsk accessory start mysql` to start the MySQL server on 1.1.1.3. See `
 
 ## Commands
 
-### Running remote execution and runners
+### Running commands on servers
 
-If you need to execute commands inside the Rails containers, you can use `mrsk app exec` and `mrsk app runner`. Examples:
+You can execute one-off commands on the servers:
 
 ```bash
 # Runs command on all servers
@@ -364,13 +364,25 @@ Database adapter          sqlite3
 Database schema version   20221231233303
 
 # Run Rails runner on primary server
-mrsk app runner -p 'puts Rails.application.config.time_zone'
+mrsk app exec -p 'bin/rails runner "puts Rails.application.config.time_zone"'
 UTC
 ```
 
-### Running a Rails console
+### Running interactive commands over SSH
 
-If you need to interact with the production console for the app, you can use `mrsk app console`, which will start a Rails console session on the primary host. You can start the console on a different host using `mrsk app console --host 192.168.0.2`. Be mindful that this is a live wire! Any changes made to the production database will take effect immeditately.
+You can run interactive commands, like a Rails console or a bash session, on a server (default is primary, use `--hosts` to connect to another):
+
+```bash
+# Starts a bash session in a new container made from the most recent app image
+mrsk app exec -i bash
+
+# Starts a bash session in the currently running container for the app
+mrsk app exec -i --reuse bash
+
+# Starts a Rails console in a new container made from the most recent app image
+mrsk app exec -i 'bin/rails console'
+```
+
 
 ### Running details to see state of containers
 

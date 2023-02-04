@@ -1,13 +1,5 @@
 require "active_support/core_ext/enumerable"
 
-require "mrsk/configuration"
-require "mrsk/commands/accessory"
-require "mrsk/commands/app"
-require "mrsk/commands/builder"
-require "mrsk/commands/prune"
-require "mrsk/commands/traefik"
-require "mrsk/commands/registry"
-
 class Mrsk::Commander
   attr_accessor :config_file, :destination, :verbosity, :version
 
@@ -77,8 +69,12 @@ class Mrsk::Commander
     Mrsk::Commands::Accessory.new(config, name: name)
   end
 
+  def auditor
+    @auditor ||= Mrsk::Commands::Auditor.new(config)
+  end
 
-  def with_verbosity(level) 
+
+  def with_verbosity(level)
     old_level = SSHKit.config.output_verbosity
     SSHKit.config.output_verbosity = level
     yield
@@ -89,7 +85,7 @@ class Mrsk::Commander
   # Test-induced damage!
   def reset
     @config = @config_file = @destination = @version = nil
-    @app = @builder = @traefik = @registry = @prune = nil
+    @app = @builder = @traefik = @registry = @prune = @auditor = nil
     @verbosity = :info
   end
 

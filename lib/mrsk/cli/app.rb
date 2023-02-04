@@ -1,22 +1,26 @@
-require "mrsk/cli/base"
-
 class Mrsk::Cli::App < Mrsk::Cli::Base
-  desc "boot", "Boot app on servers (or start them if they've already been booted)"
+  desc "boot", "Boot app on servers (or reboot app if already running)"
   def boot
     cli = self
 
+    say "Ensure no other version of the app is running...", :magenta
+    stop
+
+    say "Get most recent version available as an image...", :magenta unless options[:version]
     using_version(options[:version] || most_recent_version_available) do |version|
+      say "Start container with version #{version} (or reboot if already running)...", :magenta
+
       MRSK.config.roles.each do |role|
         on(role.hosts) do |host|
+          execute *MRSK.auditor.record("app boot version #{version}"), verbosity: :debug
+
           begin
             execute *MRSK.app.run(role: role.name)
           rescue SSHKit::Command::Failed => e
             if e.message =~ /already in use/
               error "Rebooting container with same version already deployed on #{host}"
 
-              cli.stop
               cli.remove_container version
-
               execute *MRSK.app.run(role: role.name)
             else
               raise
@@ -27,76 +31,67 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
     end
   end
 
-  desc "reboot", "Reboot app on host (stop container, remove container, start new container with latest image)"
-  def reboot
-    old_version = current_running_version
-
-    stop
-    remove_container old_version
-    boot
-  end
-
   desc "start", "Start existing app on servers (use --version=<git-hash> to designate specific version)"
   def start
-    on(MRSK.hosts) { execute *MRSK.app.start, raise_on_non_zero_exit: false }
+    on(MRSK.hosts) do
+      execute *MRSK.auditor.record("app start version #{MRSK.version}"), verbosity: :debug
+      execute *MRSK.app.start, raise_on_non_zero_exit: false
+    end
   end
-  
+
   desc "stop", "Stop app on servers"
   def stop
-    on(MRSK.hosts) { execute *MRSK.app.stop, raise_on_non_zero_exit: false }
+    on(MRSK.hosts) do
+      execute *MRSK.auditor.record("app stop"), verbosity: :debug
+      execute *MRSK.app.stop, raise_on_non_zero_exit: false
+    end
   end
-  
+
   desc "details", "Display details about app containers"
   def details
     on(MRSK.hosts) { |host| puts_by_host host, capture_with_info(*MRSK.app.info) }
   end
-  
+
   desc "exec [CMD]", "Execute a custom command on servers"
-  option :method, aliases: "-m", default: "exec", desc: "Execution method: [exec] perform inside app container / [run] perform in new container / [ssh] perform over ssh"
+  option :interactive, aliases: "-i", type: :boolean, default: false, desc: "Execute command over ssh for an interactive shell (use for console/bash)"
+  option :reuse, type: :boolean, default: false, desc: "Reuse currently running container instead of starting a new one"
   def exec(cmd)
-    runner = \
-      case options[:method]
-      when "exec" then "exec"
-      when "run"  then "run_exec"
-      when "ssh"  then "exec_over_ssh"
-      else raise "Unknown method: #{options[:method]}"
-      end.inquiry
-
-    if runner.exec_over_ssh?
-      run_locally do
-        info "Launching command on #{MRSK.primary_host}"
-        exec MRSK.app.exec_over_ssh(cmd, host: MRSK.primary_host)
+    case
+    when options[:interactive] && options[:reuse]
+      say "Get current version of running container...", :magenta unless options[:version]
+      using_version(options[:version] || current_running_version) do |version|
+        say "Launching interactive command with version #{version} via SSH from existing container on #{MRSK.primary_host}...", :magenta
+        run_locally { exec MRSK.app.execute_in_existing_container_over_ssh(cmd, host: MRSK.primary_host) }
       end
-    else
-      on(MRSK.hosts) { |host| puts_by_host host, capture_with_info(*MRSK.app.send(runner, cmd)) }
-    end
-  end
 
-  desc "console", "Start Rails Console on primary host (or specific host set by --hosts)"
-  def console
-    using_version(options[:version] || most_recent_version_available) do
-      run_locally do
-        if version
-          info "Launching Rails console on #{MRSK.primary_host} [Version: #{version}]"
-          exec MRSK.app.console(host: MRSK.primary_host)
-        else
-          error "No image available for #{MRSK.config.repository}"
+    when options[:interactive]
+      say "Get most recent version available as an image...", :magenta unless options[:version]
+      using_version(options[:version] || most_recent_version_available) do |version|
+        say "Launching interactive command with version #{version} via SSH from new container on #{MRSK.primary_host}...", :magenta
+        run_locally { exec MRSK.app.execute_in_new_container_over_ssh(cmd, host: MRSK.primary_host) }
+      end
+
+    when options[:reuse]
+      say "Get current version of running container...", :magenta unless options[:version]
+      using_version(options[:version] || current_running_version) do |version|
+        say "Launching command with version #{version} from existing container...", :magenta
+
+        on(MRSK.hosts) do |host|
+          execute *MRSK.auditor.record("app cmd '#{cmd}' with version #{version}"), verbosity: :debug
+          puts_by_host host, capture_with_info(*MRSK.app.execute_in_existing_container(cmd))
+        end
+      end
+
+    else
+      say "Get most recent version available as an image...", :magenta unless options[:version]
+      using_version(options[:version] || most_recent_version_available) do |version|
+        say "Launching command with version #{version} from new container...", :magenta
+        on(MRSK.hosts) do |host|
+          execute *MRSK.auditor.record("app cmd '#{cmd}' with version #{version}"), verbosity: :debug
+          puts_by_host host, capture_with_info(*MRSK.app.execute_in_new_container(cmd))
         end
       end
     end
-  end
-
-  desc "bash", "Start a bash session on primary host (or specific host set by --hosts)"
-  def bash
-    run_locally do
-      info "Launching bash session on #{MRSK.primary_host}"
-      exec MRSK.app.bash(host: MRSK.primary_host)
-    end
-  end
-
-  desc "runner [EXPRESSION]", "Execute Rails runner with given expression"
-  def runner(expression)
-    on(MRSK.hosts) { |host| puts_by_host host, capture_with_info(*MRSK.app.exec("bin/rails", "runner", "'#{expression}'")) }
   end
 
   desc "containers", "List all the app containers currently on servers"
@@ -113,7 +108,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
   def current
     on(MRSK.hosts) { |host| puts_by_host host, capture_with_info(*MRSK.app.current_container_id) }
   end
-  
+
   desc "logs", "Show lines from app on servers"
   option :since, aliases: "-s", desc: "Show logs since timestamp (e.g. 2013-01-02T13:23:37Z) or relative (e.g. 42m for 42 minutes)"
   option :lines, type: :numeric, aliases: "-n", desc: "Number of log lines to pull from each server"
@@ -152,17 +147,31 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
 
   desc "remove_container [VERSION]", "Remove app container with given version from servers"
   def remove_container(version)
-    on(MRSK.hosts) { execute *MRSK.app.remove_container(version: version) }
+    on(MRSK.hosts) do
+      execute *MRSK.auditor.record("app remove container #{version}"), verbosity: :debug
+      execute *MRSK.app.remove_container(version: version)
+    end
   end
 
   desc "remove_containers", "Remove all app containers from servers"
   def remove_containers
-    on(MRSK.hosts) { execute *MRSK.app.remove_containers }
+    on(MRSK.hosts) do
+      execute *MRSK.auditor.record("app remove containers"), verbosity: :debug
+      execute *MRSK.app.remove_containers
+    end
   end
 
   desc "remove_images", "Remove all app images from servers"
   def remove_images
-    on(MRSK.hosts) { execute *MRSK.app.remove_images }
+    on(MRSK.hosts) do
+      execute *MRSK.auditor.record("app remove images"), verbosity: :debug
+      execute *MRSK.app.remove_images
+    end
+  end
+
+  desc "current_version", "Shows the version currently running"
+  def current_version
+    on(MRSK.hosts) { |host| puts_by_host host, capture_with_info(*MRSK.app.current_running_version).strip }
   end
 
   private

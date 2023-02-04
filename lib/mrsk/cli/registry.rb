@@ -1,9 +1,7 @@
-require "mrsk/cli/base"
-
 class Mrsk::Cli::Registry < Mrsk::Cli::Base
   desc "login", "Login to the registry locally and remotely"
   def login
-    run_locally           { execute *MRSK.registry.login }
+    run_locally    { execute *MRSK.registry.login }
     on(MRSK.hosts) { execute *MRSK.registry.login }
   rescue ArgumentError => e
     puts e.message

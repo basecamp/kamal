@@ -1,10 +1,8 @@
 require "test_helper"
-require "mrsk/configuration"
-require "mrsk/commands/registry"
 
 class CommandsRegistryTest < ActiveSupport::TestCase
   setup do
-    @config = { service: "app", 
+    @config = { service: "app",
       image: "dhh/app",
       registry: { "username" => "dhh",
         "password" => "secret",

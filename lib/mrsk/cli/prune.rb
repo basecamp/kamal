@@ -1,5 +1,3 @@
-require "mrsk/cli/base"
-
 class Mrsk::Cli::Prune < Mrsk::Cli::Base
   desc "all", "Prune unused images and stopped containers"
   def all
@@ -9,11 +7,17 @@ class Mrsk::Cli::Prune < Mrsk::Cli::Base
 
   desc "images", "Prune unused images older than 30 days"
   def images
-    on(MRSK.hosts) { execute *MRSK.prune.images }
+    on(MRSK.hosts) do
+      execute *MRSK.auditor.record("prune images"), verbosity: :debug
+      execute *MRSK.prune.images
+    end
   end
 
   desc "containers", "Prune stopped containers for the service older than 3 days"
   def containers
-    on(MRSK.hosts) { execute *MRSK.prune.containers }
+    on(MRSK.hosts) do
+      execute *MRSK.auditor.record("prune containers"), verbosity: :debug
+      execute *MRSK.prune.containers
+    end
   end
 end

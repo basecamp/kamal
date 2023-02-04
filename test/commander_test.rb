@@ -1,5 +1,4 @@
 require "test_helper"
-require "mrsk/commander"
 
 class CommanderTest < ActiveSupport::TestCase
   setup do

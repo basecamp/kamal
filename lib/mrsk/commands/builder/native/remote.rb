@@ -1,5 +1,3 @@
-require "mrsk/commands/builder/native"
-
 class Mrsk::Commands::Builder::Native::Remote < Mrsk::Commands::Builder::Native
   def create
     chain \

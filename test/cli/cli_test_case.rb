@@ -1,6 +1,5 @@
 require "test_helper"
 require "active_support/testing/stream"
-require "mrsk/cli"
 
 class CliTestCase < ActiveSupport::TestCase
   include ActiveSupport::Testing::Stream

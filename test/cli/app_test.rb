@@ -15,32 +15,48 @@ class CliAppTest < CliTestCase
 
     run_command("boot").tap do |output|
       assert_match /Rebooting container with same version already deployed/, output # Can't start what's already running
-      assert_match /docker ps -q --filter label=service=app | xargs docker stop/, output # Stop what's running
-      assert_match /docker container ls -a -f name=app-999 -q | docker container rm/, output # Remove old container
+      assert_match /docker ps -q --filter label=service=app \| xargs docker stop/, output # Stop what's running
+      assert_match /docker container ls -a -f name=app-999 -q \| xargs docker container rm/, output # Remove old container
       assert_match /docker run/, output # Start new container
     end
   ensure
     Thread.report_on_exception = true
   end
 
-  test "reboot to default version" do
-    run_command("reboot").tap do |output|
-      assert_match /docker ps --filter label=service=app/, output # Find current container
-      assert_match /docker stop/, output # Stop old container
-      assert_match /docker container rm/, output # Remove old container
-      assert_match /docker run -d --restart unless-stopped .* dhh\/app:999/, output # Start new container
+  test "start" do
+    run_command("start").tap do |output|
+      assert_match /docker start app-999/, output
     end
   end
 
-  test "reboot to specific version" do
-    run_command("reboot", "--version", "456").tap do |output|
-      assert_match /docker run -d --restart unless-stopped .* dhh\/app:456/, output
+  test "stop" do
+    run_command("stop").tap do |output|
+      assert_match /docker ps -q --filter label=service=app \| xargs docker stop/, output
+    end
+  end
+
+  test "details" do
+    run_command("details").tap do |output|
+      assert_match /docker ps --filter label=service=app/, output
     end
   end
 
   test "remove_container" do
     run_command("remove_container", "1234567").tap do |output|
-      assert_match /docker container ls -a -f name=app-1234567 -q | docker container rm/, output
+      assert_match /docker container ls -a -f name=app-1234567 -q \| xargs docker container rm/, output
+    end
+  end
+
+  test "exec" do
+    run_command("exec", "ruby -v").tap do |output|
+      assert_match /ruby -v/, output
+    end
+  end
+
+  test "exec with reuse" do
+    run_command("exec", "--reuse", "ruby -v").tap do |output|
+      assert_match %r[docker ps --filter label=service=app --format \"{{.Names}}\" | sed 's/-/\\n/g' | tail -n 1], output # Get current version
+      assert_match %r[docker exec app-999 ruby -v], output
     end
   end
 
