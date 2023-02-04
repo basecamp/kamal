@@ -1,10 +1,8 @@
 require "test_helper"
-require "mrsk/configuration"
-require "mrsk/commands/accessory"
 
 class CommandsAccessoryTest < ActiveSupport::TestCase
   setup do
-    @config = { 
+    @config = {
       service: "app", image: "dhh/app", registry: { "username" => "dhh", "password" => "secret" },
       servers: [ "1.1.1.1" ],
       accessories: {

@@ -1,5 +1,3 @@
-require "mrsk/commands/base"
-
 class Mrsk::Commands::App < Mrsk::Commands::Base
   def run(role: :web)
     role = config.role(role)

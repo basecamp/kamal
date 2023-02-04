@@ -1,5 +1,3 @@
-require "mrsk/commands/base"
-
 class Mrsk::Commands::Builder::Base < Mrsk::Commands::Base
   delegate :argumentize, to: Mrsk::Utils
 

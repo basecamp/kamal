@@ -1,6 +1,4 @@
 require "test_helper"
-require "mrsk/configuration"
-require "mrsk/commands/traefik"
 
 class CommandsTraefikTest < ActiveSupport::TestCase
   setup do

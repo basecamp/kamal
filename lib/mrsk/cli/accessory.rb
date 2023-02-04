@@ -1,5 +1,3 @@
-require "mrsk/cli/base"
-
 class Mrsk::Cli::Accessory < Mrsk::Cli::Base
   desc "boot [NAME]", "Boot accessory service on host (use NAME=all to boot all accessories)"
   def boot(name)

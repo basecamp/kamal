@@ -1,5 +1,4 @@
 require "test_helper"
-require "mrsk/configuration"
 
 class ConfigurationTest < ActiveSupport::TestCase
   setup do

@@ -4,7 +4,7 @@
 Thread.report_on_exception = false
 
 require "dotenv/load"
-require "mrsk/cli"
+require "mrsk"
 
 begin
   Mrsk::Cli::Main.start(ARGV)

@@ -1,5 +1,3 @@
-require "mrsk/commands/builder/multiarch"
-
 class Mrsk::Commands::Builder::Multiarch::Remote < Mrsk::Commands::Builder::Multiarch
   def create
     combine \
