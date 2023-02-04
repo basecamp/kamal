@@ -1,3 +1,8 @@
+require "active_support/ordered_options"
+require "active_support/core_ext/string/inquiry"
+require "active_support/core_ext/module/delegation"
+require "pathname"
+require "erb"
 require "net/ssh/proxy/jump"
 
 class Mrsk::Configuration
