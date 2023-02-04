@@ -24,6 +24,70 @@ class CommandsAppTest < ActiveSupport::TestCase
       [:docker, :run, "-d", "--restart unless-stopped", "--name", "app-999", "-e", "RAILS_MASTER_KEY=456", "--volume", "/local/path:/container/path", "--label", "service=app", "--label", "role=web", "--label", "traefik.http.routers.app.rule='PathPrefix(`/`)'", "--label", "traefik.http.services.app.loadbalancer.healthcheck.path=/up", "--label", "traefik.http.services.app.loadbalancer.healthcheck.interval=1s", "--label", "traefik.http.middlewares.app.retry.attempts=3", "--label", "traefik.http.middlewares.app.retry.initialinterval=500ms", "dhh/app:999"], @app.run
   end
 
+  test "run without master key" do
+    ENV["RAILS_MASTER_KEY"] = nil
+    @app = Mrsk::Commands::App.new Mrsk::Configuration.new(@config.tap { |c| c[:skip_master_key] = true })
+
+    assert @app.run.exclude?("RAILS_MASTER_KEY=456")
+  end
+
+  test "start" do
+    assert_equal \
+      [ :docker, :start, "app-999" ],
+      @app.start
+  end
+
+  test "stop" do
+    assert_equal \
+      [ :docker, :ps, "-q", "--filter", "label=service=app", "|", :xargs, :docker, :stop ],
+      @app.stop
+  end
+
+  test "info" do
+    assert_equal \
+      [ :docker, :ps, "--filter", "label=service=app" ],
+      @app.info
+  end
+
+
+  test "logs" do
+    assert_equal \
+      [ :docker, :ps, "-q", "--filter", "label=service=app", "|", "xargs docker logs 2>&1" ],
+      @app.logs
+
+    assert_equal \
+      [ :docker, :ps, "-q", "--filter", "label=service=app", "|", "xargs docker logs --since 5m 2>&1" ],
+      @app.logs(since: "5m")
+
+    assert_equal \
+      [ :docker, :ps, "-q", "--filter", "label=service=app", "|", "xargs docker logs -n 100 2>&1" ],
+      @app.logs(lines: "100")
+
+    assert_equal \
+      [ :docker, :ps, "-q", "--filter", "label=service=app", "|", "xargs docker logs --since 5m -n 100 2>&1" ],
+      @app.logs(since: "5m", lines: "100")
+
+    assert_equal \
+      [ :docker, :ps, "-q", "--filter", "label=service=app", "|",  "xargs docker logs 2>&1", "|", "grep 'my-id'" ],
+      @app.logs(grep: "my-id")
+
+    assert_equal \
+      [ :docker, :ps, "-q", "--filter", "label=service=app", "|",  "xargs docker logs --since 5m 2>&1", "|", "grep 'my-id'" ],
+      @app.logs(since: "5m", grep: "my-id")
+  end
+
+  test "follow logs" do
+    @app.stub(:run_over_ssh, ->(cmd, host:) { cmd.join(" ") }) do
+      assert_equal \
+        "docker ps -q --filter label=service=app | xargs docker logs -t -n 10 -f 2>&1",
+        @app.follow_logs(host: "app-1")
+
+      assert_equal \
+        "docker ps -q --filter label=service=app | xargs docker logs -t -n 10 -f 2>&1 | grep \"Completed\"",
+        @app.follow_logs(host: "app-1", grep: "Completed")
+    end
+  end
+
 
   test "execute in new container" do
     assert_equal \
@@ -52,10 +116,21 @@ class CommandsAppTest < ActiveSupport::TestCase
   end
 
 
-  test "run without master key" do
-    ENV["RAILS_MASTER_KEY"] = nil
-    @app = Mrsk::Commands::App.new Mrsk::Configuration.new(@config.tap { |c| c[:skip_master_key] = true })
+  test "current_container_id" do
+    assert_equal \
+      [ :docker, :ps, "-q", "--filter", "label=service=app" ],
+      @app.current_container_id
+  end
 
-    assert @app.run.exclude?("RAILS_MASTER_KEY=456")
+  test "container_id_for" do
+    assert_equal \
+      [ :docker, :container, :ls, "-a", "-f", "name=app-999", "-q" ],
+      @app.container_id_for(container_name: "app-999")
+  end
+
+  test "current_running_version" do
+    assert_equal \
+      [ :docker, :ps, "--filter", "label=service=app", "--format", "\"{{.Names}}\"", "|", "sed 's/-/\\n/g'", "|", "tail -n 1" ],
+      @app.current_running_version
   end
 end
