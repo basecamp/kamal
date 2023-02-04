@@ -110,6 +110,30 @@ class CommandsAppTest < ActiveSupport::TestCase
     end
   end
 
+  test "run over ssh" do
+    assert_equal "ssh -t root@1.1.1.1 'ls'", @app.run_over_ssh("ls", host: "1.1.1.1")
+  end
+
+  test "run over ssh with custom user" do
+    @app = Mrsk::Commands::App.new Mrsk::Configuration.new(@config.tap { |c| c[:ssh] = { "user" => "app" } })
+    assert_equal "ssh -t app@1.1.1.1 'ls'", @app.run_over_ssh("ls", host: "1.1.1.1")
+  end
+
+  test "run over ssh with proxy" do
+    @app = Mrsk::Commands::App.new Mrsk::Configuration.new(@config.tap { |c| c[:ssh] = { "proxy" => "2.2.2.2" } })
+    assert_equal "ssh -J root@2.2.2.2 -t root@1.1.1.1 'ls'", @app.run_over_ssh("ls", host: "1.1.1.1")
+  end
+
+  test "run over ssh with proxy user" do
+    @app = Mrsk::Commands::App.new Mrsk::Configuration.new(@config.tap { |c| c[:ssh] = { "proxy" => "app@2.2.2.2" } })
+    assert_equal "ssh -J app@2.2.2.2 -t root@1.1.1.1 'ls'", @app.run_over_ssh("ls", host: "1.1.1.1")
+  end
+
+  test "run over ssh with custom user with proxy" do
+    @app = Mrsk::Commands::App.new Mrsk::Configuration.new(@config.tap { |c| c[:ssh] = { "user" => "app", "proxy" => "2.2.2.2" } })
+    assert_equal "ssh -J root@2.2.2.2 -t app@1.1.1.1 'ls'", @app.run_over_ssh("ls", host: "1.1.1.1")
+  end
+
 
   test "current_container_id" do
     assert_equal \
@@ -133,15 +157,5 @@ class CommandsAppTest < ActiveSupport::TestCase
     assert_equal \
       "docker image ls --format \"{{.Tag}}\" dhh/app | head -n 1",
       @app.most_recent_version_from_available_images.join(" ")
-  end
-
-  test "exec_over_ssh" do
-    assert @app.exec_over_ssh("ls", host: '1.1.1.1').start_with?("ssh -t #{@app.config.ssh_user}@1.1.1.1")
-  end
-
-  test "exec_over_ssh with proxy" do
-    @app = Mrsk::Commands::App.new Mrsk::Configuration.new(@config.tap { |c| c[:ssh] = { "proxy" => 'root@2.2.2.2' } })
-
-    assert @app.exec_over_ssh("ls", host: '1.1.1.1').start_with?("ssh -J root@2.2.2.2 -t #{@app.config.ssh_user}@1.1.1.1")
   end
 end
