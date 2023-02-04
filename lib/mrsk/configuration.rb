@@ -3,6 +3,7 @@ require "active_support/core_ext/string/inquiry"
 require "active_support/core_ext/module/delegation"
 require "pathname"
 require "erb"
+require "net/ssh/proxy/jump"
 
 class Mrsk::Configuration
   delegate :service, :image, :servers, :env, :labels, :registry, :builder, to: :raw_config, allow_nil: true
@@ -103,11 +104,22 @@ class Mrsk::Configuration
   end
 
   def ssh_user
-    raw_config.ssh_user || "root"
+    if raw_config.ssh.present?
+      raw_config.ssh["user"] || "root"
+    else
+      "root"
+    end
+  end
+
+  def ssh_proxy
+    if raw_config.ssh.present? && raw_config.ssh["proxy"]
+      Net::SSH::Proxy::Jump.new \
+        raw_config.ssh["proxy"].include?("@") ? raw_config.ssh["proxy"] : "root@#{raw_config.ssh["proxy"]}"
+    end
   end
 
   def ssh_options
-    { user: ssh_user, auth_methods: [ "publickey" ] }
+    { user: ssh_user, proxy: ssh_proxy, auth_methods: [ "publickey" ] }.compact
   end
 
 

@@ -71,10 +71,27 @@ registry:
 
 ### Using a different SSH user than root
 
-The default SSH user is root, but you can change it using `ssh_user`:
+The default SSH user is root, but you can change it using `ssh/user`:
 
 ```yaml
-ssh_user: app
+ssh:
+  user: app
+```
+
+### Using a proxy SSH host
+
+If you need to connect to server through a proxy host, you can use `ssh/proxy`:
+
+```yaml
+ssh:
+  proxy: "192.168.0.1" # defaults to root as the user
+```
+
+Or with specific user:
+
+```yaml
+ssh:
+  proxy: "app@192.168.0.1"
 ```
 
 ### Using env variables
