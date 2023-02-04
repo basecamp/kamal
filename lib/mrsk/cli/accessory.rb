@@ -7,6 +7,7 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
       with_accessory(name) do |accessory|
         directories(name)
         upload(name)
+
         on(accessory.host) do
           execute *MRSK.auditor.record("accessory #{name} boot"), verbosity: :debug
           execute *accessory.run

@@ -6,7 +6,6 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
       "-d",
       "--restart unless-stopped",
       "--name", service_with_version,
-      *rails_master_key_arg,
       *role.env_args,
       *config.volume_args,
       *role.label_args,
@@ -35,11 +34,13 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
   end
 
   def follow_logs(host:, grep: nil)
-    run_over_ssh pipe(
-      current_container_id,
-      "xargs docker logs -t -n 10 -f 2>&1",
-      (%(grep "#{grep}") if grep)
-    ).join(" "), host: host
+    run_over_ssh \
+      pipe(
+        current_container_id,
+        "xargs docker logs -t -n 10 -f 2>&1",
+        (%(grep "#{grep}") if grep)
+      ),
+      host: host
   end
 
 
@@ -54,7 +55,6 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
     docker :run,
       ("-it" if interactive),
       "--rm",
-      *rails_master_key_arg,
       *config.env_args,
       *config.volume_args,
       config.absolute_image,
@@ -62,11 +62,11 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
   end
 
   def execute_in_existing_container_over_ssh(*command, host:)
-    run_over_ssh execute_in_existing_container(*command, interactive: true).join(" "), host: host
+    run_over_ssh execute_in_existing_container(*command, interactive: true), host: host
   end
 
   def execute_in_new_container_over_ssh(*command, host:)
-    run_over_ssh execute_in_new_container(*command, interactive: true).join(" "), host: host
+    run_over_ssh execute_in_new_container(*command, interactive: true), host: host
   end
 
 
@@ -127,13 +127,5 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
 
     def service_filter
       [ "--filter", "label=service=#{config.service}" ]
-    end
-
-    def rails_master_key_arg
-      if master_key = config.master_key
-        [ "-e", redact("RAILS_MASTER_KEY=#{master_key}") ]
-      else
-        []
-      end
     end
 end

@@ -15,12 +15,15 @@ servers:
 registry:
   username: registry-user-name
   password: <%= ENV.fetch("MRSK_REGISTRY_PASSWORD") %>
+env:
+  secret:
+    - RAILS_MASTER_KEY
 ```
 
 Now you're ready to deploy a multi-arch image to the servers:
 
 ```
-MRSK_REGISTRY_PASSWORD=pw mrsk deploy
+RAILS_MASTER_KEY=123 MRSK_REGISTRY_PASSWORD=pw mrsk deploy
 ```
 
 This will:
@@ -280,14 +283,6 @@ This build argument can then be used in the Dockerfile:
 # Private repositories need an access token during the build
 ARG RUBY_VERSION
 FROM ruby:$RUBY_VERSION-slim as base
-```
-
-### Using without RAILS_MASTER_KEY
-
-If you're using MRSK with older Rails apps that predate RAILS_MASTER_KEY, or with a non-Rails app, you can skip the default usage and reference:
-
-```yaml
-skip_master_key: true
 ```
 
 ### Using accessories for database, cache, search services

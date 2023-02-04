@@ -39,10 +39,10 @@ class Mrsk::Commands::Accessory < Mrsk::Commands::Base
   end
 
   def follow_logs(grep: nil)
-    run_over_ssh pipe(
-      docker(:logs, service_name, "-t", "-n", "10", "-f", "2>&1"),
-      (%(grep "#{grep}") if grep)
-    ).join(" ")
+    run_over_ssh \
+      pipe \
+        docker(:logs, service_name, "-t", "-n", "10", "-f", "2>&1"),
+        (%(grep "#{grep}") if grep)
   end
 
 
@@ -64,11 +64,11 @@ class Mrsk::Commands::Accessory < Mrsk::Commands::Base
   end
 
   def execute_in_existing_container_over_ssh(*command)
-    run_over_ssh execute_in_existing_container(*command, interactive: true).join(" ")
+    run_over_ssh execute_in_existing_container(*command, interactive: true)
   end
 
   def execute_in_new_container_over_ssh(*command)
-    run_over_ssh execute_in_new_container(*command, interactive: true).join(" ")
+    run_over_ssh execute_in_new_container(*command, interactive: true)
   end
 
   def run_over_ssh(command)

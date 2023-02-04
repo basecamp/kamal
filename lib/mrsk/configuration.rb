@@ -117,12 +117,6 @@ class Mrsk::Configuration
     { user: ssh_user, proxy: ssh_proxy, auth_methods: [ "publickey" ] }.compact
   end
 
-  def master_key
-    unless raw_config.skip_master_key
-      ENV["RAILS_MASTER_KEY"] || File.read(Pathname.new(File.expand_path("config/master.key")))
-    end
-  end
-
 
   def valid?
     ensure_required_keys_present && ensure_env_available

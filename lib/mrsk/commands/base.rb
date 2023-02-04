@@ -8,14 +8,11 @@ module Mrsk::Commands
       @config = config
     end
 
-    def run_over_ssh(command, host:)
-      ssh_command = "ssh"
-
-      if config.ssh_proxy
-        ssh_command << " -J #{config.ssh_proxy.jump_proxies}"
+    def run_over_ssh(*command, host:)
+      "ssh".tap do |cmd|
+        cmd << " -J #{config.ssh_proxy.jump_proxies}" if config.ssh_proxy
+        cmd << " -t #{config.ssh_user}@#{host} '#{command.join(" ")}'"
       end
-
-      ssh_command << " -t #{config.ssh_user}@#{host} '#{command}'"
     end
 
     private
