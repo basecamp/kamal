@@ -6,7 +6,6 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
       "-d",
       "--restart unless-stopped",
       "--name", service_with_version,
-      *rails_master_key_arg,
       *role.env_args,
       *config.volume_args,
       *role.label_args,
@@ -56,7 +55,6 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
     docker :run,
       ("-it" if interactive),
       "--rm",
-      *rails_master_key_arg,
       *config.env_args,
       *config.volume_args,
       config.absolute_image,
@@ -129,13 +127,5 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
 
     def service_filter
       [ "--filter", "label=service=#{config.service}" ]
-    end
-
-    def rails_master_key_arg
-      if master_key = config.master_key
-        [ "-e", redact("RAILS_MASTER_KEY=#{master_key}") ]
-      else
-        []
-      end
     end
 end
