@@ -104,9 +104,13 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
     end
   end
 
-  desc "envify", "Create .env by evaluating .env.erb"
+  desc "envify", "Create .env by evaluating .env.erb (or .env.staging.erb -> .env.staging when using -d staging)"
   def envify
-    File.write(".env", ERB.new(IO.read(Pathname.new(File.expand_path(".env.erb")))).result)
+    if destination = options[:destination]
+      File.write(".env.#{destination}", ERB.new(IO.read(Pathname.new(File.expand_path(".env.#{destination}.erb")))).result)
+    else
+      File.write(".env", ERB.new(IO.read(Pathname.new(File.expand_path(".env.erb")))).result)
+    end
   end
 
   desc "remove", "Remove Traefik, app, and registry session from servers"
