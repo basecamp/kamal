@@ -1,10 +1,10 @@
 # MRSK
 
-MRSK deploys Rails apps in containers to servers running Docker with zero downtime. It uses the dynamic reverse-proxy Traefik to hold requests while the new application container is started and the old one is stopped. It works seamlessly across multiple hosts, using SSHKit to execute commands.
+MRSK deploys web apps in containers to servers running Docker with zero downtime. It uses the dynamic reverse-proxy Traefik to hold requests while the new application container is started and the old one is stopped. It works seamlessly across multiple hosts, using SSHKit to execute commands.
 
 ## Installation
 
-Install MRSK globally with `gem install mrsk`. Then, inside your app directory, run `mrsk install`. Now edit the new file `config/deploy.yml`. It could look as simple as this:
+Install MRSK globally with `gem install mrsk`. Then, inside your app directory, run `mrsk init` (or `mrsk init --bundle` within Rails apps where you want a bin/mrsk binstub). Now edit the new file `config/deploy.yml`. It could look as simple as this:
 
 ```yaml
 service: hey
@@ -20,10 +20,12 @@ env:
     - RAILS_MASTER_KEY
 ```
 
-Now you're ready to deploy a multi-arch image to the servers:
+Then edit your `.env` file to add your registry password as `MRSK_REGISTRY_PASSWORD` (and your `RAILS_MASTER_KEY` for production with a Rails app).
+
+Now you're ready to deploy to the servers:
 
 ```
-RAILS_MASTER_KEY=123 MRSK_REGISTRY_PASSWORD=pw mrsk deploy
+mrsk deploy
 ```
 
 This will:

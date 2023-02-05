@@ -74,22 +74,29 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
     end
   end
 
-  desc "install", "Create config stub in config/deploy.yml and binstub in bin/mrsk"
-  option :skip_binstub, type: :boolean, default: false, desc: "Skip adding MRSK to the Gemfile and creating bin/mrsk binstub"
-  def install
+  desc "init", "Create config stub in config/deploy.yml and env stub in .env"
+  option :bundle, type: :boolean, default: false, desc: "Add MRSK to the Gemfile and create a bin/mrsk binstub"
+  def init
     require "fileutils"
 
     if (deploy_file = Pathname.new(File.expand_path("config/deploy.yml"))).exist?
       puts "Config file already exists in config/deploy.yml (remove first to create a new one)"
     else
+      FileUtils.mkdir_p deploy_file.dirname
       FileUtils.cp_r Pathname.new(File.expand_path("templates/deploy.yml", __dir__)), deploy_file
       puts "Created configuration file in config/deploy.yml"
     end
 
-    unless options[:skip_binstub]
+    unless (deploy_file = Pathname.new(File.expand_path(".env"))).exist?
+      FileUtils.cp_r Pathname.new(File.expand_path("templates/template.env", __dir__)), deploy_file
+      puts "Created .env file"
+    end
+
+    if options[:bundle]
       if (binstub = Pathname.new(File.expand_path("bin/mrsk"))).exist?
         puts "Binstub already exists in bin/mrsk (remove first to create a new one)"
       else
+        puts "Adding MRSK to Gemfile and bundle..."
         `bundle add mrsk`
         `bundle binstubs mrsk`
         puts "Created binstub file in bin/mrsk"
