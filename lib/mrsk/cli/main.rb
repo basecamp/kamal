@@ -104,6 +104,11 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
     end
   end
 
+  desc "envify", "Create .env by evaluating .env.erb"
+  def envify
+    File.write(".env", ERB.new(IO.read(Pathname.new(File.expand_path(".env.erb")))).result)
+  end
+
   desc "remove", "Remove Traefik, app, and registry session from servers"
   def remove
     invoke "mrsk:cli:traefik:remove"
