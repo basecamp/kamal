@@ -3,7 +3,6 @@
 # Prevent failures from being reported twice.
 Thread.report_on_exception = false
 
-require "dotenv/load"
 require "mrsk"
 
 begin

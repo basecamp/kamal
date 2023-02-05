@@ -1,4 +1,5 @@
 require "thor"
+require "dotenv"
 require "mrsk/sshkit_with_ext"
 
 module Mrsk::Cli
@@ -21,10 +22,19 @@ module Mrsk::Cli
 
     def initialize(*)
       super
+      load_envs
       initialize_commander(options)
     end
 
     private
+      def load_envs
+        if destination = options[:destination]
+          Dotenv.load(".env.#{destination}", ".env")
+        else
+          Dotenv.load(".env")
+        end
+      end
+
       def initialize_commander(options)
         MRSK.tap do |commander|
           commander.config_file = Pathname.new(File.expand_path(options[:config_file]))
