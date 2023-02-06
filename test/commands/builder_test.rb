@@ -41,7 +41,7 @@ class CommandsBuilderTest < ActiveSupport::TestCase
 
   test "native push with build args" do
     builder = new_builder_command(builder: { "multiarch" => false, "args" => { "a" => 1, "b" => 2 } })
-    assert_equal [ :docker, :build, "-t", "--build-arg", "a=1", "--build-arg", "b=2", "dhh/app:123", ".", "&&", :docker, :push, "dhh/app:123" ], builder.push
+    assert_equal [ :docker, :build, "-t", "dhh/app:123", "--build-arg", "a=1", "--build-arg", "b=2", ".", "&&", :docker, :push, "dhh/app:123" ], builder.push
   end
 
   test "multiarch push with build args" do
@@ -51,7 +51,7 @@ class CommandsBuilderTest < ActiveSupport::TestCase
 
   test "native push with with build secrets" do
     builder = new_builder_command(builder: { "multiarch" => false, "secrets" => [ "a", "b" ] })
-    assert_equal [ :docker, :build, "-t", "--secret", "id=a", "--secret", "id=b", "dhh/app:123", ".", "&&", :docker, :push, "dhh/app:123" ], builder.push
+    assert_equal [ :docker, :build, "-t", "dhh/app:123", "--secret", "id=a", "--secret", "id=b", ".", "&&", :docker, :push, "dhh/app:123" ], builder.push
   end
 
   private
