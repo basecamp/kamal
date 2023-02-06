@@ -9,6 +9,16 @@ class CommanderTest < ActiveSupport::TestCase
     assert_equal Mrsk::Configuration, @mrsk.config.class
   end
 
+  test "commit hash as version" do
+    assert_equal `git rev-parse HEAD`.strip, @mrsk.config.version
+  end
+
+  test "commit hash as version but not in git" do
+    @mrsk.expects(:system).with("git rev-parse").returns(nil)
+    error = assert_raises(RuntimeError) { @mrsk.config }
+    assert_match /no git repository found/, error.message
+  end
+
   test "overwriting hosts" do
     assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3", "1.1.1.4" ], @mrsk.hosts
 

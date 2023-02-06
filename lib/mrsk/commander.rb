@@ -91,7 +91,15 @@ class Mrsk::Commander
 
   private
     def cascading_version
-      version.presence || ENV["VERSION"] || `git rev-parse HEAD`.strip
+      version.presence || ENV["VERSION"] || current_commit_hash
+    end
+
+    def current_commit_hash
+      if system("git rev-parse")
+        `git rev-parse HEAD`.strip
+      else
+        raise "Can't use commit hash as version, no git repository found in #{Dir.pwd}"
+      end
     end
 
     # Lazy setup of SSHKit
