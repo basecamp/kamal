@@ -1,11 +1,6 @@
 class Mrsk::Cli::App < Mrsk::Cli::Base
   desc "boot", "Boot app on servers (or reboot app if already running)"
   def boot
-    cli = self
-
-    say "Ensure no other version of the app is running...", :magenta
-    stop
-
     say "Get most recent version available as an image...", :magenta unless options[:version]
     using_version(options[:version] || most_recent_version_available) do |version|
       say "Start container with version #{version} (or reboot if already running)...", :magenta
@@ -15,12 +10,14 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
           execute *MRSK.auditor.record("app boot version #{version}"), verbosity: :debug
 
           begin
+            execute *MRSK.app.stop, raise_on_non_zero_exit: false
             execute *MRSK.app.run(role: role.name)
           rescue SSHKit::Command::Failed => e
             if e.message =~ /already in use/
               error "Rebooting container with same version already deployed on #{host}"
+              execute *MRSK.auditor.record("app rebooted with version #{version}"), verbosity: :debug
 
-              cli.remove_container version
+              execute *MRSK.app.remove_container(version: version)
               execute *MRSK.app.run(role: role.name)
             else
               raise
