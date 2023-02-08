@@ -75,10 +75,14 @@ class Mrsk::Commander
 
 
   def with_verbosity(level)
-    old_level = SSHKit.config.output_verbosity
+    old_level = self.verbosity
+
+    self.verbosity = level
     SSHKit.config.output_verbosity = level
+
     yield
   ensure
+    self.verbosity = old_level
     SSHKit.config.output_verbosity = old_level
   end
 
