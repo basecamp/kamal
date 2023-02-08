@@ -13,6 +13,10 @@ class Mrsk::Commands::Builder::Base < Mrsk::Commands::Base
     argumentize "--secret", secrets.collect { |secret| [ "id", secret ] }
   end
 
+  def build_tags
+    [ "-t", config.absolute_image, "-t", config.latest_image ]
+  end
+
   private
     def args
       (config.builder && config.builder["args"]) || {}

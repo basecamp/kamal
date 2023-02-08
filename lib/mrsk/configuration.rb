@@ -82,6 +82,10 @@ class Mrsk::Configuration
     "#{repository}:#{version}"
   end
 
+  def latest_image
+    "#{repository}:latest"
+  end
+
   def service_with_version
     "#{service}-#{version}"
   end
