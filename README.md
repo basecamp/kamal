@@ -249,7 +249,7 @@ builder:
 
 This build secret can then be referenced in the Dockerfile:
 
-```
+```dockerfile
 # Copy Gemfiles
 COPY Gemfile Gemfile.lock ./
 
