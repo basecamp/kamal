@@ -266,11 +266,12 @@ You can customize the traefik command line:
 
 ```yaml
 traefik:
-  accesslog: true
-  accesslog.format: json
-  metrics.prometheus: true
-  metrics.prometheus.buckets: 0.1,0.3,1.2,5.0
+  args:
+    accesslog: true
+    accesslog.format: json
 ```
+
+This will start the traefik container with `--accesslog=true accesslog.format=json`.
 
 ### Configuring build args for new images
 
