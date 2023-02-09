@@ -14,7 +14,7 @@ class CliAccessoryTest < CliTestCase
   end
 
   test "boot" do
-    assert_match "Running docker run --name app-mysql -d --restart unless-stopped --log-driver local -p 3306:3306 -e [REDACTED] -e MYSQL_ROOT_HOST=% --volume $PWD/app-mysql/etc/mysql/my.cnf:/etc/mysql/my.cnf --volume $PWD/app-mysql/data:/var/lib/mysql --label service=app-mysql mysql:5.7 on 1.1.1.3", run_command("boot", "mysql")
+    assert_match "Running docker run --name app-mysql -d --restart unless-stopped --log-opt max-size=10m -p 3306:3306 -e [REDACTED] -e MYSQL_ROOT_HOST=% --volume $PWD/app-mysql/etc/mysql/my.cnf:/etc/mysql/my.cnf --volume $PWD/app-mysql/data:/var/lib/mysql --label service=app-mysql mysql:5.7 on 1.1.1.3", run_command("boot", "mysql")
   end
 
   test "exec" do

@@ -10,7 +10,7 @@ class CommandsTraefikTest < ActiveSupport::TestCase
 
   test "run" do
     assert_equal \
-      "docker run --name traefik -d --restart unless-stopped --log-driver local -p 80:80 -v /var/run/docker.sock:/var/run/docker.sock traefik --providers.docker --log.level=DEBUG --accesslog.format json --metrics.prometheus.buckets 0.1,0.3,1.2,5.0",
+      "docker run --name traefik -d --restart unless-stopped --log-opt max-size=10m -p 80:80 -v /var/run/docker.sock:/var/run/docker.sock traefik --providers.docker --log.level=DEBUG --accesslog.format json --metrics.prometheus.buckets 0.1,0.3,1.2,5.0",
       new_command.run.join(" ")
   end
 

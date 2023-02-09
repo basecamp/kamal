@@ -3,7 +3,7 @@ class Mrsk::Commands::Traefik < Mrsk::Commands::Base
     docker :run, "--name traefik",
       "-d",
       "--restart", "unless-stopped",
-      "--log-driver", "local",
+      "--log-opt", "max-size=#{MAX_LOG_SIZE}",
       "-p 80:80",
       "-v /var/run/docker.sock:/var/run/docker.sock",
       "traefik",

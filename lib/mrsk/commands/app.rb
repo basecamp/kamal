@@ -5,7 +5,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
     docker :run,
       "-d",
       "--restart unless-stopped",
-      "--log-driver", "local",
+      "--log-opt", "max-size=#{MAX_LOG_SIZE}",
       "--name", service_with_version,
       *role.env_args,
       *config.volume_args,
