@@ -14,7 +14,7 @@ class CommandsAppTest < ActiveSupport::TestCase
 
   test "run" do
     assert_equal \
-      "docker run -d --restart unless-stopped --name app-999 -e RAILS_MASTER_KEY=456 --label service=app --label role=web --label traefik.http.routers.app.rule='PathPrefix(`/`)' --label traefik.http.services.app.loadbalancer.healthcheck.path=/up --label traefik.http.services.app.loadbalancer.healthcheck.interval=1s --label traefik.http.middlewares.app.retry.attempts=3 --label traefik.http.middlewares.app.retry.initialinterval=500ms dhh/app:999",
+      "docker run -d --restart unless-stopped --log-driver local --name app-999 -e RAILS_MASTER_KEY=456 --label service=app --label role=web --label traefik.http.routers.app.rule='PathPrefix(`/`)' --label traefik.http.services.app.loadbalancer.healthcheck.path=/up --label traefik.http.services.app.loadbalancer.healthcheck.interval=1s --label traefik.http.middlewares.app.retry.attempts=3 --label traefik.http.middlewares.app.retry.initialinterval=500ms dhh/app:999",
       @app.run.join(" ")
   end
 
@@ -22,7 +22,7 @@ class CommandsAppTest < ActiveSupport::TestCase
     @config[:volumes] = ["/local/path:/container/path" ]
 
     assert_equal \
-      "docker run -d --restart unless-stopped --name app-999 -e RAILS_MASTER_KEY=456 --volume /local/path:/container/path --label service=app --label role=web --label traefik.http.routers.app.rule='PathPrefix(`/`)' --label traefik.http.services.app.loadbalancer.healthcheck.path=/up --label traefik.http.services.app.loadbalancer.healthcheck.interval=1s --label traefik.http.middlewares.app.retry.attempts=3 --label traefik.http.middlewares.app.retry.initialinterval=500ms dhh/app:999",
+      "docker run -d --restart unless-stopped --log-driver local --name app-999 -e RAILS_MASTER_KEY=456 --volume /local/path:/container/path --label service=app --label role=web --label traefik.http.routers.app.rule='PathPrefix(`/`)' --label traefik.http.services.app.loadbalancer.healthcheck.path=/up --label traefik.http.services.app.loadbalancer.healthcheck.interval=1s --label traefik.http.middlewares.app.retry.attempts=3 --label traefik.http.middlewares.app.retry.initialinterval=500ms dhh/app:999",
       @app.run.join(" ")
   end
 

@@ -12,6 +12,7 @@ class Mrsk::Commands::Accessory < Mrsk::Commands::Base
       "--name", service_name,
       "-d",
       "--restart", "unless-stopped",
+      "--log-driver", "local",
       "-p", port,
       *env_args,
       *volume_args,

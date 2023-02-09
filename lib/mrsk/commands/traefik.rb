@@ -2,7 +2,8 @@ class Mrsk::Commands::Traefik < Mrsk::Commands::Base
   def run
     docker :run, "--name traefik",
       "-d",
-      "--restart unless-stopped",
+      "--restart", "unless-stopped",
+      "--log-driver", "local",
       "-p 80:80",
       "-v /var/run/docker.sock:/var/run/docker.sock",
       "traefik",

@@ -49,11 +49,11 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
 
   test "run" do
     assert_equal \
-      "docker run --name app-mysql -d --restart unless-stopped -p 3306:3306 -e MYSQL_ROOT_PASSWORD=secret123 -e MYSQL_ROOT_HOST=% --label service=app-mysql mysql:8.0",
+      "docker run --name app-mysql -d --restart unless-stopped --log-driver local -p 3306:3306 -e MYSQL_ROOT_PASSWORD=secret123 -e MYSQL_ROOT_HOST=% --label service=app-mysql mysql:8.0",
       @mysql.run.join(" ")
 
     assert_equal \
-      "docker run --name app-redis -d --restart unless-stopped -p 6379:6379 -e SOMETHING=else --volume /var/lib/redis:/data --label service=app-redis --label cache=true redis:latest",
+      "docker run --name app-redis -d --restart unless-stopped --log-driver local -p 6379:6379 -e SOMETHING=else --volume /var/lib/redis:/data --label service=app-redis --label cache=true redis:latest",
       @redis.run.join(" ")
   end
 
