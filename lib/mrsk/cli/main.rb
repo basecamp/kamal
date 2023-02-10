@@ -107,13 +107,9 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
   desc "envify", "Create .env by evaluating .env.erb (or .env.staging.erb -> .env.staging when using -d staging)"
   def envify
     if destination = options[:destination]
-      File.write(".env.#{destination}", "")
-      File.chown(0600, ".env.#{destination}")
-      File.write(".env.#{destination}", ERB.new(IO.read(Pathname.new(File.expand_path(".env.#{destination}.erb")))).result)
+      File.write(".env.#{destination}", ERB.new(IO.read(Pathname.new(File.expand_path(".env.#{destination}.erb")))).result, perm: 0600)
     else
-      File.write(".env", "")
-      File.chown(0600, ".env")
-      File.write(".env", ERB.new(IO.read(Pathname.new(File.expand_path(".env.erb")))).result)
+      File.write(".env", ERB.new(IO.read(Pathname.new(File.expand_path(".env.erb")))).result, perm: 0600)
     end
   end
 
