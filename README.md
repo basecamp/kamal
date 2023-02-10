@@ -253,11 +253,11 @@ This build secret can then be referenced in the Dockerfile:
 # Copy Gemfiles
 COPY Gemfile Gemfile.lock ./
 
-# Install dependencies, including private repositories via access token (then remove git configs with exposed GITHUB_TOKEN)
+# Install dependencies, including private repositories via access token (then remove bundle cache with exposed GITHUB_TOKEN)
 RUN --mount=type=secret,id=GITHUB_TOKEN \
   BUNDLE_GITHUB__COM=x-access-token:$(cat /run/secrets/GITHUB_TOKEN) \
   bundle install && \
-  find /usr/local/bundle/cache/bundler/git -name "config" -delete
+  rm -rf /usr/local/bundle/cache
 ```
 
 ### Using command arguments for Traefik
