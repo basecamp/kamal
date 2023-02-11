@@ -114,7 +114,7 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
       env_path          = ".env"
     end
 
-    File.open(env_path, "w+", 0600) { |env_file| env_file.write ERB.new(Pathname.new(env_template_path).read).result }
+    File.write(env_path, ERB.new(File.read(env_template_path)).result, perm: 0600)
   end
 
   desc "remove", "Remove Traefik, app, and registry session from servers"
