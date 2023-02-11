@@ -107,10 +107,14 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
   desc "envify", "Create .env by evaluating .env.erb (or .env.staging.erb -> .env.staging when using -d staging)"
   def envify
     if destination = options[:destination]
-      File.write(".env.#{destination}", ERB.new(IO.read(Pathname.new(File.expand_path(".env.#{destination}.erb")))).result)
+      env_template_path = ".env.#{destination}.erb"
+      env_path          = ".env.#{destination}"
     else
-      File.write(".env", ERB.new(IO.read(Pathname.new(File.expand_path(".env.erb")))).result)
+      env_template_path = ".env.erb"
+      env_path          = ".env"
     end
+
+    File.open(env_path, "w+", 0600) { |env_file| env_file.write ERB.new(Pathname.new(env_template_path).read).result }
   end
 
   desc "remove", "Remove Traefik, app, and registry session from servers"
