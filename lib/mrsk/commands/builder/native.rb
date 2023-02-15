@@ -9,7 +9,7 @@ class Mrsk::Commands::Builder::Native < Mrsk::Commands::Builder::Base
 
   def push
     combine \
-      docker(:build, *build_tags, *build_args, *build_secrets, "."),
+      docker(:build, *build_options, "."),
       docker(:push, config.absolute_image)
   end
 

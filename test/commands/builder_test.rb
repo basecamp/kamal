@@ -31,12 +31,12 @@ class CommandsBuilderTest < ActiveSupport::TestCase
 
   test "build args" do
     builder = new_builder_command(builder: { "args" => { "a" => 1, "b" => 2 } })
-    assert_equal [ "--build-arg", "a=1", "--build-arg", "b=2" ], builder.target.build_args
+    assert_equal ["-t", "dhh/app:123", "-t", "dhh/app:latest", "--build-arg", "a=1", "--build-arg", "b=2"], builder.target.build_options
   end
 
   test "build secrets" do
     builder = new_builder_command(builder: { "secrets" => ["token_a", "token_b"] })
-    assert_equal [ "--secret", "id=token_a", "--secret", "id=token_b" ], builder.target.build_secrets
+    assert_equal ["-t", "dhh/app:123", "-t", "dhh/app:latest", "--secret", "id=token_a", "--secret", "id=token_b"], builder.target.build_options
   end
 
   test "native push with build args" do
