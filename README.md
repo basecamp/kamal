@@ -20,7 +20,9 @@ env:
     - RAILS_MASTER_KEY
 ```
 
-Then edit your `.env` file to add your registry password as `MRSK_REGISTRY_PASSWORD` (and your `RAILS_MASTER_KEY` for production with a Rails app).
+Then edit your `.env` file to add your registry password as `MRSK_REGISTRY_PASSWORD` (and your `RAILS_MASTER_KEY` for production with a Rails app). 
+
+Finally, you have to ensure your application can answer 200 OK to a GET /up request. That's how the zero-downtime deploy process knows that your new version is ready to serve traffic.
 
 Now you're ready to deploy to the servers:
 
