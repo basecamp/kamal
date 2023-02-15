@@ -16,8 +16,8 @@ class CommandsPruneTest < ActiveSupport::TestCase
 
   test "containers" do
     assert_equal \
-      "docker image prune --force --filter until=168h",
-      new_command.images.join(" ")
+      "docker container prune --force --filter label=service=app --filter until=72h",
+      new_command.containers.join(" ")
   end
 
   private

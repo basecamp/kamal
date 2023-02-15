@@ -11,6 +11,6 @@ class Mrsk::Commands::Prune < Mrsk::Commands::Base
 
   def containers
     docker :image, :prune, "--force", "--filter", "until=#{PRUNE_IMAGES_AFTER}h"
-    docker :container, :prune, "--force", "--filter", "label=service=#{config.service}", "--filter", "'until=#{PRUNE_CONTAINERS_AFTER}h'"
+    docker :container, :prune, "--force", "--filter", "label=service=#{config.service}", "--filter", "until=#{PRUNE_CONTAINERS_AFTER}h"
   end
 end
