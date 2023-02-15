@@ -6,20 +6,24 @@ class Mrsk::Commands::Builder::Base < Mrsk::Commands::Base
   end
 
   def build_options
-    [ *build_tags, *build_args, *build_secrets ]
+    [ *build_tags, *build_labels, *build_args, *build_secrets ]
   end
 
   private
+    def build_tags
+      [ "-t", config.absolute_image, "-t", config.latest_image ]
+    end
+
+    def build_labels
+      argumentize "--label", { service: config.service }
+    end
+
     def build_args
       argumentize "--build-arg", args, redacted: true
     end
 
     def build_secrets
       argumentize "--secret", secrets.collect { |secret| [ "id", secret ] }
-    end
-
-    def build_tags
-      [ "-t", config.absolute_image, "-t", config.latest_image ]
     end
 
     def args
