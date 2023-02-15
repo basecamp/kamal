@@ -6,7 +6,7 @@ class Mrsk::Commands::Prune < Mrsk::Commands::Base
   PRUNE_CONTAINERS_AFTER = 3.days.in_hours.to_i
 
   def images
-    docker :image, :prune, "--force", "--filter", "until=#{PRUNE_IMAGES_AFTER}h"
+    docker :image, :prune, "--all", "--force", "--filter", "until=#{PRUNE_IMAGES_AFTER}h"
   end
 
   def containers

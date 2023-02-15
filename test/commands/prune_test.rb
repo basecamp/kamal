@@ -10,7 +10,7 @@ class CommandsPruneTest < ActiveSupport::TestCase
 
   test "images" do
     assert_equal \
-      "docker image prune --force --filter until=168h",
+      "docker image prune --all --force --filter until=168h",
       new_command.images.join(" ")
   end
 
