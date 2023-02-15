@@ -5,7 +5,7 @@ class Mrsk::Cli::Prune < Mrsk::Cli::Base
     invoke :images
   end
 
-  desc "images", "Prune unused images older than 30 days"
+  desc "images", "Prune unused images older than 7 days"
   def images
     on(MRSK.hosts) do
       execute *MRSK.auditor.record("prune images"), verbosity: :debug
