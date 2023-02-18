@@ -126,6 +126,10 @@ class Mrsk::Configuration
     { user: ssh_user, proxy: ssh_proxy, auth_methods: [ "publickey" ] }.compact
   end
 
+  def audit_broadcast_cmd
+    raw_config.audit_broadcast_cmd
+  end
+
 
   def valid?
     ensure_required_keys_present && ensure_env_available

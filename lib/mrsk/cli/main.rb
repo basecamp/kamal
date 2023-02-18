@@ -10,7 +10,7 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
 
   desc "deploy", "Deploy the app to servers"
   def deploy
-    print_runtime do
+    runtime = print_runtime do
       say "Ensure Docker is installed...", :magenta
       invoke "mrsk:cli:server:bootstrap"
 
@@ -28,16 +28,20 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
       say "Prune old containers and images...", :magenta
       invoke "mrsk:cli:prune:all"
     end
+
+    audit_broadcast "Deployed in #{runtime.to_i} seconds"
   end
 
   desc "redeploy", "Deploy new version of the app to servers (without bootstrapping servers, starting Traefik, pruning, and registry login)"
   def redeploy
-    print_runtime do
+    runtime = print_runtime do
       say "Build and push app image...", :magenta
       invoke "mrsk:cli:build:deliver"
 
       invoke "mrsk:cli:app:boot"
     end
+
+    audit_broadcast "Redeployed in #{runtime.to_i} seconds"
   end
 
   desc "rollback [VERSION]", "Rollback the app to VERSION"
@@ -51,6 +55,8 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
       execute *MRSK.app.stop, raise_on_non_zero_exit: false
       execute *MRSK.app.start
     end
+
+    audit_broadcast "Rolled back to version #{version}"
   end
 
   desc "details", "Display details about Traefik and app containers"
