@@ -20,8 +20,6 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
   def upload(name)
     with_accessory(name) do |accessory|
       on(accessory.host) do
-        execute *MRSK.auditor.record("accessory #{name} upload files"), verbosity: :debug
-
         accessory.files.each do |(local, remote)|
           accessory.ensure_local_file_present(local)
 
@@ -37,8 +35,6 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
   def directories(name)
     with_accessory(name) do |accessory|
       on(accessory.host) do
-        execute *MRSK.auditor.record("accessory #{name} create directories"), verbosity: :debug
-
         accessory.directories.keys.each do |host_path|
           execute *accessory.make_directory(host_path)
         end
@@ -189,7 +185,6 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
   def remove_service_directory(name)
     with_accessory(name) do |accessory|
       on(accessory.host) do
-        execute *MRSK.auditor.record("accessory #{name} remove service directory"), verbosity: :debug
         execute *accessory.remove_service_directory
       end
     end
