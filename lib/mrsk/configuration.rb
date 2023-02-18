@@ -107,6 +107,7 @@ class Mrsk::Configuration
     end
   end
 
+
   def ssh_user
     if raw_config.ssh.present?
       raw_config.ssh["user"] || "root"
@@ -126,8 +127,13 @@ class Mrsk::Configuration
     { user: ssh_user, proxy: ssh_proxy, auth_methods: [ "publickey" ] }.compact
   end
 
+
   def audit_broadcast_cmd
     raw_config.audit_broadcast_cmd
+  end
+
+  def healthcheck
+    { "path" => "/up", "port" => "3000" }.merge(raw_config.healthcheck || {})
   end
 
 

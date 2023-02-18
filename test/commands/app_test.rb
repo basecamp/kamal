@@ -26,6 +26,14 @@ class CommandsAppTest < ActiveSupport::TestCase
       @app.run.join(" ")
   end
 
+  test "run with custom healthcheck path" do
+    @config[:healthcheck] = { "path" => "/healthz" }
+
+    assert_equal \
+      "docker run -d --restart unless-stopped --log-opt max-size=10m --name app-999 -e RAILS_MASTER_KEY=456 --label service=app --label role=web --label traefik.http.routers.app.rule='PathPrefix(`/`)' --label traefik.http.services.app.loadbalancer.healthcheck.path=/healthz --label traefik.http.services.app.loadbalancer.healthcheck.interval=1s --label traefik.http.middlewares.app.retry.attempts=3 --label traefik.http.middlewares.app.retry.initialinterval=500ms dhh/app:999",
+      @app.run.join(" ")
+  end
+
   test "start" do
     assert_equal \
       "docker start app-999",

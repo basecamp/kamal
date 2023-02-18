@@ -22,8 +22,6 @@ env:
 
 Then edit your `.env` file to add your registry password as `MRSK_REGISTRY_PASSWORD` (and your `RAILS_MASTER_KEY` for production with a Rails app). 
 
-Finally, you have to ensure your application can answer `200 OK` to a `GET /up` request. That's how the zero-downtime deploy process knows that your new version is ready to serve traffic.
-
 Now you're ready to deploy to the servers:
 
 ```
@@ -39,9 +37,10 @@ This will:
 5. Push the image to the registry.
 6. Pull the image from the registry on the servers.
 7. Ensure Traefik is running and accepting traffic on port 80.
-8. Stop any containers running a previous versions of the app.
-9. Start a new container with the version of the app that matches the current git version hash.
-10. Prune unused images and stopped containers to ensure servers don't fill up.
+8. Ensure your app responds with `200 OK` to `GET /up`.
+9. Stop any containers running a previous versions of the app.
+10. Start a new container with the version of the app that matches the current git version hash.
+11. Prune unused images and stopped containers to ensure servers don't fill up.
 
 Voila! All the servers are now serving the app on port 80. If you're just running a single server, you're ready to go. If you're running multiple servers, you need to put a load balancer in front of them.
 
@@ -369,6 +368,18 @@ That'll post a line like follows to a preconfigured chatbot in Basecamp:
 ```
 [My App] [2023-02-18 11:29:52] [dhh] Rolled back to version d264c4e92470ad1bd18590f04466787262f605de
 ```
+
+### Using custom healthcheck path or port
+
+MRSK defaults to checking the health of your application again `/up` on port 3000. You can tailor both with the `healthcheck` setting:
+
+```yaml
+healthcheck:
+  path: /healthz
+  port: 4000
+```
+
+This will ensure your application is configured with a traefik label for the healthcheck against `/healthz` and that the pre-deploy healthcheck that MRSK performs is done against the same path on port 4000.
 
 ## Commands
 

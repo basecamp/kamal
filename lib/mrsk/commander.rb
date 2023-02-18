@@ -73,6 +73,10 @@ class Mrsk::Commander
     @auditor ||= Mrsk::Commands::Auditor.new(config)
   end
 
+  def healthcheck
+    @healthcheck ||= Mrsk::Commands::Healthcheck.new(config)
+  end
+
 
   def with_verbosity(level)
     old_level = self.verbosity

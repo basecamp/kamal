@@ -75,10 +75,6 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
     docker :ps, "-q", *service_filter
   end
 
-  def container_id_for(container_name:)
-    docker :container, :ls, "-a", "-f", "name=#{container_name}", "-q"
-  end
-
   def current_running_version
     # FIXME: Find more graceful way to extract the version from "app-version" than using sed and tail!
     pipe \
