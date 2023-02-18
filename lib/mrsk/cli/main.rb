@@ -29,7 +29,7 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
       invoke "mrsk:cli:prune:all"
     end
 
-    audit_broadcast "Deployed in #{runtime.to_i} seconds"
+    audit_broadcast "Deployed app in #{runtime.to_i} seconds"
   end
 
   desc "redeploy", "Deploy new version of the app to servers (without bootstrapping servers, starting Traefik, pruning, and registry login)"
@@ -41,7 +41,7 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
       invoke "mrsk:cli:app:boot"
     end
 
-    audit_broadcast "Redeployed in #{runtime.to_i} seconds"
+    audit_broadcast "Redeployed app in #{runtime.to_i} seconds"
   end
 
   desc "rollback [VERSION]", "Rollback the app to VERSION"
@@ -56,7 +56,7 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
       execute *MRSK.app.start
     end
 
-    audit_broadcast "Rolled back to version #{version}"
+    audit_broadcast "Rolled back app to version #{version}"
   end
 
   desc "details", "Display details about Traefik and app containers"
