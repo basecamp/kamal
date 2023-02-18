@@ -11,9 +11,7 @@ class Mrsk::Commands::Auditor < Mrsk::Commands::Base
   # Runs locally
   def broadcast(line)
     if broadcast_cmd = config.audit_broadcast_cmd
-      pipe \
-        [ :echo, tagged_broadcast_line(line) ],
-        broadcast_cmd
+      [ broadcast_cmd, tagged_broadcast_line(line) ]
     end
   end
 

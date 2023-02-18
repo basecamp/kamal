@@ -348,7 +348,7 @@ If you need separate env variables for different destinations, you can set them 
 
 ### Using audit broadcasts
 
-If you'd like to broadcast audits of deploys, rollbacks, etc to a chatroom or elsewhere, you can configure the `audit_broadcast_cmd` setting with the path to a bin file that reads the audit line from STDIN, and then does whatever with it:
+If you'd like to broadcast audits of deploys, rollbacks, etc to a chatroom or elsewhere, you can configure the `audit_broadcast_cmd` setting with the path to a bin file that will be passed the audit line as the first argument:
 
 ```yaml
 audit_broadcast_cmd:
@@ -359,14 +359,13 @@ The broadcast command could look something like:
 
 ```bash
 #!/usr/bin/env bash
-read
-curl -q -d content="[My app] ${REPLY}" https://3.basecamp.com/XXXXX/integrations/XXXXX/buckets/XXXXX/chats/XXXXX/lines
+curl -q -d content="[My App] ${1}" https://3.basecamp.com/XXXXX/integrations/XXXXX/buckets/XXXXX/chats/XXXXX/lines
 ```
 
 That'll post a line like follows to a preconfigured chatbot in Basecamp:
 
 ```
-[My App] [2023-02-18 11:29:52] [dhh] Rolled back to version d264c4e92470ad1bd18590f04466787262f605de
+[My App] [dhh] Rolled back to version d264c4e92470ad1bd18590f04466787262f605de
 ```
 
 ### Using custom healthcheck path or port

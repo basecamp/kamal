@@ -16,7 +16,7 @@ class CommandsAuditorTest < ActiveSupport::TestCase
 
   test "broadcast" do
     assert_match \
-      /echo '.* app removed container' \| bin\/audit_broadcast/,
+      /bin\/audit_broadcast '\[.*\] app removed container'/,
       new_command.broadcast("app removed container").join(" ")
   end
 
