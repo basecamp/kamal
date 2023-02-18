@@ -155,7 +155,8 @@ class Mrsk::Configuration
       volume_args: volume_args,
       ssh_options: ssh_options,
       builder: raw_config.builder,
-      accessories: raw_config.accessories
+      accessories: raw_config.accessories,
+      healthcheck: healthcheck
     }.compact
   end
 
