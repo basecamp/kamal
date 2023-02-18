@@ -59,9 +59,14 @@ module Mrsk::Cli
       def print_runtime
         started_at = Time.now
         yield
+        return Time.now - started_at
       ensure
         runtime = Time.now - started_at
         puts "  Finished all in #{sprintf("%.1f seconds", runtime)}"
+      end
+
+      def audit_broadcast(line)
+        run_locally { execute *MRSK.auditor.broadcast(line), verbosity: :debug }
       end
   end
 end

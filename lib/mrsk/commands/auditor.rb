@@ -1,10 +1,20 @@
 require "active_support/core_ext/time/conversions"
 
 class Mrsk::Commands::Auditor < Mrsk::Commands::Base
+  # Runs remotely
   def record(line)
     append \
       [ :echo, tagged_line(line) ],
       audit_log_file
+  end
+
+  # Runs locally
+  def broadcast(line)
+    if broadcast_cmd = config.audit_broadcast_cmd
+      pipe \
+        [ :echo, tagged_line(line) ],
+        broadcast_cmd
+    end
   end
 
   def reveal
@@ -21,14 +31,14 @@ class Mrsk::Commands::Auditor < Mrsk::Commands::Base
     end
 
     def tags
-      "[#{timestamp}] [#{performer}]"
+      "[#{recorded_at}] [#{performer}]"
     end
 
     def performer
-      `whoami`.strip
+      @performer ||= `whoami`.strip
     end
 
-    def timestamp
+    def recorded_at
       Time.now.to_fs(:db)
     end
 end
