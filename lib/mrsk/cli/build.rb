@@ -29,7 +29,7 @@ class Mrsk::Cli::Build < Mrsk::Cli::Base
   desc "pull", "Pull app image from the registry onto servers"
   def pull
     on(MRSK.hosts) do
-      execute *MRSK.auditor.record("build pull image #{MRSK.version}"), verbosity: :debug
+      execute *MRSK.auditor.record("Pulled image with version #{MRSK.version}"), verbosity: :debug
       execute *MRSK.builder.pull
     end
   end
