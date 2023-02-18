@@ -17,6 +17,10 @@ module Mrsk::Commands
       end
     end
 
+    def container_id_for(container_name:)
+      docker :container, :ls, "-a", "-f", "name=#{container_name}", "-q"
+    end
+
     private
       def combine(*commands, by: "&&")
         commands

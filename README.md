@@ -22,7 +22,7 @@ env:
 
 Then edit your `.env` file to add your registry password as `MRSK_REGISTRY_PASSWORD` (and your `RAILS_MASTER_KEY` for production with a Rails app). 
 
-Finally, you have to ensure your application can answer `200 OK` to a `GET /up` request. That's how the zero-downtime deploy process knows that your new version is ready to serve traffic.
+Finally, you have to ensure your application can answer `200 OK` to a `GET /up` request (or configure an alternative health path). That's how the zero-downtime deploy process knows that your new version is ready to serve traffic.
 
 Now you're ready to deploy to the servers:
 
@@ -369,6 +369,18 @@ That'll post a line like follows to a preconfigured chatbot in Basecamp:
 ```
 [My App] [2023-02-18 11:29:52] [dhh] Rolled back to version d264c4e92470ad1bd18590f04466787262f605de
 ```
+
+### Using custom healthcheck path or port
+
+MRSK defaults to checking the health of your application again `/up` on port 3000. You can tailor both with the `healthcheck` setting:
+
+```yaml
+healthcheck:
+  path: /healthz
+  port: 4000
+```
+
+This will ensure your application is configured with a traefik label for the healthcheck against `/healthz` and that the pre-deploy healthcheck that MRSK performs is done against the same path on port 4000.
 
 ## Commands
 

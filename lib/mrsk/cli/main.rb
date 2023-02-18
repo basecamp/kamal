@@ -23,6 +23,9 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
       say "Ensure Traefik is running...", :magenta
       invoke "mrsk:cli:traefik:boot"
 
+      say "Ensure app can pass healthcheck...", :magenta
+      invoke "mrsk:cli:healthcheck:perform"
+
       invoke "mrsk:cli:app:boot"
 
       say "Prune old containers and images...", :magenta
@@ -37,6 +40,9 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
     runtime = print_runtime do
       say "Build and push app image...", :magenta
       invoke "mrsk:cli:build:deliver"
+
+      say "Ensure app can pass healthcheck...", :magenta
+      invoke "mrsk:cli:healthcheck:perform"
 
       invoke "mrsk:cli:app:boot"
     end
@@ -146,6 +152,9 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
 
   desc "build", "Build the application image"
   subcommand "build", Mrsk::Cli::Build
+
+  desc "healthcheck", "Healthcheck the application"
+  subcommand "healthcheck", Mrsk::Cli::Healthcheck
 
   desc "prune", "Prune old application images and containers"
   subcommand "prune", Mrsk::Cli::Prune
