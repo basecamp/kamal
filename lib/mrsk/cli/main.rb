@@ -48,15 +48,18 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
   def rollback(version)
     MRSK.version = version
 
-    cli = self
+    if container_name_available?(MRSK.config.service_with_version)
+      say "Stop current version, then start version #{version}...", :magenta
 
-    cli.say "Stop current version, then start version #{version}...", :magenta
-    on(MRSK.hosts) do
-      execute *MRSK.app.stop, raise_on_non_zero_exit: false
-      execute *MRSK.app.start
+      on(MRSK.hosts) do |host|
+        execute *MRSK.app.stop, raise_on_non_zero_exit: false
+        execute *MRSK.app.start
+      end
+
+      audit_broadcast "Rolled back app to version #{version}"
+    else
+      say "The app version '#{version}' is not available as a container (use 'mrsk app containers' for available versions)", :red
     end
-
-    audit_broadcast "Rolled back app to version #{version}"
   end
 
   desc "details", "Display details about Traefik and app containers"
@@ -155,4 +158,11 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
 
   desc "traefik", "Manage the Traefik load balancer"
   subcommand "traefik", Mrsk::Cli::Traefik
+
+  private
+    def container_name_available?(container_name, host: MRSK.primary_host)
+      container_names = nil
+      on(host) { container_names = capture_with_info(*MRSK.app.list_container_names).split("\n") }
+      Array(container_names).include?(container_name)
+    end
 end

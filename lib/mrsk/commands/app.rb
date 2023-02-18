@@ -93,9 +93,19 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
       "head -n 1"
   end
 
+  def all_versions_from_available_containers
+    pipe \
+      docker(:image, :ls, "--format", '"{{.Tag}}"', config.repository),
+      "head -n 1"
+  end
+
 
   def list_containers
     docker :container, :ls, "-a", *service_filter
+  end
+
+  def list_container_names
+    [ *list_containers, "--format", "'{{ .Names }}'" ]
   end
 
   def remove_container(version:)
