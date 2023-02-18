@@ -133,7 +133,7 @@ class Mrsk::Configuration
   end
 
   def healthcheck
-    { "path" => "/up", "port" => "3000" }.merge(raw_config.healthcheck || {})
+    { "path" => "/up", "port" => 3000 }.merge(raw_config.healthcheck || {})
   end
 
 
