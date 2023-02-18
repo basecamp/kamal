@@ -7,7 +7,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
 
       MRSK.config.roles.each do |role|
         on(role.hosts) do |host|
-          execute *MRSK.auditor.record("app boot version #{version}"), verbosity: :debug
+          execute *MRSK.auditor.record("Booted app version #{version}"), verbosity: :debug
 
           begin
             execute *MRSK.app.stop, raise_on_non_zero_exit: false
@@ -15,7 +15,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
           rescue SSHKit::Command::Failed => e
             if e.message =~ /already in use/
               error "Rebooting container with same version already deployed on #{host}"
-              execute *MRSK.auditor.record("app rebooted with version #{version}"), verbosity: :debug
+              execute *MRSK.auditor.record("Rebooted app version #{version}"), verbosity: :debug
 
               execute *MRSK.app.remove_container(version: version)
               execute *MRSK.app.run(role: role.name)
@@ -31,7 +31,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
   desc "start", "Start existing app on servers (use --version=<git-hash> to designate specific version)"
   def start
     on(MRSK.hosts) do
-      execute *MRSK.auditor.record("app start version #{MRSK.version}"), verbosity: :debug
+      execute *MRSK.auditor.record("Started app version #{MRSK.version}"), verbosity: :debug
       execute *MRSK.app.start, raise_on_non_zero_exit: false
     end
   end
@@ -39,7 +39,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
   desc "stop", "Stop app on servers"
   def stop
     on(MRSK.hosts) do
-      execute *MRSK.auditor.record("app stop"), verbosity: :debug
+      execute *MRSK.auditor.record("Stopped app"), verbosity: :debug
       execute *MRSK.app.stop, raise_on_non_zero_exit: false
     end
   end
@@ -74,7 +74,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
         say "Launching command with version #{version} from existing container...", :magenta
 
         on(MRSK.hosts) do |host|
-          execute *MRSK.auditor.record("app cmd '#{cmd}' with version #{version}"), verbosity: :debug
+          execute *MRSK.auditor.record("Executed cmd '#{cmd}' on app version #{version}"), verbosity: :debug
           puts_by_host host, capture_with_info(*MRSK.app.execute_in_existing_container(cmd))
         end
       end
@@ -84,7 +84,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
       using_version(options[:version] || most_recent_version_available) do |version|
         say "Launching command with version #{version} from new container...", :magenta
         on(MRSK.hosts) do |host|
-          execute *MRSK.auditor.record("app cmd '#{cmd}' with version #{version}"), verbosity: :debug
+          execute *MRSK.auditor.record("Executed cmd '#{cmd}' on app version #{version}"), verbosity: :debug
           puts_by_host host, capture_with_info(*MRSK.app.execute_in_new_container(cmd))
         end
       end
@@ -140,7 +140,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
   desc "remove_container [VERSION]", "Remove app container with given version from servers"
   def remove_container(version)
     on(MRSK.hosts) do
-      execute *MRSK.auditor.record("app remove container #{version}"), verbosity: :debug
+      execute *MRSK.auditor.record("Removed app container with version #{version}"), verbosity: :debug
       execute *MRSK.app.remove_container(version: version)
     end
   end
@@ -148,7 +148,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
   desc "remove_containers", "Remove all app containers from servers"
   def remove_containers
     on(MRSK.hosts) do
-      execute *MRSK.auditor.record("app remove containers"), verbosity: :debug
+      execute *MRSK.auditor.record("Removed all app containers"), verbosity: :debug
       execute *MRSK.app.remove_containers
     end
   end
@@ -156,7 +156,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
   desc "remove_images", "Remove all app images from servers"
   def remove_images
     on(MRSK.hosts) do
-      execute *MRSK.auditor.record("app remove images"), verbosity: :debug
+      execute *MRSK.auditor.record("Removed all app images"), verbosity: :debug
       execute *MRSK.app.remove_images
     end
   end

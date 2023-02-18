@@ -9,9 +9,11 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
         upload(name)
 
         on(accessory.host) do
-          execute *MRSK.auditor.record("accessory #{name} boot"), verbosity: :debug
+          execute *MRSK.auditor.record("Booted #{name} accessory"), verbosity: :debug
           execute *accessory.run
         end
+
+        audit_broadcast "Booted accessory #{name}"
       end
     end
   end
@@ -55,7 +57,7 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
   def start(name)
     with_accessory(name) do |accessory|
       on(accessory.host) do
-        execute *MRSK.auditor.record("accessory #{name} start"), verbosity: :debug
+        execute *MRSK.auditor.record("Started #{name} accessory"), verbosity: :debug
         execute *accessory.start
       end
     end
@@ -65,7 +67,7 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
   def stop(name)
     with_accessory(name) do |accessory|
       on(accessory.host) do
-        execute *MRSK.auditor.record("accessory #{name} stop"), verbosity: :debug
+        execute *MRSK.auditor.record("Stopped #{name} accessory"), verbosity: :debug
         execute *accessory.stop, raise_on_non_zero_exit: false
       end
     end
@@ -107,14 +109,14 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
       when options[:reuse]
         say "Launching command from existing container...", :magenta
         on(accessory.host) do
-          execute *MRSK.auditor.record("accessory #{name} cmd '#{cmd}'"), verbosity: :debug
+          execute *MRSK.auditor.record("Executed cmd '#{cmd}' on #{name} accessory"), verbosity: :debug
           capture_with_info(*accessory.execute_in_existing_container(cmd))
         end
 
       else
         say "Launching command from new container...", :magenta
         on(accessory.host) do
-          execute *MRSK.auditor.record("accessory #{name} cmd '#{cmd}'"), verbosity: :debug
+          execute *MRSK.auditor.record("Executed cmd '#{cmd}' on #{name} accessory"), verbosity: :debug
           capture_with_info(*accessory.execute_in_new_container(cmd))
         end
       end
@@ -165,7 +167,7 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
   def remove_container(name)
     with_accessory(name) do |accessory|
       on(accessory.host) do
-        execute *MRSK.auditor.record("accessory #{name} remove container"), verbosity: :debug
+        execute *MRSK.auditor.record("Remove #{name} accessory container"), verbosity: :debug
         execute *accessory.remove_container
       end
     end
@@ -175,7 +177,7 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
   def remove_image(name)
     with_accessory(name) do |accessory|
       on(accessory.host) do
-        execute *MRSK.auditor.record("accessory #{name} remove image"), verbosity: :debug
+        execute *MRSK.auditor.record("Removed #{name} accessory image"), verbosity: :debug
         execute *accessory.remove_image
       end
     end
