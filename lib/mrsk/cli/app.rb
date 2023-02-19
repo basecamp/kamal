@@ -133,6 +133,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
 
   desc "remove", "Remove app containers and images from servers"
   def remove
+    stop
     remove_containers
     remove_images
   end
