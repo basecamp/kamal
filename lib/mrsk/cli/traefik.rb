@@ -6,9 +6,9 @@ class Mrsk::Cli::Traefik < Mrsk::Cli::Base
 
   desc "reboot", "Reboot Traefik on servers (stop container, remove container, start new container)"
   def reboot
-    invoke :stop
-    invoke :remove_container
-    invoke :boot
+    stop
+    remove_container
+    boot
   end
 
   desc "start", "Start existing Traefik container on servers"
@@ -29,8 +29,8 @@ class Mrsk::Cli::Traefik < Mrsk::Cli::Base
 
   desc "restart", "Restart existing Traefik container on servers"
   def restart
-    invoke :stop
-    invoke :start
+    stop
+    start
   end
 
   desc "details", "Show details about Traefik container from servers"
@@ -64,9 +64,9 @@ class Mrsk::Cli::Traefik < Mrsk::Cli::Base
 
   desc "remove", "Remove Traefik container and image from servers"
   def remove
-    invoke :stop
-    invoke :remove_container
-    invoke :remove_image
+    stop
+    remove_container
+    remove_image
   end
 
   desc "remove_container", "Remove Traefik container from servers", hide: true
