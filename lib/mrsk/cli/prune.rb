@@ -1,8 +1,8 @@
 class Mrsk::Cli::Prune < Mrsk::Cli::Base
   desc "all", "Prune unused images and stopped containers"
   def all
-    invoke :containers
-    invoke :images
+    containers
+    images
   end
 
   desc "images", "Prune unused images older than 7 days"

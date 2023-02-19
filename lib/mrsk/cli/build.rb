@@ -1,8 +1,8 @@
 class Mrsk::Cli::Build < Mrsk::Cli::Base
   desc "deliver", "Build app and push app image to registry then pull image on servers"
   def deliver
-    invoke :push
-    invoke :pull
+    push
+    pull
   end
 
   desc "push", "Build and push app image to registry"
