@@ -41,6 +41,14 @@ class CliAppTest < CliTestCase
     end
   end
 
+  test "remove" do
+    run_command("remove").tap do |output|
+      assert_match /docker ps -q --filter label=service=app | xargs docker stop/, output
+      assert_match /docker container prune -f --filter label=service=app/, output
+      assert_match /docker image prune -a -f --filter label=service=app/, output
+    end
+  end
+
   test "remove_container" do
     run_command("remove_container", "1234567").tap do |output|
       assert_match /docker container ls -a -f name=app-1234567 -q \| xargs docker container rm/, output
