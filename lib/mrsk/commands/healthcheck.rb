@@ -16,7 +16,7 @@ class Mrsk::Commands::Healthcheck < Mrsk::Commands::Base
   end
 
   def curl
-    [ :curl, "--silent", "--output", "/dev/null", "--write-out", "'%{http_code}'", health_url ]
+    [ :curl, "--silent", "--output", "/dev/null", "--write-out", "'%{http_code}'", "--retry-max-time", 10, "--retry", 5, health_url ]
   end
 
   def logs

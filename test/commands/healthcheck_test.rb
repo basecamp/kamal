@@ -24,7 +24,7 @@ class CommandsHealthcheckTest < ActiveSupport::TestCase
 
   test "curl" do
     assert_equal \
-      "curl --silent --output /dev/null --write-out '%{http_code}' http://localhost:3999/up",
+      "curl --silent --output /dev/null --write-out '%{http_code}' --retry-max-time 10 --retry 5 http://localhost:3999/up",
       new_command.curl.join(" ")
   end
 
@@ -32,7 +32,7 @@ class CommandsHealthcheckTest < ActiveSupport::TestCase
     @config[:healthcheck] = { "path" => "/healthz" }
 
     assert_equal \
-      "curl --silent --output /dev/null --write-out '%{http_code}' http://localhost:3999/healthz",
+      "curl --silent --output /dev/null --write-out '%{http_code}' --retry-max-time 10 --retry 5 http://localhost:3999/healthz",
       new_command.curl.join(" ")
   end
 
