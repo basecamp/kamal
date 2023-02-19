@@ -14,7 +14,8 @@ servers:
   - 192.168.0.2
 registry:
   username: registry-user-name
-  password: <%= ENV.fetch("MRSK_REGISTRY_PASSWORD") %>
+  password:
+    - MRSK_REGISTRY_PASSWORD
 env:
   secret:
     - RAILS_MASTER_KEY
