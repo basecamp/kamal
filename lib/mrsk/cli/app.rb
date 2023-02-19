@@ -28,7 +28,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
     end
   end
 
-  desc "start", "Start existing app on servers (use --version=<git-hash> to designate specific version)"
+  desc "start", "Start existing app container on servers"
   def start
     on(MRSK.hosts) do
       execute *MRSK.auditor.record("Started app version #{MRSK.version}"), verbosity: :debug
@@ -36,7 +36,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
     end
   end
 
-  desc "stop", "Stop app on servers"
+  desc "stop", "Stop app container on servers"
   def stop
     on(MRSK.hosts) do
       execute *MRSK.auditor.record("Stopped app"), verbosity: :debug
@@ -44,12 +44,12 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
     end
   end
 
-  desc "details", "Display details about app containers"
+  desc "details", "Show details about app containers"
   def details
     on(MRSK.hosts) { |host| puts_by_host host, capture_with_info(*MRSK.app.info) }
   end
 
-  desc "exec [CMD]", "Execute a custom command on servers"
+  desc "exec [CMD]", "Execute a custom command on servers (use --help to show options)"
   option :interactive, aliases: "-i", type: :boolean, default: false, desc: "Execute command over ssh for an interactive shell (use for console/bash)"
   option :reuse, type: :boolean, default: false, desc: "Reuse currently running container instead of starting a new one"
   def exec(cmd)
@@ -91,21 +91,21 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
     end
   end
 
-  desc "containers", "List all the app containers currently on servers"
+  desc "containers", "Show app containers on servers"
   def containers
     on(MRSK.hosts) { |host| puts_by_host host, capture_with_info(*MRSK.app.list_containers) }
   end
 
-  desc "images", "List all the app images currently on servers"
+  desc "images", "Show app images on servers"
   def images
     on(MRSK.hosts) { |host| puts_by_host host, capture_with_info(*MRSK.app.list_images) }
   end
 
-  desc "logs", "Show lines from app on servers"
-  option :since, aliases: "-s", desc: "Show logs since timestamp (e.g. 2013-01-02T13:23:37Z) or relative (e.g. 42m for 42 minutes)"
-  option :lines, type: :numeric, aliases: "-n", desc: "Number of log lines to pull from each server"
+  desc "logs", "Show log lines from app on servers (use --help to show options)"
+  option :since, aliases: "-s", desc: "Show lines since timestamp (e.g. 2013-01-02T13:23:37Z) or relative (e.g. 42m for 42 minutes)"
+  option :lines, type: :numeric, aliases: "-n", desc: "Number of lines to show from each server"
   option :grep, aliases: "-g", desc: "Show lines with grep match only (use this to fetch specific requests by id)"
-  option :follow, aliases: "-f", desc: "Follow logs on primary server (or specific host set by --hosts)"
+  option :follow, aliases: "-f", desc: "Follow log on primary server (or specific host set by --hosts)"
   def logs
     # FIXME: Catch when app containers aren't running
 
@@ -137,7 +137,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
     remove_images
   end
 
-  desc "remove_container [VERSION]", "Remove app container with given version from servers"
+  desc "remove_container [VERSION]", "Remove app container with given version from servers", hide: true
   def remove_container(version)
     on(MRSK.hosts) do
       execute *MRSK.auditor.record("Removed app container with version #{version}"), verbosity: :debug
@@ -145,7 +145,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
     end
   end
 
-  desc "remove_containers", "Remove all app containers from servers"
+  desc "remove_containers", "Remove all app containers from servers", hide: true
   def remove_containers
     on(MRSK.hosts) do
       execute *MRSK.auditor.record("Removed all app containers"), verbosity: :debug
@@ -153,7 +153,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
     end
   end
 
-  desc "remove_images", "Remove all app images from servers"
+  desc "remove_images", "Remove all app images from servers", hide: true
   def remove_images
     on(MRSK.hosts) do
       execute *MRSK.auditor.record("Removed all app images"), verbosity: :debug
@@ -161,8 +161,8 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
     end
   end
 
-  desc "current_version", "Shows the version currently running"
-  def current_version
+  desc "version", "Show app version currently running on servers"
+  def version
     on(MRSK.hosts) { |host| puts_by_host host, capture_with_info(*MRSK.app.current_running_version).strip }
   end
 

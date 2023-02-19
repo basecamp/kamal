@@ -11,7 +11,7 @@ class Mrsk::Cli::Traefik < Mrsk::Cli::Base
     invoke :boot
   end
 
-  desc "start", "Start existing Traefik on servers"
+  desc "start", "Start existing Traefik container on servers"
   def start
     on(MRSK.traefik_hosts) do
       execute *MRSK.auditor.record("Started traefik"), verbosity: :debug
@@ -19,7 +19,7 @@ class Mrsk::Cli::Traefik < Mrsk::Cli::Base
     end
   end
 
-  desc "stop", "Stop Traefik on servers"
+  desc "stop", "Stop existing Traefik container on servers"
   def stop
     on(MRSK.traefik_hosts) do
       execute *MRSK.auditor.record("Stopped traefik"), verbosity: :debug
@@ -27,13 +27,13 @@ class Mrsk::Cli::Traefik < Mrsk::Cli::Base
     end
   end
 
-  desc "restart", "Restart Traefik on servers"
+  desc "restart", "Restart existing Traefik container on servers"
   def restart
     invoke :stop
     invoke :start
   end
 
-  desc "details", "Display details about Traefik containers from servers"
+  desc "details", "Show details about Traefik container from servers"
   def details
     on(MRSK.traefik_hosts) { |host| puts_by_host host, capture_with_info(*MRSK.traefik.info), type: "Traefik" }
   end
@@ -69,7 +69,7 @@ class Mrsk::Cli::Traefik < Mrsk::Cli::Base
     invoke :remove_image
   end
 
-  desc "remove_container", "Remove Traefik container from servers"
+  desc "remove_container", "Remove Traefik container from servers", hide: true
   def remove_container
     on(MRSK.traefik_hosts) do
       execute *MRSK.auditor.record("Removed traefik container"), verbosity: :debug
@@ -77,7 +77,7 @@ class Mrsk::Cli::Traefik < Mrsk::Cli::Base
     end
   end
 
-  desc "remove_container", "Remove Traefik image from servers"
+  desc "remove_container", "Remove Traefik image from servers", hide: true
   def remove_image
     on(MRSK.traefik_hosts) do
       execute *MRSK.auditor.record("Removed traefik image"), verbosity: :debug

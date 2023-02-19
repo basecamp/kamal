@@ -17,8 +17,8 @@ module Mrsk::Cli
     class_option :hosts, aliases: "-h", desc: "Run commands on these hosts instead of all (separate by comma)"
     class_option :roles, aliases: "-r", desc: "Run commands on these roles instead of all (separate by comma)"
 
-    class_option :config_file, aliases: "-c", default: "config/deploy.yml", desc: "Path to config file (default: config/deploy.yml)"
-    class_option :destination, aliases: "-d", desc: "Specify destination to be used for config file (west -> deploy.west.yml)"
+    class_option :config_file, aliases: "-c", default: "config/deploy.yml", desc: "Path to config file"
+    class_option :destination, aliases: "-d", desc: "Specify destination to be used for config file (staging -> deploy.staging.yml)"
 
     def initialize(*)
       super

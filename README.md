@@ -447,7 +447,7 @@ mrsk app exec -i 'bin/rails console'
 ```
 
 
-### Running details to see state of containers
+### Running details to show state of containers
 
 You can see the state of your servers by running `mrsk details`:
 

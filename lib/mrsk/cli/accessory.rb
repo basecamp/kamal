@@ -1,5 +1,5 @@
 class Mrsk::Cli::Accessory < Mrsk::Cli::Base
-  desc "boot [NAME]", "Boot accessory service on host (use NAME=all to boot all accessories)"
+  desc "boot [NAME]", "Boot new accessory service on host (use NAME=all to boot all accessories)"
   def boot(name)
     if name == "all"
       MRSK.accessory_names.each { |accessory_name| boot(accessory_name) }
@@ -18,7 +18,7 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
     end
   end
 
-  desc "upload [NAME]", "Upload accessory files to host"
+  desc "upload [NAME]", "Upload accessory files to host", hide: true
   def upload(name)
     with_accessory(name) do |accessory|
       on(accessory.host) do
@@ -33,7 +33,7 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
     end
   end
 
-  desc "directories [NAME]", "Create accessory directories on host"
+  desc "directories [NAME]", "Create accessory directories on host", hide: true
   def directories(name)
     with_accessory(name) do |accessory|
       on(accessory.host) do
@@ -44,7 +44,7 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
     end
   end
 
-  desc "reboot [NAME]", "Reboot accessory on host (stop container, remove container, start new container)"
+  desc "reboot [NAME]", "Reboot existing accessory on host (stop container, remove container, start new container)"
   def reboot(name)
     with_accessory(name) do |accessory|
       stop(name)
@@ -53,7 +53,7 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
     end
   end
 
-  desc "start [NAME]", "Start existing accessory on host"
+  desc "start [NAME]", "Start existing accessory container on host"
   def start(name)
     with_accessory(name) do |accessory|
       on(accessory.host) do
@@ -63,7 +63,7 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
     end
   end
 
-  desc "stop [NAME]", "Stop accessory on host"
+  desc "stop [NAME]", "Stop existing accessory container on host"
   def stop(name)
     with_accessory(name) do |accessory|
       on(accessory.host) do
@@ -73,7 +73,7 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
     end
   end
 
-  desc "restart [NAME]", "Restart accessory on host"
+  desc "restart [NAME]", "Restart existing accessory container on host"
   def restart(name)
     with_accessory(name) do
       stop(name)
@@ -81,7 +81,7 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
     end
   end
 
-  desc "details [NAME]", "Display details about accessory on host (use NAME=all to boot all accessories)"
+  desc "details [NAME]", "Show details about accessory on host (use NAME=all to show all accessories)"
   def details(name)
     if name == "all"
       MRSK.accessory_names.each { |accessory_name| details(accessory_name) }
@@ -92,7 +92,7 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
     end
   end
 
-  desc "exec [NAME] [CMD]", "Execute a custom command on servers"
+  desc "exec [NAME] [CMD]", "Execute a custom command on servers (use --help to show options)"
   option :interactive, aliases: "-i", type: :boolean, default: false, desc: "Execute command over ssh for an interactive shell (use for console/bash)"
   option :reuse, type: :boolean, default: false, desc: "Reuse currently running container instead of starting a new one"
   def exec(name, cmd)
@@ -123,7 +123,7 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
     end
   end
 
-  desc "logs [NAME]", "Show log lines from accessory on host"
+  desc "logs [NAME]", "Show log lines from accessory on host (use --help to show options)"
   option :since, aliases: "-s", desc: "Show logs since timestamp (e.g. 2013-01-02T13:23:37Z) or relative (e.g. 42m for 42 minutes)"
   option :lines, type: :numeric, aliases: "-n", desc: "Number of log lines to pull from each server"
   option :grep, aliases: "-g", desc: "Show lines with grep match only (use this to fetch specific requests by id)"
@@ -149,7 +149,8 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
     end
   end
 
-  desc "remove [NAME]", "Remove accessory container and image from host (use NAME=all to boot all accessories)"
+  desc "remove [NAME]", "Remove accessory container and image from host (use NAME=all to remove all accessories)"
+  option :confirmed, aliases: "-y", type: :boolean, default: false, desc: "Proceed without confirmation question"
   def remove(name)
     if name == "all"
       MRSK.accessory_names.each { |accessory_name| remove(accessory_name) }
@@ -163,7 +164,7 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
     end
   end
 
-  desc "remove_container [NAME]", "Remove accessory container from host"
+  desc "remove_container [NAME]", "Remove accessory container from host", hide: true
   def remove_container(name)
     with_accessory(name) do |accessory|
       on(accessory.host) do
@@ -173,7 +174,7 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
     end
   end
 
-  desc "remove_image [NAME]", "Remove accessory image from host"
+  desc "remove_image [NAME]", "Remove accessory image from host", hide: true
   def remove_image(name)
     with_accessory(name) do |accessory|
       on(accessory.host) do
@@ -183,7 +184,7 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
     end
   end
 
-  desc "remove_service_directory [NAME]", "Remove accessory directory used for uploaded files and data directories from host"
+  desc "remove_service_directory [NAME]", "Remove accessory directory used for uploaded files and data directories from host", hide: true
   def remove_service_directory(name)
     with_accessory(name) do |accessory|
       on(accessory.host) do

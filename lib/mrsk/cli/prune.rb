@@ -13,7 +13,7 @@ class Mrsk::Cli::Prune < Mrsk::Cli::Base
     end
   end
 
-  desc "containers", "Prune stopped containers for the service older than 3 days"
+  desc "containers", "Prune stopped containers older than 3 days"
   def containers
     on(MRSK.hosts) do
       execute *MRSK.auditor.record("Pruned containers"), verbosity: :debug
