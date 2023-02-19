@@ -14,6 +14,8 @@ class Mrsk::Cli::Healthcheck < Mrsk::Cli::Base
           raise SSHKit::Command::Failed, "#{target} failed to return 200 OK!"
         end
       rescue SSHKit::Command::Failed => e
+        error capture_with_info(*MRSK.healthcheck.logs)
+
         if e.message =~ /curl/
           # Catches 4xx, 5xx
           raise SSHKit::Command::Failed, "#{target} failed to return 200 OK!"
@@ -21,7 +23,6 @@ class Mrsk::Cli::Healthcheck < Mrsk::Cli::Base
           raise
         end
       ensure
-        error capture_with_info(*MRSK.healthcheck.logs)
         execute *MRSK.healthcheck.stop, raise_on_non_zero_exit: false
         execute *MRSK.healthcheck.remove, raise_on_non_zero_exit: false
       end
