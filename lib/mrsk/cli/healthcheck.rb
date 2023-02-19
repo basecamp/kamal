@@ -21,6 +21,7 @@ class Mrsk::Cli::Healthcheck < Mrsk::Cli::Base
           raise
         end
       ensure
+        error capture_with_info(*MRSK.healthcheck.logs)
         execute *MRSK.healthcheck.stop, raise_on_non_zero_exit: false
         execute *MRSK.healthcheck.remove, raise_on_non_zero_exit: false
       end

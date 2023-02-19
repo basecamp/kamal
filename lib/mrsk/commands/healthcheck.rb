@@ -19,16 +19,16 @@ class Mrsk::Commands::Healthcheck < Mrsk::Commands::Base
     [ :curl, "--silent", "--output", "/dev/null", "--write-out", "'%{http_code}'", health_url ]
   end
 
+  def logs
+    pipe container_id, xargs(docker(:logs, "2>&1"))
+  end
+
   def stop
-    pipe \
-      container_id_for(container_name: container_name),
-      xargs(docker(:stop))
+    pipe container_id, xargs(docker(:stop))
   end
 
   def remove
-    pipe \
-      container_id_for(container_name: container_name),
-      xargs(docker(:container, :rm))
+    pipe container_id, xargs(docker(:container, :rm))
   end
 
   private
@@ -38,6 +38,10 @@ class Mrsk::Commands::Healthcheck < Mrsk::Commands::Base
 
     def container_name_with_version
       "healthcheck-#{config.service_with_version}"
+    end
+
+    def container_id
+      container_id_for(container_name: container_name)
     end
 
     def health_url
