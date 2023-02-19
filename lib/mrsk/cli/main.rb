@@ -135,9 +135,12 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
   desc "remove", "Remove Traefik, app, accessories, and registry session from servers"
   option :confirmed, aliases: "-y", type: :boolean, default: false, desc: "Proceed without confirmation question"
   def remove
-    invoke "mrsk:cli:traefik:remove"
-    invoke "mrsk:cli:app:remove"
-    invoke "mrsk:cli:registry:logout"
+    if options[:confirmed] || ask(remove_confirmation_question, limited_to: %w( y N ), default: "N") == "y"
+      invoke "mrsk:cli:traefik:remove", [], options.without(:confirmed)
+      invoke "mrsk:cli:app:remove", [], options.without(:confirmed)
+      invoke "mrsk:cli:accessory:remove", [ "all" ]
+      invoke "mrsk:cli:registry:logout", [], options.without(:confirmed)
+    end
   end
 
   desc "version", "Show MRSK version"
@@ -174,5 +177,11 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
       container_names = nil
       on(host) { container_names = capture_with_info(*MRSK.app.list_container_names).split("\n") }
       Array(container_names).include?(container_name)
+    end
+
+    def remove_confirmation_question      
+      "This will remove all containers and images. " +
+      (MRSK.config.accessories.any? ? "Including #{MRSK.config.accessories.collect(&:name).to_sentence}. " : "") +
+      "Are you sure?"
     end
 end

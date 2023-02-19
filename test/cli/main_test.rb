@@ -25,6 +25,29 @@ class CliMainTest < CliTestCase
     end
   end
 
+  test "remove with confirmation" do
+    run_command("remove", "-y").tap do |output|
+      assert_match /docker container stop traefik/, output
+      assert_match /docker container prune -f --filter label=org.opencontainers.image.title=Traefik/, output
+      assert_match /docker image prune -a -f --filter label=org.opencontainers.image.title=Traefik/, output
+
+      assert_match /docker ps -q --filter label=service=app | xargs docker stop/, output
+      assert_match /docker container prune -f --filter label=service=app/, output
+      assert_match /docker image prune -a -f --filter label=service=app/, output
+
+      assert_match /docker container stop app-mysql/, output
+      assert_match /docker container prune -f --filter label=service=app-mysql/, output
+      assert_match /docker image prune -a -f --filter label=service=app-mysql/, output
+      assert_match /rm -rf app-mysql/, output
+
+      assert_match /docker container stop app-redis/, output
+      assert_match /docker container prune -f --filter label=service=app-redis/, output
+      assert_match /docker image prune -a -f --filter label=service=app-redis/, output
+      assert_match /rm -rf app-redis/, output
+
+      assert_match /docker logout/, output
+    end
+  end
 
   private
     def run_command(*command)
