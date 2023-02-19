@@ -31,6 +31,14 @@ class CliAccessoryTest < CliTestCase
     end
   end
 
+  test "remove with confirmation" do
+    run_command("remove", "mysql", "-y").tap do |output|
+      assert_match /docker container stop app-mysql/, output
+      assert_match /docker image prune -a -f --filter label=service=app-mysql/, output
+      assert_match /rm -rf app-mysql/, output
+    end
+  end
+
   private
     def run_command(*command)
       stdouted { Mrsk::Cli::Accessory.start([*command, "-c", "test/fixtures/deploy_with_accessories.yml"]) }
