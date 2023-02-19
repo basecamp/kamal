@@ -44,6 +44,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
     end
   end
 
+  # FIXME: Drop in favor of just containers?
   desc "details", "Show details about app containers"
   def details
     on(MRSK.hosts) { |host| puts_by_host host, capture_with_info(*MRSK.app.info) }
