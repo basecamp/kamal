@@ -184,7 +184,12 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
     def most_recent_version_available(host: MRSK.primary_host)
       version = nil
       on(host) { version = capture_with_info(*MRSK.app.most_recent_version_from_available_images).strip }
-      version.presence
+      
+      if version == "<none>"
+        raise "Most recent image available was not tagged with a version (returned <none>)"
+      else
+        version.presence
+      end
     end
 
     def current_running_version(host: MRSK.primary_host)
