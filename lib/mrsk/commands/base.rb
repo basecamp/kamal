@@ -18,7 +18,7 @@ module Mrsk::Commands
     end
 
     def container_id_for(container_name:)
-      docker :container, :ls, "-a", "-f", "name=#{container_name}", "-q"
+      docker :container, :ls, "--all", "--filter", "name=#{container_name}", "--quiet"
     end
 
     private

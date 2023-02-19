@@ -2,7 +2,7 @@ require_relative "cli_test_case"
 
 class CliAppTest < CliTestCase
   test "boot" do
-    assert_match /Running docker run -d --restart unless-stopped/, run_command("boot")
+    assert_match /Running docker run --detach --restart unless-stopped/, run_command("boot")
   end
 
   test "boot will reboot if same version is already running" do
@@ -15,8 +15,8 @@ class CliAppTest < CliTestCase
 
     run_command("boot").tap do |output|
       assert_match /Rebooting container with same version already deployed/, output # Can't start what's already running
-      assert_match /docker ps -q --filter label=service=app \| xargs docker stop/, output # Stop what's running
-      assert_match /docker container ls -a -f name=app-999 -q \| xargs docker container rm/, output # Remove old container
+      assert_match /docker ps --quiet --filter label=service=app \| xargs docker stop/, output # Stop what's running
+      assert_match /docker container ls --all --filter name=app-999 --quiet \| xargs docker container rm/, output # Remove old container
       assert_match /docker run/, output # Start new container
     end
   ensure
@@ -31,7 +31,7 @@ class CliAppTest < CliTestCase
 
   test "stop" do
     run_command("stop").tap do |output|
-      assert_match /docker ps -q --filter label=service=app \| xargs docker stop/, output
+      assert_match /docker ps --quiet --filter label=service=app \| xargs docker stop/, output
     end
   end
 
@@ -43,15 +43,15 @@ class CliAppTest < CliTestCase
 
   test "remove" do
     run_command("remove").tap do |output|
-      assert_match /docker ps -q --filter label=service=app | xargs docker stop/, output
-      assert_match /docker container prune -f --filter label=service=app/, output
-      assert_match /docker image prune -a -f --filter label=service=app/, output
+      assert_match /docker ps --quiet --filter label=service=app | xargs docker stop/, output
+      assert_match /docker container prune --force --filter label=service=app/, output
+      assert_match /docker image prune --all --force --filter label=service=app/, output
     end
   end
 
   test "remove_container" do
     run_command("remove_container", "1234567").tap do |output|
-      assert_match /docker container ls -a -f name=app-1234567 -q \| xargs docker container rm/, output
+      assert_match /docker container ls --all --filter name=app-1234567 --quiet \| xargs docker container rm/, output
     end
   end
 

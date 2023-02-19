@@ -3,7 +3,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
     role = config.role(role)
 
     docker :run,
-      "-d",
+      "--detach",
       "--restart unless-stopped",
       "--log-opt", "max-size=#{MAX_LOG_SIZE}",
       "--name", service_with_version,
@@ -30,7 +30,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
   def logs(since: nil, lines: nil, grep: nil)
     pipe \
       current_container_id,
-      "xargs docker logs#{" --since #{since}" if since}#{" -n #{lines}" if lines} 2>&1",
+      "xargs docker logs#{" --since #{since}" if since}#{" --tail #{lines}" if lines} 2>&1",
       ("grep '#{grep}'" if grep)
   end
 
@@ -38,7 +38,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
     run_over_ssh \
       pipe(
         current_container_id,
-        "xargs docker logs -t -n 10 -f 2>&1",
+        "xargs docker logs --timestamps --tail 10 --follow 2>&1",
         (%(grep "#{grep}") if grep)
       ),
       host: host
@@ -72,7 +72,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
 
 
   def current_container_id
-    docker :ps, "-q", *service_filter
+    docker :ps, "--quiet", *service_filter
   end
 
   def current_running_version
@@ -97,7 +97,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
 
 
   def list_containers
-    docker :container, :ls, "-a", *service_filter
+    docker :container, :ls, "--all", *service_filter
   end
 
   def list_container_names
@@ -111,7 +111,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
   end
 
   def remove_containers
-    docker :container, :prune, "-f", *service_filter
+    docker :container, :prune, "--force", *service_filter
   end
 
   def list_images
@@ -119,7 +119,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
   end
 
   def remove_images
-    docker :image, :prune, "-a", "-f", *service_filter
+    docker :image, :prune, "--all", "--force", *service_filter
   end
 
 

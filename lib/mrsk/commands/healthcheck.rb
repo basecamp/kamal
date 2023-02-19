@@ -5,9 +5,9 @@ class Mrsk::Commands::Healthcheck < Mrsk::Commands::Base
     web = config.role(:web)
 
     docker :run,
-      "-d",
+      "--detach",
       "--name", container_name_with_version,
-      "-p", "#{EXPOSED_PORT}:#{config.healthcheck["port"]}",
+      "--publish", "#{EXPOSED_PORT}:#{config.healthcheck["port"]}",
       "--label", "service=#{container_name}",
       *web.env_args,
       *config.volume_args,

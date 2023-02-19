@@ -10,7 +10,7 @@ class CommandsHealthcheckTest < ActiveSupport::TestCase
 
   test "run" do
     assert_equal \
-      "docker run -d --name healthcheck-app-123 -p 3999:3000 --label service=healthcheck-app dhh/app:123",
+      "docker run --detach --name healthcheck-app-123 --publish 3999:3000 --label service=healthcheck-app dhh/app:123",
       new_command.run.join(" ")
   end
 
@@ -18,7 +18,7 @@ class CommandsHealthcheckTest < ActiveSupport::TestCase
     @config[:healthcheck] = { "port" => 3001 }
 
     assert_equal \
-      "docker run -d --name healthcheck-app-123 -p 3999:3001 --label service=healthcheck-app dhh/app:123",
+      "docker run --detach --name healthcheck-app-123 --publish 3999:3001 --label service=healthcheck-app dhh/app:123",
       new_command.run.join(" ")
   end
 
@@ -38,13 +38,13 @@ class CommandsHealthcheckTest < ActiveSupport::TestCase
 
   test "stop" do
     assert_equal \
-      "docker container ls -a -f name=healthcheck-app -q | xargs docker stop",
+      "docker container ls --all --filter name=healthcheck-app --quiet | xargs docker stop",
       new_command.stop.join(" ")
   end
 
   test "remove" do
     assert_equal \
-      "docker container ls -a -f name=healthcheck-app -q | xargs docker container rm",
+      "docker container ls --all --filter name=healthcheck-app --quiet | xargs docker container rm",
       new_command.remove.join(" ")
   end
 

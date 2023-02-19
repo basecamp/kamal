@@ -1,11 +1,11 @@
 class Mrsk::Commands::Traefik < Mrsk::Commands::Base
   def run
     docker :run, "--name traefik",
-      "-d",
+      "--detach",
       "--restart", "unless-stopped",
       "--log-opt", "max-size=#{MAX_LOG_SIZE}",
-      "-p 80:80",
-      "-v /var/run/docker.sock:/var/run/docker.sock",
+      "--publish", "80:80",
+      "--volume", "/var/run/docker.sock:/var/run/docker.sock",
       "traefik",
       "--providers.docker",
       "--log.level=DEBUG",
@@ -26,23 +26,23 @@ class Mrsk::Commands::Traefik < Mrsk::Commands::Base
 
   def logs(since: nil, lines: nil, grep: nil)
     pipe \
-      docker(:logs, "traefik", (" --since #{since}" if since), (" -n #{lines}" if lines), "-t", "2>&1"),
+      docker(:logs, "traefik", (" --since #{since}" if since), (" --tail #{lines}" if lines), "--timestamps", "2>&1"),
       ("grep '#{grep}'" if grep)
   end
 
   def follow_logs(host:, grep: nil)
     run_over_ssh pipe(
-      docker(:logs, "traefik", "-t", "-n", "10", "-f", "2>&1"),
+      docker(:logs, "traefik", "--timestamps", "--tail", "10", "--follow", "2>&1"),
       (%(grep "#{grep}") if grep)
     ).join(" "), host: host
   end
 
   def remove_container
-    docker :container, :prune, "-f", "--filter", "label=org.opencontainers.image.title=Traefik"
+    docker :container, :prune, "--force", "--filter", "label=org.opencontainers.image.title=Traefik"
   end
 
   def remove_image
-    docker :image, :prune, "-a", "-f", "--filter", "label=org.opencontainers.image.title=Traefik"
+    docker :image, :prune, "--all", "--force", "--filter", "label=org.opencontainers.image.title=Traefik"
   end
 
   private

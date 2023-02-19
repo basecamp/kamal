@@ -10,10 +10,10 @@ class Mrsk::Commands::Accessory < Mrsk::Commands::Base
   def run
     docker :run,
       "--name", service_name,
-      "-d",
+      "--detach",
       "--restart", "unless-stopped",
       "--log-opt", "max-size=#{MAX_LOG_SIZE}",
-      "-p", port,
+      "--publish", port,
       *env_args,
       *volume_args,
       *label_args,
@@ -35,14 +35,14 @@ class Mrsk::Commands::Accessory < Mrsk::Commands::Base
 
   def logs(since: nil, lines: nil, grep: nil)
     pipe \
-      docker(:logs, service_name, (" --since #{since}" if since), (" -n #{lines}" if lines), "-t", "2>&1"),
+      docker(:logs, service_name, (" --since #{since}" if since), (" --tail #{lines}" if lines), "--timestamps", "2>&1"),
       ("grep '#{grep}'" if grep)
   end
 
   def follow_logs(grep: nil)
     run_over_ssh \
       pipe \
-        docker(:logs, service_name, "-t", "-n", "10", "-f", "2>&1"),
+        docker(:logs, service_name, "--timestamps", "--tail", "10", "--follow", "2>&1"),
         (%(grep "#{grep}") if grep)
   end
 
@@ -96,11 +96,11 @@ class Mrsk::Commands::Accessory < Mrsk::Commands::Base
   end
 
   def remove_container
-    docker :container, :prune, "-f", *service_filter
+    docker :container, :prune, "--force", *service_filter
   end
 
   def remove_image
-    docker :image, :prune, "-a", "-f", *service_filter
+    docker :image, :prune, "--all", "--force", *service_filter
   end
 
   private

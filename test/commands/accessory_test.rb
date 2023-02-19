@@ -49,11 +49,11 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
 
   test "run" do
     assert_equal \
-      "docker run --name app-mysql -d --restart unless-stopped --log-opt max-size=10m -p 3306:3306 -e MYSQL_ROOT_PASSWORD=secret123 -e MYSQL_ROOT_HOST=% --label service=app-mysql mysql:8.0",
+      "docker run --name app-mysql --detach --restart unless-stopped --log-opt max-size=10m --publish 3306:3306 -e MYSQL_ROOT_PASSWORD=secret123 -e MYSQL_ROOT_HOST=% --label service=app-mysql mysql:8.0",
       @mysql.run.join(" ")
 
     assert_equal \
-      "docker run --name app-redis -d --restart unless-stopped --log-opt max-size=10m -p 6379:6379 -e SOMETHING=else --volume /var/lib/redis:/data --label service=app-redis --label cache=true redis:latest",
+      "docker run --name app-redis --detach --restart unless-stopped --log-opt max-size=10m --publish 6379:6379 -e SOMETHING=else --volume /var/lib/redis:/data --label service=app-redis --label cache=true redis:latest",
       @redis.run.join(" ")
   end
 
@@ -106,29 +106,29 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
 
   test "logs" do
     assert_equal \
-      "docker logs app-mysql -t 2>&1",
+      "docker logs app-mysql --timestamps 2>&1",
       @mysql.logs.join(" ")
 
     assert_equal \
-      "docker logs app-mysql  --since 5m  -n 100 -t 2>&1 | grep 'thing'",
+      "docker logs app-mysql  --since 5m  --tail 100 --timestamps 2>&1 | grep 'thing'",
       @mysql.logs(since: "5m", lines: 100, grep: "thing").join(" ")
   end
 
   test "follow logs" do
     assert_equal \
-      "ssh -t root@1.1.1.5 'docker logs app-mysql -t -n 10 -f 2>&1'",
+      "ssh -t root@1.1.1.5 'docker logs app-mysql --timestamps --tail 10 --follow 2>&1'",
       @mysql.follow_logs
   end
 
   test "remove container" do
     assert_equal \
-      "docker container prune -f --filter label=service=app-mysql",
+      "docker container prune --force --filter label=service=app-mysql",
       @mysql.remove_container.join(" ")
   end
 
   test "remove image" do
     assert_equal \
-      "docker image prune -a -f --filter label=service=app-mysql",
+      "docker image prune --all --force --filter label=service=app-mysql",
       @mysql.remove_image.join(" ")
   end
 end
