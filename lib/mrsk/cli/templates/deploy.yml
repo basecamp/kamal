@@ -15,7 +15,7 @@ registry:
   username: my-user
   password: my-password-should-go-somewhere-safe
 
-# Inject ENV variables into containers.
+# Inject ENV variables into containers (secrets come from .env).
 # env:
 #   clear:
 #     DB_HOST: 192.168.0.2
@@ -40,7 +40,7 @@ registry:
 #     arch: amd64
 #     host: ssh://app@192.168.0.1
 
-# Use accessory services.
+# Use accessory services (secrets come from .env).
 # accessories:
 #   db:
 #     image: mysql:8.0
