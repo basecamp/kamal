@@ -1,6 +1,10 @@
 class Mrsk::Commands::Builder::Base < Mrsk::Commands::Base
   delegate :argumentize, to: Mrsk::Utils
 
+  def clean
+    docker :image, :rm, "--force", config.absolute_image
+  end
+
   def pull
     docker :pull, config.absolute_image
   end

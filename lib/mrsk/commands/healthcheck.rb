@@ -16,11 +16,11 @@ class Mrsk::Commands::Healthcheck < Mrsk::Commands::Base
   end
 
   def curl
-    [ :curl, "--silent", "--output", "/dev/null", "--write-out", "'%{http_code}'", "--retry-max-time", 10, "--retry", 5, health_url ]
+    [ :curl, "--silent", "--output", "/dev/null", "--write-out", "'%{http_code}'", "--max-time", "2", health_url ]
   end
 
   def logs
-    pipe container_id, xargs(docker(:logs, "2>&1"))
+    pipe container_id, xargs(docker(:logs, "--tail", 50, "2>&1"))
   end
 
   def stop
