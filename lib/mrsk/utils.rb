@@ -5,7 +5,7 @@ module Mrsk::Utils
   def argumentize(argument, attributes, redacted: false)
     Array(attributes).flat_map do |k, v|
       if v.present?
-        [ argument, redacted ? redact("#{k}=#{v}") : "#{k}=#{v}" ]
+        [ argument, redacted ? redact("#{k}=\"#{v}\"") : "#{k}=\"#{v}\"" ]
       else
         [ argument, k ]
       end
