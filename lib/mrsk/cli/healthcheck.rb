@@ -22,7 +22,7 @@ class Mrsk::Cli::Healthcheck < Mrsk::Cli::Base
           end
         rescue SSHKit::Command::Failed
           if attempt <= MAX_ATTEMPTS
-            info "#{target} not ready yet, retrying in #{attempt}s..."
+            info "#{target} failed to respond, retrying in #{attempt}s..."
             sleep attempt
             attempt += 1
 
