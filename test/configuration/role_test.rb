@@ -95,9 +95,9 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
     }
 
     ENV["REDIS_PASSWORD"] = "secret456"
-    ENV["DB_PASSWORD"] = "secret123"
+    ENV["DB_PASSWORD"] = "secret&\"123"
 
-    assert_equal ["-e", "REDIS_PASSWORD=\"secret456\"", "-e", "DB_PASSWORD=\"secret123\"", "-e", "REDIS_URL=\"redis://a/b\"", "-e", "WEB_CONCURRENCY=\"4\""], @config_with_roles.role(:workers).env_args
+    assert_equal ["-e", "REDIS_PASSWORD=\"secret456\"", "-e", "DB_PASSWORD=\"secret&\\\"123\"", "-e", "REDIS_URL=\"redis://a/b\"", "-e", "WEB_CONCURRENCY=\"4\""], @config_with_roles.role(:workers).env_args
   ensure
     ENV["REDIS_PASSWORD"] = nil
     ENV["DB_PASSWORD"] = nil

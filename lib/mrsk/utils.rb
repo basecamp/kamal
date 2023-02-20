@@ -5,7 +5,7 @@ module Mrsk::Utils
   def argumentize(argument, attributes, redacted: false)
     Array(attributes).flat_map do |k, v|
       if v.present?
-        [ argument, redacted ? redact("#{k}=\"#{v}\"") : "#{k}=\"#{v}\"" ]
+        [ argument, redacted ? redact("#{k}=#{escape_bash_string v.to_s}") : "#{k}=#{escape_bash_string v.to_s}" ]
       else
         [ argument, k ]
       end
@@ -25,5 +25,9 @@ module Mrsk::Utils
   # Copied from SSHKit::Backend::Abstract#redact to be available inside Commands classes
   def redact(arg) # Used in execute_command to hide redact() args a user passes in
     arg.to_s.extend(SSHKit::Redaction) # to_s due to our inability to extend Integer, etc
+  end
+
+  def escape_bash_string(string)
+    string.dump.gsub(/`/, '\\\\`')
   end
 end
