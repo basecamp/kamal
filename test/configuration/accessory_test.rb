@@ -72,20 +72,20 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
   end
 
   test "label args" do
-    assert_equal ["--label", "service=app-mysql"], @config.accessory(:mysql).label_args
-    assert_equal ["--label", "service=app-redis", "--label", "cache=true"], @config.accessory(:redis).label_args
+    assert_equal ["--label", "service=\"app-mysql\""], @config.accessory(:mysql).label_args
+    assert_equal ["--label", "service=\"app-redis\"", "--label", "cache=\"true\""], @config.accessory(:redis).label_args
   end
 
   test "env args with secret" do
     ENV["MYSQL_ROOT_PASSWORD"] = "secret123"
-    assert_equal ["-e", "MYSQL_ROOT_PASSWORD=secret123", "-e", "MYSQL_ROOT_HOST=%"], @config.accessory(:mysql).env_args
+    assert_equal ["-e", "MYSQL_ROOT_PASSWORD=\"secret123\"", "-e", "MYSQL_ROOT_HOST=\"%\""], @config.accessory(:mysql).env_args
     assert @config.accessory(:mysql).env_args[1].is_a?(SSHKit::Redaction)
   ensure
     ENV["MYSQL_ROOT_PASSWORD"] = nil
   end
 
   test "env args without secret" do
-    assert_equal ["-e", "SOMETHING=else"], @config.accessory(:redis).env_args
+    assert_equal ["-e", "SOMETHING=\"else\""], @config.accessory(:redis).env_args
   end
 
   test "volume args" do
