@@ -1,13 +1,14 @@
 module Mrsk::Utils
   extend self
 
-  # Return a list of shell arguments using the same named argument against the passed attributes (hash or array).
+  # Return a list of escaped shell arguments using the same named argument against the passed attributes (hash or array).
   def argumentize(argument, attributes, redacted: false)
-    Array(attributes).flat_map do |k, v|
-      if v.present?
-        [ argument, redacted ? redact("#{k}=#{v}") : "#{k}=#{v}" ]
+    Array(attributes).flat_map do |key, value|
+      if value.present?
+        escaped_pair = [ key, value.to_s.dump.gsub(/`/, '\\\\`') ].join("=")
+        [ argument, redacted ? redact(escaped_pair) : escaped_pair ]
       else
-        [ argument, k ]
+        [ argument, key ]
       end
     end
   end
