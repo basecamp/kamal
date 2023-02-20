@@ -30,6 +30,7 @@ class Mrsk::Cli::Build < Mrsk::Cli::Base
   def pull
     on(MRSK.hosts) do
       execute *MRSK.auditor.record("Pulled image with version #{MRSK.version}"), verbosity: :debug
+      execute *MRSK.builder.clean, raise_on_non_zero_exit: false
       execute *MRSK.builder.pull
     end
   end
