@@ -1,5 +1,5 @@
 class Mrsk::Commands::Healthcheck < Mrsk::Commands::Base
-  EXPOSED_PORT = 3999
+  EXPOSED_PORT = 3000
 
   def run
     web = config.role(:web)
