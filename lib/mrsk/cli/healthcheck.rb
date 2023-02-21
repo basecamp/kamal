@@ -1,6 +1,8 @@
 class Mrsk::Cli::Healthcheck < Mrsk::Cli::Base
   MAX_ATTEMPTS = 5
 
+  class HealthcheckError < StandardError; end
+
   default_command :perform
 
   desc "perform", "Health check current app version"
@@ -18,7 +20,7 @@ class Mrsk::Cli::Healthcheck < Mrsk::Cli::Base
           if status == "200"
             info "#{target} succeeded with 200 OK!"
           else
-            raise "#{target} failed with status #{status}"
+            raise HealthcheckError, "#{target} failed with status #{status}"
           end
         rescue SSHKit::Command::Failed
           if attempt <= MAX_ATTEMPTS
@@ -31,7 +33,7 @@ class Mrsk::Cli::Healthcheck < Mrsk::Cli::Base
             raise
           end
         end
-      rescue SSHKit::Command::Failed => e
+      rescue SSHKit::Command::Failed, HealthcheckError => e
         error capture_with_info(*MRSK.healthcheck.logs)
 
         if e.message =~ /curl/
