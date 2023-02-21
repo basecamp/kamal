@@ -498,7 +498,7 @@ If you wish to remove the entire application, including Traefik, containers, ima
 
 ## Stage of development
 
-This is alpha software. Lots of stuff is missing. Lots of stuff will keep moving around for a while.
+This is beta software. Commands may still move around. But we're live in production at [37signals](https://37signals.com).
 
 ## License
 
