@@ -10,7 +10,7 @@ class CommandsHealthcheckTest < ActiveSupport::TestCase
 
   test "run" do
     assert_equal \
-      "docker run --detach --name healthcheck-app-123 --publish 3999:3000 --label service=healthcheck-app dhh/app:123",
+      "docker run --detach --name healthcheck-app-123 --publish 3000:3000 --label service=healthcheck-app dhh/app:123",
       new_command.run.join(" ")
   end
 
@@ -18,13 +18,13 @@ class CommandsHealthcheckTest < ActiveSupport::TestCase
     @config[:healthcheck] = { "port" => 3001 }
 
     assert_equal \
-      "docker run --detach --name healthcheck-app-123 --publish 3999:3001 --label service=healthcheck-app dhh/app:123",
+      "docker run --detach --name healthcheck-app-123 --publish 3000:3001 --label service=healthcheck-app dhh/app:123",
       new_command.run.join(" ")
   end
 
   test "curl" do
     assert_equal \
-      "curl --silent --output /dev/null --write-out '%{http_code}' --max-time 2 http://localhost:3999/up",
+      "curl --silent --output /dev/null --write-out '%{http_code}' --max-time 2 http://localhost:3000/up",
       new_command.curl.join(" ")
   end
 
@@ -32,7 +32,7 @@ class CommandsHealthcheckTest < ActiveSupport::TestCase
     @config[:healthcheck] = { "path" => "/healthz" }
 
     assert_equal \
-      "curl --silent --output /dev/null --write-out '%{http_code}' --max-time 2 http://localhost:3999/healthz",
+      "curl --silent --output /dev/null --write-out '%{http_code}' --max-time 2 http://localhost:3000/healthz",
       new_command.curl.join(" ")
   end
 
