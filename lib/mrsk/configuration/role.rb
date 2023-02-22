@@ -61,7 +61,7 @@ class Mrsk::Configuration::Role
           "traefik.http.routers.#{config.service}.rule" => "PathPrefix(`/`)",
           "traefik.http.services.#{config.service}.loadbalancer.healthcheck.path" => config.healthcheck["path"],
           "traefik.http.services.#{config.service}.loadbalancer.healthcheck.interval" => "1s",
-          "traefik.http.middlewares.#{config.service}.retry.attempts" => "3",
+          "traefik.http.middlewares.#{config.service}.retry.attempts" => "5",
           "traefik.http.middlewares.#{config.service}.retry.initialinterval" => "500ms"
         }
       else

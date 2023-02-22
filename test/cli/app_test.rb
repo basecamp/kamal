@@ -2,7 +2,16 @@ require_relative "cli_test_case"
 
 class CliAppTest < CliTestCase
   test "boot" do
-    assert_match /Running docker run --detach --restart unless-stopped/, run_command("boot")
+    # Stub current version fetch
+    SSHKit::Backend::Abstract.any_instance.stubs(:capture)
+      .returns("999") # new version
+      .then
+      .returns("123") # old version
+
+    run_command("boot").tap do |output|
+      assert_match /docker run --detach --restart unless-stopped/, output
+      assert_match /docker container ls --all --filter name=app-123 --quiet | xargs docker stop/, output
+    end
   end
 
   test "boot will reboot if same version is already running" do
@@ -11,12 +20,17 @@ class CliAppTest < CliTestCase
     # Prevent expected failures from outputting to terminal
     Thread.report_on_exception = false
 
-    MRSK.app.stubs(:run).raises(SSHKit::Command::Failed.new("already in use")).then.returns([ :docker, :run ])
+    MRSK.app.stubs(:run)
+      .raises(SSHKit::Command::Failed.new("already in use"))
+      .then
+      .raises(SSHKit::Command::Failed.new("already in use"))
+      .then
+      .returns([ :docker, :run ])
 
     run_command("boot").tap do |output|
-      assert_match /Rebooting container with same version already deployed/, output # Can't start what's already running
-      assert_match /docker ps --quiet --filter label=service=app \| xargs docker stop/, output # Stop what's running
-      assert_match /docker container ls --all --filter name=app-999 --quiet \| xargs docker container rm/, output # Remove old container
+      assert_match /Rebooting container with same version 999 already deployed/, output # Can't start what's already running
+      assert_match /docker container ls --all --filter name=app-999 --quiet | xargs docker container rm/, output # Stop old running
+      assert_match /docker container ls --all --filter name=app-999 --quiet | xargs docker container rm/, output # Remove old container
       assert_match /docker run/, output # Start new container
     end
   ensure

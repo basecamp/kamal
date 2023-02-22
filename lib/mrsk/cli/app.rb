@@ -10,13 +10,17 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
           execute *MRSK.auditor.record("Booted app version #{version}"), verbosity: :debug
 
           begin
-            execute *MRSK.app.stop, raise_on_non_zero_exit: false
+            old_version = capture_with_info(*MRSK.app.current_running_version).strip
             execute *MRSK.app.run(role: role.name)
+            sleep 10
+            execute *MRSK.app.stop(version: old_version), raise_on_non_zero_exit: false if old_version.present?
+
           rescue SSHKit::Command::Failed => e
             if e.message =~ /already in use/
-              error "Rebooting container with same version already deployed on #{host}"
+              error "Rebooting container with same version #{version} already deployed on #{host}"
               execute *MRSK.auditor.record("Rebooted app version #{version}"), verbosity: :debug
 
+              execute *MRSK.app.stop(version: version)
               execute *MRSK.app.remove_container(version: version)
               execute *MRSK.app.run(role: role.name)
             else

@@ -1,5 +1,5 @@
 class Mrsk::Cli::Healthcheck < Mrsk::Cli::Base
-  MAX_ATTEMPTS = 5
+  MAX_ATTEMPTS = 7
 
   class HealthcheckError < StandardError; end
 
