@@ -153,9 +153,7 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
   option :confirmed, aliases: "-y", type: :boolean, default: false, desc: "Proceed without confirmation question"
   def remove(name)
     if name == "all"
-      if options[:confirmed] || ask("This will remove all containers and images for all accessories. Are you sure?", limited_to: %w( y N ), default: "N") == "y"
-        MRSK.accessory_names.each { |accessory_name| remove(accessory_name) }
-      end
+      MRSK.accessory_names.each { |accessory_name| remove(accessory_name) }
     else
       if options[:confirmed] || ask("This will remove all containers and images for #{name}. Are you sure?", limited_to: %w( y N ), default: "N") == "y"
         with_accessory(name) do
