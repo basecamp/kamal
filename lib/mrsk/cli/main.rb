@@ -57,11 +57,16 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
     if container_name_available?(MRSK.config.service_with_version)
       say "Start version #{version}, then stop the old version...", :magenta
 
+      cli = self
+
       on(MRSK.hosts) do |host|
         old_version = capture_with_info(*MRSK.app.current_running_version).strip.presence
 
         execute *MRSK.app.start
+
+        cli.say "Waiting #{MRSK.config.readiness_delay}s for app to start...", :magenta
         sleep MRSK.config.readiness_delay
+
         execute *MRSK.app.stop(version: old_version), raise_on_non_zero_exit: false
       end
 
