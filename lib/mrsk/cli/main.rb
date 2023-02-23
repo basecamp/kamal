@@ -146,7 +146,7 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
     if options[:confirmed] || ask(remove_confirmation_question, limited_to: %w( y N ), default: "N") == "y"
       invoke "mrsk:cli:traefik:remove", [], options.without(:confirmed)
       invoke "mrsk:cli:app:remove", [], options.without(:confirmed)
-      invoke "mrsk:cli:accessory:remove", [ "all" ]
+      invoke "mrsk:cli:accessory:remove", [ "all" ], options
       invoke "mrsk:cli:registry:logout", [], options.without(:confirmed)
     end
   end
