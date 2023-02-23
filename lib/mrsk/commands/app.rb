@@ -18,8 +18,10 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
     docker :start, service_with_version
   end
 
-  def stop
-    pipe current_container_id, xargs(docker(:stop))
+  def stop(version: nil)
+    pipe \
+      version ? container_id_for_version(version) : current_container_id,
+      xargs(docker(:stop))
   end
 
   def info
@@ -130,6 +132,10 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
       else
         config.service_with_version
       end
+    end
+
+    def container_id_for_version(version)
+      container_id_for(container_name: service_with_version(version))    
     end
 
     def service_filter

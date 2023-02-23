@@ -5,18 +5,27 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
     using_version(options[:version] || most_recent_version_available) do |version|
       say "Start container with version #{version} (or reboot if already running)...", :magenta
 
+      cli = self
+      
       MRSK.config.roles.each do |role|
         on(role.hosts) do |host|
           execute *MRSK.auditor.record("Booted app version #{version}"), verbosity: :debug
 
           begin
-            execute *MRSK.app.stop, raise_on_non_zero_exit: false
+            old_version = capture_with_info(*MRSK.app.current_running_version).strip
             execute *MRSK.app.run(role: role.name)
+
+            cli.say "Waiting #{MRSK.config.readiness_delay}s for app to boot...", :magenta
+            sleep MRSK.config.readiness_delay
+
+            execute *MRSK.app.stop(version: old_version), raise_on_non_zero_exit: false if old_version.present?
+
           rescue SSHKit::Command::Failed => e
             if e.message =~ /already in use/
-              error "Rebooting container with same version already deployed on #{host}"
+              error "Rebooting container with same version #{version} already deployed on #{host} (may cause gap in zero-downtime promise!)"
               execute *MRSK.auditor.record("Rebooted app version #{version}"), verbosity: :debug
 
+              execute *MRSK.app.stop(version: version)
               execute *MRSK.app.remove_container(version: version)
               execute *MRSK.app.run(role: role.name)
             else
