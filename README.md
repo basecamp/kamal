@@ -330,6 +330,21 @@ accessories:
 
 Now run `mrsk accessory start mysql` to start the MySQL server on 1.1.1.3. See `mrsk accessory` for all the commands possible.
 
+### Using Cron
+
+You can use a specific container to run your Cron jobs:
+
+```yaml
+servers:
+  cron:
+    hosts:
+      - 192.168.0.1
+    cmd:
+      bash -c "cat config/crontab | crontab - && cron -f"
+```
+
+This assumes the Cron settings are stored in `config/crontab`.
+
 ### Using a generated .env file
 
 If you're using a centralized secret store, like 1Password, you can create `.env.erb` as a template which looks up the secrets. Example of a .env.erb file:
