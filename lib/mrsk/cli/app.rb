@@ -22,7 +22,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
 
           rescue SSHKit::Command::Failed => e
             if e.message =~ /already in use/
-              error "Rebooting container with same version #{version} already deployed on #{host}"
+              error "Rebooting container with same version #{version} already deployed on #{host} (may cause gap in zero-downtime promise!)"
               execute *MRSK.auditor.record("Rebooted app version #{version}"), verbosity: :debug
 
               execute *MRSK.app.stop(version: version)
