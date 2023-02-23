@@ -13,7 +13,7 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
           execute *accessory.run
         end
 
-        audit_broadcast "Booted accessory #{name}"
+        audit_broadcast "Booted accessory #{name}" unless options[:skip_broadcast]
       end
     end
   end
