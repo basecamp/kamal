@@ -136,6 +136,9 @@ class Mrsk::Configuration
     { "path" => "/up", "port" => 3000 }.merge(raw_config.healthcheck || {})
   end
 
+  def readiness_delay
+    raw_config.readiness_delay || 7
+  end
 
   def valid?
     ensure_required_keys_present && ensure_env_available

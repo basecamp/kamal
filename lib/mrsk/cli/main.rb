@@ -61,7 +61,7 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
         old_version = capture_with_info(*MRSK.app.current_running_version).strip.presence
 
         execute *MRSK.app.start
-        sleep 10
+        sleep MRSK.config.readiness_delay
         execute *MRSK.app.stop(version: old_version), raise_on_non_zero_exit: false
       end
 

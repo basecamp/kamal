@@ -12,7 +12,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
           begin
             old_version = capture_with_info(*MRSK.app.current_running_version).strip
             execute *MRSK.app.run(role: role.name)
-            sleep 10
+            sleep MRSK.config.readiness_delay
             execute *MRSK.app.stop(version: old_version), raise_on_non_zero_exit: false if old_version.present?
 
           rescue SSHKit::Command::Failed => e
