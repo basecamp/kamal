@@ -3,7 +3,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
   def boot
     say "Get most recent version available as an image...", :magenta unless options[:version]
     using_version(options[:version] || most_recent_version_available) do |version|
-      say "Start container with version #{version} (or reboot if already running)...", :magenta
+      say "Start container with version #{version} using a #{MRSK.config.readiness_delay}s readiness delay (or reboot if already running)...", :magenta
 
       cli = self
       
@@ -14,10 +14,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
           begin
             old_version = capture_with_info(*MRSK.app.current_running_version).strip
             execute *MRSK.app.run(role: role.name)
-
-            cli.say "Waiting #{MRSK.config.readiness_delay}s for app to boot...", :magenta
             sleep MRSK.config.readiness_delay
-
             execute *MRSK.app.stop(version: old_version), raise_on_non_zero_exit: false if old_version.present?
 
           rescue SSHKit::Command::Failed => e
