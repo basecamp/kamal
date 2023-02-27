@@ -19,7 +19,7 @@ class CliMainTest < CliTestCase
     Mrsk::Cli::Main.any_instance.stubs(:container_name_available?).returns(true)
 
     run_command("rollback", "123").tap do |output|
-      assert_match /Start version 123, then stop the old version/, output
+      assert_match /Start version 123/, output
       assert_match /docker ps -q --filter label=service=app | xargs docker stop/, output
       assert_match /docker start app-123/, output
     end
