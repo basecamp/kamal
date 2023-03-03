@@ -21,7 +21,11 @@ class Mrsk::Commands::Auditor < Mrsk::Commands::Base
 
   private
     def audit_log_file
-      "mrsk-#{config.service}-audit.log"
+      if config.destination
+        "mrsk-#{config.service}-#{config.destination}-audit.log"
+      else
+        "mrsk-#{config.service}-audit.log"
+      end
     end
 
     def tagged_record_line(line)
