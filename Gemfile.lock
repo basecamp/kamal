@@ -4,6 +4,7 @@ PATH
     mrsk (0.8.4)
       activesupport (>= 7.0)
       dotenv (~> 2.8)
+      json-schema (~> 3.0.0)
       sshkit (~> 1.21)
       thor (~> 1.2)
       zeitwerk (~> 2.5)
@@ -105,8 +106,8 @@ PLATFORMS
 DEPENDENCIES
   bcrypt_pbkdf
   debug
-  json-schema
   ed25519
+  json-schema
   mocha
   mrsk!
   railties

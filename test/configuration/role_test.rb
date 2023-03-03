@@ -63,7 +63,7 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
 
   test "default traefik label on non-web role" do
     config = Mrsk::Configuration.new(@deploy_with_roles.tap { |c|
-      c[:servers]["beta"] = { "traefik" => "true", "hosts" => [ "1.1.1.5" ] }
+      c[:servers]["beta"] = { "traefik" => true, "hosts" => [ "1.1.1.5" ] }
     })
 
     assert_equal [ "--label", "service=\"app\"", "--label", "role=\"beta\"", "--label", "traefik.http.routers.app.rule=\"PathPrefix(\\`/\\`)\"", "--label", "traefik.http.services.app.loadbalancer.healthcheck.path=\"/up\"", "--label", "traefik.http.services.app.loadbalancer.healthcheck.interval=\"1s\"", "--label", "traefik.http.middlewares.app.retry.attempts=\"5\"", "--label", "traefik.http.middlewares.app.retry.initialinterval=\"500ms\"" ], config.role(:beta).label_args

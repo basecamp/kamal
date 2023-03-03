@@ -1,70 +1,220 @@
----
 type: object
-required:
-- service
-- image
-- servers
-- registry
+required: [service, image, servers, registry]
+
 properties:
   service:
+    $ref: '#/definitions/service'
+  image:
+    $ref: '#/definitions/image'
+  ssh:
+    $ref: '#/definitions/ssh'
+  registry:
+    $ref: '#/definitions/registry'
+  env:
+    $ref: '#/definitions/env'
+  servers:
+    $ref: '#/definitions/servers'
+  volumes:
+    $ref: '#/definitions/volumes'
+  builder:
+    $ref: '#/definitions/builder'
+  traefik:
+    $ref: '#/definitions/traefik'
+  accessories:
+    $ref: '#/definitions/accessories'
+  healthcheck:
+    $ref: '#/definitions/healthcheck'
+  audit_broadcast_cmd:
     type: string
-    description: Name of the service.
+  readiness_delay:
+    type: number
+
+definitions:
+  accessories:
+    type: object
+    additionalProperties:
+      $ref: '#/definitions/accessory'
+  
+  accessory:
+    type: object
+    required: [image, host, port]
+    properties:
+      image:
+        $ref: '#/definitions/image'
+      host:
+        type: string
+        example: 1.1.1.3
+      port:
+        anyOf:
+          - type: number
+            example: 3306
+          - type: string
+            example: '3306:3306'
+      env:
+        $ref: '#/definitions/env'
+      files:
+        type: array
+        example: ['config/mysql/my.cnf:/etc/mysql/my.cnf']
+        items:
+          type: string
+      directories:
+        type: array
+        example: ['data:/var/lib/mysql']
+        items:
+          type: string
+      volumes:
+        $ref: '#/definitions/volumes'
+      labels:
+        type: object
+        example: { 'cache': true }
+
+  builder:
+    type: object
+    properties:
+      multiarch:
+        type: boolean
+        default: true
+      local:
+        $ref: '#/definitions/builder-host-args'
+      remote:
+        $ref: '#/definitions/builder-host-args'
+      secrets:
+        $ref: '#/definitions/secrets-list'
+      args:
+        type: object
+        description: Build arguments that aren't secret can also be configured
+        example: {'RUBY_VERSION': 3.2.0}
+        items:
+          type: string
+  
+  builder-host-args:
+    type: object
+    properties:
+      arch:
+        type: string
+        example: arm64
+      host:
+        type: string
+        example: ssh://root@192.168.0.1
+
+  env:
+    anyOf:
+    - $ref: '#/definitions/env-object'
+    - $ref: '#/definitions/env-grouped'
+
+  env-object:
+    type: object
+    description: Environment variables for the service.
+    additionalProperties:
+      type: string
+
+  env-grouped:
+    type: object
+    description: Grouped by environment
+    properties:
+      clear:
+        $ref: '#/definitions/env-object'
+      secret:
+        $ref: '#/definitions/secrets-list'
+
   image:
     type: string
-    description: Docker image name.
+    description: Docker image
+    example: 37s/hey
+
   registry:
     type: object
-    required:
-    - username
-    - password
+    required: [username, password]
     properties:
-      server:
-        type: string
-        description: Docker registry server.
       username:
         type: string
         description: Username for the Docker registry.
       password:
+        anyOf:
+        - type: string
+          description: Password for the Docker registry.
+        - $ref: '#/definitions/secrets-list'
+      server:
         type: string
-        description: Password for the Docker registry.
-  env:
-    anyOf:
-    - type: object
-      description: Environment variables for the service.
-      additionalProperties:
-        type: string
-    - type: object
-      description: Grouped by environment
-      properties:
-        clear:
-          type: object
-          description: Clear environment variables for the service.
-          additionalProperties:
-            type: string
-        secret:
-          type: array
-          description: Secret environment variables for the service.
-          items:
-            type: string
+        description: Docker registry server.
+        default: hub.docker.com
+
+  secrets-list:
+    type: array
+    description: List of secret environment variables
+    example: ['DATABASE_PASSWORD', 'REDIS_PASSWORD']
+    items:
+      type: string
+
   servers:
     anyOf:
-    - type: array
-      description: List of servers.
-      items:
+    - $ref: '#/definitions/servers-list'
+    - $ref: '#/definitions/servers-with-roles'
+
+  servers-with-roles:
+    type: object
+    description: Grouped by role
+    required: [web]
+    additionalProperties:
+      anyOf:
+      - $ref: '#/definitions/servers-list'
+      - type: object
+        properties:
+          traefik:
+            type: boolean
+          hosts:
+            $ref: '#/definitions/servers-list'
+          cmd:
+            type: string
+          labels:
+            additionalProperties:
+              type: string
+
+  servers-list:
+    type: array
+    description: List of servers.
+    items:
+      type: string
+
+  service:
+    type: string
+    description: Name of the service.
+    example: hey
+
+  ssh:
+    type: object
+    properties:
+      user:
         type: string
-    - type: object
-      description: Grouped by environment
-      required:
-        - web
-      properties:
-        web:
-          type: array
-          description: List of servers.
-          items:
-            type: string
-      patternProperties:
-        "^S_":
-          type: array
-          description: List of servers.
-          items:
-            type: string
+        description: User for SSH connections
+        example: deploy
+        default: root
+      proxy:
+        type: string
+        description: Connect to SSH server through a proxy host
+
+  traefik:
+    type: object
+    properties:
+      args:
+        type: object
+        description: Traefik arguments
+        example: {'accesslog': true, 'accesslog.format': 'json'}
+        items:
+          type: string
+
+  volumes:
+    type: array
+    description: Add custom volumes into the app containers
+    items:
+      type: string
+  
+  healthcheck:
+    type: object
+    properties:
+      path:
+        type: string
+        example: '/healtz'
+      port:
+        type: number
+        example: 3000

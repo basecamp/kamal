@@ -141,10 +141,6 @@ class Mrsk::Configuration
     raw_config.readiness_delay || 7
   end
 
-  def valid?
-    ensure_required_keys_present && ensure_env_available
-  end
-
   def to_h
     {
       roles: role_names,

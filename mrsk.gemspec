@@ -17,4 +17,5 @@ Gem::Specification.new do |spec|
   spec.add_dependency "thor", "~> 1.2"
   spec.add_dependency "dotenv", "~> 2.8"
   spec.add_dependency "zeitwerk", "~> 2.5"
+  spec.add_dependency "json-schema", "~> 3.0.0"
 end

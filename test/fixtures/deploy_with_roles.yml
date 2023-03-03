@@ -12,4 +12,5 @@ env:
 registry:
   server: registry.digitalocean.com
   username: user
-  password: pw
+  password: 
+    - SECRET_PASSWORD
