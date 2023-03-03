@@ -1,11 +1,11 @@
 class Mrsk::Cli::Build < Mrsk::Cli::Base
-  desc "deliver", "Deliver a newly built app image to servers"
+  desc "deliver", "Build app and push app image to registry then pull image on servers"
   def deliver
-    invoke :push
-    invoke :pull
+    push
+    pull
   end
 
-  desc "push", "Build locally and push app image to registry"
+  desc "push", "Build and push app image to registry"
   def push
     cli = self
 
@@ -26,15 +26,16 @@ class Mrsk::Cli::Build < Mrsk::Cli::Base
     end
   end
 
-  desc "pull", "Pull app image from the registry onto servers"
+  desc "pull", "Pull app image from registry onto servers"
   def pull
     on(MRSK.hosts) do
-      execute *MRSK.auditor.record("build pull image #{MRSK.version}"), verbosity: :debug
+      execute *MRSK.auditor.record("Pulled image with version #{MRSK.version}"), verbosity: :debug
+      execute *MRSK.builder.clean, raise_on_non_zero_exit: false
       execute *MRSK.builder.pull
     end
   end
 
-  desc "create", "Create a local build setup"
+  desc "create", "Create a build setup"
   def create
     run_locally do
       begin
@@ -51,7 +52,7 @@ class Mrsk::Cli::Build < Mrsk::Cli::Base
     end
   end
 
-  desc "remove", "Remove local build setup"
+  desc "remove", "Remove build setup"
   def remove
     run_locally do
       debug "Using builder: #{MRSK.builder.name}"
@@ -59,7 +60,7 @@ class Mrsk::Cli::Build < Mrsk::Cli::Base
     end
   end
 
-  desc "details", "Show the name of the configured builder"
+  desc "details", "Show build setup"
   def details
     run_locally do
       puts "Builder: #{MRSK.builder.name}"

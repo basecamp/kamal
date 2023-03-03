@@ -1,6 +1,8 @@
 # MRSK
 
-MRSK deploys web apps in containers to servers running Docker with zero downtime. It uses the dynamic reverse-proxy Traefik to hold requests while the new application container is started and the old one is stopped. It works seamlessly across multiple hosts, using SSHKit to execute commands.
+MRSK deploys web apps anywhere from bare metal to cloud VMs using Docker with zero downtime. It uses the dynamic reverse-proxy Traefik to hold requests while the new application container is started and the old one is stopped. It works seamlessly across multiple hosts, using SSHKit to execute commands. It was built for Rails applications, but works with any type of web app that can be containerized with Docker.
+
+Watch the screencast: https://www.youtube.com/watch?v=LL1cV2FXZ5I
 
 ## Installation
 
@@ -14,13 +16,14 @@ servers:
   - 192.168.0.2
 registry:
   username: registry-user-name
-  password: <%= ENV.fetch("MRSK_REGISTRY_PASSWORD") %>
+  password:
+    - MRSK_REGISTRY_PASSWORD
 env:
   secret:
     - RAILS_MASTER_KEY
 ```
 
-Then edit your `.env` file to add your registry password as `MRSK_REGISTRY_PASSWORD` (and your `RAILS_MASTER_KEY` for production with a Rails app).
+Then edit your `.env` file to add your registry password as `MRSK_REGISTRY_PASSWORD` (and your `RAILS_MASTER_KEY` for production with a Rails app). 
 
 Now you're ready to deploy to the servers:
 
@@ -30,24 +33,39 @@ mrsk deploy
 
 This will:
 
-1. Connect to the servers over SSH (using root by default, authenticated by your loaded ssh key)
+1. Connect to the servers over SSH (using root by default, authenticated by your ssh key)
 2. Install Docker on any server that might be missing it (using apt-get)
 3. Log into the registry both locally and remotely
 4. Build the image using the standard Dockerfile in the root of the application.
 5. Push the image to the registry.
-6. Pull the image from the registry on the servers.
+6. Pull the image from the registry onto the servers.
 7. Ensure Traefik is running and accepting traffic on port 80.
-8. Stop any containers running a previous versions of the app.
+8. Ensure your app responds with `200 OK` to `GET /up`.
 9. Start a new container with the version of the app that matches the current git version hash.
-10. Prune unused images and stopped containers to ensure servers don't fill up.
+10. Stop the old container running the previous version of the app.
+11. Prune unused images and stopped containers to ensure servers don't fill up.
 
 Voila! All the servers are now serving the app on port 80. If you're just running a single server, you're ready to go. If you're running multiple servers, you need to put a load balancer in front of them.
 
-## Why not just run Capistrano or Kubernetes?
+## Vision
 
-MRSK basically is Capistrano for Containers, which allow us to use vanilla servers as the hosts. No need to ensure that the servers have just the right version of Ruby or other dependencies you need. That all lives in the Docker image now. You can boot a brand new Ubuntu (or whatever) server, add it to the deploy servers of MRSK, and it'll be auto-provisioned with Docker, and run right away. Docker's layer caching also allows for quicker deployments with less mucking about on the server. And the images built for MRSK can be used for CI or later introspection.
+In the past decade+, there's been an explosion in commercial offerings that make deploying web apps easier. Heroku kicked it off with an incredible offering that stayed ahead of the competition seemingly forever. These days we have excellent alternatives like Fly.io and Render. And hosted Kubernetes is making things easier too on AWS, GCP, Digital Ocean, and elsewhere. But these are all offerings that have you renting computers in the cloud at a premium. If you want to run on your own hardware, or even just have a clear migration path to do so in the future, you need to carefully consider how locked in you get to these commercial platforms. Preferably before the bills swallow your business whole!
 
-Kubernetes is a beast. Running it yourself on your own hardware is not for the faint of heart. It's a fine option if you want to run on someone else's platform, like Render or Fly, but if you'd like the freedom to move between cloud and your own hardware, or even mix the two, MRSK is much simpler. You can see everything that's going on, it's just basic Docker commands being called.
+MRSK seeks to bring the advance in ergonomics pioneered by these commercial offerings to deploying web apps anywhere. Whether that's low-cost cloud options without the managed-service markup from the likes of Digital Ocean, Hetzner, OVH, etc, or it's your own colocated bare metal. To MRSK, it's all the same. Feed the config file a list of IP addresses with vanilla Ubuntu servers that have seen no prep beyond an added SSH key, and you'll be running in literally minutes.
+
+This approach gives you enormous portability. You can have your web app deployed on several clouds at ease like this. Or you can buy the baseline with your own hardware, then deploy to a cloud before a big seasonal spike to get more capacity. When you're not locked into a single provider from a tooling perspective, there are a lot of compelling options available.
+
+Ultimately, MRSK is meant to compress the complexity of going to production using open source tooling that isn't tied to any commercial offering. Not to zero, mind you. You're probably still better off with a fully managed service if basic Linux or Docker is still difficult, but as soon as those concepts are familiar, you'll be ready to go with MRSK.
+
+## Why not just run Capistrano, Kubernetes or Docker Swarm?
+
+MRSK basically is Capistrano for Containers, without the need to carefully prepare servers in advance. No need to ensure that the servers have just the right version of Ruby or other dependencies you need. That all lives in the Docker image now. You can boot a brand new Ubuntu (or whatever) server, add it to the list of servers in MRSK, and it'll be auto-provisioned with Docker, and run right away. Docker's layer caching also speeds up deployments with less mucking about on the server. And the images built for MRSK can be used for CI or later introspection.
+
+Kubernetes is a beast. Running it yourself on your own hardware is not for the faint of heart. It's a fine option if you want to run on someone else's platform, either transparently [like Render](https://thenewstack.io/render-cloud-deployment-with-less-engineering/) or explicitly on AWS/GCP, but if you'd like the freedom to move between cloud and your own hardware, or even mix the two, MRSK is much simpler. You can see everything that's going on, it's just basic Docker commands being called.
+
+Docker Swarm is much simpler than Kubernetes, but it's still built on the same declarative model that uses state reconciliation. MRSK is intentionally designed around imperative commands, like Capistrano.
+
+Ultimately, there are a myriad of ways to deploy web apps, but this is the toolkit we're using at [37signals](https://37signals.com) to bring [HEY](https://www.hey.com) [home from the cloud](https://world.hey.com/dhh/why-we-re-leaving-the-cloud-654b47e0) without losing the advantages of modern containerization tooling.
 
 ## Configuration
 
@@ -59,6 +77,71 @@ MRSK uses [dotenv](https://github.com/bkeepers/dotenv) to automatically load env
 MRSK_REGISTRY_PASSWORD=pw
 DB_PASSWORD=secret123
 ```
+
+### Using a generated .env file
+
+#### 1password as a secret store
+
+If you're using a centralized secret store, like 1Password, you can create `.env.erb` as a template which looks up the secrets. Example of a .env.erb file:
+
+```erb
+<% if (session_token = `op signin --account my-one-password-account --raw`.strip) != "" %># Generated by mrsk envify
+GITHUB_TOKEN=<%= `gh config get -h github.com oauth_token`.strip %>
+MRSK_REGISTRY_PASSWORD=<%= `op read "op://Vault/Docker Hub/password" -n --session  #{session_token}` %>
+RAILS_MASTER_KEY=<%= `op read "op://Vault/My App/RAILS_MASTER_SECRET" -n --session #{session_token}` %>
+MYSQL_ROOT_PASSWORD=<%= `op read "op://Vault/My App/MYSQL_ROOT_PASSWORD" -n --session #{session_token}` %>
+<% else raise ArgumentError, "Session token missing" end %>
+```
+
+This template can safely be checked into git. Then everyone deploying the app can run `mrsk envify` when they setup the app for the first time or passwords change to get the correct `.env` file.
+
+If you need separate env variables for different destinations, you can set them with `.env.destination.erb` for the template, which will generate `.env.staging` when run with `mrsk envify -d staging`.
+
+#### bitwarden as a secret store
+
+If you are using open source secret store like bitwarden, you can create `.env.erb` as a template which looks up the secrets. 
+
+You can store `SOME_SECRET` in a secure note in bitwarden vault. 
+
+```
+$ bw list items --search SOME_SECRET | jq
+? Master password: [hidden]
+
+[
+  {
+    "object": "item",
+    "id": "123123123-1232-4224-222f-234234234234",
+    "organizationId": null,
+    "folderId": null,
+    "type": 2,
+    "reprompt": 0,
+    "name": "SOME_SECRET",
+    "notes": "yyy",
+    "favorite": false,
+    "secureNote": {
+      "type": 0
+    },
+    "collectionIds": [],
+    "revisionDate": "2023-02-28T23:54:47.868Z",
+    "creationDate": "2022-11-07T03:16:05.828Z",
+    "deletedDate": null
+  }
+]
+```
+
+and extract the `id` of `SOME_SECRET` from the `json` above and use in the `erb` below.
+
+
+Example `.env.erb` file:
+
+```erb
+<% if (session_token=`bw unlock --raw`.strip) != "" %># Generated by mrsk envify
+SOME_SECRET=<%= `bw get notes 123123123-1232-4224-222f-234234234234 --session #{session_token}` %>
+<% else raise ArgumentError, "session_token token missing" end %>
+```
+
+Then everyone deploying the app can run `mrsk envify` and mrsk will generate `.env` 
+
 
 ### Using another registry than Docker Hub
 
@@ -171,10 +254,10 @@ You can specialize the default Traefik rules by setting labels on the containers
 
 ```
 labels:
-  traefik.http.routers.hey.rule: '''Host(`app.hey.com`)'''
+  traefik.http.routers.hey.rule: Host(\`app.hey.com\`)
 ```
 
-Note: The extra quotes are needed to ensure the rule is passed in correctly!
+Note: The escaped backticks are needed to ensure the rule is passed in correctly and not treated as command substitution by Bash!
 
 This allows you to run multiple applications on the same server sharing the same Traefik instance and port.
 See https://doc.traefik.io/traefik/routing/routers/#rule for a full list of available routing rules.
@@ -197,7 +280,7 @@ servers:
 
 ### Using remote builder for native multi-arch
 
-If you're developing on ARM64 (like Apple Silicon), but you want to deploy on AMD64 (x86 64-bit), you can use multi-archecture images. By default, MRSK will setup a local buildx configuration that does this through QEMU emulation. But this can be quite slow, especially on the first build.
+If you're developing on ARM64 (like Apple Silicon), but you want to deploy on AMD64 (x86 64-bit), you can use multi-architecture images. By default, MRSK will setup a local buildx configuration that does this through QEMU emulation. But this can be quite slow, especially on the first build.
 
 If you want to speed up this process by using a remote AMD64 host to natively build the AMD64 part of the image, while natively building the ARM64 part locally, you can do so using builder options:
 
@@ -237,7 +320,7 @@ This is also a good option if you're running MRSK from a CI server that shares a
 
 ### Using build secrets for new images
 
-Some images need a secret passed in during build time, like a GITHUB_TOKEN to give access to private gem repositories. This can be done by having the secret in ENV, then referencing it in the builder configuration:
+Some images need a secret passed in during build time, like a GITHUB_TOKEN, to give access to private gem repositories. This can be done by having the secret in ENV, then referencing it in the builder configuration:
 
 ```yaml
 builder:
@@ -247,14 +330,15 @@ builder:
 
 This build secret can then be referenced in the Dockerfile:
 
-```
+```dockerfile
 # Copy Gemfiles
 COPY Gemfile Gemfile.lock ./
 
-# Install dependencies, including private repositories via access token
+# Install dependencies, including private repositories via access token (then remove bundle cache with exposed GITHUB_TOKEN)
 RUN --mount=type=secret,id=GITHUB_TOKEN \
   BUNDLE_GITHUB__COM=x-access-token:$(cat /run/secrets/GITHUB_TOKEN) \
-  bundle install
+  bundle install && \
+  rm -rf /usr/local/bundle/cache
 ```
 
 ### Using command arguments for Traefik
@@ -263,11 +347,12 @@ You can customize the traefik command line:
 
 ```yaml
 traefik:
-  accesslog: true
-  accesslog.format: json
-  metrics.prometheus: true
-  metrics.prometheus.buckets: 0.1,0.3,1.2,5.0
+  args:
+    accesslog: true
+    accesslog.format: json
 ```
+
+This will start the traefik container with `--accesslog=true accesslog.format=json`.
 
 ### Configuring build args for new images
 
@@ -314,22 +399,54 @@ accessories:
 
 Now run `mrsk accessory start mysql` to start the MySQL server on 1.1.1.3. See `mrsk accessory` for all the commands possible.
 
-### Using a generated .env file
+### Using Cron
 
-If you're using a centralized secret store, like 1Password, you can create `.env.erb` as a template which looks up the secrets. Example of a .env.erb file:
+You can use a specific container to run your Cron jobs:
 
-```erb
-<% if (session_token = `op signin --account my-one-password-account --raw`.strip) != "" %># Generated by mrsk envify
-GITHUB_TOKEN=<%= `gh config get -h github.com oauth_token`.strip %>
-MRSK_REGISTRY_PASSWORD=<%= `op read "op://Vault/Docker Hub/password" -n --session  #{session_token}` %>
-RAILS_MASTER_KEY=<%= `op read "op://Vault/My App/RAILS_MASTER_SECRET" -n --session #{session_token}` %>
-MYSQL_ROOT_PASSWORD=<%= `op read "op://Vault/My App/MYSQL_ROOT_PASSWORD" -n --session #{session_token}` %>
-<% else raise ArgumentError, "Session token missing" end %>
+```yaml
+servers:
+  cron:
+    hosts:
+      - 192.168.0.1
+    cmd:
+      bash -c "cat config/crontab | crontab - && cron -f"
 ```
 
-This template can safely be checked into git. Then everyone deploying the app can run `mrsk envify` when they setup the app for the first time or passwords change to get the correct `.env` file.
+This assumes the Cron settings are stored in `config/crontab`.
 
-If you need separate env variables for different destinations, you can set them with `.env.destination.erb` for the template, which will generate `.env.staging` when run with `mrsk envify -d staging`.
+### Using audit broadcasts
+
+If you'd like to broadcast audits of deploys, rollbacks, etc to a chatroom or elsewhere, you can configure the `audit_broadcast_cmd` setting with the path to a bin file that will be passed the audit line as the first argument:
+
+```yaml
+audit_broadcast_cmd:
+  bin/audit_broadcast
+```
+
+The broadcast command could look something like:
+
+```bash
+#!/usr/bin/env bash
+curl -q -d content="[My App] ${1}" https://3.basecamp.com/XXXXX/integrations/XXXXX/buckets/XXXXX/chats/XXXXX/lines
+```
+
+That'll post a line like follows to a preconfigured chatbot in Basecamp:
+
+```
+[My App] [dhh] Rolled back to version d264c4e92470ad1bd18590f04466787262f605de
+```
+
+### Using custom healthcheck path or port
+
+MRSK defaults to checking the health of your application again `/up` on port 3000. You can tailor both with the `healthcheck` setting:
+
+```yaml
+healthcheck:
+  path: /healthz
+  port: 4000
+```
+
+This will ensure your application is configured with a traefik label for the healthcheck against `/healthz` and that the pre-deploy healthcheck that MRSK performs is done against the same path on port 4000.
 
 ## Commands
 
@@ -398,7 +515,7 @@ mrsk app exec -i 'bin/rails console'
 ```
 
 
-### Running details to see state of containers
+### Running details to show state of containers
 
 You can see the state of your servers by running `mrsk details`:
 
@@ -448,7 +565,7 @@ If you wish to remove the entire application, including Traefik, containers, ima
 
 ## Stage of development
 
-This is alpha software. Lots of stuff is missing. Lots of stuff will keep moving around for a while.
+This is beta software. Commands may still move around. But we're live in production at [37signals](https://37signals.com).
 
 ## License
 

@@ -1,5 +1,5 @@
 class Mrsk::Commands::Builder < Mrsk::Commands::Base
-  delegate :create, :remove, :push, :pull, :info, to: :target
+  delegate :create, :remove, :push, :clean, :pull, :info, to: :target
 
   def name
     target.class.to_s.remove("Mrsk::Commands::Builder::").underscore

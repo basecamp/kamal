@@ -16,9 +16,7 @@ class Mrsk::Commands::Builder::Native::Remote < Mrsk::Commands::Builder::Native
       "--push",
       "--platform", platform,
       "--builder", builder_name,
-      "-t", config.absolute_image,
-      *build_args,
-      *build_secrets,
+      *build_options,
       "."
   end
 

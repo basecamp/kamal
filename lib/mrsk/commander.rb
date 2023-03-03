@@ -49,22 +49,6 @@ class Mrsk::Commander
     @app ||= Mrsk::Commands::App.new(config)
   end
 
-  def builder
-    @builder ||= Mrsk::Commands::Builder.new(config)
-  end
-
-  def traefik
-    @traefik ||= Mrsk::Commands::Traefik.new(config)
-  end
-
-  def registry
-    @registry ||= Mrsk::Commands::Registry.new(config)
-  end
-
-  def prune
-    @prune ||= Mrsk::Commands::Prune.new(config)
-  end
-
   def accessory(name)
     Mrsk::Commands::Accessory.new(config, name: name)
   end
@@ -73,12 +57,36 @@ class Mrsk::Commander
     @auditor ||= Mrsk::Commands::Auditor.new(config)
   end
 
+  def builder
+    @builder ||= Mrsk::Commands::Builder.new(config)
+  end
+
+  def healthcheck
+    @healthcheck ||= Mrsk::Commands::Healthcheck.new(config)
+  end
+
+  def prune
+    @prune ||= Mrsk::Commands::Prune.new(config)
+  end
+
+  def registry
+    @registry ||= Mrsk::Commands::Registry.new(config)
+  end
+
+  def traefik
+    @traefik ||= Mrsk::Commands::Traefik.new(config)
+  end
+
 
   def with_verbosity(level)
-    old_level = SSHKit.config.output_verbosity
+    old_level = self.verbosity
+
+    self.verbosity = level
     SSHKit.config.output_verbosity = level
+
     yield
   ensure
+    self.verbosity = old_level
     SSHKit.config.output_verbosity = old_level
   end
 

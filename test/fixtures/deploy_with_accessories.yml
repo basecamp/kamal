@@ -27,3 +27,5 @@ accessories:
     port: 6379
     directories:
       - data:/data
+
+readiness_delay: 0

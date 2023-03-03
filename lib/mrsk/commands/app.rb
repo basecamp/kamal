@@ -3,8 +3,9 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
     role = config.role(role)
 
     docker :run,
-      "-d",
+      "--detach",
       "--restart unless-stopped",
+      "--log-opt", "max-size=#{MAX_LOG_SIZE}",
       "--name", service_with_version,
       *role.env_args,
       *config.volume_args,
@@ -17,8 +18,10 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
     docker :start, service_with_version
   end
 
-  def stop
-    pipe current_container_id, xargs(docker(:stop))
+  def stop(version: nil)
+    pipe \
+      version ? container_id_for_version(version) : current_container_id,
+      xargs(docker(:stop))
   end
 
   def info
@@ -29,7 +32,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
   def logs(since: nil, lines: nil, grep: nil)
     pipe \
       current_container_id,
-      "xargs docker logs#{" --since #{since}" if since}#{" -n #{lines}" if lines} 2>&1",
+      "xargs docker logs#{" --since #{since}" if since}#{" --tail #{lines}" if lines} 2>&1",
       ("grep '#{grep}'" if grep)
   end
 
@@ -37,7 +40,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
     run_over_ssh \
       pipe(
         current_container_id,
-        "xargs docker logs -t -n 10 -f 2>&1",
+        "xargs docker logs --timestamps --tail 10 --follow 2>&1",
         (%(grep "#{grep}") if grep)
       ),
       host: host
@@ -71,11 +74,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
 
 
   def current_container_id
-    docker :ps, "-q", *service_filter
-  end
-
-  def container_id_for(container_name:)
-    docker :container, :ls, "-a", "-f", "name=#{container_name}", "-q"
+    docker :ps, "--quiet", *service_filter
   end
 
   def current_running_version
@@ -92,9 +91,19 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
       "head -n 1"
   end
 
+  def all_versions_from_available_containers
+    pipe \
+      docker(:image, :ls, "--format", '"{{.Tag}}"', config.repository),
+      "head -n 1"
+  end
+
 
   def list_containers
-    docker :container, :ls, "-a", *service_filter
+    docker :container, :ls, "--all", *service_filter
+  end
+
+  def list_container_names
+    [ *list_containers, "--format", "'{{ .Names }}'" ]
   end
 
   def remove_container(version:)
@@ -104,7 +113,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
   end
 
   def remove_containers
-    docker :container, :prune, "-f", *service_filter
+    docker :container, :prune, "--force", *service_filter
   end
 
   def list_images
@@ -112,7 +121,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
   end
 
   def remove_images
-    docker :image, :prune, "-a", "-f", *service_filter
+    docker :image, :prune, "--all", "--force", *service_filter
   end
 
 
@@ -123,6 +132,10 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
       else
         config.service_with_version
       end
+    end
+
+    def container_id_for_version(version)
+      container_id_for(container_name: service_with_version(version))    
     end
 
     def service_filter

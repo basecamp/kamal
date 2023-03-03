@@ -17,8 +17,10 @@ module Mrsk::Cli
     class_option :hosts, aliases: "-h", desc: "Run commands on these hosts instead of all (separate by comma)"
     class_option :roles, aliases: "-r", desc: "Run commands on these roles instead of all (separate by comma)"
 
-    class_option :config_file, aliases: "-c", default: "config/deploy.yml", desc: "Path to config file (default: config/deploy.yml)"
-    class_option :destination, aliases: "-d", desc: "Specify destination to be used for config file (west -> deploy.west.yml)"
+    class_option :config_file, aliases: "-c", default: "config/deploy.yml", desc: "Path to config file"
+    class_option :destination, aliases: "-d", desc: "Specify destination to be used for config file (staging -> deploy.staging.yml)"
+
+    class_option :skip_broadcast, aliases: "-B", type: :boolean, default: false, desc: "Skip audit broadcasts"
 
     def initialize(*)
       super
@@ -59,9 +61,14 @@ module Mrsk::Cli
       def print_runtime
         started_at = Time.now
         yield
+        return Time.now - started_at
       ensure
         runtime = Time.now - started_at
         puts "  Finished all in #{sprintf("%.1f seconds", runtime)}"
+      end
+
+      def audit_broadcast(line)
+        run_locally { execute *MRSK.auditor.broadcast(line), verbosity: :debug }
       end
   end
 end

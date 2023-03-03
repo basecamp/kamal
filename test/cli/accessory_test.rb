@@ -14,7 +14,7 @@ class CliAccessoryTest < CliTestCase
   end
 
   test "boot" do
-    assert_match "Running docker run --name app-mysql -d --restart unless-stopped -p 3306:3306 -e [REDACTED] -e MYSQL_ROOT_HOST=% --volume $PWD/app-mysql/etc/mysql/my.cnf:/etc/mysql/my.cnf --volume $PWD/app-mysql/data:/var/lib/mysql --label service=app-mysql mysql:5.7 on 1.1.1.3", run_command("boot", "mysql")
+    assert_match "Running docker run --name app-mysql --detach --restart unless-stopped --log-opt max-size=10m --publish 3306:3306 -e [REDACTED] -e MYSQL_ROOT_HOST=\"%\" --volume $PWD/app-mysql/etc/mysql/my.cnf:/etc/mysql/my.cnf --volume $PWD/app-mysql/data:/var/lib/mysql --label service=\"app-mysql\" mysql:5.7 on 1.1.1.3", run_command("boot", "mysql")
   end
 
   test "exec" do
@@ -28,6 +28,14 @@ class CliAccessoryTest < CliTestCase
     run_command("exec", "mysql", "--reuse", "mysql -v").tap do |output|
       assert_match /Launching command from existing container/, output
       assert_match %r[docker exec app-mysql mysql -v], output
+    end
+  end
+
+  test "remove with confirmation" do
+    run_command("remove", "mysql", "-y").tap do |output|
+      assert_match /docker container stop app-mysql/, output
+      assert_match /docker image prune --all --force --filter label=service=app-mysql/, output
+      assert_match /rm -rf app-mysql/, output
     end
   end
 

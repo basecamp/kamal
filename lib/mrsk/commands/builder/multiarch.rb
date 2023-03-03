@@ -12,9 +12,7 @@ class Mrsk::Commands::Builder::Multiarch < Mrsk::Commands::Builder::Base
       "--push",
       "--platform", "linux/amd64,linux/arm64",
       "--builder", builder_name,
-      "-t", config.absolute_image,
-      *build_args,
-      *build_secrets,
+      *build_options,
       "."
   end
 

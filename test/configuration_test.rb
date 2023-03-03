@@ -78,7 +78,7 @@ class ConfigurationTest < ActiveSupport::TestCase
   end
 
   test "env args" do
-    assert_equal [ "-e", "REDIS_URL=redis://x/y" ], @config.env_args
+    assert_equal [ "-e", "REDIS_URL=\"redis://x/y\"" ], @config.env_args
   end
 
   test "env args with clear and secrets" do
@@ -87,7 +87,7 @@ class ConfigurationTest < ActiveSupport::TestCase
       env: { "clear" => { "PORT" => "3000" }, "secret" => [ "PASSWORD" ] }
     }) })
 
-    assert_equal [ "-e", "PASSWORD=secret123", "-e", "PORT=3000" ], config.env_args
+    assert_equal [ "-e", "PASSWORD=\"secret123\"", "-e", "PORT=\"3000\"" ], config.env_args
     assert config.env_args[1].is_a?(SSHKit::Redaction)
   ensure
     ENV["PASSWORD"] = nil
@@ -98,7 +98,7 @@ class ConfigurationTest < ActiveSupport::TestCase
       env: { "clear" => { "PORT" => "3000" } }
     }) })
 
-    assert_equal [ "-e", "PORT=3000" ], config.env_args
+    assert_equal [ "-e", "PORT=\"3000\"" ], config.env_args
   end
 
   test "env args with only secrets" do
@@ -107,7 +107,7 @@ class ConfigurationTest < ActiveSupport::TestCase
       env: { "secret" => [ "PASSWORD" ] }
     }) })
 
-    assert_equal [ "-e", "PASSWORD=secret123" ], config.env_args
+    assert_equal [ "-e", "PASSWORD=\"secret123\"" ], config.env_args
     assert config.env_args[1].is_a?(SSHKit::Redaction)
   ensure
     ENV["PASSWORD"] = nil
@@ -182,6 +182,6 @@ class ConfigurationTest < ActiveSupport::TestCase
   end
 
   test "to_h" do
-    assert_equal({ :roles=>["web"], :hosts=>["1.1.1.1", "1.1.1.2"], :primary_host=>"1.1.1.1", :version=>"missing", :repository=>"dhh/app", :absolute_image=>"dhh/app:missing", :service_with_version=>"app-missing", :env_args=>["-e", "REDIS_URL=redis://x/y"], :ssh_options=>{:user=>"root", :auth_methods=>["publickey"]}, :volume_args=>["--volume", "/local/path:/container/path"] }, @config.to_h)
+    assert_equal({ :roles=>["web"], :hosts=>["1.1.1.1", "1.1.1.2"], :primary_host=>"1.1.1.1", :version=>"missing", :repository=>"dhh/app", :absolute_image=>"dhh/app:missing", :service_with_version=>"app-missing", :env_args=>["-e", "REDIS_URL=\"redis://x/y\""], :ssh_options=>{:user=>"root", :auth_methods=>["publickey"]}, :volume_args=>["--volume", "/local/path:/container/path"], :healthcheck=>{"path"=>"/up", "port"=>3000 }}, @config.to_h)
   end
 end

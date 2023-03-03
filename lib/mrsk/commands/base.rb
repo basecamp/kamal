@@ -2,6 +2,8 @@ module Mrsk::Commands
   class Base
     delegate :redact, to: Mrsk::Utils
 
+    MAX_LOG_SIZE = "10m"
+
     attr_accessor :config
 
     def initialize(config)
@@ -13,6 +15,10 @@ module Mrsk::Commands
         cmd << " -J #{config.ssh_proxy.jump_proxies}" if config.ssh_proxy
         cmd << " -t #{config.ssh_user}@#{host} '#{command.join(" ")}'"
       end
+    end
+
+    def container_id_for(container_name:)
+      docker :container, :ls, "--all", "--filter", "name=#{container_name}", "--quiet"
     end
 
     private

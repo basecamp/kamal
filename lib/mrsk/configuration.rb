@@ -84,6 +84,10 @@ class Mrsk::Configuration
     "#{repository}:#{version}"
   end
 
+  def latest_image
+    "#{repository}:latest"
+  end
+
   def service_with_version
     "#{service}-#{version}"
   end
@@ -105,6 +109,7 @@ class Mrsk::Configuration
     end
   end
 
+
   def ssh_user
     if raw_config.ssh.present?
       raw_config.ssh["user"] || "root"
@@ -124,6 +129,22 @@ class Mrsk::Configuration
     { user: ssh_user, proxy: ssh_proxy, auth_methods: [ "publickey" ] }.compact
   end
 
+  def audit_broadcast_cmd
+    raw_config.audit_broadcast_cmd
+  end
+
+  def healthcheck
+    { "path" => "/up", "port" => 3000 }.merge(raw_config.healthcheck || {})
+  end
+
+  def readiness_delay
+    raw_config.readiness_delay || 7
+  end
+
+  def valid?
+    ensure_required_keys_present && ensure_env_available
+  end
+
   def to_h
     {
       roles: role_names,
@@ -137,7 +158,8 @@ class Mrsk::Configuration
       volume_args: volume_args,
       ssh_options: ssh_options,
       builder: raw_config.builder,
-      accessories: raw_config.accessories
+      accessories: raw_config.accessories,
+      healthcheck: healthcheck
     }.compact
   end
 

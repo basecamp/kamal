@@ -1,5 +1,5 @@
 class Mrsk::Cli::Main < Mrsk::Cli::Base
-  desc "setup", "Setup all accessories and deploy the app to servers"
+  desc "setup", "Setup all accessories and deploy app to servers"
   def setup
     print_runtime do
       invoke "mrsk:cli:server:bootstrap"
@@ -8,9 +8,9 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
     end
   end
 
-  desc "deploy", "Deploy the app to servers"
+  desc "deploy", "Deploy app to servers"
   def deploy
-    print_runtime do
+    runtime = print_runtime do
       say "Ensure Docker is installed...", :magenta
       invoke "mrsk:cli:server:bootstrap"
 
@@ -23,37 +23,59 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
       say "Ensure Traefik is running...", :magenta
       invoke "mrsk:cli:traefik:boot"
 
+      say "Ensure app can pass healthcheck...", :magenta
+      invoke "mrsk:cli:healthcheck:perform"
+
       invoke "mrsk:cli:app:boot"
 
       say "Prune old containers and images...", :magenta
       invoke "mrsk:cli:prune:all"
     end
+
+    audit_broadcast "Deployed app in #{runtime.to_i} seconds" unless options[:skip_broadcast]
   end
 
-  desc "redeploy", "Deploy new version of the app to servers (without bootstrapping servers, starting Traefik, pruning, and registry login)"
+  desc "redeploy", "Deploy app to servers without bootstrapping servers, starting Traefik, pruning, and registry login"
   def redeploy
-    print_runtime do
+    runtime = print_runtime do
       say "Build and push app image...", :magenta
       invoke "mrsk:cli:build:deliver"
 
+      say "Ensure app can pass healthcheck...", :magenta
+      invoke "mrsk:cli:healthcheck:perform"
+
       invoke "mrsk:cli:app:boot"
     end
+
+    audit_broadcast "Redeployed app in #{runtime.to_i} seconds" unless options[:skip_broadcast]
   end
 
-  desc "rollback [VERSION]", "Rollback the app to VERSION"
+  desc "rollback [VERSION]", "Rollback app to VERSION"
   def rollback(version)
     MRSK.version = version
 
-    cli = self
+    if container_name_available?(MRSK.config.service_with_version)
+      say "Start version #{version}, then wait #{MRSK.config.readiness_delay}s for app to boot before stopping the old version...", :magenta
 
-    cli.say "Stop current version, then start version #{version}...", :magenta
-    on(MRSK.hosts) do
-      execute *MRSK.app.stop, raise_on_non_zero_exit: false
-      execute *MRSK.app.start
+      cli = self
+
+      on(MRSK.hosts) do |host|
+        old_version = capture_with_info(*MRSK.app.current_running_version).strip.presence
+
+        execute *MRSK.app.start
+
+        sleep MRSK.config.readiness_delay
+
+        execute *MRSK.app.stop(version: old_version), raise_on_non_zero_exit: false
+      end
+
+      audit_broadcast "Rolled back app to version #{version}" unless options[:skip_broadcast]
+    else
+      say "The app version '#{version}' is not available as a container (use 'mrsk app containers' for available versions)", :red
     end
   end
 
-  desc "details", "Display details about Traefik and app containers"
+  desc "details", "Show details about all containers"
   def details
     invoke "mrsk:cli:traefik:details"
     invoke "mrsk:cli:app:details"
@@ -67,7 +89,7 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
     end
   end
 
-  desc "config", "Show combined config"
+  desc "config", "Show combined config (including secrets!)"
   def config
     run_locally do
       puts MRSK.config.to_h.to_yaml
@@ -107,42 +129,60 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
   desc "envify", "Create .env by evaluating .env.erb (or .env.staging.erb -> .env.staging when using -d staging)"
   def envify
     if destination = options[:destination]
-      File.write(".env.#{destination}", ERB.new(IO.read(Pathname.new(File.expand_path(".env.#{destination}.erb")))).result)
+      env_template_path = ".env.#{destination}.erb"
+      env_path          = ".env.#{destination}"
     else
-      File.write(".env", ERB.new(IO.read(Pathname.new(File.expand_path(".env.erb")))).result)
+      env_template_path = ".env.erb"
+      env_path          = ".env"
+    end
+
+    File.write(env_path, ERB.new(File.read(env_template_path)).result, perm: 0600)
+  end
+
+  desc "remove", "Remove Traefik, app, accessories, and registry session from servers"
+  option :confirmed, aliases: "-y", type: :boolean, default: false, desc: "Proceed without confirmation question"
+  def remove
+    if options[:confirmed] || ask("This will remove all containers and images. Are you sure?", limited_to: %w( y N ), default: "N") == "y"
+      invoke "mrsk:cli:traefik:remove", [], options.without(:confirmed)
+      invoke "mrsk:cli:app:remove", [], options.without(:confirmed)
+      invoke "mrsk:cli:accessory:remove", [ "all" ], options
+      invoke "mrsk:cli:registry:logout", [], options.without(:confirmed)
     end
   end
 
-  desc "remove", "Remove Traefik, app, and registry session from servers"
-  def remove
-    invoke "mrsk:cli:traefik:remove"
-    invoke "mrsk:cli:app:remove"
-    invoke "mrsk:cli:registry:logout"
-  end
-
-  desc "version", "Display the MRSK version"
+  desc "version", "Show MRSK version"
   def version
     puts Mrsk::VERSION
   end
 
-  desc "accessory", "Manage the accessories"
+  desc "accessory", "Manage accessories (db/redis/search)"
   subcommand "accessory", Mrsk::Cli::Accessory
 
-  desc "app", "Manage the application"
+  desc "app", "Manage application"
   subcommand "app", Mrsk::Cli::App
 
-  desc "build", "Build the application image"
+  desc "build", "Build application image"
   subcommand "build", Mrsk::Cli::Build
+
+  desc "healthcheck", "Healthcheck application"
+  subcommand "healthcheck", Mrsk::Cli::Healthcheck
 
   desc "prune", "Prune old application images and containers"
   subcommand "prune", Mrsk::Cli::Prune
 
-  desc "registry", "Login and out of the image registry"
+  desc "registry", "Login and -out of the image registry"
   subcommand "registry", Mrsk::Cli::Registry
 
   desc "server", "Bootstrap servers with Docker"
   subcommand "server", Mrsk::Cli::Server
 
-  desc "traefik", "Manage the Traefik load balancer"
+  desc "traefik", "Manage Traefik load balancer"
   subcommand "traefik", Mrsk::Cli::Traefik
+
+  private
+    def container_name_available?(container_name, host: MRSK.primary_host)
+      container_names = nil
+      on(host) { container_names = capture_with_info(*MRSK.app.list_container_names).split("\n") }
+      Array(container_names).include?(container_name)
+    end
 end
