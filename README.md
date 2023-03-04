@@ -354,6 +354,15 @@ traefik:
 
 This will start the traefik container with `--accesslog=true accesslog.format=json`.
 
+### Traefik's host port binding
+
+By default Traefik binds to port 80 of the host machine, it can be configured to use an alternative port:
+
+```yaml
+traefik:
+  host_port: 8080
+```
+
 ### Configuring build args for new images
 
 Build arguments that aren't secret can also be configured:
