@@ -1,8 +1,10 @@
 name: Docker
 
 on:
-  push:
-    branches: main
+  release:
+    types: [created]
+    tags:
+      - 'v*'
 
 jobs:
   build-and-push-image:
@@ -14,6 +16,10 @@ jobs:
       -
         name: Checkout
         uses: actions/checkout@v3
+      -
+        name: Extract Version Number
+        id: extract_version
+        run: echo "::set-output name=version::${{ github.ref | replace('refs/tags/v', '') }}"
       -
         name: Set up QEMU
         uses: docker/setup-qemu-action@v2
@@ -34,4 +40,6 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ghcr.io/mrsked/mrsk:latest
+          tags: |
+            ghcr.io/mrsked/mrsk:latest
+            ghcr.io/mrsked/mrsk:${{ steps.extract_version.outputs.version }}
