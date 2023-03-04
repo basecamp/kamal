@@ -80,7 +80,7 @@ DB_PASSWORD=secret123
 
 ### Using a generated .env file
 
-#### 1password as a secret store
+#### 1Password as a secret store
 
 If you're using a centralized secret store, like 1Password, you can create `.env.erb` as a template which looks up the secrets. Example of a .env.erb file:
 
@@ -97,7 +97,7 @@ This template can safely be checked into git. Then everyone deploying the app ca
 
 If you need separate env variables for different destinations, you can set them with `.env.destination.erb` for the template, which will generate `.env.staging` when run with `mrsk envify -d staging`.
 
-#### bitwarden as a secret store
+#### Bitwarden as a secret store
 
 If you are using open source secret store like bitwarden, you can create `.env.erb` as a template which looks up the secrets. 
 
@@ -367,7 +367,6 @@ builder:
 This build argument can then be used in the Dockerfile:
 
 ```
-# Private repositories need an access token during the build
 ARG RUBY_VERSION
 FROM ruby:$RUBY_VERSION-slim as base
 ```
