@@ -10,7 +10,8 @@ class Mrsk::Commands::Builder::Base < Mrsk::Commands::Base
   end
 
   def build_options
-    [ *build_tags, *build_labels, *build_args, *build_secrets ]
+    [ *build_tags, *build_labels, *build_args, *build_secrets, *build_dockerfile ]
+  end
   end
 
   private
@@ -30,11 +31,19 @@ class Mrsk::Commands::Builder::Base < Mrsk::Commands::Base
       argumentize "--secret", secrets.collect { |secret| [ "id", secret ] }
     end
 
+    def build_dockerfile
+      argumentize "--file", dockerfile
+    end
+
     def args
       (config.builder && config.builder["args"]) || {}
     end
 
     def secrets
       (config.builder && config.builder["secrets"]) || []
+    end
+
+    def dockerfile
+      (config.builder && config.builder["dockerfile"]) || "Dockerfile"
     end
 end
