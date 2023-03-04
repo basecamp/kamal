@@ -19,7 +19,7 @@ jobs:
       -
         name: Extract Version Number
         id: extract_version
-        run: echo "::set-output name=version::${{ github.ref | replace('refs/tags/v', '') }}"
+        run: echo "::set-output name=version::${{ github.ref | replace('refs/tags/', '') }}"
       -
         name: Set up QEMU
         uses: docker/setup-qemu-action@v2
