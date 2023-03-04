@@ -14,7 +14,6 @@ COPY lib/mrsk/version.rb /mrsk/lib/mrsk/version.rb
 RUN apk add --no-cache --update build-base git docker openrc \
     && rc-update add docker boot \
     && gem install bundler --version=2.4.3 \
-    && mkdir -p /mrsk \
     && bundle install
 
 # Copy the rest of our application code into the container.
