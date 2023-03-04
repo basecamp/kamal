@@ -12,6 +12,9 @@ class Mrsk::Commands::Builder::Base < Mrsk::Commands::Base
   def build_options
     [ *build_tags, *build_labels, *build_args, *build_secrets, *build_dockerfile ]
   end
+
+  def build_context
+    context
   end
 
   private
@@ -45,5 +48,9 @@ class Mrsk::Commands::Builder::Base < Mrsk::Commands::Base
 
     def dockerfile
       (config.builder && config.builder["dockerfile"]) || "Dockerfile"
+    end
+
+    def context
+      (config.builder && config.builder["context"]) || "."
     end
 end

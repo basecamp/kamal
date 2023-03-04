@@ -58,6 +58,13 @@ class CommandsBuilderTest < ActiveSupport::TestCase
       builder.target.build_options.join(" ")
   end
 
+  test "build context" do
+    builder = new_builder_command(builder: { "context" => ".." })
+    assert_equal \
+      "docker buildx build --push --platform linux/amd64,linux/arm64 --builder mrsk-app-multiarch -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile ..",
+      builder.push.join(" ")
+  end
+
   test "native push with build args" do
     builder = new_builder_command(builder: { "multiarch" => false, "args" => { "a" => 1, "b" => 2 } })
     assert_equal \
