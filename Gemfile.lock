@@ -3,7 +3,9 @@ PATH
   specs:
     mrsk (0.8.4)
       activesupport (>= 7.0)
+      bcrypt_pbkdf (~> 1.0)
       dotenv (~> 2.8)
+      ed25519 (~> 1.2)
       sshkit (~> 1.21)
       thor (~> 1.2)
       zeitwerk (~> 2.5)
@@ -98,9 +100,7 @@ PLATFORMS
   x86_64-linux
 
 DEPENDENCIES
-  bcrypt_pbkdf
   debug
-  ed25519
   mocha
   mrsk!
   railties
