@@ -33,11 +33,11 @@ class Mrsk::Commands::Healthcheck < Mrsk::Commands::Base
 
   private
     def container_name
-      "healthcheck-#{config.service}"
+      [ "healthcheck", config.service, config.destination ].compact.join("-")
     end
 
     def container_name_with_version
-      "healthcheck-#{config.service_with_version}"
+      "#{container_name}-#{config.version}"
     end
 
     def container_id

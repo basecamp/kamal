@@ -22,6 +22,14 @@ class CommandsHealthcheckTest < ActiveSupport::TestCase
       new_command.run.join(" ")
   end
 
+  test "run with destination" do
+    @destination = "staging"
+
+    assert_equal \
+      "docker run --detach --name healthcheck-app-staging-123 --publish 3999:3000 --label service=healthcheck-app-staging dhh/app:123",
+      new_command.run.join(" ")
+  end
+
   test "curl" do
     assert_equal \
       "curl --silent --output /dev/null --write-out '%{http_code}' --max-time 2 http://localhost:3999/up",
@@ -42,14 +50,44 @@ class CommandsHealthcheckTest < ActiveSupport::TestCase
       new_command.stop.join(" ")
   end
 
+  test "stop with destination" do
+    @destination = "staging"
+
+    assert_equal \
+      "docker container ls --all --filter name=healthcheck-app-staging --quiet | xargs docker stop",
+      new_command.stop.join(" ")
+  end
+
   test "remove" do
     assert_equal \
       "docker container ls --all --filter name=healthcheck-app --quiet | xargs docker container rm",
       new_command.remove.join(" ")
   end
 
+  test "remove with destination" do
+    @destination = "staging"
+
+    assert_equal \
+      "docker container ls --all --filter name=healthcheck-app-staging --quiet | xargs docker container rm",
+      new_command.remove.join(" ")
+  end
+
+  test "logs" do
+    assert_equal \
+      "docker container ls --all --filter name=healthcheck-app --quiet | xargs docker logs --tail 50 2>&1",
+      new_command.logs.join(" ")
+  end
+
+  test "logs with destination" do
+    @destination = "staging"
+
+    assert_equal \
+      "docker container ls --all --filter name=healthcheck-app-staging --quiet | xargs docker logs --tail 50 2>&1",
+      new_command.logs.join(" ")
+  end
+
   private
     def new_command
-      Mrsk::Commands::Healthcheck.new(Mrsk::Configuration.new(@config, version: "123"))
+      Mrsk::Commands::Healthcheck.new(Mrsk::Configuration.new(@config, destination: @destination, version: "123"))
     end
 end
