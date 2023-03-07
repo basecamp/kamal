@@ -150,9 +150,13 @@ The default registry is Docker Hub, but you can change it using `registry/server
 ```yaml
 registry:
   server: registry.digitalocean.com
-  username: registry-user-name
-  password: <%= ENV.fetch("MRSK_REGISTRY_PASSWORD") %>
+  username:  
+    - DOCKER_REGISTRY_TOKEN
+  password: 
+    - DOCKER_REGISTRY_TOKEN
 ```
+
+A reference to secret `DOCKER_REGISTRY_TOKEN` will look for `ENV["DOCKER_REGISTRY_TOKEN"]` on the machine running MRSK.
 
 ### Using a different SSH user than root
 
