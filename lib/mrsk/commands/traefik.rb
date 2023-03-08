@@ -4,7 +4,7 @@ class Mrsk::Commands::Traefik < Mrsk::Commands::Base
       "--detach",
       "--restart", "unless-stopped",
       "--log-opt", "max-size=#{MAX_LOG_SIZE}",
-      "--publish", "80:80",
+      "--publish", port,
       "--volume", "/var/run/docker.sock:/var/run/docker.sock",
       "traefik",
       "--providers.docker",
@@ -43,6 +43,10 @@ class Mrsk::Commands::Traefik < Mrsk::Commands::Base
 
   def remove_image
     docker :image, :prune, "--all", "--force", "--filter", "label=org.opencontainers.image.title=Traefik"
+  end
+
+  def port
+    "#{config.raw_config.traefik.fetch("host_port", "80")}:80"
   end
 
   private
