@@ -127,8 +127,10 @@ definitions:
     required: [username, password]
     properties:
       username:
-        type: string
-        description: Username for the Docker registry.
+        anyOf:
+          - type: string
+            description: Username for the Docker registry.
+          - $ref: '#/definitions/secrets-list'
       password:
         anyOf:
         - type: string
@@ -196,6 +198,9 @@ definitions:
   traefik:
     type: object
     properties:
+      host_port:
+        type: number
+        example: 80
       args:
         type: object
         description: Traefik arguments
@@ -214,7 +219,7 @@ definitions:
     properties:
       path:
         type: string
-        example: '/healtz'
+        example: '/healthz'
       port:
         type: number
         example: 3000
