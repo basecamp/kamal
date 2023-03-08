@@ -42,4 +42,9 @@ class CommanderTest < ActiveSupport::TestCase
     @mrsk.specific_primary!
     assert_equal [ "1.1.1.1" ], @mrsk.hosts
   end
+
+  test "primary_host with specific hosts via role" do
+    @mrsk.specific_roles = "web"
+    assert_equal "1.1.1.1", @mrsk.primary_host
+  end
 end

@@ -2,7 +2,7 @@ class Mrsk::Commands::Registry < Mrsk::Commands::Base
   delegate :registry, to: :config
 
   def login
-    docker :login, registry["server"], "-u", redact(registry["username"]), "-p", redact(lookup_password)
+    docker :login, registry["server"], "-u", redact(lookup("username")), "-p", redact(lookup("password"))
   end
 
   def logout
@@ -10,11 +10,11 @@ class Mrsk::Commands::Registry < Mrsk::Commands::Base
   end
 
   private
-    def lookup_password
-      if registry["password"].is_a?(Array)
-        ENV.fetch(registry["password"].first).dup
+    def lookup(key)
+      if registry[key].is_a?(Array)
+        ENV.fetch(registry[key].first).dup
       else
-        registry["password"]
+        registry[key]
       end
     end
 end
