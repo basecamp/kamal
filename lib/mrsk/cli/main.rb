@@ -11,7 +11,7 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
   desc "deploy", "Deploy app to servers"
   def deploy
     runtime = print_runtime do
-      say "Ensure Docker is installed...", :magenta
+      say "Ensure curl and Docker are installed...", :magenta
       invoke "mrsk:cli:server:bootstrap"
 
       say "Log into image registry...", :magenta
@@ -173,7 +173,7 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
   desc "registry", "Login and -out of the image registry"
   subcommand "registry", Mrsk::Cli::Registry
 
-  desc "server", "Bootstrap servers with Docker"
+  desc "server", "Bootstrap servers with curl and Docker"
   subcommand "server", Mrsk::Cli::Server
 
   desc "traefik", "Manage Traefik load balancer"
