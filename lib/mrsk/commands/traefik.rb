@@ -45,8 +45,9 @@ class Mrsk::Commands::Traefik < Mrsk::Commands::Base
     docker :image, :prune, "--all", "--force", "--filter", "label=org.opencontainers.image.title=Traefik"
   end
 
-  def port
-    "#{config.raw_config.traefik.fetch("host_port", "80")}:80"
+  def port    
+    traefik_port = config.raw_config.dig(:traefik, "host_port") || 80
+    "#{traefik_port}:80"
   end
 
   private
