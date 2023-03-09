@@ -106,7 +106,7 @@ definitions:
     type: object
     description: Environment variables for the service.
     additionalProperties:
-      type: string
+      type: [boolean, number, string]
 
   env-grouped:
     type: object
@@ -199,14 +199,14 @@ definitions:
     type: object
     properties:
       host_port:
-        type: number
+        type: [number, string]
         example: 80
       args:
         type: object
         description: Traefik arguments
         example: {'accesslog': true, 'accesslog.format': 'json'}
         items:
-          type: string
+          type: [boolean, number, string]
 
   volumes:
     type: array
@@ -221,5 +221,5 @@ definitions:
         type: string
         example: '/healthz'
       port:
-        type: number
+        type: [number, string]
         example: 3000
