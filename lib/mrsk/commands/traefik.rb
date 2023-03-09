@@ -1,4 +1,8 @@
 class Mrsk::Commands::Traefik < Mrsk::Commands::Base
+  delegate :optionize, to: Mrsk::Utils
+
+  CONTAINER_PORT = 80
+
   def run
     docker :run, "--name traefik",
       "--detach",
@@ -9,7 +13,7 @@ class Mrsk::Commands::Traefik < Mrsk::Commands::Base
       "traefik",
       "--providers.docker",
       "--log.level=DEBUG",
-      *cmd_args
+      *cmd_option_args
   end
 
   def start
@@ -45,12 +49,20 @@ class Mrsk::Commands::Traefik < Mrsk::Commands::Base
     docker :image, :prune, "--all", "--force", "--filter", "label=org.opencontainers.image.title=Traefik"
   end
 
-  def port
-    "#{config.raw_config.traefik.fetch("host_port", "80")}:80"
+  def port    
+    "#{host_port}:#{CONTAINER_PORT}"
   end
 
   private
-    def cmd_args
-      (config.raw_config.dig(:traefik, "args") || { }).collect { |(key, value)| [ "--#{key}", value ] }.flatten
+    def cmd_option_args
+      if args = config.raw_config.dig(:traefik, "args")
+        optionize args
+      else
+        []
+      end
+    end
+
+    def host_port
+      config.raw_config.dig(:traefik, "host_port") || CONTAINER_PORT
     end
 end

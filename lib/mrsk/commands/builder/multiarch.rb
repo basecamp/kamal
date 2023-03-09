@@ -13,7 +13,7 @@ class Mrsk::Commands::Builder::Multiarch < Mrsk::Commands::Builder::Base
       "--platform", "linux/amd64,linux/arm64",
       "--builder", builder_name,
       *build_options,
-      "."
+      build_context
   end
 
   def info

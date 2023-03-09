@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    mrsk (0.8.4)
+    mrsk (0.9.0)
       activesupport (>= 7.0)
       bcrypt_pbkdf (~> 1.0)
       dotenv (~> 2.8)

@@ -5,7 +5,7 @@ module Mrsk::Utils
   def argumentize(argument, attributes, redacted: false)
     Array(attributes).flat_map do |key, value|
       if value.present?
-        escaped_pair = [ key, value.to_s.dump.gsub(/`/, '\\\\`') ].join("=")
+        escaped_pair = [ key, escape_shell_value(value) ].join("=")
         [ argument, redacted ? redact(escaped_pair) : escaped_pair ]
       else
         [ argument, key ]
@@ -23,8 +23,18 @@ module Mrsk::Utils
     end
   end
 
+  # Returns a list of shell-dashed option arguments. If the value is true, it's treated like a value-less option.
+  def optionize(args)
+    args.collect { |(key, value)| [ "--#{key}", value == true ? nil : escape_shell_value(value) ] }.flatten.compact
+  end
+
   # Copied from SSHKit::Backend::Abstract#redact to be available inside Commands classes
   def redact(arg) # Used in execute_command to hide redact() args a user passes in
     arg.to_s.extend(SSHKit::Redaction) # to_s due to our inability to extend Integer, etc
+  end
+
+  # Escape a value to make it safe for shell use.
+  def escape_shell_value(value)
+    value.to_s.dump.gsub(/`/, '\\\\`')
   end
 end

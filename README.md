@@ -282,6 +282,27 @@ servers:
       my-label: "50"
 ```
 
+### Using container options
+
+You can specialize the options used to start containers using the `options` definitions:
+
+```yaml
+servers:
+  web:
+    - 192.168.0.1
+    - 192.168.0.2
+  job:
+    hosts:
+      - 192.168.0.3
+      - 192.168.0.4
+    cmd: bin/jobs
+    options:
+      cap-add: true
+      cpu-count: 4
+```
+
+That'll start the job containers with `docker run ... --cap-add --cpu-count 4 ...`.
+
 ### Using remote builder for native multi-arch
 
 If you're developing on ARM64 (like Apple Silicon), but you want to deploy on AMD64 (x86 64-bit), you can use multi-architecture images. By default, MRSK will setup a local buildx configuration that does this through QEMU emulation. But this can be quite slow, especially on the first build.
@@ -321,6 +342,26 @@ builder:
 ```
 
 This is also a good option if you're running MRSK from a CI server that shares architecture with the deployment servers.
+
+### Using a different Dockerfile or context when building
+
+If you need to pass a different Dockerfile or context to the build command (e.g. if you're using a monorepo or you have
+different Dockerfiles), you can do so in the builder options:
+
+```yaml
+# Use a different Dockerfile
+builder:
+  dockerfile: Dockerfile.xyz
+
+# Set context
+builder:
+  context: ".."
+
+# Set Dockerfile and context
+builder:
+  dockerfile: "../Dockerfile.xyz"
+  context: ".."
+```
 
 ### Using build secrets for new images
 
