@@ -23,8 +23,8 @@ module Mrsk::Utils
     end
   end
 
-  # Returns a list of shell-dashed arguments to be used to start a command.
-  def argumentize_for_cmd(args)
+  # Returns a list of shell-dashed option arguments.
+  def optionize(args)
     args.collect { |(key, value)| [ "--#{key}", escape_shell_value(value) ] }.flatten
   end
 

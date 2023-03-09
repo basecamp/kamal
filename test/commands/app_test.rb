@@ -34,12 +34,12 @@ class CommandsAppTest < ActiveSupport::TestCase
       @app.run.join(" ")
   end
 
-  test "run with cmd args" do
-    @config[:servers] = { "web" => [ "1.1.1.1" ], "jobs" => { "hosts" => [ "1.1.1.2" ], "cmd" => "bin/jobs", "args" => { "mount" => "somewhere" } } }
+  test "run with custom options" do
+    @config[:servers] = { "web" => [ "1.1.1.1" ], "jobs" => { "hosts" => [ "1.1.1.2" ], "cmd" => "bin/jobs", "options" => { "mount" => "somewhere" } } }
     @app = Mrsk::Commands::App.new Mrsk::Configuration.new(@config).tap { |c| c.version = "999" }
 
     assert_equal \
-      "docker run --detach --restart unless-stopped --log-opt max-size=10m --name app-999 -e RAILS_MASTER_KEY=\"456\" --label service=\"app\" --label role=\"jobs\" dhh/app:999 bin/jobs --mount \"somewhere\"",
+      "docker run --detach --restart unless-stopped --log-opt max-size=10m --name app-999 -e RAILS_MASTER_KEY=\"456\" --label service=\"app\" --label role=\"jobs\" --mount \"somewhere\" dhh/app:999 bin/jobs",
       @app.run(role: :jobs).join(" ")
   end
 

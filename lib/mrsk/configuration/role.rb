@@ -1,5 +1,5 @@
 class Mrsk::Configuration::Role
-  delegate :argumentize, :argumentize_env_with_secrets, :argumentize_for_cmd, to: Mrsk::Utils
+  delegate :argumentize, :argumentize_env_with_secrets, :optionize, to: Mrsk::Utils
 
   attr_accessor :name
 
@@ -35,9 +35,9 @@ class Mrsk::Configuration::Role
     specializations["cmd"]
   end
 
-  def cmd_args
-    if args = specializations["args"]
-      argumentize_for_cmd args
+  def option_args
+    if args = specializations["options"]
+      optionize args
     else
       []
     end
