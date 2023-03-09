@@ -10,6 +10,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
       *role.env_args,
       *config.volume_args,
       *role.label_args,
+      *role.option_args,
       config.absolute_image,
       role.cmd
   end

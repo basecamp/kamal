@@ -1,4 +1,6 @@
 class Mrsk::Commands::Traefik < Mrsk::Commands::Base
+  delegate :optionize, to: Mrsk::Utils
+
   CONTAINER_PORT = 80
 
   def run
@@ -11,7 +13,7 @@ class Mrsk::Commands::Traefik < Mrsk::Commands::Base
       "traefik",
       "--providers.docker",
       "--log.level=DEBUG",
-      *cmd_args
+      *cmd_option_args
   end
 
   def start
@@ -52,9 +54,9 @@ class Mrsk::Commands::Traefik < Mrsk::Commands::Base
   end
 
   private
-    def cmd_args
+    def cmd_option_args
       if args = config.raw_config.dig(:traefik, "args")
-        argumentize_for_cmd args
+        optionize args
       else
         []
       end
