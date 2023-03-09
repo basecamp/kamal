@@ -80,7 +80,7 @@ DB_PASSWORD=secret123
 
 ### Using a generated .env file
 
-#### 1password as a secret store
+#### 1Password as a secret store
 
 If you're using a centralized secret store, like 1Password, you can create `.env.erb` as a template which looks up the secrets. Example of a .env.erb file:
 
@@ -97,7 +97,7 @@ This template can safely be checked into git. Then everyone deploying the app ca
 
 If you need separate env variables for different destinations, you can set them with `.env.destination.erb` for the template, which will generate `.env.staging` when run with `mrsk envify -d staging`.
 
-#### bitwarden as a secret store
+#### Bitwarden as a secret store
 
 If you are using open source secret store like bitwarden, you can create `.env.erb` as a template which looks up the secrets. 
 
@@ -150,9 +150,13 @@ The default registry is Docker Hub, but you can change it using `registry/server
 ```yaml
 registry:
   server: registry.digitalocean.com
-  username: registry-user-name
-  password: <%= ENV.fetch("MRSK_REGISTRY_PASSWORD") %>
+  username:  
+    - DOCKER_REGISTRY_TOKEN
+  password: 
+    - DOCKER_REGISTRY_TOKEN
 ```
+
+A reference to secret `DOCKER_REGISTRY_TOKEN` will look for `ENV["DOCKER_REGISTRY_TOKEN"]` on the machine running MRSK.
 
 ### Using a different SSH user than root
 
@@ -354,6 +358,15 @@ traefik:
 
 This will start the traefik container with `--accesslog=true accesslog.format=json`.
 
+### Traefik's host port binding
+
+By default Traefik binds to port 80 of the host machine, it can be configured to use an alternative port:
+
+```yaml
+traefik:
+  host_port: 8080
+```
+
 ### Configuring build args for new images
 
 Build arguments that aren't secret can also be configured:
@@ -367,7 +380,6 @@ builder:
 This build argument can then be used in the Dockerfile:
 
 ```
-# Private repositories need an access token during the build
 ARG RUBY_VERSION
 FROM ruby:$RUBY_VERSION-slim as base
 ```

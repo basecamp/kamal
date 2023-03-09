@@ -30,6 +30,17 @@ class CommandsRegistryTest < ActiveSupport::TestCase
     ENV.delete("MRSK_REGISTRY_PASSWORD")
   end
 
+  test "registry login with ENV username" do
+    ENV["MRSK_REGISTRY_USERNAME"] = "also-secret"
+    @config[:registry]["username"] = [ "MRSK_REGISTRY_USERNAME" ]
+
+    assert_equal \
+      "docker login hub.docker.com -u also-secret -p secret",
+      @registry.login.join(" ")
+  ensure
+    ENV.delete("MRSK_REGISTRY_USERNAME")
+  end
+
   test "registry logout" do
     assert_equal \
       "docker logout hub.docker.com",

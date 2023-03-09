@@ -6,5 +6,3 @@ gemspec
 gem "debug"
 gem "mocha"
 gem "railties"
-gem "ed25519"
-gem "bcrypt_pbkdf"
