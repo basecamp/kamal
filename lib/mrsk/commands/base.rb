@@ -1,6 +1,6 @@
 module Mrsk::Commands
   class Base
-    delegate :redact, to: Mrsk::Utils
+    delegate :redact, :argumentize_for_cmd, to: Mrsk::Utils
 
     MAX_LOG_SIZE = "10m"
 

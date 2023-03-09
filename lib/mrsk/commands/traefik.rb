@@ -53,7 +53,11 @@ class Mrsk::Commands::Traefik < Mrsk::Commands::Base
 
   private
     def cmd_args
-      (config.raw_config.dig(:traefik, "args") || { }).collect { |(key, value)| [ "--#{key}", value ] }.flatten
+      if args = config.raw_config.dig(:traefik, "args")
+        argumentize_for_cmd args
+      else
+        []
+      end
     end
 
     def host_port
