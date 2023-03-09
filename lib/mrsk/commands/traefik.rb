@@ -1,4 +1,6 @@
 class Mrsk::Commands::Traefik < Mrsk::Commands::Base
+  delegate :argumentize_for_cmd, to: Mrsk::Utils
+
   CONTAINER_PORT = 80
 
   def run
