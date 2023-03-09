@@ -15,7 +15,7 @@ class ConfigurationTest < ActiveSupport::TestCase
     @config = Mrsk::Configuration.new(@deploy)
 
     @deploy_with_roles = @deploy.dup.merge({
-      servers: { "web" => [ "1.1.1.1", "1.1.1.2" ], "workers" => { "hosts" => [ "1.1.1.3", "1.1.1.4" ] } } })
+      servers: { "web" => [ "1.1.1.1", "1.1.1.2" ], "workers" => { "hosts" => [ "1.1.1.1", "1.1.1.3" ] } } })
 
     @config_with_roles = Mrsk::Configuration.new(@deploy_with_roles)
   end
@@ -48,7 +48,7 @@ class ConfigurationTest < ActiveSupport::TestCase
 
   test "all hosts" do
     assert_equal [ "1.1.1.1", "1.1.1.2"], @config.all_hosts
-    assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3", "1.1.1.4" ], @config_with_roles.all_hosts
+    assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3" ], @config_with_roles.all_hosts
   end
 
   test "primary web host" do
@@ -62,7 +62,7 @@ class ConfigurationTest < ActiveSupport::TestCase
     @deploy_with_roles[:servers]["workers"]["traefik"] = true
     config = Mrsk::Configuration.new(@deploy_with_roles)
 
-    assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3", "1.1.1.4" ], config.traefik_hosts
+    assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3" ], config.traefik_hosts
   end
 
   test "version" do
