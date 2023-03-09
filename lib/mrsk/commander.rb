@@ -69,8 +69,8 @@ class Mrsk::Commander
     Mrsk::Commands::Accessory.new(config, name: name)
   end
 
-  def auditor
-    @auditor ||= Mrsk::Commands::Auditor.new(config)
+  def auditor(role: nil)
+    Mrsk::Commands::Auditor.new(config, role: role)
   end
 
   def builder
