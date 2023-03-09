@@ -1,5 +1,5 @@
 class Mrsk::Configuration::Role
-  delegate :argumentize, :argumentize_env_with_secrets, to: Mrsk::Utils
+  delegate :argumentize, :argumentize_env_with_secrets, :argumentize_for_cmd, to: Mrsk::Utils
 
   attr_accessor :name
 
@@ -33,6 +33,14 @@ class Mrsk::Configuration::Role
 
   def cmd
     specializations["cmd"]
+  end
+
+  def cmd_args
+    if args = specializations["args"]
+      argumentize_for_cmd args
+    else
+      []
+    end
   end
 
   def running_traefik?

@@ -11,7 +11,8 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
       *config.volume_args,
       *role.label_args,
       config.absolute_image,
-      role.cmd
+      role.cmd,
+      *role.cmd_args
   end
 
   def start
