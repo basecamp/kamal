@@ -19,25 +19,36 @@ class CommanderTest < ActiveSupport::TestCase
     assert_match /no git repository found/, error.message
   end
 
-  test "overwriting hosts" do
-    assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3", "1.1.1.4" ], @mrsk.hosts
+  test "filtering hosts" do
+    assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3" ], @mrsk.hosts
 
-    @mrsk.specific_hosts = [ "1.2.3.4", "1.2.3.5" ]
-    assert_equal [ "1.2.3.4", "1.2.3.5" ], @mrsk.hosts
+    @mrsk.specific_hosts = [ "1.1.1.1", "1.1.1.2" ]
+    assert_equal [ "1.1.1.1", "1.1.1.2" ], @mrsk.hosts
   end
 
-  test "overwriting hosts with roles" do
-    assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3", "1.1.1.4" ], @mrsk.hosts
+  test "filtering hosts by filtering roles" do
+    assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3" ], @mrsk.hosts
 
-    @mrsk.specific_roles = [ "workers", "web" ]
-    assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3", "1.1.1.4" ], @mrsk.hosts
+    @mrsk.specific_roles = [ "web" ]
+    assert_equal [ "1.1.1.1", "1.1.1.2" ], @mrsk.hosts
+  end
+
+  test "filtering roles" do
+    assert_equal [ "web", "workers" ], @mrsk.roles.map(&:name)
 
     @mrsk.specific_roles = [ "workers" ]
-    assert_equal [ "1.1.1.3", "1.1.1.4" ], @mrsk.hosts
+    assert_equal [ "workers" ], @mrsk.roles.map(&:name)
+  end
+
+  test "filtering roles by filtering hosts" do
+    assert_equal [ "web", "workers" ], @mrsk.roles.map(&:name)
+
+    @mrsk.specific_hosts = [ "1.1.1.3" ]
+    assert_equal [ "workers" ], @mrsk.roles.map(&:name)
   end
 
   test "overwriting hosts with primary" do
-    assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3", "1.1.1.4" ], @mrsk.hosts
+    assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3" ], @mrsk.hosts
 
     @mrsk.specific_primary!
     assert_equal [ "1.1.1.1" ], @mrsk.hosts
@@ -46,5 +57,11 @@ class CommanderTest < ActiveSupport::TestCase
   test "primary_host with specific hosts via role" do
     @mrsk.specific_roles = "web"
     assert_equal "1.1.1.1", @mrsk.primary_host
+  end
+
+  test "roles_on" do
+    assert_equal [ "web", "workers" ], @mrsk.roles_on("1.1.1.1").map(&:name)
+    assert_equal [ "web" ], @mrsk.roles_on("1.1.1.2").map(&:name)
+    assert_equal [ "workers" ], @mrsk.roles_on("1.1.1.3").map(&:name)
   end
 end

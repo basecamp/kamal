@@ -14,22 +14,38 @@ class Mrsk::Commander
         .tap { |config| configure_sshkit_with(config) }
   end
 
-  attr_accessor :specific_hosts
+  attr_reader :specific_roles, :specific_hosts
 
   def specific_primary!
     self.specific_hosts = [ config.primary_web_host ]
   end
 
   def specific_roles=(role_names)
-    self.specific_hosts = config.roles.select { |r| role_names.include?(r.name) }.flat_map(&:hosts) if role_names.present?
+    @specific_roles = config.roles.select { |r| role_names.include?(r.name) } if role_names.present?
+  end
+
+  def specific_hosts=(hosts)
+    @specific_hosts = config.all_hosts & hosts if hosts.present?
   end
 
   def primary_host
     specific_hosts&.first || config.primary_web_host
   end
 
+  def roles
+    (specific_roles || config.roles).select do |role|
+      ((specific_hosts || config.all_hosts) & role.hosts).any?
+    end
+  end
+
   def hosts
-    specific_hosts || config.all_hosts
+    (specific_hosts || config.all_hosts).select do |host|
+      (specific_roles || config.roles).flat_map(&:hosts).include?(host)
+    end
+  end
+
+  def roles_on(host)
+    roles.select { |role| role.hosts.include?(host) }
   end
 
   def traefik_hosts
