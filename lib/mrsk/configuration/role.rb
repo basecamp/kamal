@@ -60,7 +60,11 @@ class Mrsk::Configuration::Role
     end
 
     def default_labels
-      { "service" => config.service, "role" => name }
+      if config.destination
+        { "service" => config.service, "role" => name, "destination" => config.destination }
+      else
+        { "service" => config.service, "role" => name }
+      end
     end
 
     def traefik_labels

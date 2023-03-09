@@ -6,7 +6,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
       "--detach",
       "--restart unless-stopped",
       "--log-opt", "max-size=#{MAX_LOG_SIZE}",
-      "--name", service_with_version,
+      "--name", service_with_version_and_destination,
       *role.env_args,
       *config.volume_args,
       *role.label_args,
@@ -16,7 +16,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
   end
 
   def start
-    docker :start, service_with_version
+    docker :start, service_with_version_and_destination
   end
 
   def stop(version: nil)
@@ -26,7 +26,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
   end
 
   def info
-    docker :ps, *service_filter
+    docker :ps, *service_filter_with_destination
   end
 
 
@@ -51,7 +51,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
   def execute_in_existing_container(*command, interactive: false)
     docker :exec,
       ("-it" if interactive),
-      config.service_with_version,
+      service_with_version_and_destination,
       *command
   end
 
@@ -75,13 +75,13 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
 
 
   def current_container_id
-    docker :ps, "--quiet", *service_filter
+    docker :ps, "--quiet", *service_filter_with_destination
   end
 
   def current_running_version
     # FIXME: Find more graceful way to extract the version from "app-version" than using sed and tail!
     pipe \
-      docker(:ps, "--filter", "label=service=#{config.service}", "--format", '"{{.Names}}"'),
+      docker(:ps, *service_filter_with_destination, "--format", '"{{.Names}}"'),
       %(sed 's/-/\\n/g'),
       "tail -n 1"
   end
@@ -100,7 +100,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
 
 
   def list_containers
-    docker :container, :ls, "--all", *service_filter
+    docker :container, :ls, "--all", *service_filter_with_destination
   end
 
   def list_container_names
@@ -109,12 +109,12 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
 
   def remove_container(version:)
     pipe \
-      container_id_for(container_name: service_with_version(version)),
+      container_id_for(container_name: service_with_version_and_destination(version)),
       xargs(docker(:container, :rm))
   end
 
   def remove_containers
-    docker :container, :prune, "--force", *service_filter
+    docker :container, :prune, "--force", *service_filter_with_destination
   end
 
   def list_images
@@ -127,19 +127,23 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
 
 
   private
-    def service_with_version(version = nil)
-      if version
-        "#{config.service}-#{version}"
-      else
-        config.service_with_version
-      end
+    def service_with_version_and_destination(version = nil)
+      [ config.service, config.destination, version || config.version ].compact.join("-")
     end
 
     def container_id_for_version(version)
-      container_id_for(container_name: service_with_version(version))    
+      container_id_for(container_name: service_with_version_and_destination(version))
     end
 
     def service_filter
       [ "--filter", "label=service=#{config.service}" ]
+    end
+
+    def service_filter_with_destination
+      if config.destination
+        service_filter << "label=destination=#{config.destination}"
+      else
+        service_filter
+      end
     end
 end

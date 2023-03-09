@@ -21,7 +21,7 @@ class Mrsk::Commands::Auditor < Mrsk::Commands::Base
 
   private
     def audit_log_file
-      "mrsk-#{config.service}-audit.log"
+      [ "mrsk", config.service, config.destination, "audit.log" ].compact.join("-")
     end
 
     def tagged_record_line(line)

@@ -6,7 +6,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
       say "Start container with version #{version} using a #{MRSK.config.readiness_delay}s readiness delay (or reboot if already running)...", :magenta
 
       cli = self
-      
+
       MRSK.config.roles.each do |role|
         on(role.hosts) do |host|
           execute *MRSK.auditor.record("Booted app version #{version}"), verbosity: :debug
