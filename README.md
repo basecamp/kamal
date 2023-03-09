@@ -336,7 +336,7 @@ builder:
 builder:
   context: ".."
 
-# Set context and Dockerfile
+# Set Dockerfile and context
 builder:
   dockerfile: "../Dockerfile.xyz"
   context: ".."
