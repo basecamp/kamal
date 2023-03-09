@@ -11,6 +11,7 @@ class Mrsk::Configuration
   delegate :argumentize, :argumentize_env_with_secrets, to: Mrsk::Utils
 
   attr_accessor :version
+  attr_accessor :destination
   attr_accessor :raw_config
 
   class << self
@@ -20,7 +21,7 @@ class Mrsk::Configuration
           config.deep_merge! \
             load_config_file destination_config_file(base_config_file, destination)
         end
-      end, version: version)
+      end, destination: destination, version: version)
     end
 
     private
@@ -38,9 +39,10 @@ class Mrsk::Configuration
       end
   end
 
-  def initialize(raw_config, version: "missing", validate: true)
+  def initialize(raw_config, destination: nil, version: "missing", validate: true)
     validate!(raw_config) if validate
     @raw_config = ActiveSupport::InheritableOptions.new(raw_config)
+    @destination = destination
     @version = version
     ensure_env_available
   end

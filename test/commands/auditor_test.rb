@@ -14,6 +14,14 @@ class CommandsAuditorTest < ActiveSupport::TestCase
       new_command.record("app removed container").join(" ")
   end
 
+  test "record with destination" do
+    @destination = "staging"
+
+    assert_match \
+      /echo '.* app removed container' >> mrsk-app-staging-audit.log/,
+      new_command.record("app removed container").join(" ")
+  end
+
   test "broadcast" do
     assert_match \
       /bin\/audit_broadcast '\[.*\] app removed container'/,
@@ -22,6 +30,6 @@ class CommandsAuditorTest < ActiveSupport::TestCase
 
   private
     def new_command
-      Mrsk::Commands::Auditor.new(Mrsk::Configuration.new(@config, version: "123"))
+      Mrsk::Commands::Auditor.new(Mrsk::Configuration.new(@config, destination: @destination, version: "123"))
     end
 end
