@@ -17,7 +17,7 @@ class Mrsk::Commands::Builder::Native::Remote < Mrsk::Commands::Builder::Native
       "--platform", platform,
       "--builder", builder_name,
       *build_options,
-      "."
+      build_context
   end
 
   def info
