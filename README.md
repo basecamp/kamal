@@ -343,6 +343,26 @@ builder:
 
 This is also a good option if you're running MRSK from a CI server that shares architecture with the deployment servers.
 
+### Using a different Dockerfile or context when building
+
+If you need to pass a different Dockerfile or context to the build command (e.g. if you're using a monorepo or you have
+different Dockerfiles), you can do so in the builder options:
+
+```yaml
+# Use a different Dockerfile
+builder:
+  dockerfile: Dockerfile.xyz
+
+# Set context
+builder:
+  context: ".."
+
+# Set Dockerfile and context
+builder:
+  dockerfile: "../Dockerfile.xyz"
+  context: ".."
+```
+
 ### Using build secrets for new images
 
 Some images need a secret passed in during build time, like a GITHUB_TOKEN, to give access to private gem repositories. This can be done by having the secret in ENV, then referencing it in the builder configuration:
