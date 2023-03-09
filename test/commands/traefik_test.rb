@@ -19,6 +19,14 @@ class CommandsTraefikTest < ActiveSupport::TestCase
       new_command.run.join(" ")
   end
 
+  test "run without configuration" do
+    @config.delete(:traefik)
+
+    assert_equal \
+      "docker run --name traefik --detach --restart unless-stopped --log-opt max-size=10m --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock traefik --providers.docker --log.level=DEBUG",
+      new_command.run.join(" ")
+  end
+
   test "traefik start" do
     assert_equal \
       "docker container start traefik",
