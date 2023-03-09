@@ -338,7 +338,7 @@ builder:
 
 # Set context and Dockerfile
 builder:
-  dockerfile: "../Dockerfile.xyz" # Dockerfile is in the parent directory
+  dockerfile: "../Dockerfile.xyz"
   context: ".."
 ```
 
