@@ -8,7 +8,7 @@ class Mrsk::Cli::Server < Mrsk::Cli::Base
       end
 
       if dependencies_to_install.any?
-        execute "apt-get update -y && apt-get install #{dependencies_to_install.join(" ")} -y)"
+        execute "apt-get update -y && apt-get install #{dependencies_to_install.join(" ")} -y"
       end
     end
   end
