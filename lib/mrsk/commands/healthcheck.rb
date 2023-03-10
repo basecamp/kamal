@@ -11,6 +11,7 @@ class Mrsk::Commands::Healthcheck < Mrsk::Commands::Base
       "--label", "service=#{container_name}",
       *web.env_args,
       *config.volume_args,
+      *web.option_args,
       config.absolute_image,
       web.cmd
   end
