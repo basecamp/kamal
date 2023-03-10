@@ -23,7 +23,7 @@ env:
     - RAILS_MASTER_KEY
 ```
 
-Then edit your `.env` file to add your registry password as `MRSK_REGISTRY_PASSWORD` (and your `RAILS_MASTER_KEY` for production with a Rails app). 
+Then edit your `.env` file to add your registry password as `MRSK_REGISTRY_PASSWORD` (and your `RAILS_MASTER_KEY` for production with a Rails app).
 
 Now you're ready to deploy to the servers:
 
@@ -67,6 +67,16 @@ Docker Swarm is much simpler than Kubernetes, but it's still built on the same d
 
 Ultimately, there are a myriad of ways to deploy web apps, but this is the toolkit we're using at [37signals](https://37signals.com) to bring [HEY](https://www.hey.com) [home from the cloud](https://world.hey.com/dhh/why-we-re-leaving-the-cloud-654b47e0) without losing the advantages of modern containerization tooling.
 
+## Running MRSK from Docker
+
+MRSK is packaged up in a Docker container similarly to [rails/docked](https://github.com/rails/docked). This will allow you to run MRSK (from your application directory) without having to install any dependencies other than Docker. Add the following alias to your profile configuration to make working with the container more convenient:
+
+```bash
+alias mrsk="docker run -it --rm -v '${PWD}:/workdir' -v '${SSH_AUTH_SOCK}:/ssh-agent' -v /var/run/docker.sock:/var/run/docker.sock -e 'SSH_AUTH_SOCK=/ssh-agent' ghcr.io/mrsked/mrsk:latest"
+```
+
+Since MRSK uses SSH to establish a remote connection, it will need access to your SSH agent. The above command uses a volume mount to make it available inside the container and configures the SSH agent inside the container to make use of it.
+
 ## Configuration
 
 ### Using .env file to load required environment variables
@@ -99,9 +109,9 @@ If you need separate env variables for different destinations, you can set them 
 
 #### Bitwarden as a secret store
 
-If you are using open source secret store like bitwarden, you can create `.env.erb` as a template which looks up the secrets. 
+If you are using open source secret store like bitwarden, you can create `.env.erb` as a template which looks up the secrets.
 
-You can store `SOME_SECRET` in a secure note in bitwarden vault. 
+You can store `SOME_SECRET` in a secure note in bitwarden vault.
 
 ```
 $ bw list items --search SOME_SECRET | jq
@@ -140,7 +150,7 @@ SOME_SECRET=<%= `bw get notes 123123123-1232-4224-222f-234234234234 --session #{
 <% else raise ArgumentError, "session_token token missing" end %>
 ```
 
-Then everyone deploying the app can run `mrsk envify` and mrsk will generate `.env` 
+Then everyone deploying the app can run `mrsk envify` and mrsk will generate `.env`
 
 
 ### Using another registry than Docker Hub
@@ -150,9 +160,9 @@ The default registry is Docker Hub, but you can change it using `registry/server
 ```yaml
 registry:
   server: registry.digitalocean.com
-  username:  
+  username:
     - DOCKER_REGISTRY_TOKEN
-  password: 
+  password:
     - DOCKER_REGISTRY_TOKEN
 ```
 
