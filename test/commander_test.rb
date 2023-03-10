@@ -60,8 +60,8 @@ class CommanderTest < ActiveSupport::TestCase
   end
 
   test "roles_on" do
-    assert_equal [ "web", "workers" ], @mrsk.roles_on("1.1.1.1").map(&:name)
-    assert_equal [ "web" ], @mrsk.roles_on("1.1.1.2").map(&:name)
-    assert_equal [ "workers" ], @mrsk.roles_on("1.1.1.3").map(&:name)
+    assert_equal [ "web", "workers" ], @mrsk.roles_on("1.1.1.1")
+    assert_equal [ "web" ], @mrsk.roles_on("1.1.1.2")
+    assert_equal [ "workers" ], @mrsk.roles_on("1.1.1.3")
   end
 end

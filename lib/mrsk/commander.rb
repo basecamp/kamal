@@ -45,7 +45,7 @@ class Mrsk::Commander
   end
 
   def roles_on(host)
-    roles.select { |role| role.hosts.include?(host.to_s) }
+    roles.select { |role| role.hosts.include?(host.to_s) }.map(&:name)
   end
 
   def traefik_hosts
