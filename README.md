@@ -426,6 +426,42 @@ traefik:
   host_port: 8080
 ```
 
+### Additional entrypoints for traefik
+
+You can configure additional ports and entrypoints for traefik list so:
+
+```yaml
+traefik:
+  additional_ports: 
+    - 9000
+    - 9001
+  args:
+    entrypoints.myentrypoint.address: ":9000"
+    entrypoints.otherentrypoint.address: ":9001"
+```
+
+Be aware, a lot of the out-of-the-box magic of mrsk is provided by traefik defaults so going down this path requires more manual configuration, like so:
+
+A more complete example including entrypoints would be:
+
+```yaml
+service: myservice
+
+labels:
+  traefik.tcp.routers.other.rule: 'HostSNI(`*`)'
+  traefik.tcp.routers.other.entrypoints: otherentrypoint
+  traefik.tcp.services.other.loadbalancer.server.port: 9000
+  traefik.http.routers.myservice.entrypoints: web
+  traefik.http.services.myservice.loadbalancer.server.port: 8080
+
+traefik:
+  additional_ports:
+    - 9000
+  args:
+    'entrypoints.web.address=:80': true
+    'entrypoints.otherentrypoint.address=:9000': true
+```
+
 ### Configuring build args for new images
 
 Build arguments that aren't secret can also be configured:

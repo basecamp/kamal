@@ -9,6 +9,7 @@ class Mrsk::Commands::Traefik < Mrsk::Commands::Base
       "--restart", "unless-stopped",
       "--log-opt", "max-size=#{MAX_LOG_SIZE}",
       "--publish", port,
+      *additional_ports,
       "--volume", "/var/run/docker.sock:/var/run/docker.sock",
       "traefik",
       "--providers.docker",
@@ -54,6 +55,14 @@ class Mrsk::Commands::Traefik < Mrsk::Commands::Base
   end
 
   private
+    def additional_ports
+      if args = config.raw_config.dig(:traefik, "additional_ports")
+        args.collect { |value| "--publish #{value}:#{value}" }.compact
+      else
+        []
+      end
+    end
+
     def cmd_option_args
       if args = config.traefik["args"]
         optionize args, with: "="

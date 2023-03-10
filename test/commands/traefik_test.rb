@@ -19,6 +19,17 @@ class CommandsTraefikTest < ActiveSupport::TestCase
       new_command.run.join(" ")
   end
 
+  test "run with additional entrypoints" do
+    assert_equal \
+      "docker run --name traefik --detach --restart unless-stopped --log-opt max-size=10m --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock traefik --providers.docker --log.level=DEBUG --accesslog.format \"json\" --metrics.prometheus.buckets \"0.1,0.3,1.2,5.0\"",
+      new_command.run.join(" ")
+
+    @config[:traefik]["additional_ports"] = %w[9000 9001]
+    assert_equal \
+      "docker run --name traefik --detach --restart unless-stopped --log-opt max-size=10m --publish 80:80 --publish 9000:9000 --publish 9001:9001 --volume /var/run/docker.sock:/var/run/docker.sock traefik --providers.docker --log.level=DEBUG --accesslog.format \"json\" --metrics.prometheus.buckets \"0.1,0.3,1.2,5.0\"",
+      new_command.run.join(" ")
+  end
+
   test "run without configuration" do
     @config.delete(:traefik)
 
