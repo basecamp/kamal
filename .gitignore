@@ -2,3 +2,4 @@
 *.gem
 coverage/*
 .DS_Store
+gemfiles/*.lock
