@@ -81,7 +81,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
       say "Get current version of running container...", :magenta unless options[:version]
       using_version(options[:version] || current_running_version) do |version|
         say "Launching interactive command with version #{version} via SSH from existing container on #{MRSK.primary_host}...", :magenta
-        run_locally { exec MRSK.app(role: role).execute_in_existing_container_over_ssh(cmd, host: MRSK.primary_host) }
+        run_locally { exec MRSK.app(role: "web").execute_in_existing_container_over_ssh(cmd, host: MRSK.primary_host) }
       end
 
     when options[:interactive]
