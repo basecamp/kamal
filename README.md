@@ -426,13 +426,13 @@ traefik:
   host_port: 8080
 ```
 
-### Additional entrypoints for traefik
+### Configure entrypoints for traefik
 
-You can configure additional ports and entrypoints for traefik list so:
+You can override the ports and entrypoints for traefik list so:
 
 ```yaml
 traefik:
-  additional_ports: 
+  ports: 
     - 9000
     - 9001
   args:
@@ -455,7 +455,8 @@ labels:
   traefik.http.services.myservice.loadbalancer.server.port: 8080
 
 traefik:
-  additional_ports:
+  ports:
+    - 80
     - 9000
   args:
     'entrypoints.web.address=:80': true
