@@ -1,12 +1,19 @@
 class Mrsk::Commands::App < Mrsk::Commands::Base
-  def run(role: :web)
-    role = config.role(role)
+  attr_reader :role
+
+  def initialize(config, role: nil)
+    super(config)
+    @role = role
+  end
+
+  def run
+    role = config.role(self.role)
 
     docker :run,
       "--detach",
       "--restart unless-stopped",
       "--log-opt", "max-size=#{MAX_LOG_SIZE}",
-      "--name", service_with_version_and_destination,
+      "--name", service_with_version_and_destination_and_role,
       *role.env_args,
       *config.volume_args,
       *role.label_args,
@@ -16,7 +23,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
   end
 
   def start
-    docker :start, service_with_version_and_destination
+    docker :start, service_with_version_and_destination_and_role
   end
 
   def stop(version: nil)
@@ -26,7 +33,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
   end
 
   def info
-    docker :ps, *service_filter_with_destination
+    docker :ps, *service_filter_with_destination_and_role
   end
 
 
@@ -51,7 +58,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
   def execute_in_existing_container(*command, interactive: false)
     docker :exec,
       ("-it" if interactive),
-      service_with_version_and_destination,
+      service_with_version_and_destination_and_role,
       *command
   end
 
@@ -75,13 +82,13 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
 
 
   def current_container_id
-    docker :ps, "--quiet", *service_filter_with_destination
+    docker :ps, "--quiet", *service_filter_with_destination_and_role
   end
 
   def current_running_version
     # FIXME: Find more graceful way to extract the version from "app-version" than using sed and tail!
     pipe \
-      docker(:ps, *service_filter_with_destination, "--format", '"{{.Names}}"'),
+      docker(:ps, *service_filter_with_destination_and_role, "--format", '"{{.Names}}"'),
       %(sed 's/-/\\n/g'),
       "tail -n 1"
   end
@@ -100,7 +107,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
 
 
   def list_containers
-    docker :container, :ls, "--all", *service_filter_with_destination
+    docker :container, :ls, "--all", *service_filter_with_destination_and_role # TODO: role hier needed oder sogar falsch?
   end
 
   def list_container_names
@@ -109,12 +116,12 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
 
   def remove_container(version:)
     pipe \
-      container_id_for(container_name: service_with_version_and_destination(version)),
+      container_id_for(container_name: service_with_version_and_destination_and_role(version)),
       xargs(docker(:container, :rm))
   end
 
   def remove_containers
-    docker :container, :prune, "--force", *service_filter_with_destination
+    docker :container, :prune, "--force", *service_filter_with_destination_and_role
   end
 
   def list_images
@@ -127,23 +134,22 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
 
 
   private
-    def service_with_version_and_destination(version = nil)
-      [ config.service, config.destination, version || config.version ].compact.join("-")
+    def service_with_version_and_destination_and_role(version = nil)
+      [ config.service, role, config.destination, version || config.version ].compact.join("-") # TODO: is role sometimes nil here? bis jetzt wars nie nil
     end
 
     def container_id_for_version(version)
-      container_id_for(container_name: service_with_version_and_destination(version))
+      container_id_for(container_name: service_with_version_and_destination_and_role(version))
     end
 
     def service_filter
       [ "--filter", "label=service=#{config.service}" ]
     end
 
-    def service_filter_with_destination
-      if config.destination
-        service_filter << "label=destination=#{config.destination}"
-      else
-        service_filter
+    def service_filter_with_destination_and_role
+      service_filter.tap do |filter|
+        filter << "label=destination=#{config.destination}" if config.destination
+        filter << "label=role=#{role}" if role
       end
     end
 end

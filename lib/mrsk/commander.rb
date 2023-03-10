@@ -45,7 +45,7 @@ class Mrsk::Commander
   end
 
   def roles_on(host)
-    roles.select { |role| role.hosts.include?(host) }
+    roles.select { |role| role.hosts.include?(host.to_s) }
   end
 
   def traefik_hosts
@@ -61,8 +61,8 @@ class Mrsk::Commander
   end
 
 
-  def app
-    @app ||= Mrsk::Commands::App.new(config)
+  def app(role: nil)
+    Mrsk::Commands::App.new(config, role: role)
   end
 
   def accessory(name)

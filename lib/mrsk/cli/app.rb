@@ -7,24 +7,26 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
 
       cli = self
 
-      MRSK.config.roles.each do |role|
-        on(role.hosts) do |host|
-          execute *MRSK.auditor.record("Booted app version #{version}"), verbosity: :debug
+      on(MRSK.hosts) do |host|
+        roles = MRSK.roles_on(host)
+
+        roles.each do |role|
+          execute *MRSK.auditor(role: role.name).record("Booted app version #{version}"), verbosity: :debug
 
           begin
-            old_version = capture_with_info(*MRSK.app.current_running_version).strip
-            execute *MRSK.app.run(role: role.name)
+            old_version = capture_with_info(*MRSK.app(role: role.name).current_running_version).strip
+            execute *MRSK.app(role: role.name).run
             sleep MRSK.config.readiness_delay
-            execute *MRSK.app.stop(version: old_version), raise_on_non_zero_exit: false if old_version.present?
+            execute *MRSK.app(role: role.name).stop(version: old_version), raise_on_non_zero_exit: false if old_version.present?
 
           rescue SSHKit::Command::Failed => e
             if e.message =~ /already in use/
               error "Rebooting container with same version #{version} already deployed on #{host} (may cause gap in zero-downtime promise!)"
-              execute *MRSK.auditor.record("Rebooted app version #{version}"), verbosity: :debug
+              execute *MRSK.auditor(role: role.name).record("Rebooted app version #{version}"), verbosity: :debug
 
-              execute *MRSK.app.stop(version: version)
-              execute *MRSK.app.remove_container(version: version)
-              execute *MRSK.app.run(role: role.name)
+              execute *MRSK.app(role: role.name).stop(version: version)
+              execute *MRSK.app(role: role.name).remove_container(version: version)
+              execute *MRSK.app(role: role.name).run
             else
               raise
             end
@@ -36,24 +38,38 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
 
   desc "start", "Start existing app container on servers"
   def start
-    on(MRSK.hosts) do
-      execute *MRSK.auditor.record("Started app version #{MRSK.version}"), verbosity: :debug
-      execute *MRSK.app.start, raise_on_non_zero_exit: false
+    on(MRSK.hosts) do |host|
+      roles = MRSK.roles_on(host)
+
+      roles.each do |role|
+        execute *MRSK.auditor(role: role.name).record("Started app version #{MRSK.version}"), verbosity: :debug
+        execute *MRSK.app(role: role.name).start, raise_on_non_zero_exit: false
+      end
     end
   end
 
   desc "stop", "Stop app container on servers"
   def stop
-    on(MRSK.hosts) do
-      execute *MRSK.auditor.record("Stopped app"), verbosity: :debug
-      execute *MRSK.app.stop, raise_on_non_zero_exit: false
+    on(MRSK.hosts) do |host|
+      roles = MRSK.roles_on(host)
+
+      roles.each do |role|
+        execute *MRSK.auditor(role: role.name).record("Stopped app"), verbosity: :debug
+        execute *MRSK.app(role: role.name).stop, raise_on_non_zero_exit: false
+      end
     end
   end
 
   # FIXME: Drop in favor of just containers?
   desc "details", "Show details about app containers"
   def details
-    on(MRSK.hosts) { |host| puts_by_host host, capture_with_info(*MRSK.app.info) }
+    on(MRSK.hosts) do |host|
+      roles = MRSK.roles_on(host)
+
+      roles.each do |role|
+        puts_by_host host, capture_with_info(*MRSK.app(role: role.name).info)
+      end
+    end
   end
 
   desc "exec [CMD]", "Execute a custom command on servers (use --help to show options)"
@@ -65,7 +81,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
       say "Get current version of running container...", :magenta unless options[:version]
       using_version(options[:version] || current_running_version) do |version|
         say "Launching interactive command with version #{version} via SSH from existing container on #{MRSK.primary_host}...", :magenta
-        run_locally { exec MRSK.app.execute_in_existing_container_over_ssh(cmd, host: MRSK.primary_host) }
+        run_locally { exec MRSK.app(role: role.name).execute_in_existing_container_over_ssh(cmd, host: MRSK.primary_host) }
       end
 
     when options[:interactive]
@@ -81,8 +97,12 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
         say "Launching command with version #{version} from existing container...", :magenta
 
         on(MRSK.hosts) do |host|
-          execute *MRSK.auditor.record("Executed cmd '#{cmd}' on app version #{version}"), verbosity: :debug
-          puts_by_host host, capture_with_info(*MRSK.app.execute_in_existing_container(cmd))
+          roles = MRSK.roles_on(host)
+
+          roles.each do |role|
+            execute *MRSK.auditor(role: role.name).record("Executed cmd '#{cmd}' on app version #{version}"), verbosity: :debug
+            puts_by_host host, capture_with_info(*MRSK.app(role: role.name).execute_in_existing_container(cmd))
+          end
         end
       end
 
@@ -147,17 +167,25 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
 
   desc "remove_container [VERSION]", "Remove app container with given version from servers", hide: true
   def remove_container(version)
-    on(MRSK.hosts) do
-      execute *MRSK.auditor.record("Removed app container with version #{version}"), verbosity: :debug
-      execute *MRSK.app.remove_container(version: version)
+    on(MRSK.hosts) do |host|
+      roles = MRSK.roles_on(host)
+
+      roles.each do |role|
+        execute *MRSK.auditor(role: role.name).record("Removed app container with version #{version}"), verbosity: :debug
+        execute *MRSK.app(role: role.name).remove_container(version: version)
+      end
     end
   end
 
   desc "remove_containers", "Remove all app containers from servers", hide: true
   def remove_containers
-    on(MRSK.hosts) do
-      execute *MRSK.auditor.record("Removed all app containers"), verbosity: :debug
-      execute *MRSK.app.remove_containers
+    on(MRSK.hosts) do |host|
+      roles = MRSK.roles_on(host)
+
+      roles.each do |role|
+        execute *MRSK.auditor(role: role.name).record("Removed all app containers"), verbosity: :debug
+        execute *MRSK.app(role: role.name).remove_containers
+      end
     end
   end
 
