@@ -148,8 +148,8 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
 
     def service_filter_with_destination_and_role
       service_filter.tap do |filter|
-        filter << "label=destination=#{config.destination}" if config.destination
-        filter << "label=role=#{role}" if role
+        filter.concat [ "--filter", "label=destination=#{config.destination}" ] if config.destination
+        filter.concat [ "--filter", "label=role=#{role}" ] if role
       end
     end
 end

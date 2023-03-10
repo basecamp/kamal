@@ -51,51 +51,51 @@ class CommandsAppTest < ActiveSupport::TestCase
 
   test "stop" do
     assert_equal \
-      "docker ps --quiet --filter label=service=app label=role=web | xargs docker stop",
+      "docker ps --quiet --filter label=service=app --filter label=role=web | xargs docker stop",
       @app.stop.join(" ")
   end
 
   test "info" do
     assert_equal \
-      "docker ps --filter label=service=app label=role=web",
+      "docker ps --filter label=service=app --filter label=role=web",
       @app.info.join(" ")
   end
 
 
   test "logs" do
     assert_equal \
-      "docker ps --quiet --filter label=service=app label=role=web | xargs docker logs 2>&1",
+      "docker ps --quiet --filter label=service=app --filter label=role=web | xargs docker logs 2>&1",
       @app.logs.join(" ")
 
     assert_equal \
-      "docker ps --quiet --filter label=service=app label=role=web | xargs docker logs --since 5m 2>&1",
+      "docker ps --quiet --filter label=service=app --filter label=role=web | xargs docker logs --since 5m 2>&1",
       @app.logs(since: "5m").join(" ")
 
     assert_equal \
-      "docker ps --quiet --filter label=service=app label=role=web | xargs docker logs --tail 100 2>&1",
+      "docker ps --quiet --filter label=service=app --filter label=role=web | xargs docker logs --tail 100 2>&1",
       @app.logs(lines: "100").join(" ")
 
     assert_equal \
-      "docker ps --quiet --filter label=service=app label=role=web | xargs docker logs --since 5m --tail 100 2>&1",
+      "docker ps --quiet --filter label=service=app --filter label=role=web | xargs docker logs --since 5m --tail 100 2>&1",
       @app.logs(since: "5m", lines: "100").join(" ")
 
     assert_equal \
-      "docker ps --quiet --filter label=service=app label=role=web | xargs docker logs 2>&1 | grep 'my-id'",
+      "docker ps --quiet --filter label=service=app --filter label=role=web | xargs docker logs 2>&1 | grep 'my-id'",
       @app.logs(grep: "my-id").join(" ")
 
     assert_equal \
-      "docker ps --quiet --filter label=service=app label=role=web | xargs docker logs --since 5m 2>&1 | grep 'my-id'",
+      "docker ps --quiet --filter label=service=app --filter label=role=web | xargs docker logs --since 5m 2>&1 | grep 'my-id'",
       @app.logs(since: "5m", grep: "my-id").join(" ")
   end
 
   test "follow logs" do
     @app.stub(:run_over_ssh, ->(cmd, host:) { cmd.join(" ") }) do
       assert_equal \
-        "docker ps --quiet --filter label=service=app label=role=web | xargs docker logs --timestamps --tail 10 --follow 2>&1",
+        "docker ps --quiet --filter label=service=app --filter label=role=web | xargs docker logs --timestamps --tail 10 --follow 2>&1",
         @app.follow_logs(host: "app-1")
 
       assert_equal \
-        "docker ps --quiet --filter label=service=app label=role=web | xargs docker logs --timestamps --tail 10 --follow 2>&1 | grep \"Completed\"",
+        "docker ps --quiet --filter label=service=app --filter label=role=web | xargs docker logs --timestamps --tail 10 --follow 2>&1 | grep \"Completed\"",
         @app.follow_logs(host: "app-1", grep: "Completed")
     end
   end
@@ -154,7 +154,7 @@ class CommandsAppTest < ActiveSupport::TestCase
 
   test "current_container_id" do
     assert_equal \
-      "docker ps --quiet --filter label=service=app label=role=web",
+      "docker ps --quiet --filter label=service=app --filter label=role=web",
       @app.current_container_id.join(" ")
   end
 
@@ -166,7 +166,7 @@ class CommandsAppTest < ActiveSupport::TestCase
 
   test "current_running_version" do
     assert_equal \
-      "docker ps --filter label=service=app label=role=web --format \"{{.Names}}\" | sed 's/-/\\n/g' | tail -n 1",
+      "docker ps --filter label=service=app --filter label=role=web --format \"{{.Names}}\" | sed 's/-/\\n/g' | tail -n 1",
       @app.current_running_version.join(" ")
   end
 
