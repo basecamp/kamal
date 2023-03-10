@@ -1,7 +1,8 @@
 class Mrsk::Cli::Build < Mrsk::Cli::Base
   desc "deliver", "Build app and push app image to registry then pull image on servers"
+  option :skip_push, aliases: "-P", type: :boolean, default: false, desc: "Skip image build and push"
   def deliver
-    push
+    push unless options[:skip_push]
     pull
   end
 

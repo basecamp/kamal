@@ -9,27 +9,28 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
   end
 
   desc "deploy", "Deploy app to servers"
+  option :skip_push, aliases: "-P", type: :boolean, default: false, desc: "Skip image build and push"
   def deploy
     runtime = print_runtime do
       say "Ensure curl and Docker are installed...", :magenta
-      invoke "mrsk:cli:server:bootstrap"
+      invoke "mrsk:cli:server:bootstrap", [], options.without(:skip_push)
 
       say "Log into image registry...", :magenta
-      invoke "mrsk:cli:registry:login"
+      invoke "mrsk:cli:registry:login", [], options.without(:skip_push)
 
       say "Build and push app image...", :magenta
       invoke "mrsk:cli:build:deliver"
 
       say "Ensure Traefik is running...", :magenta
-      invoke "mrsk:cli:traefik:boot"
+      invoke "mrsk:cli:traefik:boot", [], options.without(:skip_push)
 
       say "Ensure app can pass healthcheck...", :magenta
-      invoke "mrsk:cli:healthcheck:perform"
+      invoke "mrsk:cli:healthcheck:perform", [], options.without(:skip_push)
 
-      invoke "mrsk:cli:app:boot"
+      invoke "mrsk:cli:app:boot", [], options.without(:skip_push)
 
       say "Prune old containers and images...", :magenta
-      invoke "mrsk:cli:prune:all"
+      invoke "mrsk:cli:prune:all", [], options.without(:skip_push)
     end
 
     audit_broadcast "Deployed app in #{runtime.to_i} seconds" unless options[:skip_broadcast]
