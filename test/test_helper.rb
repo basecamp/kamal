@@ -9,7 +9,6 @@ require "mrsk"
 
 ActiveSupport::LogSubscriber.logger = ActiveSupport::Logger.new(STDOUT) if ENV["VERBOSE"]
 
-# Applies to remote commands only
 SSHKit.config.backend = SSHKit::Backend::Printer
 
 class ActiveSupport::TestCase
