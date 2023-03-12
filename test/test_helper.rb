@@ -12,14 +12,5 @@ ActiveSupport::LogSubscriber.logger = ActiveSupport::Logger.new(STDOUT) if ENV["
 # Applies to remote commands only
 SSHKit.config.backend = SSHKit::Backend::Printer
 
-# Ensure local commands use the printer backend too
-module SSHKit
-  module DSL
-    def run_locally(&block)
-      SSHKit::Backend::Printer.new(SSHKit::Host.new(:local), &block).run
-    end
-  end
-end
-
 class ActiveSupport::TestCase
 end
