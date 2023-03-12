@@ -12,6 +12,7 @@ module Mrsk::Cli
     class_option :quiet, type: :boolean, aliases: "-q", desc: "Minimal logging"
 
     class_option :version, desc: "Run commands against a specific app version"
+    class_option :use_prebuilt_image, type: :boolean, default: false, desc: "Use prebuilt image, skip building"
 
     class_option :primary, type: :boolean, aliases: "-p", desc: "Run commands only on primary host instead of all"
     class_option :hosts, aliases: "-h", desc: "Run commands on these hosts instead of all (separate by comma)"
@@ -39,9 +40,10 @@ module Mrsk::Cli
 
       def initialize_commander(options)
         MRSK.tap do |commander|
-          commander.config_file = Pathname.new(File.expand_path(options[:config_file]))
-          commander.destination = options[:destination]
-          commander.version     = options[:version]
+          commander.config_file        = Pathname.new(File.expand_path(options[:config_file]))
+          commander.destination        = options[:destination]
+          commander.version            = options[:version]
+          commander.use_prebuilt_image = options[:use_prebuilt_image]
 
           commander.specific_hosts    = options[:hosts]&.split(",")
           commander.specific_roles    = options[:roles]&.split(",")

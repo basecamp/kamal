@@ -1,8 +1,7 @@
 class Mrsk::Cli::Build < Mrsk::Cli::Base
   desc "deliver", "Build app and push app image to registry then pull image on servers"
-  option :use_prebuilt_image, aliases: "-P", type: :boolean, default: false, desc: "Use prebuilt image, skip build"
   def deliver
-    push unless options[:use_prebuilt_image]
+    push unless MRSK.use_prebuilt_image
     pull
   end
 

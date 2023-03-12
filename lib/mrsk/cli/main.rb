@@ -9,44 +9,37 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
   end
 
   desc "deploy", "Deploy app to servers"
-  option :use_prebuilt_image, aliases: "-P", type: :boolean, default: false, desc: "Use prebuilt image, skip build"
   def deploy
     runtime = print_runtime do
       say "Ensure curl and Docker are installed...", :magenta
-      invoke "mrsk:cli:server:bootstrap", [], options.without(:use_prebuilt_image)
+      invoke "mrsk:cli:server:bootstrap"
 
       say "Log into image registry...", :magenta
-      invoke "mrsk:cli:registry:login", [], options.without(:use_prebuilt_image)
+      invoke "mrsk:cli:registry:login"
 
       say "Build and push app image...", :magenta
       invoke "mrsk:cli:build:deliver"
 
       say "Ensure Traefik is running...", :magenta
-      invoke "mrsk:cli:traefik:boot", [], options.without(:use_prebuilt_image)
+      invoke "mrsk:cli:traefik:boot"
 
       say "Ensure app can pass healthcheck...", :magenta
-      invoke "mrsk:cli:healthcheck:perform", [], options.without(:use_prebuilt_image)
+      invoke "mrsk:cli:healthcheck:perform"
 
-      invoke "mrsk:cli:app:boot", [], options.without(:use_prebuilt_image)
+      invoke "mrsk:cli:app:boot"
 
       say "Prune old containers and images...", :magenta
-      invoke "mrsk:cli:prune:all", [], options.without(:use_prebuilt_image)
+      invoke "mrsk:cli:prune:all"
     end
 
     audit_broadcast "Deployed app in #{runtime.to_i} seconds" unless options[:skip_broadcast]
   end
 
   desc "redeploy", "Deploy app to servers without bootstrapping servers, starting Traefik, pruning, and registry login"
-  option :use_prebuilt_image, aliases: "-P", type: :boolean, default: false, desc: "Use prebuilt image, skip build"
   def redeploy
     runtime = print_runtime do
-      unless options[:use_prebuilt_image]
-        say "Build and push app image...", :magenta
-        invoke "mrsk:cli:build:push"
-      end
-
-      say "Pull image onto servers...", :magenta
-      invoke "mrsk:cli:build:pull"
+      say "Build and push app image...", :magenta
+      invoke "mrsk:cli:build:deliver"
 
       say "Ensure app can pass healthcheck...", :magenta
       invoke "mrsk:cli:healthcheck:perform"
