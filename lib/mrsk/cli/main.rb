@@ -12,32 +12,25 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
   option :use_prebuilt_image, aliases: "-P", type: :boolean, default: false, desc: "Use prebuilt image, skip build"
   def deploy
     runtime = print_runtime do
-      options_without_prebuilt_image = options.without(:use_prebuilt_image)
-
       say "Ensure curl and Docker are installed...", :magenta
-      invoke "mrsk:cli:server:bootstrap", [], options_without_prebuilt_image
+      invoke "mrsk:cli:server:bootstrap", [], options.without(:use_prebuilt_image)
 
       say "Log into image registry...", :magenta
-      invoke "mrsk:cli:registry:login", [], options_without_prebuilt_image
+      invoke "mrsk:cli:registry:login", [], options.without(:use_prebuilt_image)
 
-      unless options[:use_prebuilt_image]
-        say "Build and push app image...", :magenta
-        invoke "mrsk:cli:build:push"
-      end
-
-      say "Pull image onto servers...", :magenta
-      invoke "mrsk:cli:build:pull", [], options_without_prebuilt_image
+      say "Build and push app image...", :magenta
+      invoke "mrsk:cli:build:deliver"
 
       say "Ensure Traefik is running...", :magenta
-      invoke "mrsk:cli:traefik:boot", [], options_without_prebuilt_image
+      invoke "mrsk:cli:traefik:boot", [], options.without(:use_prebuilt_image)
 
       say "Ensure app can pass healthcheck...", :magenta
-      invoke "mrsk:cli:healthcheck:perform", [], options_without_prebuilt_image
+      invoke "mrsk:cli:healthcheck:perform", [], options.without(:use_prebuilt_image)
 
-      invoke "mrsk:cli:app:boot", [], options_without_prebuilt_image
+      invoke "mrsk:cli:app:boot", [], options.without(:use_prebuilt_image)
 
       say "Prune old containers and images...", :magenta
-      invoke "mrsk:cli:prune:all", [], options_without_prebuilt_image
+      invoke "mrsk:cli:prune:all", [], options.without(:use_prebuilt_image)
     end
 
     audit_broadcast "Deployed app in #{runtime.to_i} seconds" unless options[:skip_broadcast]
