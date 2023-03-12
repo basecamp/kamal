@@ -256,12 +256,12 @@ servers:
 
 You can specialize the default Traefik rules by setting labels on the containers that are being started:
 
-```
+```yaml
 labels:
-  traefik.http.routers.hey.rule: Host(\`app.hey.com\`)
+  traefik.http.routers.hey.rule: Host(`app.hey.com`)
 ```
 
-Note: The escaped backticks are needed to ensure the rule is passed in correctly and not treated as command substitution by Bash!
+Note: The backticks are needed to ensure the rule is passed in correctly and not treated as command substitution by Bash!
 
 This allows you to run multiple applications on the same server sharing the same Traefik instance and port.
 See https://doc.traefik.io/traefik/routing/routers/#rule for a full list of available routing rules.
