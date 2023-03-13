@@ -40,7 +40,7 @@ class CommandsAppTest < ActiveSupport::TestCase
 
     assert_equal \
       "docker run --detach --restart unless-stopped --log-opt max-size=10m --name app-jobs-999 -e MRSK_CONTAINER_NAME=\"app-jobs-999\" -e RAILS_MASTER_KEY=\"456\" --label service=\"app\" --label role=\"jobs\" --mount \"somewhere\" --cap-add dhh/app:999 bin/jobs",
-      @app.run(role: :jobs).join(" ")
+      @app.run.join(" ")
   end
 
   test "start" do
