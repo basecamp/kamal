@@ -33,7 +33,7 @@ class CommandsHealthcheckTest < ActiveSupport::TestCase
   test "run with custom options" do
     @config[:servers] = { "web" => { "hosts" => [ "1.1.1.1" ], "options" => { "mount" => "somewhere" } } }
     assert_equal \
-      "docker run --detach --name healthcheck-app-123 --publish 3999:3000 --label service=healthcheck-app --mount \"somewhere\" dhh/app:123",
+      "docker run --detach --name healthcheck-app-123 --publish 3999:3000 --label service=healthcheck-app -e MRSK_CONTAINER_NAME=\"healthcheck-app\" --mount \"somewhere\" dhh/app:123",
       new_command.run.join(" ")
   end
 
