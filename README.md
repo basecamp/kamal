@@ -222,6 +222,12 @@ volumes:
   - "/local/path:/container/path"
 ```
 
+### MRSK env variables
+
+The following env variables are set when your container runs:
+
+`MRSK_CONTAINER_NAME` : this contains the current container name and version
+
 ### Using different roles for servers
 
 If your application uses separate hosts for running jobs or other roles beyond the default web running, you can specify these hosts in a dedicated role with a new entrypoint command like so:
