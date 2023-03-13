@@ -14,6 +14,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
       "--restart unless-stopped",
       "--log-opt", "max-size=#{MAX_LOG_SIZE}",
       "--name", service_with_version_and_destination_and_role,
+      "-e", "MRSK_CONTAINER_NAME=\"#{service_with_version_and_destination}\"",
       *role.env_args,
       *config.volume_args,
       *role.label_args,

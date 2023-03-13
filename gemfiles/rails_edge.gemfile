@@ -1,0 +1,9 @@
+source 'https://rubygems.org'
+git_source(:github) { |repo| "https://github.com/#{repo}.git" }
+
+git "https://github.com/rails/rails.git" do
+  gem "railties"
+  gem "activesupport"
+end
+
+gemspec path: "../"
