@@ -1,7 +1,7 @@
 class Mrsk::Cli::Build < Mrsk::Cli::Base
   desc "deliver", "Build app and push app image to registry then pull image on servers"
   def deliver
-    push unless MRSK.use_prebuilt_image
+    push
     pull
   end
 

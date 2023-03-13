@@ -1,7 +1,7 @@
 require "active_support/core_ext/enumerable"
 
 class Mrsk::Commander
-  attr_accessor :config_file, :destination, :verbosity, :version, :use_prebuilt_image
+  attr_accessor :config_file, :destination, :verbosity, :version
 
   def initialize(config_file: nil, destination: nil, verbosity: :info)
     @config_file, @destination, @verbosity = config_file, destination, verbosity
