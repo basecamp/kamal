@@ -18,7 +18,7 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
       invoke "mrsk:cli:server:bootstrap", [], invoke_options
 
       say "Log into image registry...", :magenta
-      invoke "mrsk:cli:registry:login"
+      invoke "mrsk:cli:registry:login", [], invoke_options
 
       if options[:skip_push]
         say "Pull app image...", :magenta
