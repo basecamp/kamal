@@ -30,6 +30,13 @@ class CommandsHealthcheckTest < ActiveSupport::TestCase
       new_command.run.join(" ")
   end
 
+  test "run with custom options" do
+    @config[:servers] = { "web" => { "hosts" => [ "1.1.1.1" ], "options" => { "mount" => "somewhere" } } }
+    assert_equal \
+      "docker run --detach --name healthcheck-app-123 --publish 3999:3000 --label service=healthcheck-app --mount \"somewhere\" dhh/app:123",
+      new_command.run.join(" ")
+  end
+
   test "curl" do
     assert_equal \
       "curl --silent --output /dev/null --write-out '%{http_code}' --max-time 2 http://localhost:3999/up",
