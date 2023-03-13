@@ -4,6 +4,8 @@ MRSK deploys web apps anywhere from bare metal to cloud VMs using Docker with ze
 
 Watch the screencast: https://www.youtube.com/watch?v=LL1cV2FXZ5I
 
+Join us on Discord: https://discord.gg/DQETs3Pm
+
 ## Installation
 
 Install MRSK globally with `gem install mrsk`. Then, inside your app directory, run `mrsk init` (or `mrsk init --bundle` within Rails apps where you want a bin/mrsk binstub). Now edit the new file `config/deploy.yml`. It could look as simple as this:
