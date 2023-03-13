@@ -149,13 +149,13 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
     end
   end
 
-  desc "remove [NAME]", "Remove accessory container and image from host (use NAME=all to remove all accessories)"
+  desc "remove [NAME]", "Remove accessory container, image and data directory from host (use NAME=all to remove all accessories)"
   option :confirmed, aliases: "-y", type: :boolean, default: false, desc: "Proceed without confirmation question"
   def remove(name)
     if name == "all"
       MRSK.accessory_names.each { |accessory_name| remove(accessory_name) }
     else
-      if options[:confirmed] || ask("This will remove all containers and images for #{name}. Are you sure?", limited_to: %w( y N ), default: "N") == "y"
+      if options[:confirmed] || ask("This will remove all containers, images and data directories for #{name}. Are you sure?", limited_to: %w( y N ), default: "N") == "y"
         with_accessory(name) do
           stop(name)
           remove_container(name)
