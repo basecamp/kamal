@@ -165,6 +165,9 @@ class Mrsk::Configuration
     }.compact
   end
 
+  def traefik
+    raw_config.traefik || {}
+  end
 
   private
     # Will raise ArgumentError if any required config keys are missing
