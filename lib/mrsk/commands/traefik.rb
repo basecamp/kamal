@@ -56,7 +56,7 @@ class Mrsk::Commands::Traefik < Mrsk::Commands::Base
   private
     def cmd_option_args
       if args = config.traefik["args"]
-        optionize args
+        optionize args, with: "="
       else
         []
       end
