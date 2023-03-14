@@ -426,21 +426,31 @@ traefik:
   host_port: 8080
 ```
 
-### Configure entrypoints for traefik
+### Configure docker options for traefik
 
-You can override the ports and entrypoints for traefik list so:
+We allow users to override the published ports and bound volumes for the traefik container like so:
 
 ```yaml
 traefik:
-  ports: 
+  options:
+    publish:
     - 9000
-    - 9001
-  args:
-    entrypoints.myentrypoint.address: ":9000"
-    entrypoints.otherentrypoint.address: ":9001"
+    - 80    
 ```
 
-Be aware, a lot of the out-of-the-box magic of mrsk is provided by traefik defaults so going down this path requires more manual configuration, like so:
+Note, this fully overrides any defaults. If you choose to do this, then you'll like need to start out by copying the 
+default configuration:
+
+```yaml
+traefik:
+  options: 
+    publish:
+    - 80
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+  args:
+    'entrypoints.web.address=:80': true
+```
 
 A more complete example including entrypoints would be:
 
@@ -455,9 +465,12 @@ labels:
   traefik.http.services.myservice.loadbalancer.server.port: 8080
 
 traefik:
-  ports:
-    - 80
-    - 9000
+  options:
+    publish:
+      - 80
+      - 9000
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
   args:
     'entrypoints.web.address=:80': true
     'entrypoints.otherentrypoint.address=:9000': true

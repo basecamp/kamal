@@ -9,7 +9,7 @@ class Mrsk::Commands::Traefik < Mrsk::Commands::Base
       "--restart", "unless-stopped",
       "--log-opt", "max-size=#{MAX_LOG_SIZE}",
       *published_ports,
-      "--volume", "/var/run/docker.sock:/var/run/docker.sock",
+     *volumes,
       "traefik",
       "--providers.docker",
       "--log.level=DEBUG",
@@ -55,10 +55,18 @@ class Mrsk::Commands::Traefik < Mrsk::Commands::Base
 
   private
     def published_ports
-      if args = config.raw_config.dig(:traefik, "ports")
-        args.collect { |value| "--publish #{value}:#{value}" }.compact
+      if ports = config.raw_config.dig(:traefik, "options", "publish")
+        ports.collect { |value| "--publish #{value}:#{value}" }.compact
       else
         ["--publish #{port}"]
+      end
+    end
+
+    def volumes
+      if volumes = config.raw_config.dig(:traefik, "options", "volumes")
+        volumes.collect { |value| "--volume #{value}" }.compact
+      else
+        ["--volume /var/run/docker.sock:/var/run/docker.sock"]
       end
     end
 
