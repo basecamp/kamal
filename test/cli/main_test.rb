@@ -6,6 +6,74 @@ class CliMainTest < CliTestCase
     assert_equal Mrsk::VERSION, version
   end
 
+  test "deploy" do
+    invoke_options = { "config_file" => "test/fixtures/deploy_with_accessories.yml", "skip_broadcast" => false, "skip_push" => false}
+
+    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:server:bootstrap", [], invoke_options)
+    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:registry:login", [], invoke_options)
+    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:build:deliver", [], invoke_options)
+    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:traefik:boot", [], invoke_options)
+    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:healthcheck:perform", [], invoke_options)
+    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:app:boot", [], invoke_options)
+    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:prune:all", [], invoke_options)
+
+    run_command("deploy").tap do |output|
+      assert_match /Ensure curl and Docker are installed/, output
+      assert_match /Log into image registry/, output
+      assert_match /Build and push app image/, output
+      assert_match /Ensure Traefik is running/, output
+      assert_match /Ensure app can pass healthcheck/, output
+      assert_match /Prune old containers and images/, output
+    end
+  end
+
+  test "deploy with skip_push" do
+    invoke_options = { "config_file" => "test/fixtures/deploy_with_accessories.yml", "skip_broadcast" => false, "skip_push" => true }
+
+    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:server:bootstrap", [], invoke_options)
+    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:registry:login", [], invoke_options)
+    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:build:pull", [], invoke_options)
+    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:traefik:boot", [], invoke_options)
+    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:healthcheck:perform", [], invoke_options)
+    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:app:boot", [], invoke_options)
+    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:prune:all", [], invoke_options)
+
+    run_command("deploy", "--skip_push").tap do |output|
+      assert_match /Ensure curl and Docker are installed/, output
+      assert_match /Log into image registry/, output
+      assert_match /Pull app image/, output
+      assert_match /Ensure Traefik is running/, output
+      assert_match /Ensure app can pass healthcheck/, output
+      assert_match /Prune old containers and images/, output
+    end
+  end
+
+  test "redeploy" do
+    invoke_options = { "config_file" => "test/fixtures/deploy_with_accessories.yml", "skip_broadcast" => false, "skip_push" => false}
+
+    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:build:deliver", [], invoke_options)
+    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:healthcheck:perform", [], invoke_options)
+    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:app:boot", [], invoke_options)
+
+    run_command("redeploy").tap do |output|
+      assert_match /Build and push app image/, output
+      assert_match /Ensure app can pass healthcheck/, output
+    end
+  end
+
+  test "redeploy with skip_push" do
+    invoke_options = { "config_file" => "test/fixtures/deploy_with_accessories.yml", "skip_broadcast" => false, "skip_push" => true }
+
+    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:build:pull", [], invoke_options)
+    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:healthcheck:perform", [], invoke_options)
+    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:app:boot", [], invoke_options)
+
+    run_command("redeploy", "--skip_push").tap do |output|
+      assert_match /Pull app image/, output
+      assert_match /Ensure app can pass healthcheck/, output
+    end
+  end
+
   test "rollback bad version" do
     run_command("details") # Preheat MRSK const
 
