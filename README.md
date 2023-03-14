@@ -11,7 +11,7 @@ Join us on Discord: https://discord.gg/DQETs3Pm
 Install MRSK globally with `gem install mrsk` or build a dockerized version:
 
 ```sh
-docker build . -t mrsk:dind -t mrsk:latest -f Dockerfile.dind
+docker build . -t mrsk:latest -f Dockerfile
 ```
 
 If you build the docker version, add the following alias to your .${SHELL}rc file and re-source the rc file to allow ssh and docker to work within the container:
