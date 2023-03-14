@@ -22,7 +22,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
               error "Rebooting container with same version #{version} already deployed on #{host} (may cause gap in zero-downtime promise!)"
               execute *MRSK.auditor.record("Rebooted app version #{version}"), verbosity: :debug
 
-              execute *MRSK.app.stop(version: version)
+              execute *MRSK.app.stop(version: version, stop_immediately: true), raise_on_non_zero_exit: false
               execute *MRSK.app.remove_container(version: version)
               execute *MRSK.app.run(role: role.name)
             else

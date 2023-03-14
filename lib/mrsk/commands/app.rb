@@ -20,14 +20,28 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
     docker :start, service_with_version_and_destination
   end
 
-  def stop(version: nil)
-    pipe \
-      version ? container_id_for_version(version) : current_container_id,
-      xargs(docker(:stop))
+  DEFAULT_STOP_WAIT_TIME = 10
+  NON_BLOCKING_STOP = -1
+
+  def stop(version: nil, stop_immediately: false)
+    container_id = version ? container_id_for_version(version) : current_container_id
+    if stop_immediately
+      pipe \
+        container_id,
+        xargs(docker(:kill, "--signal=SIGKILL"))
+    elsif config.stop_wait_time == NON_BLOCKING_STOP
+      pipe \
+        container_id,
+        xargs(docker(:kill, "--signal=SIGTERM"))
+    else
+      pipe \
+        container_id,
+        xargs(docker(:stop, "-t", config.stop_wait_time || DEFAULT_STOP_WAIT_TIME))
+    end
   end
 
   def info
-    docker :ps, *filter_args
+    docker :ps, *filter_args, "--latest"
   end
 
 
@@ -76,13 +90,13 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
 
 
   def current_container_id
-    docker :ps, "--quiet", *filter_args
+    docker :ps, "--quiet", *filter_args, "--latest"
   end
 
   def current_running_version
     # FIXME: Find more graceful way to extract the version from "app-version" than using sed and tail!
     pipe \
-      docker(:ps, *filter_args, "--format", '"{{.Names}}"'),
+      docker(:ps, *filter_args, "--format", '"{{.Names}}"', "--latest"),
       %(sed 's/-/\\n/g'),
       "tail -n 1"
   end

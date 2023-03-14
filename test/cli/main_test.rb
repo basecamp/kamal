@@ -88,7 +88,7 @@ class CliMainTest < CliTestCase
 
   test "rollback good version" do
     Mrsk::Cli::Main.any_instance.stubs(:container_name_available?).returns(true)
-    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info).with(:docker, :ps, "--filter", "label=service=app", "--format", "\"{{.Names}}\"", "|", "sed 's/-/\\n/g'", "|", "tail -n 1").returns("version-to-rollback\n").times(2)
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info).with(:docker, :ps, "--filter", "label=service=app", "--format", "\"{{.Names}}\"", "--latest", "|", "sed 's/-/\\n/g'", "|", "tail -n 1").returns("version-to-rollback\n").times(2)
 
     run_command("rollback", "123").tap do |output|
       assert_match "Start version 123", output
@@ -99,7 +99,7 @@ class CliMainTest < CliTestCase
 
   test "rollback without old version" do
     Mrsk::Cli::Main.any_instance.stubs(:container_name_available?).returns(true)
-    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info).with(:docker, :ps, "--filter", "label=service=app", "--format", "\"{{.Names}}\"", "|", "sed 's/-/\\n/g'", "|", "tail -n 1").returns("").times(2)
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info).with(:docker, :ps, "--filter", "label=service=app", "--format", "\"{{.Names}}\"", "--latest", "|", "sed 's/-/\\n/g'", "|", "tail -n 1").returns("").times(2)
 
     run_command("rollback", "123").tap do |output|
       assert_match "Start version 123", output

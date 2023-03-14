@@ -6,7 +6,8 @@ require "erb"
 require "net/ssh/proxy/jump"
 
 class Mrsk::Configuration
-  delegate :service, :image, :servers, :env, :labels, :registry, :builder, to: :raw_config, allow_nil: true
+  delegate :service, :image, :servers, :env, :labels, :registry, :builder, :stop_wait_time,
+    to: :raw_config, allow_nil: true
   delegate :argumentize, :argumentize_env_with_secrets, to: Mrsk::Utils
 
   attr_accessor :destination

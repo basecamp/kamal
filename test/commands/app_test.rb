@@ -56,63 +56,63 @@ class CommandsAppTest < ActiveSupport::TestCase
 
   test "stop" do
     assert_equal \
-      "docker ps --quiet --filter label=service=app | xargs docker stop",
+      "docker ps --quiet --filter label=service=app --latest | xargs docker stop -t 10",
       new_command.stop.join(" ")
   end
 
   test "stop with version" do
     assert_equal \
-      "docker container ls --all --filter name=app-123 --quiet | xargs docker stop",
+      "docker container ls --all --filter name=app-123 --quiet | xargs docker stop -t 10",
       new_command.stop(version: "123").join(" ")
   end
 
   test "info" do
     assert_equal \
-      "docker ps --filter label=service=app",
+      "docker ps --filter label=service=app --latest",
       new_command.info.join(" ")
   end
 
   test "info with destination" do
     @destination = "staging"
     assert_equal \
-      "docker ps --filter label=service=app --filter label=destination=staging",
+      "docker ps --filter label=service=app --filter label=destination=staging --latest",
       new_command.info.join(" ")
   end
 
 
   test "logs" do
     assert_equal \
-      "docker ps --quiet --filter label=service=app | xargs docker logs 2>&1",
+      "docker ps --quiet --filter label=service=app --latest | xargs docker logs 2>&1",
       new_command.logs.join(" ")
 
     assert_equal \
-      "docker ps --quiet --filter label=service=app | xargs docker logs --since 5m 2>&1",
+      "docker ps --quiet --filter label=service=app --latest | xargs docker logs --since 5m 2>&1",
       new_command.logs(since: "5m").join(" ")
 
     assert_equal \
-      "docker ps --quiet --filter label=service=app | xargs docker logs --tail 100 2>&1",
+      "docker ps --quiet --filter label=service=app --latest | xargs docker logs --tail 100 2>&1",
       new_command.logs(lines: "100").join(" ")
 
     assert_equal \
-      "docker ps --quiet --filter label=service=app | xargs docker logs --since 5m --tail 100 2>&1",
+      "docker ps --quiet --filter label=service=app --latest | xargs docker logs --since 5m --tail 100 2>&1",
       new_command.logs(since: "5m", lines: "100").join(" ")
 
     assert_equal \
-      "docker ps --quiet --filter label=service=app | xargs docker logs 2>&1 | grep 'my-id'",
+      "docker ps --quiet --filter label=service=app --latest | xargs docker logs 2>&1 | grep 'my-id'",
       new_command.logs(grep: "my-id").join(" ")
 
     assert_equal \
-      "docker ps --quiet --filter label=service=app | xargs docker logs --since 5m 2>&1 | grep 'my-id'",
+      "docker ps --quiet --filter label=service=app --latest | xargs docker logs --since 5m 2>&1 | grep 'my-id'",
       new_command.logs(since: "5m", grep: "my-id").join(" ")
   end
 
   test "follow logs" do
     assert_match \
-      "docker ps --quiet --filter label=service=app | xargs docker logs --timestamps --tail 10 --follow 2>&1",
+      "docker ps --quiet --filter label=service=app --latest | xargs docker logs --timestamps --tail 10 --follow 2>&1",
       new_command.follow_logs(host: "app-1")
 
     assert_match \
-      "docker ps --quiet --filter label=service=app | xargs docker logs --timestamps --tail 10 --follow 2>&1 | grep \"Completed\"",
+      "docker ps --quiet --filter label=service=app --latest | xargs docker logs --timestamps --tail 10 --follow 2>&1 | grep \"Completed\"",
       new_command.follow_logs(host: "app-1", grep: "Completed")
   end
 
@@ -166,14 +166,14 @@ class CommandsAppTest < ActiveSupport::TestCase
 
   test "current_container_id" do
     assert_equal \
-      "docker ps --quiet --filter label=service=app",
+      "docker ps --quiet --filter label=service=app --latest",
       new_command.current_container_id.join(" ")
   end
 
   test "current_container_id with destination" do
     @destination = "staging"
     assert_equal \
-      "docker ps --quiet --filter label=service=app --filter label=destination=staging",
+      "docker ps --quiet --filter label=service=app --filter label=destination=staging --latest",
       new_command.current_container_id.join(" ")
   end
 
@@ -185,7 +185,7 @@ class CommandsAppTest < ActiveSupport::TestCase
 
   test "current_running_version" do
     assert_equal \
-      "docker ps --filter label=service=app --format \"{{.Names}}\" | sed 's/-/\\n/g' | tail -n 1",
+      "docker ps --filter label=service=app --format \"{{.Names}}\" --latest | sed 's/-/\\n/g' | tail -n 1",
       new_command.current_running_version.join(" ")
   end
 

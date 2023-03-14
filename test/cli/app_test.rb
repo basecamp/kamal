@@ -29,7 +29,7 @@ class CliAppTest < CliTestCase
 
     run_command("boot").tap do |output|
       assert_match "Rebooting container with same version 999 already deployed", output # Can't start what's already running
-      assert_match "docker container ls --all --filter name=app-999 --quiet | xargs docker container rm", output # Stop old running
+      assert_match "docker container ls --all --filter name=app-999 --quiet | xargs docker kill --signal=SIGKILL", output # Stop old running
       assert_match "docker container ls --all --filter name=app-999 --quiet | xargs docker container rm", output # Remove old container
       assert_match "docker run", output # Start new container
     end
@@ -45,7 +45,7 @@ class CliAppTest < CliTestCase
 
   test "stop" do
     run_command("stop").tap do |output|
-      assert_match "docker ps --quiet --filter label=service=app | xargs docker stop", output
+      assert_match "docker ps --quiet --filter label=service=app --latest | xargs docker stop -t 10", output
     end
   end
 
@@ -63,7 +63,7 @@ class CliAppTest < CliTestCase
 
   test "exec with reuse" do
     run_command("exec", "--reuse", "ruby -v").tap do |output|
-      assert_match "docker ps --filter label=service=app --format \"{{.Names}}\" | sed 's/-/\\n/g' | tail -n 1", output # Get current version
+      assert_match "docker ps --filter label=service=app --format \"{{.Names}}\" --latest | sed 's/-/\\n/g' | tail -n 1", output # Get current version
       assert_match "docker exec app-999 ruby -v", output
     end
   end
@@ -82,16 +82,16 @@ class CliAppTest < CliTestCase
 
   test "logs" do
     SSHKit::Backend::Abstract.any_instance.stubs(:exec)
-      .with("ssh -t root@1.1.1.1 'docker ps --quiet --filter label=service=app | xargs docker logs --timestamps --tail 10 2>&1'")
+      .with("ssh -t root@1.1.1.1 'docker ps --quiet --filter label=service=app --latest | xargs docker logs --timestamps --tail 10 2>&1'")
 
-    assert_match "docker ps --quiet --filter label=service=app | xargs docker logs --tail 100 2>&1", run_command("logs")
+    assert_match "docker ps --quiet --filter label=service=app --latest | xargs docker logs --tail 100 2>&1", run_command("logs")
   end
 
   test "logs with follow" do
     SSHKit::Backend::Abstract.any_instance.stubs(:exec)
-      .with("ssh -t root@1.1.1.1 'docker ps --quiet --filter label=service=app | xargs docker logs --timestamps --tail 10 --follow 2>&1'")
+      .with("ssh -t root@1.1.1.1 'docker ps --quiet --filter label=service=app --latest | xargs docker logs --timestamps --tail 10 --follow 2>&1'")
 
-    assert_match "docker ps --quiet --filter label=service=app | xargs docker logs --timestamps --tail 10 --follow 2>&1", run_command("logs", "--follow")
+    assert_match "docker ps --quiet --filter label=service=app --latest | xargs docker logs --timestamps --tail 10 --follow 2>&1", run_command("logs", "--follow")
   end
 
   test "remove" do
@@ -122,7 +122,7 @@ class CliAppTest < CliTestCase
 
   test "version" do
     run_command("version").tap do |output|
-      assert_match "docker ps --filter label=service=app --format \"{{.Names}}\" | sed 's/-/\\n/g' | tail -n 1", output
+      assert_match "docker ps --filter label=service=app --format \"{{.Names}}\" --latest | sed 's/-/\\n/g' | tail -n 1", output
     end
   end
 
