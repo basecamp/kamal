@@ -135,8 +135,10 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
         puts "Binstub already exists in bin/mrsk (remove first to create a new one)"
       else
         puts "Adding MRSK to Gemfile and bundle..."
-        `bundle add mrsk`
-        `bundle binstubs mrsk`
+        run_locally do
+          execute :bundle, :add, :mrsk
+          execute :bundle, :binstubs, :mrsk
+        end
         puts "Created binstub file in bin/mrsk"
       end
     end
