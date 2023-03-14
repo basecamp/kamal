@@ -449,7 +449,7 @@ traefik:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
   args:
-    'entrypoints.web.address=:80': true
+    entrypoints.web.address: ':80'
 ```
 
 A more complete example including entrypoints would be:
@@ -472,8 +472,8 @@ traefik:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
   args:
-    'entrypoints.web.address=:80': true
-    'entrypoints.otherentrypoint.address=:9000': true
+    entrypoints.web.address: ':80'
+    entrypoints.otherentrypoint.address: ':9000'
 ```
 
 ### Configuring build args for new images
