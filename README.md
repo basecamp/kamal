@@ -436,6 +436,8 @@ traefik:
     publish:
     - 9000
     - 80    
+    volumes:
+      - /tmp/example:/tmp/example
 ```
 
 Note, this fully overrides any defaults. If you choose to do this, then you'll like need to start out by copying the 
