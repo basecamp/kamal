@@ -449,7 +449,7 @@ traefik:
     publish:
     - 80
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+    - /var/run/docker.sock:/var/run/docker.sock
   args:
     entrypoints.web.address: ':80'
 ```

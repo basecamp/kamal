@@ -9,7 +9,7 @@ class Mrsk::Commands::Traefik < Mrsk::Commands::Base
       "--restart", "unless-stopped",
       "--log-opt", "max-size=#{MAX_LOG_SIZE}",
       *published_ports,
-     *volumes,
+      *volumes,
       "traefik",
       "--providers.docker",
       "--log.level=DEBUG",
