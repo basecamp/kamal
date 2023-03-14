@@ -9,11 +9,11 @@ require "mrsk"
 
 ActiveSupport::LogSubscriber.logger = ActiveSupport::Logger.new(STDOUT) if ENV["VERBOSE"]
 
-# Applies to remote commands only,
-# see https://github.com/capistrano/sshkit/blob/master/lib/sshkit/dsl.rb#L9
+# Applies to remote commands only.
 SSHKit.config.backend = SSHKit::Backend::Printer
 
-# Ensure local commands use the printer backend too
+# Ensure local commands use the printer backend too.
+# See https://github.com/capistrano/sshkit/blob/master/lib/sshkit/dsl.rb#L9
 module SSHKit
   module DSL
     def run_locally(&block)
