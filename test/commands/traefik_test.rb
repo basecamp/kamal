@@ -4,18 +4,18 @@ class CommandsTraefikTest < ActiveSupport::TestCase
   setup do
     @config = {
       service: "app", image: "dhh/app", registry: { "username" => "dhh", "password" => "secret" }, servers: [ "1.1.1.1" ],
-      traefik: { "args" => { "accesslog.format" => "json", "metrics.prometheus.buckets" => "0.1,0.3,1.2,5.0" } }
+      traefik: { "args" => { "accesslog.format" => "json", "api.insecure" => true, "metrics.prometheus.buckets" => "0.1,0.3,1.2,5.0" } }
     }
   end
 
   test "run" do
     assert_equal \
-      "docker run --name traefik --detach --restart unless-stopped --log-opt max-size=10m --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock traefik --providers.docker --log.level=DEBUG --accesslog.format \"json\" --metrics.prometheus.buckets \"0.1,0.3,1.2,5.0\"",
+      "docker run --name traefik --detach --restart unless-stopped --log-opt max-size=10m --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock traefik --providers.docker --log.level=DEBUG --accesslog.format=\"json\" --api.insecure --metrics.prometheus.buckets=\"0.1,0.3,1.2,5.0\"",
       new_command.run.join(" ")
 
     @config[:traefik]["host_port"] = "8080"
     assert_equal \
-      "docker run --name traefik --detach --restart unless-stopped --log-opt max-size=10m --publish 8080:80 --volume /var/run/docker.sock:/var/run/docker.sock traefik --providers.docker --log.level=DEBUG --accesslog.format \"json\" --metrics.prometheus.buckets \"0.1,0.3,1.2,5.0\"",
+      "docker run --name traefik --detach --restart unless-stopped --log-opt max-size=10m --publish 8080:80 --volume /var/run/docker.sock:/var/run/docker.sock traefik --providers.docker --log.level=DEBUG --accesslog.format=\"json\" --api.insecure --metrics.prometheus.buckets=\"0.1,0.3,1.2,5.0\"",
       new_command.run.join(" ")
   end
 
