@@ -14,7 +14,7 @@ class CommandsAppTest < ActiveSupport::TestCase
 
   test "run" do
     assert_equal \
-      "docker run --detach --restart unless-stopped --log-opt max-size=10m --name app-999 -e RAILS_MASTER_KEY=\"456\" --label service=\"app\" --label role=\"web\" --label traefik.http.routers.app.rule=\"PathPrefix(\\`/\\`)\" --label traefik.http.services.app.loadbalancer.healthcheck.path=\"/up\" --label traefik.http.services.app.loadbalancer.healthcheck.interval=\"1s\" --label traefik.http.middlewares.app.retry.attempts=\"5\" --label traefik.http.middlewares.app.retry.initialinterval=\"500ms\" dhh/app:999",
+      "docker run --detach --restart unless-stopped --log-opt max-size=10m --name app-999 -e MRSK_CONTAINER_NAME=\"app-999\" -e RAILS_MASTER_KEY=\"456\" --label service=\"app\" --label role=\"web\" --label traefik.http.routers.app.rule=\"PathPrefix(\\`/\\`)\" --label traefik.http.services.app.loadbalancer.healthcheck.path=\"/up\" --label traefik.http.services.app.loadbalancer.healthcheck.interval=\"1s\" --label traefik.http.middlewares.app-retry.retry.attempts=\"5\" --label traefik.http.middlewares.app-retry.retry.initialinterval=\"500ms\" --label traefik.http.routers.app.middlewares=\"app-retry@docker\" dhh/app:999",
       @app.run.join(" ")
   end
 
@@ -22,7 +22,7 @@ class CommandsAppTest < ActiveSupport::TestCase
     @config[:volumes] = ["/local/path:/container/path" ]
 
     assert_equal \
-      "docker run --detach --restart unless-stopped --log-opt max-size=10m --name app-999 -e RAILS_MASTER_KEY=\"456\" --volume /local/path:/container/path --label service=\"app\" --label role=\"web\" --label traefik.http.routers.app.rule=\"PathPrefix(\\`/\\`)\" --label traefik.http.services.app.loadbalancer.healthcheck.path=\"/up\" --label traefik.http.services.app.loadbalancer.healthcheck.interval=\"1s\" --label traefik.http.middlewares.app.retry.attempts=\"5\" --label traefik.http.middlewares.app.retry.initialinterval=\"500ms\" dhh/app:999",
+      "docker run --detach --restart unless-stopped --log-opt max-size=10m --name app-999 -e MRSK_CONTAINER_NAME=\"app-999\" -e RAILS_MASTER_KEY=\"456\" --volume /local/path:/container/path --label service=\"app\" --label role=\"web\" --label traefik.http.routers.app.rule=\"PathPrefix(\\`/\\`)\" --label traefik.http.services.app.loadbalancer.healthcheck.path=\"/up\" --label traefik.http.services.app.loadbalancer.healthcheck.interval=\"1s\" --label traefik.http.middlewares.app-retry.retry.attempts=\"5\" --label traefik.http.middlewares.app-retry.retry.initialinterval=\"500ms\" --label traefik.http.routers.app.middlewares=\"app-retry@docker\" dhh/app:999",
       @app.run.join(" ")
   end
 
@@ -30,7 +30,7 @@ class CommandsAppTest < ActiveSupport::TestCase
     @config[:healthcheck] = { "path" => "/healthz" }
 
     assert_equal \
-      "docker run --detach --restart unless-stopped --log-opt max-size=10m --name app-999 -e RAILS_MASTER_KEY=\"456\" --label service=\"app\" --label role=\"web\" --label traefik.http.routers.app.rule=\"PathPrefix(\\`/\\`)\" --label traefik.http.services.app.loadbalancer.healthcheck.path=\"/healthz\" --label traefik.http.services.app.loadbalancer.healthcheck.interval=\"1s\" --label traefik.http.middlewares.app.retry.attempts=\"5\" --label traefik.http.middlewares.app.retry.initialinterval=\"500ms\" dhh/app:999",
+      "docker run --detach --restart unless-stopped --log-opt max-size=10m --name app-999 -e MRSK_CONTAINER_NAME=\"app-999\" -e RAILS_MASTER_KEY=\"456\" --label service=\"app\" --label role=\"web\" --label traefik.http.routers.app.rule=\"PathPrefix(\\`/\\`)\" --label traefik.http.services.app.loadbalancer.healthcheck.path=\"/healthz\" --label traefik.http.services.app.loadbalancer.healthcheck.interval=\"1s\" --label traefik.http.middlewares.app-retry.retry.attempts=\"5\" --label traefik.http.middlewares.app-retry.retry.initialinterval=\"500ms\" --label traefik.http.routers.app.middlewares=\"app-retry@docker\" dhh/app:999",
       @app.run.join(" ")
   end
 
@@ -39,7 +39,7 @@ class CommandsAppTest < ActiveSupport::TestCase
     @app = Mrsk::Commands::App.new Mrsk::Configuration.new(@config).tap { |c| c.version = "999" }
 
     assert_equal \
-      "docker run --detach --restart unless-stopped --log-opt max-size=10m --name app-999 -e RAILS_MASTER_KEY=\"456\" --label service=\"app\" --label role=\"jobs\" --mount \"somewhere\" --cap-add dhh/app:999 bin/jobs",
+      "docker run --detach --restart unless-stopped --log-opt max-size=10m --name app-999 -e MRSK_CONTAINER_NAME=\"app-999\" -e RAILS_MASTER_KEY=\"456\" --label service=\"app\" --label role=\"jobs\" --mount \"somewhere\" --cap-add dhh/app:999 bin/jobs",
       @app.run(role: :jobs).join(" ")
   end
 

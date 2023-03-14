@@ -24,8 +24,14 @@ module Mrsk::Utils
   end
 
   # Returns a list of shell-dashed option arguments. If the value is true, it's treated like a value-less option.
-  def optionize(args)
-    args.collect { |(key, value)| [ "--#{key}", value == true ? nil : escape_shell_value(value) ] }.flatten.compact
+  def optionize(args, with: nil)
+    options = if with
+      args.collect { |(key, value)| value == true ? "--#{key}" : "--#{key}#{with}#{escape_shell_value(value)}" }
+    else
+      args.collect { |(key, value)| [ "--#{key}", value == true ? nil : escape_shell_value(value) ] }
+    end
+
+    options.flatten.compact
   end
 
   # Copied from SSHKit::Backend::Abstract#redact to be available inside Commands classes

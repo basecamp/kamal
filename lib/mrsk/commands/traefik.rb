@@ -55,14 +55,14 @@ class Mrsk::Commands::Traefik < Mrsk::Commands::Base
 
   private
     def cmd_option_args
-      if args = config.raw_config.dig(:traefik, "args")
-        optionize args
+      if args = config.traefik["args"]
+        optionize args, with: "="
       else
         []
       end
     end
 
     def host_port
-      config.raw_config.dig(:traefik, "host_port") || CONTAINER_PORT
+      config.traefik["host_port"] || CONTAINER_PORT
     end
 end

@@ -9,42 +9,58 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
   end
 
   desc "deploy", "Deploy app to servers"
+  option :skip_push, aliases: "-P", type: :boolean, default: false, desc: "Skip image build and push"
   def deploy
+    invoke_options = options.without(:skip_push)
+
     runtime = print_runtime do
       say "Ensure curl and Docker are installed...", :magenta
-      invoke "mrsk:cli:server:bootstrap"
+      invoke "mrsk:cli:server:bootstrap", [], invoke_options
 
       say "Log into image registry...", :magenta
-      invoke "mrsk:cli:registry:login"
+      invoke "mrsk:cli:registry:login", [], invoke_options
 
-      say "Build and push app image...", :magenta
-      invoke "mrsk:cli:build:deliver"
+      if options[:skip_push]
+        say "Pull app image...", :magenta
+        invoke "mrsk:cli:build:pull", [], invoke_options
+      else
+        say "Build and push app image...", :magenta
+        invoke "mrsk:cli:build:deliver", [], invoke_options
+      end
 
       say "Ensure Traefik is running...", :magenta
-      invoke "mrsk:cli:traefik:boot"
+      invoke "mrsk:cli:traefik:boot", [], invoke_options
 
       say "Ensure app can pass healthcheck...", :magenta
-      invoke "mrsk:cli:healthcheck:perform"
+      invoke "mrsk:cli:healthcheck:perform", [], invoke_options
 
-      invoke "mrsk:cli:app:boot"
+      invoke "mrsk:cli:app:boot", [], invoke_options
 
       say "Prune old containers and images...", :magenta
-      invoke "mrsk:cli:prune:all"
+      invoke "mrsk:cli:prune:all", [], invoke_options
     end
 
     audit_broadcast "Deployed app in #{runtime.to_i} seconds" unless options[:skip_broadcast]
   end
 
   desc "redeploy", "Deploy app to servers without bootstrapping servers, starting Traefik, pruning, and registry login"
+  option :skip_push, aliases: "-P", type: :boolean, default: false, desc: "Skip image build and push"
   def redeploy
+    invoke_options = options.without(:skip_push)
+
     runtime = print_runtime do
-      say "Build and push app image...", :magenta
-      invoke "mrsk:cli:build:deliver"
+      if options[:skip_push]
+        say "Pull app image...", :magenta
+        invoke "mrsk:cli:build:pull", [], invoke_options
+      else
+        say "Build and push app image...", :magenta
+        invoke "mrsk:cli:build:deliver", [], invoke_options
+      end
 
       say "Ensure app can pass healthcheck...", :magenta
-      invoke "mrsk:cli:healthcheck:perform"
+      invoke "mrsk:cli:healthcheck:perform", [], invoke_options
 
-      invoke "mrsk:cli:app:boot"
+      invoke "mrsk:cli:app:boot", [], invoke_options
     end
 
     audit_broadcast "Redeployed app in #{runtime.to_i} seconds" unless options[:skip_broadcast]
@@ -119,8 +135,10 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
         puts "Binstub already exists in bin/mrsk (remove first to create a new one)"
       else
         puts "Adding MRSK to Gemfile and bundle..."
-        `bundle add mrsk`
-        `bundle binstubs mrsk`
+        run_locally do
+          execute :bundle, :add, :mrsk
+          execute :bundle, :binstubs, :mrsk
+        end
         puts "Created binstub file in bin/mrsk"
       end
     end
