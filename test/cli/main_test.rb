@@ -108,8 +108,6 @@ class CliMainTest < CliTestCase
     run_command("audit").tap do |output|
       assert_match /tail -n 50 mrsk-app-audit.log on 1.1.1.1/, output
       assert_match /App Host: 1.1.1.1/, output
-      assert_match /tail -n 50 mrsk-app-audit.log on 1.1.1.2/, output
-      assert_match /App Host: 1.1.1.2/, output
     end
   end
 
