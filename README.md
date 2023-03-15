@@ -428,33 +428,24 @@ traefik:
 
 ### Configure docker options for traefik
 
-We allow users to override the published ports and bound volumes for the traefik container like so:
-
-```yaml
-traefik:
-  options:
-    publish:
-    - 9000
-    - 80    
-    volumes:
-      - /tmp/example:/tmp/example
-```
-
-Note, this fully overrides any defaults. If you choose to do this, then you'll like need to start out by copying the 
-default configuration:
+We allow users to pass additional docker options to the trafik container like 
 
 ```yaml
 traefik:
   options: 
     publish:
-    - 80
+    - 8080:8080
     volumes:
-    - /var/run/docker.sock:/var/run/docker.sock
-  args:
-    entrypoints.web.address: ':80'
+    - /tmp/example.json:/tmp/example.json
+    memory: 512m
 ```
 
-A more complete example including entrypoints would be:
+This will start the traefik container with a command like: `docker run ... --volume /tmp/example.json:/tmp/example.json --publish 8080:8080 `
+
+
+### Configure alternate entrypoints for traefik
+
+You can configure multiple entrypoints for traefik like so:
 
 ```yaml
 service: myservice
@@ -469,10 +460,7 @@ labels:
 traefik:
   options:
     publish:
-      - 80
-      - 9000
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+      - 9000:9000
   args:
     entrypoints.web.address: ':80'
     entrypoints.otherentrypoint.address: ':9000'
