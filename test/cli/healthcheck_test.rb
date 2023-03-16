@@ -47,6 +47,9 @@ class CliHealthcheckTest < CliTestCase
   end
 
   test "perform failing for unknown reason" do
+    # Prevent expected failures from outputting to terminal
+    Thread.report_on_exception = false
+
     SSHKit::Backend::Abstract.any_instance.stubs(:execute) # No need to execute anything here
     SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info)
       .with(:curl, "--silent", "--output", "/dev/null", "--write-out", "'%{http_code}'", "--max-time", "2", "http://localhost:3999/up")
