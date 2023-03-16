@@ -161,6 +161,10 @@ class Mrsk::Configuration
     }.compact
   end
 
+  def traefik
+    raw_config.traefik || {}
+  end
+  
   def validate!(config)
     schema_file_path = File.join(File.dirname(File.expand_path(__FILE__)), "configuration/schema.yaml")
     schema = YAML.load(IO.read(schema_file_path))

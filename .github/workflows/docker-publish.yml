@@ -17,10 +17,6 @@ jobs:
         name: Checkout
         uses: actions/checkout@v3
       -
-        name: Extract Version Number
-        id: extract_version
-        run: echo "::set-output name=version::${{ github.ref | replace('refs/tags/', '') }}"
-      -
         name: Set up QEMU
         uses: docker/setup-qemu-action@v2
       -
@@ -42,4 +38,4 @@ jobs:
           push: true
           tags: |
             ghcr.io/mrsked/mrsk:latest
-            ghcr.io/mrsked/mrsk:${{ steps.extract_version.outputs.version }}
+            ghcr.io/mrsked/mrsk:${{ github.ref_name }}
