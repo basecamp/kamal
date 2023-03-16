@@ -131,7 +131,7 @@ class CliAccessoryTest < CliTestCase
   end
 
   private
-  def run_command(*command)
-    stdouted { Mrsk::Cli::Accessory.start([*command, "-c", "test/fixtures/deploy_with_accessories.yml"]) }
-  end
+    def run_command(*command)
+      stdouted { Mrsk::Cli::Accessory.start([*command, "-c", "test/fixtures/deploy_with_accessories.yml"]) }
+    end
 end
