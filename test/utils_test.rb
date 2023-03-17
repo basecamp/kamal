@@ -33,6 +33,7 @@ class UtilsTest < ActiveSupport::TestCase
   end
 
   test "escape_shell_value" do
+    assert_equal "\"foo\"", Mrsk::Utils.escape_shell_value("foo")
     assert_equal "\"\\`foo\\`\"", Mrsk::Utils.escape_shell_value("`foo`")
   end
 end
