@@ -321,6 +321,20 @@ servers:
 
 That'll start the job containers with `docker run ... --cap-add --cpu-count 4 ...`.
 
+### Configuring logging
+
+You can configure the logging driver and options passed to Docker using `logging`:
+
+```yaml
+logging:
+  driver: awslogs
+  options:
+    awslogs-region: "eu-central-2"
+    awslogs-group: "koleo-app"
+```
+
+If nothing is configured, Docker will use its default driver `json-file`.
+
 ### Using remote builder for native multi-arch
 
 If you're developing on ARM64 (like Apple Silicon), but you want to deploy on AMD64 (x86 64-bit), you can use multi-architecture images. By default, MRSK will setup a local buildx configuration that does this through QEMU emulation. But this can be quite slow, especially on the first build.
