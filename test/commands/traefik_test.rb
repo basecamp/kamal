@@ -10,12 +10,12 @@ class CommandsTraefikTest < ActiveSupport::TestCase
 
   test "run" do
     assert_equal \
-      "docker run --name traefik --detach --restart unless-stopped --log-opt max-size=10m --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock traefik --providers.docker --log.level=DEBUG --accesslog.format=\"json\" --api.insecure --metrics.prometheus.buckets=\"0.1,0.3,1.2,5.0\"",
+      "docker run --name traefik --detach --restart unless-stopped --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock traefik --providers.docker --log.level=DEBUG --accesslog.format=\"json\" --api.insecure --metrics.prometheus.buckets=\"0.1,0.3,1.2,5.0\"",
       new_command.run.join(" ")
 
     @config[:traefik]["host_port"] = "8080"
     assert_equal \
-      "docker run --name traefik --detach --restart unless-stopped --log-opt max-size=10m --publish 8080:80 --volume /var/run/docker.sock:/var/run/docker.sock traefik --providers.docker --log.level=DEBUG --accesslog.format=\"json\" --api.insecure --metrics.prometheus.buckets=\"0.1,0.3,1.2,5.0\"",
+      "docker run --name traefik --detach --restart unless-stopped --publish 8080:80 --volume /var/run/docker.sock:/var/run/docker.sock traefik --providers.docker --log.level=DEBUG --accesslog.format=\"json\" --api.insecure --metrics.prometheus.buckets=\"0.1,0.3,1.2,5.0\"",
       new_command.run.join(" ")
   end
 
@@ -23,7 +23,15 @@ class CommandsTraefikTest < ActiveSupport::TestCase
     @config.delete(:traefik)
 
     assert_equal \
-      "docker run --name traefik --detach --restart unless-stopped --log-opt max-size=10m --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock traefik --providers.docker --log.level=DEBUG",
+      "docker run --name traefik --detach --restart unless-stopped --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock traefik --providers.docker --log.level=DEBUG",
+      new_command.run.join(" ")
+  end
+
+  test "run with logging config" do
+    @config[:logging] = { "driver" => "local", "options" => { "max-size" => "10m", "max-file" => "3" } }
+
+    assert_equal \
+      "docker run --name traefik --detach --restart unless-stopped --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock --log-driver local --log-opt max-size=\"10m\" --log-opt max-file=\"3\" traefik --providers.docker --log.level=DEBUG --accesslog.format=\"json\" --api.insecure --metrics.prometheus.buckets=\"0.1,0.3,1.2,5.0\"",
       new_command.run.join(" ")
   end
 

@@ -6,7 +6,7 @@ class CliAccessoryTest < CliTestCase
     Mrsk::Cli::Accessory.any_instance.expects(:upload).with("mysql")
 
     run_command("boot", "mysql").tap do |output|
-      assert_match "docker run --name app-mysql --detach --restart unless-stopped --log-opt max-size=10m --publish 3306:3306 -e [REDACTED] -e MYSQL_ROOT_HOST=\"%\" --volume $PWD/app-mysql/etc/mysql/my.cnf:/etc/mysql/my.cnf --volume $PWD/app-mysql/data:/var/lib/mysql --label service=\"app-mysql\" mysql:5.7 on 1.1.1.3", output
+      assert_match "docker run --name app-mysql --detach --restart unless-stopped --publish 3306:3306 -e [REDACTED] -e MYSQL_ROOT_HOST=\"%\" --volume $PWD/app-mysql/etc/mysql/my.cnf:/etc/mysql/my.cnf --volume $PWD/app-mysql/data:/var/lib/mysql --label service=\"app-mysql\" mysql:5.7 on 1.1.1.3", output
     end
   end
 
@@ -17,8 +17,8 @@ class CliAccessoryTest < CliTestCase
     Mrsk::Cli::Accessory.any_instance.expects(:upload).with("redis")
 
     run_command("boot", "all").tap do |output|
-      assert_match "docker run --name app-mysql --detach --restart unless-stopped --log-opt max-size=10m --publish 3306:3306 -e [REDACTED] -e MYSQL_ROOT_HOST=\"%\" --volume $PWD/app-mysql/etc/mysql/my.cnf:/etc/mysql/my.cnf --volume $PWD/app-mysql/data:/var/lib/mysql --label service=\"app-mysql\" mysql:5.7 on 1.1.1.3", output
-      assert_match "docker run --name app-redis --detach --restart unless-stopped --log-opt max-size=10m --publish 6379:6379 --volume $PWD/app-redis/data:/data --label service=\"app-redis\" redis:latest on 1.1.1.4", output
+      assert_match "docker run --name app-mysql --detach --restart unless-stopped --publish 3306:3306 -e [REDACTED] -e MYSQL_ROOT_HOST=\"%\" --volume $PWD/app-mysql/etc/mysql/my.cnf:/etc/mysql/my.cnf --volume $PWD/app-mysql/data:/var/lib/mysql --label service=\"app-mysql\" mysql:5.7 on 1.1.1.3", output
+      assert_match "docker run --name app-redis --detach --restart unless-stopped --publish 6379:6379 --volume $PWD/app-redis/data:/data --label service=\"app-redis\" redis:latest on 1.1.1.4", output
     end
   end
 

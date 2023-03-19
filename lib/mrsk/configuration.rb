@@ -6,7 +6,7 @@ require "erb"
 require "net/ssh/proxy/jump"
 
 class Mrsk::Configuration
-  delegate :service, :image, :servers, :env, :labels, :registry, :builder, to: :raw_config, allow_nil: true
+  delegate :service, :image, :servers, :env, :labels, :registry, :builder, :logging, to: :raw_config, allow_nil: true
   delegate :argumentize, :argumentize_env_with_secrets, to: Mrsk::Utils
 
   attr_accessor :version
@@ -109,6 +109,15 @@ class Mrsk::Configuration
     end
   end
 
+  def logging_args
+    if raw_config.logging.present?
+      [ "--log-driver", raw_config.logging["driver"] || "json-file" ] +
+        argumentize("--log-opt", raw_config.logging["options"])
+    else
+      []
+    end
+  end
+
 
   def ssh_user
     if raw_config.ssh.present?
@@ -161,6 +170,7 @@ class Mrsk::Configuration
       ssh_options: ssh_options,
       builder: raw_config.builder,
       accessories: raw_config.accessories,
+      logging: raw_config.logging,
       healthcheck: healthcheck
     }.compact
   end
