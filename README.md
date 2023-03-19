@@ -330,7 +330,7 @@ logging:
   driver: awslogs
   options:
     awslogs-region: "eu-central-2"
-    awslogs-group: "koleo-app"
+    awslogs-group: "my-app"
 ```
 
 If nothing is configured, Docker will use its default driver `json-file`.
