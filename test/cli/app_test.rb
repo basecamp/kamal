@@ -63,7 +63,19 @@ class CliAppTest < CliTestCase
 
   test "remove_container" do
     run_command("remove_container", "1234567").tap do |output|
-      assert_match /#{Regexp.escape("docker container ls --all --filter name=app-web-1234567 --quiet | xargs docker container rm")}/, output
+      assert_match "docker container ls --all --filter name=app-web-1234567 --quiet | xargs docker container rm", output
+    end
+  end
+
+  test "remove_containers" do
+    run_command("remove_containers").tap do |output|
+      assert_match "docker container prune --force --filter label=service=app", output
+    end
+  end
+
+  test "remove_images" do
+    run_command("remove_images").tap do |output|
+      assert_match "docker image prune --all --force --filter label=service=app", output
     end
   end
 
@@ -104,32 +116,6 @@ class CliAppTest < CliTestCase
       .with("ssh -t root@1.1.1.1 'docker ps --quiet --filter label=service=app | xargs docker logs --timestamps --tail 10 --follow 2>&1'")
 
     assert_match "docker ps --quiet --filter label=service=app | xargs docker logs --timestamps --tail 10 --follow 2>&1", run_command("logs", "--follow")
-  end
-
-  test "remove" do
-    Mrsk::Cli::App.any_instance.expects(:stop)
-    Mrsk::Cli::App.any_instance.expects(:remove_containers)
-    Mrsk::Cli::App.any_instance.expects(:remove_images)
-
-    run_command("remove")
-  end
-
-  test "remove_container" do
-    run_command("remove_container", "1234567").tap do |output|
-      assert_match "docker container ls --all --filter name=app-1234567 --quiet | xargs docker container rm", output
-    end
-  end
-
-  test "remove_containers" do
-    run_command("remove_containers").tap do |output|
-      assert_match "docker container prune --force --filter label=service=app", output
-    end
-  end
-
-  test "remove_images" do
-    run_command("remove_images").tap do |output|
-      assert_match "docker image prune --all --force --filter label=service=app", output
-    end
   end
 
   test "version" do
