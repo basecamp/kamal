@@ -141,7 +141,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
     end
 
     def filters
-      ["label=service=#{config.service}"].tap do |filters|
+      [ "label=service=#{config.service}" ].tap do |filters|
         filters << "label=destination=#{config.destination}" if config.destination
       end
     end
