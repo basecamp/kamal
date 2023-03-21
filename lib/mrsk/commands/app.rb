@@ -34,7 +34,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
   end
 
   def info
-    docker :ps, *service_filter_with_destination_and_role
+    docker :ps, *filter_args
   end
 
 
@@ -83,13 +83,13 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
 
 
   def current_container_id
-    docker :ps, "--quiet", *service_filter_with_destination_and_role
+    docker :ps, "--quiet", *filter_args
   end
 
   def current_running_version
     # FIXME: Find more graceful way to extract the version from "app-version" than using sed and tail!
     pipe \
-      docker(:ps, *service_filter_with_destination_and_role, "--format", '"{{.Names}}"'),
+      docker(:ps, *filter_args, "--format", '"{{.Names}}"'),
       %(sed 's/-/\\n/g'),
       "tail -n 1"
   end
@@ -108,7 +108,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
 
 
   def list_containers
-    docker :container, :ls, "--all", *service_filter_with_destination_and_role # TODO: role hier needed oder sogar falsch?
+    docker :container, :ls, "--all", *filter_args
   end
 
   def list_container_names
@@ -122,7 +122,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
   end
 
   def remove_containers
-    docker :container, :prune, "--force", *service_filter_with_destination_and_role
+    docker :container, :prune, "--force", *filter_args
   end
 
   def list_images
@@ -130,27 +130,27 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
   end
 
   def remove_images
-    docker :image, :prune, "--all", "--force", *service_filter
+    docker :image, :prune, "--all", "--force", *filter_args
   end
 
 
   private
     def service_with_version_and_destination_and_role(version = nil)
-      [ config.service, role, config.destination, version || config.version ].compact.join("-") # TODO: is role sometimes nil here? bis jetzt wars nie nil
+      [ config.service, role, config.destination, version || config.version ].compact.join("-")
     end
 
     def container_id_for_version(version)
       container_id_for(container_name: service_with_version_and_destination_and_role(version))
     end
 
-    def service_filter
-      [ "--filter", "label=service=#{config.service}" ]
+    def filter_args
+      argumentize "--filter", filters
     end
 
-    def service_filter_with_destination_and_role
-      service_filter.tap do |filter|
-        filter.concat [ "--filter", "label=destination=#{config.destination}" ] if config.destination
-        filter.concat [ "--filter", "label=role=#{role}" ] if role
+    def filters
+      [ "label=service=#{config.service}" ].tap do |filters|
+        filters << "label=destination=#{config.destination}" if config.destination
+        filters << "label=role=#{role}" if role
       end
     end
 end
