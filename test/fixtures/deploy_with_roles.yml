@@ -11,5 +11,7 @@ env:
   REDIS_URL: redis://x/y
 registry:
   server: registry.digitalocean.com
-  username: user
-  password: pw
+  username: 
+    - SECRET_USERNAME
+  password: 
+    - SECRET_PASSWORD

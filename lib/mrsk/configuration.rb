@@ -4,6 +4,7 @@ require "active_support/core_ext/module/delegation"
 require "pathname"
 require "erb"
 require "net/ssh/proxy/jump"
+require "json-schema"
 
 class Mrsk::Configuration
   delegate :service, :image, :servers, :env, :labels, :registry, :builder, to: :raw_config, allow_nil: true
@@ -39,10 +40,11 @@ class Mrsk::Configuration
   end
 
   def initialize(raw_config, destination: nil, version: "missing", validate: true)
+    validate!(raw_config) if validate
     @raw_config = ActiveSupport::InheritableOptions.new(raw_config)
     @destination = destination
     @version = version
-    valid? if validate
+    ensure_env_available
   end
 
 
@@ -129,7 +131,6 @@ class Mrsk::Configuration
     { user: ssh_user, proxy: ssh_proxy, auth_methods: [ "publickey" ] }.compact
   end
 
-
   def audit_broadcast_cmd
     raw_config.audit_broadcast_cmd
   end
@@ -141,11 +142,6 @@ class Mrsk::Configuration
   def readiness_delay
     raw_config.readiness_delay || 7
   end
-
-  def valid?
-    ensure_required_keys_present && ensure_env_available
-  end
-
 
   def to_h
     {
@@ -168,24 +164,16 @@ class Mrsk::Configuration
   def traefik
     raw_config.traefik || {}
   end
+  
+  def validate!(config)
+    schema_file_path = File.join(File.dirname(File.expand_path(__FILE__)), "configuration/schema.yaml")
+    schema = YAML.load(IO.read(schema_file_path))
+    JSON::Validator.validate!(schema, config)
+  rescue JSON::Schema::ValidationError => e
+    raise Mrsk::Configuration::Error, e.message # Temporary to pass tests
+  end
 
   private
-    # Will raise ArgumentError if any required config keys are missing
-    def ensure_required_keys_present
-      %i[ service image registry servers ].each do |key|
-        raise ArgumentError, "Missing required configuration for #{key}" unless raw_config[key].present?
-      end
-
-      if raw_config.registry["username"].blank?
-        raise ArgumentError, "You must specify a username for the registry in config/deploy.yml"
-      end
-
-      if raw_config.registry["password"].blank?
-        raise ArgumentError, "You must specify a password for the registry in config/deploy.yml (or set the ENV variable if that's used)"
-      end
-
-      true
-    end
 
     # Will raise KeyError if any secret ENVs are missing
     def ensure_env_available

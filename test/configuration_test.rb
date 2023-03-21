@@ -24,17 +24,6 @@ class ConfigurationTest < ActiveSupport::TestCase
     ENV["RAILS_MASTER_KEY"] = nil
   end
 
-  test "ensure valid keys" do
-    assert_raise(ArgumentError) do
-      Mrsk::Configuration.new(@deploy.tap { _1.delete(:service) })
-      Mrsk::Configuration.new(@deploy.tap { _1.delete(:image) })
-      Mrsk::Configuration.new(@deploy.tap { _1.delete(:registry) })
-
-      Mrsk::Configuration.new(@deploy.tap { _1[:registry].delete("username") })
-      Mrsk::Configuration.new(@deploy.tap { _1[:registry].delete("password") })
-    end
-  end
-
   test "roles" do
     assert_equal %w[ web ], @config.roles.collect(&:name)
     assert_equal %w[ web workers ], @config_with_roles.roles.collect(&:name)
@@ -132,8 +121,20 @@ class ConfigurationTest < ActiveSupport::TestCase
     end
   end
 
-  test "valid config" do
-    assert @config.valid?
+  test "configuration schema is valid" do
+    cwd = File.dirname(File.expand_path(__FILE__))
+    metaschema_file_path = File.join(cwd, "/fixtures/files/draft-04-schema.json")
+    metaschema = JSON.parse(IO.read(metaschema_file_path))
+
+    schema_file_path = File.join(cwd, "../lib/mrsk/configuration/schema.yaml")
+    schema = YAML.load(IO.read(schema_file_path))
+
+    assert JSON::Validator.validate(metaschema, schema)
+  end
+
+  test "configuration schema raises errors on fail" do
+    assert_raise(Mrsk::Configuration::Error) { Mrsk::Configuration.new(@deploy.tap { _1.delete(:service) }) }
+    assert_raise(Mrsk::Configuration::Error) { Mrsk::Configuration.new(@deploy.tap { _1[:registry].delete("username") }) }
   end
 
   test "ssh options" do
