@@ -43,4 +43,9 @@ module Mrsk::Utils
   def escape_shell_value(value)
     value.to_s.dump.gsub(/`/, '\\\\`')
   end
+
+  # Abbreviate a git revhash for concise display
+  def abbreviate_version(version)
+    version[0...7] if version
+  end
 end
