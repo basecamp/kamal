@@ -49,5 +49,16 @@ class UtilsTest < ActiveSupport::TestCase
   test "escape_shell_value" do
     assert_equal "\"foo\"", Mrsk::Utils.escape_shell_value("foo")
     assert_equal "\"\\`foo\\`\"", Mrsk::Utils.escape_shell_value("`foo`")
+
+    assert_equal "\"${PWD}\"", Mrsk::Utils.escape_shell_value("${PWD}")
+    assert_equal "\"${cat /etc/hostname}\"", Mrsk::Utils.escape_shell_value("${cat /etc/hostname}")
+    assert_equal "\"\\${PWD]\"", Mrsk::Utils.escape_shell_value("${PWD]")
+    assert_equal "\"\\$(PWD)\"", Mrsk::Utils.escape_shell_value("$(PWD)")
+    assert_equal "\"\\$PWD\"", Mrsk::Utils.escape_shell_value("$PWD")
+
+    assert_equal "\"^(https?://)www.example.com/(.*)\\$\"",
+      Mrsk::Utils.escape_shell_value("^(https?://)www.example.com/(.*)$")
+    assert_equal "\"https://example.com/\\$2\"",
+      Mrsk::Utils.escape_shell_value("https://example.com/$2")
   end
 end
