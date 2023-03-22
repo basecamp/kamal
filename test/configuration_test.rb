@@ -3,6 +3,7 @@ require "test_helper"
 class ConfigurationTest < ActiveSupport::TestCase
   setup do
     ENV["RAILS_MASTER_KEY"] = "456"
+    ENV["VERSION"] = "missing"
 
     @deploy = {
       service: "app", image: "dhh/app",
@@ -21,7 +22,8 @@ class ConfigurationTest < ActiveSupport::TestCase
   end
 
   teardown do
-    ENV["RAILS_MASTER_KEY"] = nil
+    ENV.delete("RAILS_MASTER_KEY")
+    ENV.delete("VERSION")
   end
 
   test "ensure valid keys" do
@@ -66,8 +68,20 @@ class ConfigurationTest < ActiveSupport::TestCase
   end
 
   test "version" do
-    assert_equal "missing", @config.version
-    assert_equal "123", Mrsk::Configuration.new(@deploy, version: "123").version
+    ENV.delete("VERSION")
+
+    @config.expects(:system).with("git rev-parse").returns(nil)
+    error = assert_raises(RuntimeError) { @config.version}
+    assert_match /no git repository found/, error.message
+
+    @config.expects(:current_commit_hash).returns("git-version")
+    assert_equal "git-version", @config.version
+
+    ENV["VERSION"] = "env-version"
+    assert_equal "env-version", @config.version
+
+    @config.version = "arg-version"
+    assert_equal "arg-version", @config.version
   end
 
   test "repository" do
@@ -158,17 +172,17 @@ class ConfigurationTest < ActiveSupport::TestCase
   end
 
   test "erb evaluation of yml config" do
-    config = Mrsk::Configuration.create_from Pathname.new(File.expand_path("fixtures/deploy.erb.yml", __dir__))
+    config = Mrsk::Configuration.create_from config_file: Pathname.new(File.expand_path("fixtures/deploy.erb.yml", __dir__))
     assert_equal "my-user", config.registry["username"]
   end
 
   test "destination yml config merge" do
     dest_config_file = Pathname.new(File.expand_path("fixtures/deploy_for_dest.yml", __dir__))
 
-    config = Mrsk::Configuration.create_from dest_config_file, destination: "world"
+    config = Mrsk::Configuration.create_from config_file: dest_config_file, destination: "world"
     assert_equal "1.1.1.1", config.all_hosts.first
 
-    config = Mrsk::Configuration.create_from dest_config_file, destination: "mars"
+    config = Mrsk::Configuration.create_from config_file: dest_config_file, destination: "mars"
     assert_equal "1.1.1.3", config.all_hosts.first
   end
 
@@ -176,7 +190,7 @@ class ConfigurationTest < ActiveSupport::TestCase
     dest_config_file = Pathname.new(File.expand_path("fixtures/deploy_for_dest.yml", __dir__))
 
     assert_raises(RuntimeError) do
-      config = Mrsk::Configuration.create_from dest_config_file, destination: "missing"
+      config = Mrsk::Configuration.create_from config_file: dest_config_file, destination: "missing"
     end
   end
 
