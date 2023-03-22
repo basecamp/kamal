@@ -27,7 +27,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
   end
 
   def info
-    docker :ps, *service_filter_with_destination
+    docker :ps, *filter_args
   end
 
 
@@ -76,13 +76,13 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
 
 
   def current_container_id
-    docker :ps, "--quiet", *service_filter_with_destination
+    docker :ps, "--quiet", *filter_args
   end
 
   def current_running_version
     # FIXME: Find more graceful way to extract the version from "app-version" than using sed and tail!
     pipe \
-      docker(:ps, *service_filter_with_destination, "--format", '"{{.Names}}"'),
+      docker(:ps, *filter_args, "--format", '"{{.Names}}"'),
       %(sed 's/-/\\n/g'),
       "tail -n 1"
   end
@@ -101,7 +101,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
 
 
   def list_containers
-    docker :container, :ls, "--all", *service_filter_with_destination
+    docker :container, :ls, "--all", *filter_args
   end
 
   def list_container_names
@@ -115,7 +115,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
   end
 
   def remove_containers
-    docker :container, :prune, "--force", *service_filter_with_destination
+    docker :container, :prune, "--force", *filter_args
   end
 
   def list_images
@@ -123,7 +123,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
   end
 
   def remove_images
-    docker :image, :prune, "--all", "--force", *service_filter
+    docker :image, :prune, "--all", "--force", *filter_args
   end
 
 
@@ -136,15 +136,13 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
       container_id_for(container_name: service_with_version_and_destination(version))
     end
 
-    def service_filter
-      [ "--filter", "label=service=#{config.service}" ]
+    def filter_args
+      argumentize "--filter", filters
     end
 
-    def service_filter_with_destination
-      if config.destination
-        service_filter << "label=destination=#{config.destination}"
-      else
-        service_filter
+    def filters
+      [ "label=service=#{config.service}" ].tap do |filters|
+        filters << "label=destination=#{config.destination}" if config.destination
       end
     end
 end
