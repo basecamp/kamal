@@ -87,19 +87,6 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
       "tail -n 1"
   end
 
-  def most_recent_version_from_available_images
-    pipe \
-      docker(:image, :ls, "--format", '"{{.Tag}}"', config.repository),
-      "head -n 1"
-  end
-
-  def all_versions_from_available_containers
-    pipe \
-      docker(:image, :ls, "--format", '"{{.Tag}}"', config.repository),
-      "head -n 1"
-  end
-
-
   def list_containers
     docker :container, :ls, "--all", *filter_args
   end
