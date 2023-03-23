@@ -46,6 +46,11 @@ class Mrsk::Configuration
   end
 
 
+  def abbreviated_version
+    Mrsk::Utils.abbreviate_version(version)
+  end
+
+
   def roles
     @roles ||= role_names.collect { |role_name| Role.new(role_name, config: self) }
   end

@@ -88,11 +88,23 @@ class CliMainTest < CliTestCase
 
   test "rollback good version" do
     Mrsk::Cli::Main.any_instance.stubs(:container_name_available?).returns(true)
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info).with(:docker, :ps, "--filter", "label=service=app", "--format", "\"{{.Names}}\"", "|", "sed 's/-/\\n/g'", "|", "tail -n 1").returns("version-to-rollback\n").times(2)
 
     run_command("rollback", "123").tap do |output|
-      assert_match /Start version 123/, output
-      assert_match /docker ps -q --filter label=service=app | xargs docker stop/, output
-      assert_match /docker start app-123/, output
+      assert_match "Start version 123", output
+      assert_match "docker start app-123", output
+      assert_match "docker container ls --all --filter name=app-version-to-rollback --quiet | xargs docker stop", output, "Should stop the container that was previously running"
+    end
+  end
+
+  test "rollback without old version" do
+    Mrsk::Cli::Main.any_instance.stubs(:container_name_available?).returns(true)
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info).with(:docker, :ps, "--filter", "label=service=app", "--format", "\"{{.Names}}\"", "|", "sed 's/-/\\n/g'", "|", "tail -n 1").returns("").times(2)
+
+    run_command("rollback", "123").tap do |output|
+      assert_match "Start version 123", output
+      assert_match "docker start app-123", output
+      assert_no_match "docker stop", output
     end
   end
 
