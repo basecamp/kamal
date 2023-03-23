@@ -42,12 +42,14 @@ class CliMainTest < CliTestCase
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:prune:all", [], invoke_options)
 
     run_command("deploy", "--skip_push").tap do |output|
+      assert_match /Acquiring the deploy lock/, output
       assert_match /Ensure curl and Docker are installed/, output
       assert_match /Log into image registry/, output
       assert_match /Pull app image/, output
       assert_match /Ensure Traefik is running/, output
       assert_match /Ensure app can pass healthcheck/, output
       assert_match /Prune old containers and images/, output
+      assert_match /Releasing the deploy lock/, output
     end
   end
 

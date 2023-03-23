@@ -15,8 +15,9 @@ class CliBuildTest < CliTestCase
   end
 
   test "push without builder" do
-    Mrsk::Cli::Build.any_instance.stubs(:create).returns(true)
+    stub_locking
     SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+      .with { |arg| arg == :docker }
       .raises(SSHKit::Command::Failed.new("no builder"))
       .then
       .returns(true)
@@ -40,7 +41,9 @@ class CliBuildTest < CliTestCase
   end
 
   test "create with error" do
+    stub_locking
     SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+      .with { |arg| arg == :docker }
       .raises(SSHKit::Command::Failed.new("stderr=error"))
 
     run_command("create").tap do |output|
@@ -68,5 +71,12 @@ class CliBuildTest < CliTestCase
   private
     def run_command(*command)
       stdouted { Mrsk::Cli::Build.start([*command, "-c", "test/fixtures/deploy_with_accessories.yml"]) }
+    end
+
+    def stub_locking
+      SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+        .with { |arg1, arg2| arg1 == :mkdir && arg2 == :mrsk_lock }
+      SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+        .with { |arg1, arg2| arg1 == :rm && arg2 == "mrsk_lock/details" }
     end
 end
