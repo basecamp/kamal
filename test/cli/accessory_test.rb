@@ -126,7 +126,7 @@ class CliAccessoryTest < CliTestCase
   end
 
   test "remove_image" do
-    assert_match "docker image prune --all --force --filter label=service=app-mysql", run_command("remove_image", "mysql")
+    assert_match "docker image rm --force mysql", run_command("remove_image", "mysql")
   end
 
   test "remove_service_directory" do

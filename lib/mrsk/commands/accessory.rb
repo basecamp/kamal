@@ -100,7 +100,7 @@ class Mrsk::Commands::Accessory < Mrsk::Commands::Base
   end
 
   def remove_image
-    docker :image, :prune, "--all", "--force", *service_filter
+    docker :image, :rm, "--force", image
   end
 
   private
