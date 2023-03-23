@@ -8,16 +8,16 @@ Join us on Discord: https://discord.gg/DQETs3Pm
 
 ## Installation
 
-Install MRSK globally with `gem install mrsk` or build a dockerized version:
+If you have a ruby environment available, you can install MRSK globally with
 
 ```sh
-docker build . -t mrsk:latest -f Dockerfile
+gem install mrsk
 ```
 
-If you build the docker version, add the following alias to your .${SHELL}rc file and re-source the rc file to allow ssh and docker to work within the container:
+or run a dockerized version via an alias (add this to your ${SHELL}rc to simplify re-use):
 
 ```sh
-alias mrsk='docker run --rm -it -v $HOME/.ssh:/root/.ssh -v /var/run/docker.sock:/var/run/docker.sock -v ${PWD}/:/workdir mrsk'
+alias mrsk='docker run --rm -it -v $HOME/.ssh:/root/.ssh -v /var/run/docker.sock:/var/run/docker.sock -v ${PWD}/:/workdir  ghcr.io/mrsked/mrsk'
 ```
 
 Then, inside your app directory, run `mrsk init` (or `mrsk init --bundle` within Rails apps where you want a bin/mrsk binstub). Now edit the new file `config/deploy.yml`. It could look as simple as this:
