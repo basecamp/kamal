@@ -4,7 +4,7 @@ MRSK deploys web apps anywhere from bare metal to cloud VMs using Docker with ze
 
 Watch the screencast: https://www.youtube.com/watch?v=LL1cV2FXZ5I
 
-Join us on Discord: https://discord.gg/DQETs3Pm
+Join us on Discord: https://discord.gg/YgHVT7GCXS
 
 ## Installation
 
