@@ -1,6 +1,6 @@
 module Mrsk::Commands
   class Base
-    delegate :redact, :argumentize, to: Mrsk::Utils
+    delegate :sensitive, :argumentize, to: Mrsk::Utils
 
     attr_accessor :config
 

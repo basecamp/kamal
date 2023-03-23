@@ -2,7 +2,7 @@ class Mrsk::Commands::Registry < Mrsk::Commands::Base
   delegate :registry, to: :config
 
   def login
-    docker :login, registry["server"], "-u", redact(lookup("username")), "-p", redact(lookup("password"))
+    docker :login, registry["server"], "-u", sensitive(lookup("username")), "-p", sensitive(lookup("password"))
   end
 
   def logout

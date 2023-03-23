@@ -119,7 +119,7 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
   desc "config", "Show combined config (including secrets!)"
   def config
     run_locally do
-      puts MRSK.config.to_h.to_yaml
+      puts Mrsk::Utils.redacted(MRSK.config.to_h).to_yaml
     end
   end
 
