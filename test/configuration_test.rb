@@ -26,14 +26,19 @@ class ConfigurationTest < ActiveSupport::TestCase
     ENV.delete("VERSION")
   end
 
-  test "ensure valid keys" do
-    assert_raise(ArgumentError) do
-      Mrsk::Configuration.new(@deploy.tap { _1.delete(:service) })
-      Mrsk::Configuration.new(@deploy.tap { _1.delete(:image) })
-      Mrsk::Configuration.new(@deploy.tap { _1.delete(:registry) })
+  %i[ service image registry ].each do |key|
+    test "#{key} config required" do
+      assert_raise(ArgumentError) do
+        Mrsk::Configuration.new @deploy.tap { _1.delete key }
+      end
+    end
+  end
 
-      Mrsk::Configuration.new(@deploy.tap { _1[:registry].delete("username") })
-      Mrsk::Configuration.new(@deploy.tap { _1[:registry].delete("password") })
+  %w[ username password ].each do |key|
+    test "registry #{key} required" do
+      assert_raise(ArgumentError) do
+        Mrsk::Configuration.new @deploy.tap { _1[:registry].delete key }
+      end
     end
   end
 
@@ -148,6 +153,39 @@ class ConfigurationTest < ActiveSupport::TestCase
 
   test "valid config" do
     assert @config.valid?
+    assert @config_with_roles.valid?
+  end
+
+  test "hosts required for all roles" do
+    # Empty server list for implied web role
+    assert_raises(ArgumentError) do
+      Mrsk::Configuration.new @deploy.merge(servers: [])
+    end
+
+    # Empty server list
+    assert_raises(ArgumentError) do
+      Mrsk::Configuration.new @deploy.merge(servers: { "web" => [] })
+    end
+
+    # Missing hosts key
+    assert_raises(ArgumentError) do
+      Mrsk::Configuration.new @deploy.merge(servers: { "web" => {} })
+    end
+
+    # Empty hosts list
+    assert_raises(ArgumentError) do
+      Mrsk::Configuration.new @deploy.merge(servers: { "web" => { "hosts" => [] } })
+    end
+
+    # Nil hosts
+    assert_raises(ArgumentError) do
+      Mrsk::Configuration.new @deploy.merge(servers: { "web" => { "hosts" => nil } })
+    end
+
+    # One role with hosts, one without
+    assert_raises(ArgumentError) do
+      Mrsk::Configuration.new @deploy.merge(servers: { "web" => %w[ web ], "workers" => { "hosts" => %w[ ] } })
+    end
   end
 
   test "ssh options" do

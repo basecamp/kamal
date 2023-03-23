@@ -80,7 +80,7 @@ class Mrsk::Configuration
   end
 
   def primary_web_host
-    role(:web).hosts.first
+    role(:web).primary_host
   end
 
   def traefik_hosts
@@ -194,6 +194,12 @@ class Mrsk::Configuration
 
       if raw_config.registry["password"].blank?
         raise ArgumentError, "You must specify a password for the registry in config/deploy.yml (or set the ENV variable if that's used)"
+      end
+
+      roles.each do |role|
+        if role.hosts.empty?
+          raise ArgumentError, "No servers specified for the #{role.name} role"
+        end
       end
 
       true
