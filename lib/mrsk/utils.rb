@@ -26,12 +26,17 @@ module Mrsk::Utils
   # Returns a list of shell-dashed option arguments. If the value is true, it's treated like a value-less option.
   def optionize(args, with: nil)
     options = if with
-      args.collect { |(key, value)| value == true ? "--#{key}" : "--#{key}#{with}#{escape_shell_value(value)}" }
+      flatten_args(args).collect { |(key, value)| value == true ? "--#{key}" : "--#{key}#{with}#{escape_shell_value(value)}" }
     else
-      args.collect { |(key, value)| [ "--#{key}", value == true ? nil : escape_shell_value(value) ] }
+      flatten_args(args).collect { |(key, value)| [ "--#{key}", value == true ? nil : escape_shell_value(value) ] }
     end
 
     options.flatten.compact
+  end
+
+  # Flattens a one-to-many structure into an array of two-element arrays each containing a key-value pair
+  def flatten_args(args)
+    args.flat_map { |key, value| value.try(:map) { |entry| [key, entry] } || [ [ key, value ] ] }
   end
 
   # Copied from SSHKit::Backend::Abstract#redact to be available inside Commands classes

@@ -426,6 +426,46 @@ traefik:
   host_port: 8080
 ```
 
+### Configure docker options for traefik
+
+We allow users to pass additional docker options to the trafik container like 
+
+```yaml
+traefik:
+  options: 
+    publish:
+    - 8080:8080
+    volumes:
+    - /tmp/example.json:/tmp/example.json
+    memory: 512m
+```
+
+This will start the traefik container with a command like: `docker run ... --volume /tmp/example.json:/tmp/example.json --publish 8080:8080 `
+
+
+### Configure alternate entrypoints for traefik
+
+You can configure multiple entrypoints for traefik like so:
+
+```yaml
+service: myservice
+
+labels:
+  traefik.tcp.routers.other.rule: 'HostSNI(`*`)'
+  traefik.tcp.routers.other.entrypoints: otherentrypoint
+  traefik.tcp.services.other.loadbalancer.server.port: 9000
+  traefik.http.routers.myservice.entrypoints: web
+  traefik.http.services.myservice.loadbalancer.server.port: 8080
+
+traefik:
+  options:
+    publish:
+      - 9000:9000
+  args:
+    entrypoints.web.address: ':80'
+    entrypoints.otherentrypoint.address: ':9000'
+```
+
 ### Configuring build args for new images
 
 Build arguments that aren't secret can also be configured:
