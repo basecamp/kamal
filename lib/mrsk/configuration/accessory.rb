@@ -20,11 +20,13 @@ class Mrsk::Configuration::Accessory
   end
 
   def port
-    if specifics["port"].to_s.include?(":")
-      specifics["port"]
-    else
-      "#{specifics["port"]}:#{specifics["port"]}"
+    if port = specifics["port"]&.to_s
+      port.include?(":") ? port : "#{port}:#{port}"
     end
+  end
+
+  def publish_args
+    argumentize "--publish", port if port
   end
 
   def labels

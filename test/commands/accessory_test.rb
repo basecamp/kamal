@@ -32,13 +32,18 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
           "volumes" => [
             "/var/lib/redis:/data"
           ]
+        },
+        "busybox" => {
+          "image" => "busybox:latest",
+          "host" => "1.1.1.7"
         }
       }
     }
 
-    @config = Mrsk::Configuration.new(@config)
-    @mysql  = Mrsk::Commands::Accessory.new(@config, name: :mysql)
-    @redis  = Mrsk::Commands::Accessory.new(@config, name: :redis)
+    @config  = Mrsk::Configuration.new(@config)
+    @mysql   = Mrsk::Commands::Accessory.new(@config, name: :mysql)
+    @redis   = Mrsk::Commands::Accessory.new(@config, name: :redis)
+    @busybox = Mrsk::Commands::Accessory.new(@config, name: :busybox)
 
     ENV["MYSQL_ROOT_PASSWORD"] = "secret123"
   end
@@ -55,6 +60,10 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
     assert_equal \
       "docker run --name app-redis --detach --restart unless-stopped --log-opt max-size=10m --publish 6379:6379 -e SOMETHING=\"else\" --volume /var/lib/redis:/data --label service=\"app-redis\" --label cache=\"true\" redis:latest",
       @redis.run.join(" ")
+
+    assert_equal \
+      "docker run --name app-busybox --detach --restart unless-stopped --log-opt max-size=10m --label service=\"app-busybox\" busybox:latest",
+      @busybox.run.join(" ")
   end
 
   test "start" do
