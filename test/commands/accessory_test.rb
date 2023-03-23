@@ -3,11 +3,11 @@ require "test_helper"
 class CommandsAccessoryTest < ActiveSupport::TestCase
   setup do
     @config = {
-      service: "app", image: "dhh/app", registry: { "username" => "dhh", "password" => "secret" },
+      service: "app", image: "dhh/app", registry: { "server" => "private.registry", "username" => "dhh", "password" => "secret" },
       servers: [ "1.1.1.1" ],
       accessories: {
         "mysql" => {
-          "image" => "mysql:8.0",
+          "image" => "private.registry/mysql:8.0",
           "host" => "1.1.1.5",
           "port" => "3306",
           "env" => {
@@ -32,13 +32,18 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
           "volumes" => [
             "/var/lib/redis:/data"
           ]
+        },
+        "busybox" => {
+          "image" => "busybox:latest",
+          "host" => "1.1.1.7"
         }
       }
     }
 
-    @config = Mrsk::Configuration.new(@config)
-    @mysql  = Mrsk::Commands::Accessory.new(@config, name: :mysql)
-    @redis  = Mrsk::Commands::Accessory.new(@config, name: :redis)
+    @config  = Mrsk::Configuration.new(@config)
+    @mysql   = Mrsk::Commands::Accessory.new(@config, name: :mysql)
+    @redis   = Mrsk::Commands::Accessory.new(@config, name: :redis)
+    @busybox = Mrsk::Commands::Accessory.new(@config, name: :busybox)
 
     ENV["MYSQL_ROOT_PASSWORD"] = "secret123"
   end
@@ -49,12 +54,16 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
 
   test "run" do
     assert_equal \
-      "docker run --name app-mysql --detach --restart unless-stopped --log-opt max-size=10m --publish 3306:3306 -e MYSQL_ROOT_PASSWORD=\"secret123\" -e MYSQL_ROOT_HOST=\"%\" --label service=\"app-mysql\" mysql:8.0",
+      "docker run --name app-mysql --detach --restart unless-stopped --log-opt max-size=10m --publish 3306:3306 -e MYSQL_ROOT_PASSWORD=\"secret123\" -e MYSQL_ROOT_HOST=\"%\" --label service=\"app-mysql\" private.registry/mysql:8.0",
       @mysql.run.join(" ")
 
     assert_equal \
       "docker run --name app-redis --detach --restart unless-stopped --log-opt max-size=10m --publish 6379:6379 -e SOMETHING=\"else\" --volume /var/lib/redis:/data --label service=\"app-redis\" --label cache=\"true\" redis:latest",
       @redis.run.join(" ")
+
+    assert_equal \
+      "docker run --name app-busybox --detach --restart unless-stopped --log-opt max-size=10m --label service=\"app-busybox\" busybox:latest",
+      @busybox.run.join(" ")
   end
 
   test "start" do
@@ -78,7 +87,7 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
 
   test "execute in new container" do
     assert_equal \
-      "docker run --rm -e MYSQL_ROOT_PASSWORD=\"secret123\" -e MYSQL_ROOT_HOST=\"%\" mysql:8.0 mysql -u root",
+      "docker run --rm -e MYSQL_ROOT_PASSWORD=\"secret123\" -e MYSQL_ROOT_HOST=\"%\" private.registry/mysql:8.0 mysql -u root",
       @mysql.execute_in_new_container("mysql", "-u", "root").join(" ")
   end
 
@@ -90,7 +99,7 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
 
   test "execute in new container over ssh" do
     @mysql.stub(:run_over_ssh, ->(cmd) { cmd.join(" ") }) do
-      assert_match %r|docker run -it --rm -e MYSQL_ROOT_PASSWORD=\"secret123\" -e MYSQL_ROOT_HOST=\"%\" mysql:8.0 mysql -u root|,
+      assert_match %r|docker run -it --rm -e MYSQL_ROOT_PASSWORD=\"secret123\" -e MYSQL_ROOT_HOST=\"%\" private.registry/mysql:8.0 mysql -u root|,
         @mysql.execute_in_new_container_over_ssh("mysql", "-u", "root")
     end
   end

@@ -40,7 +40,7 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
       invoke "mrsk:cli:prune:all", [], invoke_options
     end
 
-    audit_broadcast "Deployed app in #{runtime.to_i} seconds" unless options[:skip_broadcast]
+    audit_broadcast "Deployed #{service_version} in #{runtime.round} seconds" unless options[:skip_broadcast]
   end
 
   desc "redeploy", "Deploy app to servers without bootstrapping servers, starting Traefik, pruning, and registry login"
@@ -63,7 +63,7 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
       invoke "mrsk:cli:app:boot", [], invoke_options
     end
 
-    audit_broadcast "Redeployed app in #{runtime.to_i} seconds" unless options[:skip_broadcast]
+    audit_broadcast "Redeployed #{service_version} in #{runtime.round} seconds" unless options[:skip_broadcast]
   end
 
   desc "rollback [VERSION]", "Rollback app to VERSION"
@@ -74,18 +74,21 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
       say "Start version #{version}, then wait #{MRSK.config.readiness_delay}s for app to boot before stopping the old version...", :magenta
 
       cli = self
+      old_version = nil
 
       on(MRSK.hosts) do |host|
         old_version = capture_with_info(*MRSK.app.current_running_version).strip.presence
 
         execute *MRSK.app.start
 
-        sleep MRSK.config.readiness_delay
+        if old_version
+          sleep MRSK.config.readiness_delay
 
-        execute *MRSK.app.stop(version: old_version), raise_on_non_zero_exit: false
+          execute *MRSK.app.stop(version: old_version), raise_on_non_zero_exit: false
+        end
       end
 
-      audit_broadcast "Rolled back app to version #{version}" unless options[:skip_broadcast]
+      audit_broadcast "Rolled back #{service_version(Mrsk::Utils.abbreviate_version(old_version))} to #{service_version}" unless options[:skip_broadcast]
     else
       say "The app version '#{version}' is not available as a container (use 'mrsk app containers' for available versions)", :red
     end
@@ -206,5 +209,9 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
 
     def deploy_options
       { "version" => MRSK.config.version }.merge(options.without("skip_push"))
+    end
+
+    def service_version(version = MRSK.config.abbreviated_version)
+      [ MRSK.config.service, version ].compact.join("@")
     end
 end
