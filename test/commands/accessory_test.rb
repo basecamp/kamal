@@ -3,11 +3,11 @@ require "test_helper"
 class CommandsAccessoryTest < ActiveSupport::TestCase
   setup do
     @config = {
-      service: "app", image: "dhh/app", registry: { "username" => "dhh", "password" => "secret" },
+      service: "app", image: "dhh/app", registry: { "server" => "private.registry", "username" => "dhh", "password" => "secret" },
       servers: [ "1.1.1.1" ],
       accessories: {
         "mysql" => {
-          "image" => "mysql:8.0",
+          "image" => "private.registry/mysql:8.0",
           "host" => "1.1.1.5",
           "port" => "3306",
           "env" => {
@@ -49,7 +49,7 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
 
   test "run" do
     assert_equal \
-      "docker run --name app-mysql --detach --restart unless-stopped --log-opt max-size=10m --publish 3306:3306 -e MYSQL_ROOT_PASSWORD=\"secret123\" -e MYSQL_ROOT_HOST=\"%\" --label service=\"app-mysql\" mysql:8.0",
+      "docker run --name app-mysql --detach --restart unless-stopped --log-opt max-size=10m --publish 3306:3306 -e MYSQL_ROOT_PASSWORD=\"secret123\" -e MYSQL_ROOT_HOST=\"%\" --label service=\"app-mysql\" private.registry/mysql:8.0",
       @mysql.run.join(" ")
 
     assert_equal \
@@ -78,7 +78,7 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
 
   test "execute in new container" do
     assert_equal \
-      "docker run --rm -e MYSQL_ROOT_PASSWORD=\"secret123\" -e MYSQL_ROOT_HOST=\"%\" mysql:8.0 mysql -u root",
+      "docker run --rm -e MYSQL_ROOT_PASSWORD=\"secret123\" -e MYSQL_ROOT_HOST=\"%\" private.registry/mysql:8.0 mysql -u root",
       @mysql.execute_in_new_container("mysql", "-u", "root").join(" ")
   end
 
@@ -90,7 +90,7 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
 
   test "execute in new container over ssh" do
     @mysql.stub(:run_over_ssh, ->(cmd) { cmd.join(" ") }) do
-      assert_match %r|docker run -it --rm -e MYSQL_ROOT_PASSWORD=\"secret123\" -e MYSQL_ROOT_HOST=\"%\" mysql:8.0 mysql -u root|,
+      assert_match %r|docker run -it --rm -e MYSQL_ROOT_PASSWORD=\"secret123\" -e MYSQL_ROOT_HOST=\"%\" private.registry/mysql:8.0 mysql -u root|,
         @mysql.execute_in_new_container_over_ssh("mysql", "-u", "root")
     end
   end
