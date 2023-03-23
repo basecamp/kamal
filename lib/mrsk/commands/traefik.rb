@@ -10,7 +10,7 @@ class Mrsk::Commands::Traefik < Mrsk::Commands::Base
       "--log-opt", "max-size=#{MAX_LOG_SIZE}",
       "--publish", port,
       "--volume", "/var/run/docker.sock:/var/run/docker.sock",
-      *docker_option_args,
+      *docker_options_args,
       "traefik",
       "--providers.docker",
       "--log.level=DEBUG",
@@ -55,12 +55,8 @@ class Mrsk::Commands::Traefik < Mrsk::Commands::Base
   end
 
   private
-    def docker_option_args
-      if args = config.traefik["options"]
-        optionize args
-      else
-        []
-      end
+    def docker_options_args
+      optionize(config.traefik["options"] || {})
     end
 
     def cmd_option_args
