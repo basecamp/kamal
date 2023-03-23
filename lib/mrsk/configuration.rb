@@ -15,15 +15,16 @@ class Mrsk::Configuration
 
   class << self
     def create_from(base_config_file, destination: nil, version: "missing")
-      new(load_config_file(base_config_file).tap do |config|
-        if destination
-          config.deep_merge! \
-            load_config_file destination_config_file(base_config_file, destination)
-        end
-      end, destination: destination, version: version)
+      raw_config = load_config_files(base_config_file, *destination_config_file(base_config_file, destination))
+
+      new raw_config, destination: destination, version: version
     end
 
     private
+      def load_config_files(*files)
+        files.inject({}) { |config, file| config.deep_merge! load_config_file(file) }
+      end
+
       def load_config_file(file)
         if file.exist?
           YAML.load(ERB.new(IO.read(file)).result).symbolize_keys
@@ -33,8 +34,7 @@ class Mrsk::Configuration
       end
 
       def destination_config_file(base_config_file, destination)
-        dir, basename = base_config_file.split
-        dir.join basename.to_s.remove(".yml") + ".#{destination}.yml"
+        base_config_file.sub_ext(".#{destination}.yml") if destination
       end
   end
 
