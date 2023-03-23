@@ -126,7 +126,7 @@ class CliMainTest < CliTestCase
   end
 
   test "config" do
-    run_command("config").tap do |output|
+    run_command("config", config_file: "deploy_with_accessories").tap do |output|
       config = YAML.load(output)
 
       assert_equal ["web"], config[:roles]
@@ -134,6 +134,32 @@ class CliMainTest < CliTestCase
       assert_equal "999", config[:version]
       assert_equal "dhh/app", config[:repository]
       assert_equal "dhh/app:999", config[:absolute_image]
+      assert_equal "app-999", config[:service_with_version]
+    end
+  end
+
+  test "config with roles" do
+    run_command("config", config_file: "deploy_with_roles").tap do |output|
+      config = YAML.load(output)
+
+      assert_equal ["web", "workers"], config[:roles]
+      assert_equal ["1.1.1.1", "1.1.1.2", "1.1.1.3", "1.1.1.4"], config[:hosts]
+      assert_equal "999", config[:version]
+      assert_equal "registry.digitalocean.com/dhh/app", config[:repository]
+      assert_equal "registry.digitalocean.com/dhh/app:999", config[:absolute_image]
+      assert_equal "app-999", config[:service_with_version]
+    end
+  end
+
+  test "config with destination" do
+    run_command("config", "-d", "world", config_file: "deploy_for_dest").tap do |output|
+      config = YAML.load(output)
+
+      assert_equal ["web"], config[:roles]
+      assert_equal ["1.1.1.1", "1.1.1.2"], config[:hosts]
+      assert_equal "999", config[:version]
+      assert_equal "registry.digitalocean.com/dhh/app", config[:repository]
+      assert_equal "registry.digitalocean.com/dhh/app:999", config[:absolute_image]
       assert_equal "app-999", config[:service_with_version]
     end
   end
@@ -227,7 +253,7 @@ class CliMainTest < CliTestCase
   end
 
   private
-    def run_command(*command)
-      stdouted { Mrsk::Cli::Main.start([*command, "-c", "test/fixtures/deploy_with_accessories.yml"]) }
+    def run_command(*command, config_file: "deploy_with_accessories")
+      stdouted { Mrsk::Cli::Main.start([*command, "-c", "test/fixtures/#{config_file}.yml"]) }
     end
 end

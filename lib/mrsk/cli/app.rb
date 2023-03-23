@@ -37,7 +37,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
   desc "start", "Start existing app container on servers"
   def start
     on(MRSK.hosts) do
-      execute *MRSK.auditor.record("Started app version #{MRSK.version}"), verbosity: :debug
+      execute *MRSK.auditor.record("Started app version #{MRSK.config.version}"), verbosity: :debug
       execute *MRSK.app.start, raise_on_non_zero_exit: false
     end
   end

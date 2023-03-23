@@ -68,7 +68,7 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
 
   desc "rollback [VERSION]", "Rollback app to VERSION"
   def rollback(version)
-    MRSK.version = version
+    MRSK.config.version = version
 
     if container_name_available?(MRSK.config.service_with_version)
       say "Start version #{version}, then wait #{MRSK.config.readiness_delay}s for app to boot before stopping the old version...", :magenta
