@@ -56,7 +56,7 @@ class Mrsk::Commands::Traefik < Mrsk::Commands::Base
 
   private
     def docker_option_args
-      if args = config.raw_config.dig(:traefik, "options")
+      if args = config.traefik["options"]
         optionize args
       else
         []
