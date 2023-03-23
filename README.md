@@ -445,7 +445,7 @@ FROM ruby:$RUBY_VERSION-slim as base
 
 ### Using accessories for database, cache, search services
 
-You can manage your accessory services via MRSK as well. The services will build off public images, and will not be automatically updated when you deploy:
+You can manage your accessory services via MRSK as well. Accessories are long-lived services that your app depends on. They are not updated when you deploy.
 
 ```yaml
 accessories:
@@ -466,9 +466,15 @@ accessories:
     port: "36379:6379"
     volumes:
       - /var/lib/redis:/data
+  internal-example:
+    image: registry.digitalocean.com/user/otherservice:latest
+    host: 1.1.1.5
+    port: 44444
 ```
 
 Now run `mrsk accessory start mysql` to start the MySQL server on 1.1.1.3. See `mrsk accessory` for all the commands possible.
+
+Accessory images must be public or tagged in your private registry.
 
 ### Using Cron
 
