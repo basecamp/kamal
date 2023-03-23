@@ -19,6 +19,39 @@ class CommandsTraefikTest < ActiveSupport::TestCase
       new_command.run.join(" ")
   end
 
+  test "run with ports configured" do
+    assert_equal \
+      "docker run --name traefik --detach --restart unless-stopped --log-opt max-size=10m --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock traefik --providers.docker --log.level=DEBUG --accesslog.format=\"json\" --api.insecure --metrics.prometheus.buckets=\"0.1,0.3,1.2,5.0\"",
+      new_command.run.join(" ")
+
+    @config[:traefik]["options"] = {"publish" => %w[9000:9000 9001:9001]}
+    assert_equal \
+      "docker run --name traefik --detach --restart unless-stopped --log-opt max-size=10m --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock --publish \"9000:9000\" --publish \"9001:9001\" traefik --providers.docker --log.level=DEBUG --accesslog.format=\"json\" --api.insecure --metrics.prometheus.buckets=\"0.1,0.3,1.2,5.0\"",
+      new_command.run.join(" ")
+  end
+
+  test "run with volumes configured" do
+    assert_equal \
+      "docker run --name traefik --detach --restart unless-stopped --log-opt max-size=10m --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock traefik --providers.docker --log.level=DEBUG --accesslog.format=\"json\" --api.insecure --metrics.prometheus.buckets=\"0.1,0.3,1.2,5.0\"",
+      new_command.run.join(" ")
+
+    @config[:traefik]["options"] = {"volume" => %w[./letsencrypt/acme.json:/letsencrypt/acme.json] }
+    assert_equal \
+      "docker run --name traefik --detach --restart unless-stopped --log-opt max-size=10m --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock --volume \"./letsencrypt/acme.json:/letsencrypt/acme.json\" traefik --providers.docker --log.level=DEBUG --accesslog.format=\"json\" --api.insecure --metrics.prometheus.buckets=\"0.1,0.3,1.2,5.0\"",
+      new_command.run.join(" ")
+  end
+
+  test "run with several options configured" do
+    assert_equal \
+      "docker run --name traefik --detach --restart unless-stopped --log-opt max-size=10m --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock traefik --providers.docker --log.level=DEBUG --accesslog.format=\"json\" --api.insecure --metrics.prometheus.buckets=\"0.1,0.3,1.2,5.0\"",
+      new_command.run.join(" ")
+
+    @config[:traefik]["options"] = {"volume" => %w[./letsencrypt/acme.json:/letsencrypt/acme.json], "publish" => %w[8080:8080], "memory" => "512m"}
+    assert_equal \
+      "docker run --name traefik --detach --restart unless-stopped --log-opt max-size=10m --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock --volume \"./letsencrypt/acme.json:/letsencrypt/acme.json\" --publish \"8080:8080\" --memory \"512m\" traefik --providers.docker --log.level=DEBUG --accesslog.format=\"json\" --api.insecure --metrics.prometheus.buckets=\"0.1,0.3,1.2,5.0\"",
+      new_command.run.join(" ")
+  end
+
   test "run without configuration" do
     @config.delete(:traefik)
 
