@@ -235,12 +235,12 @@ class CliMainTest < CliTestCase
 
       assert_match /docker container stop app-mysql/, output
       assert_match /docker container prune --force --filter label=service=app-mysql/, output
-      assert_match /docker image prune --all --force --filter label=service=app-mysql/, output
+      assert_match /docker image rm --force mysql/, output
       assert_match /rm -rf app-mysql/, output
 
       assert_match /docker container stop app-redis/, output
       assert_match /docker container prune --force --filter label=service=app-redis/, output
-      assert_match /docker image prune --all --force --filter label=service=app-redis/, output
+      assert_match /docker image rm --force redis/, output
       assert_match /rm -rf app-redis/, output
 
       assert_match /docker logout/, output
