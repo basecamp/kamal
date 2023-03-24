@@ -3,10 +3,7 @@ require_relative "cli_test_case"
 class CliAppTest < CliTestCase
   test "boot" do
     # Stub current version fetch
-    SSHKit::Backend::Abstract.any_instance.stubs(:capture)
-      .returns("999") # new version
-      .then
-      .returns("123") # old version
+    SSHKit::Backend::Abstract.any_instance.stubs(:capture).returns("123") # old version
 
     run_command("boot").tap do |output|
       assert_match "docker run --detach --restart unless-stopped", output
@@ -27,7 +24,7 @@ class CliAppTest < CliTestCase
 
     run_command("boot").tap do |output|
       assert_match "Rebooting container with same version latest already deployed", output # Can't start what's already running
-      assert_match "docker container ls --all --filter name=app-latest --quiet | xargs docker container rm", output # Remove old container
+      assert_match "docker container ls --all --filter name=app-web-latest --quiet | xargs docker container rm", output # Remove old container
       assert_match "docker run", output # Start new container
     end
   ensure
@@ -80,7 +77,7 @@ class CliAppTest < CliTestCase
 
   test "exec" do
     run_command("exec", "ruby -v").tap do |output|
-      assert_match "docker run --rm dhh/app:999 ruby -v", output
+      assert_match "docker run --rm dhh/app:latest ruby -v", output
     end
   end
 

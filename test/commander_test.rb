@@ -11,16 +11,6 @@ class CommanderTest < ActiveSupport::TestCase
     assert_equal Mrsk::Configuration, @mrsk.config.class
   end
 
-  test "commit hash as version" do
-    assert_equal `git rev-parse HEAD`.strip, @mrsk.config.version
-  end
-
-  test "commit hash as version but not in git" do
-    @mrsk.expects(:system).with("git rev-parse").returns(nil)
-    error = assert_raises(RuntimeError) { @mrsk.config }
-    assert_match /no git repository found/, error.message
-  end
-
   test "overwriting hosts" do
     assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3", "1.1.1.4" ], @mrsk.hosts
 
@@ -29,7 +19,7 @@ class CommanderTest < ActiveSupport::TestCase
   end
 
   test "filtering hosts by filtering roles" do
-    assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3" ], @mrsk.hosts
+    assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3", "1.1.1.4" ], @mrsk.hosts
 
     @mrsk.specific_roles = [ "web" ]
     assert_equal [ "1.1.1.1", "1.1.1.2" ], @mrsk.hosts
@@ -50,7 +40,7 @@ class CommanderTest < ActiveSupport::TestCase
   end
 
   test "overwriting hosts with primary" do
-    assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3" ], @mrsk.hosts
+    assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3", "1.1.1.4" ], @mrsk.hosts
 
     @mrsk.specific_primary!
     assert_equal [ "1.1.1.1" ], @mrsk.hosts
@@ -62,8 +52,7 @@ class CommanderTest < ActiveSupport::TestCase
   end
 
   test "roles_on" do
-    assert_equal [ "web", "workers" ], @mrsk.roles_on("1.1.1.1")
-    assert_equal [ "web" ], @mrsk.roles_on("1.1.1.2")
+    assert_equal [ "web" ], @mrsk.roles_on("1.1.1.1")
     assert_equal [ "workers" ], @mrsk.roles_on("1.1.1.3")
   end
 end
