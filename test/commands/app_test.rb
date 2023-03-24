@@ -59,6 +59,13 @@ class CommandsAppTest < ActiveSupport::TestCase
       new_command.stop.join(" ")
   end
 
+  test "stop with custom stop wait time" do
+    @config[:stop_wait_time] = 30
+    assert_equal \
+      "docker ps --quiet --filter label=service=app --filter label=role=web | xargs docker stop -t 30",
+      new_command.stop.join(" ")
+  end
+
   test "stop with version" do
     assert_equal \
       "docker container ls --all --filter name=app-web-123 --quiet | xargs docker stop",
