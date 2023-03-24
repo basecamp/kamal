@@ -6,8 +6,8 @@ require "erb"
 require "net/ssh/proxy/jump"
 
 class Mrsk::Configuration
-  delegate :service, :image, :servers, :env, :labels, :registry, :builder, to: :raw_config, allow_nil: true
-  delegate :argumentize, :argumentize_env_with_secrets, to: Mrsk::Utils
+  delegate :service, :image, :servers, :env, :labels, :registry, :builder, :stop_wait_time, to: :raw_config, allow_nil: true
+  delegate :argumentize, :argumentize_env_with_secrets, :optionize, to: Mrsk::Utils
 
   attr_accessor :destination
   attr_accessor :raw_config
@@ -76,7 +76,7 @@ class Mrsk::Configuration
 
 
   def all_hosts
-    roles.flat_map(&:hosts)
+    roles.flat_map(&:hosts).uniq
   end
 
   def primary_web_host
@@ -84,7 +84,7 @@ class Mrsk::Configuration
   end
 
   def traefik_hosts
-    roles.select(&:running_traefik?).flat_map(&:hosts)
+    roles.select(&:running_traefik?).flat_map(&:hosts).uniq
   end
 
 
@@ -118,6 +118,15 @@ class Mrsk::Configuration
       argumentize "--volume", raw_config.volumes
     else
       []
+    end
+  end
+
+  def logging_args
+    if raw_config.logging.present?
+      optionize({ "log-driver" => raw_config.logging["driver"] }.compact) +
+        argumentize("--log-opt", raw_config.logging["options"])
+    else
+      argumentize("--log-opt", { "max-size" => "10m" })
     end
   end
 
@@ -173,6 +182,7 @@ class Mrsk::Configuration
       ssh_options: ssh_options,
       builder: raw_config.builder,
       accessories: raw_config.accessories,
+      logging: logging_args,
       healthcheck: healthcheck
     }.compact
   end

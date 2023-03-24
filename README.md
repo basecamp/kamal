@@ -333,6 +333,29 @@ servers:
 
 That'll start the job containers with `docker run ... --cap-add --cpu-count 4 ...`.
 
+### Configuring logging
+
+You can configure the logging driver and options passed to Docker using `logging`:
+
+```yaml
+logging:
+  driver: awslogs
+  options:
+    awslogs-region: "eu-central-2"
+    awslogs-group: "my-app"
+```
+
+If nothing is configured, the default option `max-size=10m` is used for all containers. The default logging driver of Docker is `json-file`.
+
+### Using a different stop wait time
+
+On a new deploy, each old running container is gracefully shut down with a `SIGTERM`, and after a grace period of `10` seconds a `SIGKILL` is sent.
+You can configure this value via the `stop_wait_time` option:
+
+```yaml
+stop_wait_time: 30
+```
+
 ### Using remote builder for native multi-arch
 
 If you're developing on ARM64 (like Apple Silicon), but you want to deploy on AMD64 (x86 64-bit), you can use multi-architecture images. By default, MRSK will setup a local buildx configuration that does this through QEMU emulation. But this can be quite slow, especially on the first build.
@@ -512,6 +535,9 @@ accessories:
         - MYSQL_ROOT_PASSWORD
     volumes:
       - /var/lib/mysql:/var/lib/mysql
+    options:
+      cpus: 4
+      memory: "2GB"
   redis:
     image: redis:latest
     host: 1.1.1.4
