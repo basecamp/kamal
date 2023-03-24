@@ -512,6 +512,9 @@ accessories:
         - MYSQL_ROOT_PASSWORD
     volumes:
       - /var/lib/mysql:/var/lib/mysql
+    options:
+      cpus: 4
+      memory: "2GB"
   redis:
     image: redis:latest
     host: 1.1.1.4
