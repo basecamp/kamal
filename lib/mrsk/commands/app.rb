@@ -30,7 +30,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
   def stop(version: nil)
     pipe \
       version ? container_id_for_version(version) : current_container_id,
-      xargs(docker(:stop))
+      xargs(config.stop_wait_time ? docker(:stop, "-t", config.stop_wait_time) : docker(:stop))
   end
 
   def info
