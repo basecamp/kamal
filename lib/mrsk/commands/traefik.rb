@@ -26,7 +26,7 @@ class Mrsk::Commands::Traefik < Mrsk::Commands::Base
   end
 
   def info
-    docker :ps, "--filter", "name=traefik"
+    docker :ps, "--filter", "name=^traefik$"
   end
 
   def logs(since: nil, lines: nil, grep: nil)

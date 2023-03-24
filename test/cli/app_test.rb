@@ -7,25 +7,26 @@ class CliAppTest < CliTestCase
 
     run_command("boot").tap do |output|
       assert_match "docker run --detach --restart unless-stopped", output
-      assert_match "docker container ls --all --filter name=app-web-123 --quiet | xargs docker stop", output
+      assert_match "docker container ls --all --filter name=^app-web-123$ --quiet | xargs docker stop", output
     end
   end
 
-  test "boot will reboot if same version is already running" do
+  test "boot will rename if same version is already running" do
     run_command("details") # Preheat MRSK const
 
-    # Prevent expected failures from outputting to terminal
-    Thread.report_on_exception = false
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-latest$", "--quiet")
+      .returns("12345678") # running version
 
-    Mrsk::Commands::App.any_instance.stubs(:run)
-      .raises(SSHKit::Command::Failed.new("already in use"))
-      .then
-      .returns([ :docker, :run ])
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=web", "--format", "\"{{.Names}}\"", "|", "sed 's/-/\\n/g'", "|", "tail -n 1")
+      .returns("123") # old version
 
     run_command("boot").tap do |output|
-      assert_match "Rebooting container with same version latest already deployed", output # Can't start what's already running
-      assert_match "docker container ls --all --filter name=app-web-latest --quiet | xargs docker container rm", output # Remove old container
-      assert_match "docker run", output # Start new container
+      assert_match /Renaming container .* to .* as already deployed on 1.1.1.1/, output # Rename
+      assert_match /docker rename .* .*/, output
+      assert_match "docker run --detach --restart unless-stopped", output
+      assert_match "docker container ls --all --filter name=^app-web-123$ --quiet | xargs docker stop", output
     end
   ensure
     Thread.report_on_exception = true
@@ -59,7 +60,7 @@ class CliAppTest < CliTestCase
 
   test "remove_container" do
     run_command("remove_container", "1234567").tap do |output|
-      assert_match "docker container ls --all --filter name=app-web-1234567 --quiet | xargs docker container rm", output
+      assert_match "docker container ls --all --filter name=^app-web-1234567$ --quiet | xargs docker container rm", output
     end
   end
 
