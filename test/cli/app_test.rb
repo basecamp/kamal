@@ -26,9 +26,8 @@ class CliAppTest < CliTestCase
       .returns([ :docker, :run ])
 
     run_command("boot").tap do |output|
-      assert_match "Rebooting container with same version 999 already deployed", output # Can't start what's already running
-      assert_match "docker container ls --all --filter name=app-web-999 --quiet | xargs docker container rm", output # Stop old running
-      assert_match "docker container ls --all --filter name=app-web-999 --quiet | xargs docker container rm", output # Remove old container
+      assert_match "Rebooting container with same version latest already deployed", output # Can't start what's already running
+      assert_match "docker container ls --all --filter name=app-latest --quiet | xargs docker container rm", output # Remove old container
       assert_match "docker run", output # Start new container
     end
   ensure

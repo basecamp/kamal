@@ -1,17 +1,22 @@
 require "active_support/core_ext/enumerable"
+require "active_support/core_ext/module/delegation"
 
 class Mrsk::Commander
-  attr_accessor :config_file, :destination, :verbosity, :version
+  attr_accessor :verbosity
 
-  def initialize(config_file: nil, destination: nil, verbosity: :info)
-    @config_file, @destination, @verbosity = config_file, destination, verbosity
+  def initialize
+    self.verbosity = :info
   end
 
   def config
-    @config ||= \
-      Mrsk::Configuration
-        .create_from(config_file, destination: destination, version: cascading_version)
-        .tap { |config| configure_sshkit_with(config) }
+    @config ||= Mrsk::Configuration.create_from(**@config_kwargs).tap do |config|
+      @config_kwargs = nil
+      configure_sshkit_with(config)
+    end
+  end
+
+  def configure(**kwargs)
+    @config, @config_kwargs = nil, kwargs
   end
 
   attr_reader :specific_roles, :specific_hosts
@@ -106,26 +111,15 @@ class Mrsk::Commander
     SSHKit.config.output_verbosity = old_level
   end
 
+
   # Test-induced damage!
   def reset
-    @config = @config_file = @destination = @version = nil
+    @config = nil
     @app = @builder = @traefik = @registry = @prune = @auditor = nil
     @verbosity = :info
   end
 
   private
-    def cascading_version
-      version.presence || ENV["VERSION"] || current_commit_hash
-    end
-
-    def current_commit_hash
-      if system("git rev-parse")
-        `git rev-parse HEAD`.strip
-      else
-        raise "Can't use commit hash as version, no git repository found in #{Dir.pwd}"
-      end
-    end
-
     # Lazy setup of SSHKit
     def configure_sshkit_with(config)
       SSHKit::Backend::Netssh.configure { |ssh| ssh.ssh_options = config.ssh_options }

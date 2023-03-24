@@ -11,7 +11,7 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
   desc "deploy", "Deploy app to servers"
   option :skip_push, aliases: "-P", type: :boolean, default: false, desc: "Skip image build and push"
   def deploy
-    invoke_options = options.without(:skip_push)
+    invoke_options = deploy_options
 
     runtime = print_runtime do
       say "Ensure curl and Docker are installed...", :magenta
@@ -46,7 +46,7 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
   desc "redeploy", "Deploy app to servers without bootstrapping servers, starting Traefik, pruning, and registry login"
   option :skip_push, aliases: "-P", type: :boolean, default: false, desc: "Skip image build and push"
   def redeploy
-    invoke_options = options.without(:skip_push)
+    invoke_options = deploy_options
 
     runtime = print_runtime do
       if options[:skip_push]
@@ -68,7 +68,7 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
 
   desc "rollback [VERSION]", "Rollback app to VERSION"
   def rollback(version)
-    MRSK.version = version
+    MRSK.config.version = version
 
     if container_name_available?(MRSK.config.service_with_version)
       say "Start version #{version}, then wait #{MRSK.config.readiness_delay}s for app to boot before stopping the old version...", :magenta
@@ -205,6 +205,10 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
       container_names = nil
       on(host) { container_names = capture_with_info(*MRSK.app.list_container_names).split("\n") }
       Array(container_names).include?(container_name)
+    end
+
+    def deploy_options
+      { "version" => MRSK.config.version }.merge(options.without("skip_push"))
     end
 
     def service_version(version = MRSK.config.abbreviated_version)

@@ -2,7 +2,9 @@ require "test_helper"
 
 class CommanderTest < ActiveSupport::TestCase
   setup do
-    @mrsk = Mrsk::Commander.new config_file: Pathname.new(File.expand_path("fixtures/deploy_with_roles.yml", __dir__))
+    @mrsk = Mrsk::Commander.new.tap do |mrsk|
+      mrsk.configure config_file: Pathname.new(File.expand_path("fixtures/deploy_with_roles.yml", __dir__))
+    end
   end
 
   test "lazy configuration" do
@@ -19,8 +21,8 @@ class CommanderTest < ActiveSupport::TestCase
     assert_match /no git repository found/, error.message
   end
 
-  test "filtering hosts" do
-    assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3" ], @mrsk.hosts
+  test "overwriting hosts" do
+    assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3", "1.1.1.4" ], @mrsk.hosts
 
     @mrsk.specific_hosts = [ "1.1.1.1", "1.1.1.2" ]
     assert_equal [ "1.1.1.1", "1.1.1.2" ], @mrsk.hosts

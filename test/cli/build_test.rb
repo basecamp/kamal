@@ -29,7 +29,7 @@ class CliBuildTest < CliTestCase
   test "pull" do
     run_command("pull").tap do |output|
       assert_match /docker image rm --force dhh\/app:999/, output
-      assert_match /docker pull dhh\/app:999/, output
+      assert_match /docker pull dhh\/app:latest/, output
     end
   end
 

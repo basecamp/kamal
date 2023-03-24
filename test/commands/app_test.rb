@@ -188,12 +188,6 @@ class CommandsAppTest < ActiveSupport::TestCase
       new_command.current_running_version.join(" ")
   end
 
-  test "most_recent_version_from_available_images" do
-    assert_equal \
-      "docker image ls --format \"{{.Tag}}\" dhh/app | head -n 1",
-      new_command.most_recent_version_from_available_images.join(" ")
-  end
-
   test "list_containers" do
     assert_equal \
       "docker container ls --all --filter label=service=app --filter label=role=web",

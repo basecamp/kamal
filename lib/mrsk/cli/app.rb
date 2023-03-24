@@ -2,7 +2,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
   desc "boot", "Boot app on servers (or reboot app if already running)"
   def boot
     say "Get most recent version available as an image...", :magenta unless options[:version]
-    using_version(options[:version] || most_recent_version_available) do |version|
+    using_version(version_or_latest) do |version|
       say "Start container with version #{version} using a #{MRSK.config.readiness_delay}s readiness delay (or reboot if already running)...", :magenta
 
       cli = self
@@ -42,7 +42,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
       roles = MRSK.roles_on(host)
 
       roles.each do |role|
-        execute *MRSK.auditor(role: role).record("Started app version #{MRSK.version}"), verbosity: :debug
+        execute *MRSK.auditor.record("Started app version #{MRSK.config.version}"), verbosity: :debug
         execute *MRSK.app(role: role).start, raise_on_non_zero_exit: false
       end
     end
@@ -86,7 +86,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
 
     when options[:interactive]
       say "Get most recent version available as an image...", :magenta unless options[:version]
-      using_version(options[:version] || most_recent_version_available) do |version|
+      using_version(version_or_latest) do |version|
         say "Launching interactive command with version #{version} via SSH from new container on #{MRSK.primary_host}...", :magenta
         run_locally { exec MRSK.app.execute_in_new_container_over_ssh(cmd, host: MRSK.primary_host) }
       end
@@ -108,7 +108,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
 
     else
       say "Get most recent version available as an image...", :magenta unless options[:version]
-      using_version(options[:version] || most_recent_version_available) do |version|
+      using_version(version_or_latest) do |version|
         say "Launching command with version #{version} from new container...", :magenta
         on(MRSK.hosts) do |host|
           execute *MRSK.auditor.record("Executed cmd '#{cmd}' on app version #{version}"), verbosity: :debug
@@ -217,20 +217,13 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
       end
     end
 
-    def most_recent_version_available(host: MRSK.primary_host)
-      version = nil
-      on(host) { version = capture_with_info(*MRSK.app.most_recent_version_from_available_images).strip }
-      
-      if version == "<none>"
-        raise "Most recent image available was not tagged with a version (returned <none>)"
-      else
-        version.presence
-      end
-    end
-
     def current_running_version(host: MRSK.primary_host)
       version = nil
       on(host) { version = capture_with_info(*MRSK.app.current_running_version).strip }
       version.presence
+    end
+
+    def version_or_latest
+      options[:version] || "latest"
     end
 end
