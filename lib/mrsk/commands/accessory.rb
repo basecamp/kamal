@@ -13,7 +13,7 @@ class Mrsk::Commands::Accessory < Mrsk::Commands::Base
       "--name", service_name,
       "--detach",
       "--restart", "unless-stopped",
-      "--log-opt", "max-size=#{MAX_LOG_SIZE}",
+      *config.logging_args,
       *publish_args,
       *env_args,
       *volume_args,

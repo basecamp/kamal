@@ -333,6 +333,20 @@ servers:
 
 That'll start the job containers with `docker run ... --cap-add --cpu-count 4 ...`.
 
+### Configuring logging
+
+You can configure the logging driver and options passed to Docker using `logging`:
+
+```yaml
+logging:
+  driver: awslogs
+  options:
+    awslogs-region: "eu-central-2"
+    awslogs-group: "my-app"
+```
+
+If nothing is configured, the default option `max-size=10m` is used for all containers. The default logging driver of Docker is `json-file`.
+
 ### Using a different stop wait time
 
 On a new deploy, each old running container is gracefully shut down with a `SIGTERM`, and after a grace period of `10` seconds a `SIGKILL` is sent.
