@@ -39,7 +39,11 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
           },
           "volumes" => [
             "/var/lib/redis:/data"
-          ]
+          ],
+          "options" => {
+            "cpus" => 4,
+            "memory" => "2GB"
+          }
         }
       }
     }
@@ -103,5 +107,9 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
 
   test "directories" do
     assert_equal({"$PWD/app-mysql/data"=>"/var/lib/mysql"}, @config.accessory(:mysql).directories)
+  end
+
+  test "options" do
+    assert_equal ["--cpus", "\"4\"", "--memory", "\"2GB\""], @config.accessory(:redis).option_args
   end
 end

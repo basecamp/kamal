@@ -32,26 +32,26 @@ class Mrsk::Commands::Auditor < Mrsk::Commands::Base
     end
 
     def tagged_record_line(line)
-      quote [recorded_at_tag, performer_tag, role_tag, line].compact.join(" ")
+      tagged_line recorded_at_tag, performer_tag, role_tag, line
     end
 
     def tagged_broadcast_line(line)
-      quote [performer_tag, role_tag, line].compact.join(" ")
+      tagged_line performer_tag, role_tag, line
     end
 
-    def role_tag
-      "[#{role}]" if role
-    end
-
-    def performer_tag
-      "[#{`whoami`.strip}]"
+    def tagged_line(*tags_and_line)
+      "'#{tags_and_line.compact.join(" ")}'"
     end
 
     def recorded_at_tag
       "[#{Time.now.to_fs(:db)}]"
     end
 
-    def quote(tagged_line)
-      "'#{tagged_line}'"
+    def performer_tag
+      "[#{`whoami`.strip}]"
+    end
+
+    def role_tag
+      "[#{role}]" if role
     end
 end
