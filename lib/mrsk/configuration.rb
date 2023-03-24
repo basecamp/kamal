@@ -7,7 +7,7 @@ require "net/ssh/proxy/jump"
 
 class Mrsk::Configuration
   delegate :service, :image, :servers, :env, :labels, :registry, :builder, :logging, to: :raw_config, allow_nil: true
-  delegate :argumentize, :argumentize_env_with_secrets, to: Mrsk::Utils
+  delegate :argumentize, :argumentize_env_with_secrets, :optionize, to: Mrsk::Utils
 
   attr_accessor :destination
   attr_accessor :raw_config
@@ -125,7 +125,7 @@ class Mrsk::Configuration
 
   def logging_args
     if raw_config.logging.present?
-      [ "--log-driver", raw_config.logging["driver"] ] +
+      optionize({ "log-driver" => raw_config.logging["driver"] }.compact) +
         argumentize("--log-opt", raw_config.logging["options"])
     else
       argumentize("--log-opt", { "max-size" => MAX_LOG_SIZE })

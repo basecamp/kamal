@@ -64,7 +64,7 @@ class CommandsTraefikTest < ActiveSupport::TestCase
     @config[:logging] = { "driver" => "local", "options" => { "max-size" => "100m", "max-file" => "3" } }
 
     assert_equal \
-      "docker run --name traefik --detach --restart unless-stopped --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock --log-driver local --log-opt max-size=\"100m\" --log-opt max-file=\"3\" traefik --providers.docker --log.level=DEBUG --accesslog.format=\"json\" --api.insecure --metrics.prometheus.buckets=\"0.1,0.3,1.2,5.0\"",
+      "docker run --name traefik --detach --restart unless-stopped --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock --log-driver \"local\" --log-opt max-size=\"100m\" --log-opt max-file=\"3\" traefik --providers.docker --log.level=DEBUG --accesslog.format=\"json\" --api.insecure --metrics.prometheus.buckets=\"0.1,0.3,1.2,5.0\"",
       new_command.run.join(" ")
   end
 

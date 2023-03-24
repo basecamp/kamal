@@ -213,9 +213,14 @@ class ConfigurationTest < ActiveSupport::TestCase
     assert_equal ["--log-opt", "max-size=\"10m\""], @config.logging_args
   end
 
-  test "logging args with custom config" do
+  test "logging args with configured options" do
+    config = Mrsk::Configuration.new(@deploy.tap { |c| c.merge!(logging: { "options" => { "max-size" => "100m", "max-file" => 5 } }) })
+    assert_equal ["--log-opt", "max-size=\"100m\"", "--log-opt", "max-file=\"5\""], @config.logging_args
+  end
+
+  test "logging args with configured driver and options" do
     config = Mrsk::Configuration.new(@deploy.tap { |c| c.merge!(logging: { "driver" => "local", "options" => { "max-size" => "100m", "max-file" => 5 } }) })
-    assert_equal ["--log-driver", "local", "--log-opt", "max-size=\"100m\"", "--log-opt", "max-file=\"5\""], @config.logging_args
+    assert_equal ["--log-driver", "\"local\"", "--log-opt", "max-size=\"100m\"", "--log-opt", "max-file=\"5\""], @config.logging_args
   end
 
   test "erb evaluation of yml config" do
