@@ -12,8 +12,6 @@ class Mrsk::Configuration
   attr_accessor :destination
   attr_accessor :raw_config
 
-  MAX_LOG_SIZE = "10m"
-
   class << self
     def create_from(config_file:, destination: nil, version: nil)
       raw_config = load_config_files(config_file, *destination_config_file(config_file, destination))
@@ -128,7 +126,7 @@ class Mrsk::Configuration
       optionize({ "log-driver" => raw_config.logging["driver"] }.compact) +
         argumentize("--log-opt", raw_config.logging["options"])
     else
-      argumentize("--log-opt", { "max-size" => MAX_LOG_SIZE })
+      argumentize("--log-opt", { "max-size" => "10m" })
     end
   end
 
