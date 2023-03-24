@@ -7,6 +7,10 @@ class Mrsk::Configuration::Role
    @name, @config = name.inquiry, config
   end
 
+  def primary_host
+    hosts.first
+  end
+
   def hosts
     @hosts ||= extract_hosts_from_config
   end
@@ -55,7 +59,7 @@ class Mrsk::Configuration::Role
         config.servers
       else
         servers = config.servers[name]
-        servers.is_a?(Array) ? servers : servers["hosts"]
+        servers.is_a?(Array) ? servers : Array(servers["hosts"])
       end
     end
 

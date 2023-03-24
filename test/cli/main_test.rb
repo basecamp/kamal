@@ -88,11 +88,23 @@ class CliMainTest < CliTestCase
 
   test "rollback good version" do
     Mrsk::Cli::Main.any_instance.stubs(:container_name_available?).returns(true)
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info).with(:docker, :ps, "--filter", "label=service=app", "--format", "\"{{.Names}}\"", "|", "sed 's/-/\\n/g'", "|", "tail -n 1").returns("version-to-rollback\n").times(2)
 
     run_command("rollback", "123").tap do |output|
-      assert_match /Start version 123/, output
-      assert_match /docker ps -q --filter label=service=app | xargs docker stop/, output
-      assert_match /docker start app-123/, output
+      assert_match "Start version 123", output
+      assert_match "docker start app-123", output
+      assert_match "docker container ls --all --filter name=app-version-to-rollback --quiet | xargs docker stop", output, "Should stop the container that was previously running"
+    end
+  end
+
+  test "rollback without old version" do
+    Mrsk::Cli::Main.any_instance.stubs(:container_name_available?).returns(true)
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info).with(:docker, :ps, "--filter", "label=service=app", "--format", "\"{{.Names}}\"", "|", "sed 's/-/\\n/g'", "|", "tail -n 1").returns("").times(2)
+
+    run_command("rollback", "123").tap do |output|
+      assert_match "Start version 123", output
+      assert_match "docker start app-123", output
+      assert_no_match "docker stop", output
     end
   end
 
@@ -114,7 +126,7 @@ class CliMainTest < CliTestCase
   end
 
   test "config" do
-    run_command("config").tap do |output|
+    run_command("config", config_file: "deploy_with_accessories").tap do |output|
       config = YAML.load(output)
 
       assert_equal ["web"], config[:roles]
@@ -122,6 +134,32 @@ class CliMainTest < CliTestCase
       assert_equal "999", config[:version]
       assert_equal "dhh/app", config[:repository]
       assert_equal "dhh/app:999", config[:absolute_image]
+      assert_equal "app-999", config[:service_with_version]
+    end
+  end
+
+  test "config with roles" do
+    run_command("config", config_file: "deploy_with_roles").tap do |output|
+      config = YAML.load(output)
+
+      assert_equal ["web", "workers"], config[:roles]
+      assert_equal ["1.1.1.1", "1.1.1.2", "1.1.1.3", "1.1.1.4"], config[:hosts]
+      assert_equal "999", config[:version]
+      assert_equal "registry.digitalocean.com/dhh/app", config[:repository]
+      assert_equal "registry.digitalocean.com/dhh/app:999", config[:absolute_image]
+      assert_equal "app-999", config[:service_with_version]
+    end
+  end
+
+  test "config with destination" do
+    run_command("config", "-d", "world", config_file: "deploy_for_dest").tap do |output|
+      config = YAML.load(output)
+
+      assert_equal ["web"], config[:roles]
+      assert_equal ["1.1.1.1", "1.1.1.2"], config[:hosts]
+      assert_equal "999", config[:version]
+      assert_equal "registry.digitalocean.com/dhh/app", config[:repository]
+      assert_equal "registry.digitalocean.com/dhh/app:999", config[:absolute_image]
       assert_equal "app-999", config[:service_with_version]
     end
   end
@@ -215,7 +253,7 @@ class CliMainTest < CliTestCase
   end
 
   private
-    def run_command(*command)
-      stdouted { Mrsk::Cli::Main.start([*command, "-c", "test/fixtures/deploy_with_accessories.yml"]) }
+    def run_command(*command, config_file: "deploy_with_accessories")
+      stdouted { Mrsk::Cli::Main.start([*command, "-c", "test/fixtures/#{config_file}.yml"]) }
     end
 end

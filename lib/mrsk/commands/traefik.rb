@@ -10,6 +10,7 @@ class Mrsk::Commands::Traefik < Mrsk::Commands::Base
       "--publish", port,
       "--volume", "/var/run/docker.sock:/var/run/docker.sock",
       *config.logging_args,
+      *docker_options_args,
       "traefik",
       "--providers.docker",
       "--log.level=DEBUG",
@@ -49,11 +50,15 @@ class Mrsk::Commands::Traefik < Mrsk::Commands::Base
     docker :image, :prune, "--all", "--force", "--filter", "label=org.opencontainers.image.title=Traefik"
   end
 
-  def port    
+  def port
     "#{host_port}:#{CONTAINER_PORT}"
   end
 
   private
+    def docker_options_args
+      optionize(config.traefik["options"] || {})
+    end
+
     def cmd_option_args
       if args = config.traefik["args"]
         optionize args, with: "="

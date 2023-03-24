@@ -4,7 +4,7 @@ MRSK deploys web apps anywhere from bare metal to cloud VMs using Docker with ze
 
 Watch the screencast: https://www.youtube.com/watch?v=LL1cV2FXZ5I
 
-Join us on Discord: https://discord.gg/DQETs3Pm
+Join us on Discord: https://discord.gg/YgHVT7GCXS
 
 ## Installation
 
@@ -440,6 +440,46 @@ traefik:
   host_port: 8080
 ```
 
+### Configure docker options for traefik
+
+We allow users to pass additional docker options to the trafik container like 
+
+```yaml
+traefik:
+  options: 
+    publish:
+    - 8080:8080
+    volumes:
+    - /tmp/example.json:/tmp/example.json
+    memory: 512m
+```
+
+This will start the traefik container with a command like: `docker run ... --volume /tmp/example.json:/tmp/example.json --publish 8080:8080 `
+
+
+### Configure alternate entrypoints for traefik
+
+You can configure multiple entrypoints for traefik like so:
+
+```yaml
+service: myservice
+
+labels:
+  traefik.tcp.routers.other.rule: 'HostSNI(`*`)'
+  traefik.tcp.routers.other.entrypoints: otherentrypoint
+  traefik.tcp.services.other.loadbalancer.server.port: 9000
+  traefik.http.routers.myservice.entrypoints: web
+  traefik.http.services.myservice.loadbalancer.server.port: 8080
+
+traefik:
+  options:
+    publish:
+      - 9000:9000
+  args:
+    entrypoints.web.address: ':80'
+    entrypoints.otherentrypoint.address: ':9000'
+```
+
 ### Configuring build args for new images
 
 Build arguments that aren't secret can also be configured:
@@ -459,7 +499,7 @@ FROM ruby:$RUBY_VERSION-slim as base
 
 ### Using accessories for database, cache, search services
 
-You can manage your accessory services via MRSK as well. The services will build off public images, and will not be automatically updated when you deploy:
+You can manage your accessory services via MRSK as well. Accessories are long-lived services that your app depends on. They are not updated when you deploy.
 
 ```yaml
 accessories:
@@ -480,9 +520,15 @@ accessories:
     port: "36379:6379"
     volumes:
       - /var/lib/redis:/data
+  internal-example:
+    image: registry.digitalocean.com/user/otherservice:latest
+    host: 1.1.1.5
+    port: 44444
 ```
 
 Now run `mrsk accessory start mysql` to start the MySQL server on 1.1.1.3. See `mrsk accessory` for all the commands possible.
+
+Accessory images must be public or tagged in your private registry.
 
 ### Using Cron
 

@@ -1,6 +1,6 @@
 class Mrsk::Commands::Accessory < Mrsk::Commands::Base
   attr_reader :accessory_config
-  delegate :service_name, :image, :host, :port, :files, :directories, :env_args, :volume_args, :label_args, to: :accessory_config
+  delegate :service_name, :image, :host, :port, :files, :directories, :publish_args, :env_args, :volume_args, :label_args, to: :accessory_config
 
   def initialize(config, name:)
     super(config)
@@ -12,8 +12,8 @@ class Mrsk::Commands::Accessory < Mrsk::Commands::Base
       "--name", service_name,
       "--detach",
       "--restart", "unless-stopped",
-      "--publish", port,
       *config.logging_args,
+      *publish_args,
       *env_args,
       *volume_args,
       *label_args,

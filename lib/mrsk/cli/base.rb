@@ -39,14 +39,6 @@ module Mrsk::Cli
 
       def initialize_commander(options)
         MRSK.tap do |commander|
-          commander.config_file = Pathname.new(File.expand_path(options[:config_file]))
-          commander.destination = options[:destination]
-          commander.version     = options[:version]
-
-          commander.specific_hosts    = options[:hosts]&.split(",")
-          commander.specific_roles    = options[:roles]&.split(",")
-          commander.specific_primary! if options[:primary]
-
           if options[:verbose]
             ENV["VERBOSE"] = "1" # For backtraces via cli/start
             commander.verbosity = :debug
@@ -55,6 +47,15 @@ module Mrsk::Cli
           if options[:quiet]
             commander.verbosity = :error
           end
+
+          commander.configure \
+            config_file: Pathname.new(File.expand_path(options[:config_file])),
+            destination: options[:destination],
+            version: options[:version]
+
+          commander.specific_hosts    = options[:hosts]&.split(",")
+          commander.specific_roles    = options[:roles]&.split(",")
+          commander.specific_primary! if options[:primary]
         end
       end
 

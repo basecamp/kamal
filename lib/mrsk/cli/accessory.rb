@@ -9,6 +9,7 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
         upload(name)
 
         on(accessory.host) do
+          execute *MRSK.registry.login
           execute *MRSK.auditor.record("Booted #{name} accessory"), verbosity: :debug
           execute *accessory.run
         end

@@ -9,21 +9,21 @@ class Mrsk::Configuration
   delegate :service, :image, :servers, :env, :labels, :registry, :builder, :logging, to: :raw_config, allow_nil: true
   delegate :argumentize, :argumentize_env_with_secrets, to: Mrsk::Utils
 
-  attr_accessor :version
   attr_accessor :destination
   attr_accessor :raw_config
 
   class << self
-    def create_from(base_config_file, destination: nil, version: "missing")
-      new(load_config_file(base_config_file).tap do |config|
-        if destination
-          config.deep_merge! \
-            load_config_file destination_config_file(base_config_file, destination)
-        end
-      end, destination: destination, version: version)
+    def create_from(config_file:, destination: nil, version: nil)
+      raw_config = load_config_files(config_file, *destination_config_file(config_file, destination))
+
+      new raw_config, destination: destination, version: version
     end
 
     private
+      def load_config_files(*files)
+        files.inject({}) { |config, file| config.deep_merge! load_config_file(file) }
+      end
+
       def load_config_file(file)
         if file.exist?
           YAML.load(ERB.new(IO.read(file)).result).symbolize_keys
@@ -33,16 +33,28 @@ class Mrsk::Configuration
       end
 
       def destination_config_file(base_config_file, destination)
-        dir, basename = base_config_file.split
-        dir.join basename.to_s.remove(".yml") + ".#{destination}.yml"
+        base_config_file.sub_ext(".#{destination}.yml") if destination
       end
   end
 
-  def initialize(raw_config, destination: nil, version: "missing", validate: true)
+  def initialize(raw_config, destination: nil, version: nil, validate: true)
     @raw_config = ActiveSupport::InheritableOptions.new(raw_config)
     @destination = destination
-    @version = version
+    @declared_version = version
     valid? if validate
+  end
+
+
+  def version=(version)
+    @declared_version = version
+  end
+
+  def version
+    @declared_version.presence || ENV["VERSION"] || current_commit_hash
+  end
+
+  def abbreviated_version
+    Mrsk::Utils.abbreviate_version(version)
   end
 
 
@@ -68,7 +80,7 @@ class Mrsk::Configuration
   end
 
   def primary_web_host
-    role(:web).hosts.first
+    role(:web).primary_host
   end
 
   def traefik_hosts
@@ -194,6 +206,12 @@ class Mrsk::Configuration
         raise ArgumentError, "You must specify a password for the registry in config/deploy.yml (or set the ENV variable if that's used)"
       end
 
+      roles.each do |role|
+        if role.hosts.empty?
+          raise ArgumentError, "No servers specified for the #{role.name} role"
+        end
+      end
+
       true
     end
 
@@ -207,5 +225,14 @@ class Mrsk::Configuration
 
     def role_names
       raw_config.servers.is_a?(Array) ? [ "web" ] : raw_config.servers.keys.sort
+    end
+
+    def current_commit_hash
+      @current_commit_hash ||=
+        if system("git rev-parse")
+          `git rev-parse HEAD`.strip
+        else
+          raise "Can't use commit hash as version, no git repository found in #{Dir.pwd}"
+        end
     end
 end
