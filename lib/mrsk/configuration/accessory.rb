@@ -1,5 +1,5 @@
 class Mrsk::Configuration::Accessory
-  delegate :argumentize, :argumentize_env_with_secrets, to: Mrsk::Utils
+  delegate :argumentize, :argumentize_env_with_secrets, :optionize, to: Mrsk::Utils
 
   attr_accessor :name, :specifics
 
@@ -65,6 +65,14 @@ class Mrsk::Configuration::Accessory
 
   def volume_args
     argumentize "--volume", volumes
+  end
+
+  def option_args
+    if args = specifics["options"]
+      optionize args
+    else
+      []
+    end
   end
 
   private
