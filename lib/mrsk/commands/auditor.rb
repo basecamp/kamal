@@ -1,6 +1,13 @@
 require "active_support/core_ext/time/conversions"
 
 class Mrsk::Commands::Auditor < Mrsk::Commands::Base
+  attr_reader :role
+
+  def initialize(config, role: nil)
+    super(config)
+    @role = role
+  end
+
   # Runs remotely
   def record(line)
     append \
@@ -25,11 +32,15 @@ class Mrsk::Commands::Auditor < Mrsk::Commands::Base
     end
 
     def tagged_record_line(line)
-      "'#{recorded_at_tag} #{performer_tag} #{line}'"
+      quote [recorded_at_tag, performer_tag, role_tag, line].compact.join(" ")
     end
 
     def tagged_broadcast_line(line)
-      "'#{performer_tag} #{line}'"
+      quote [performer_tag, role_tag, line].compact.join(" ")
+    end
+
+    def role_tag
+      "[#{role}]" if role
     end
 
     def performer_tag
@@ -38,5 +49,9 @@ class Mrsk::Commands::Auditor < Mrsk::Commands::Base
 
     def recorded_at_tag
       "[#{Time.now.to_fs(:db)}]"
+    end
+
+    def quote(tagged_line)
+      "'#{tagged_line}'"
     end
 end
