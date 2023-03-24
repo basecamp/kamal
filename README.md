@@ -333,7 +333,7 @@ logging:
     awslogs-group: "my-app"
 ```
 
-If nothing is configured, Docker will use its default driver `json-file`.
+If nothing is configured, the default option `max-size=10m` is used for all containers. The default logging driver of Docker is `json-file`.
 
 ### Using remote builder for native multi-arch
 
