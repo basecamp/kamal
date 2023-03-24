@@ -39,6 +39,10 @@ module Mrsk::Commands
         combine *commands, by: ">>"
       end
 
+      def write(*commands)
+        combine *commands, by: ">"
+      end
+
       def xargs(command)
         [ :xargs, command ].flatten
       end

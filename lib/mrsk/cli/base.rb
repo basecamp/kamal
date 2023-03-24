@@ -6,6 +6,8 @@ module Mrsk::Cli
   class Base < Thor
     include SSHKit::DSL
 
+    class LockError < StandardError; end
+
     def self.exit_on_failure?() true end
 
     class_option :verbose, type: :boolean, aliases: "-v", desc: "Detailed logging"
@@ -70,6 +72,36 @@ module Mrsk::Cli
 
       def audit_broadcast(line)
         run_locally { execute *MRSK.auditor.broadcast(line), verbosity: :debug }
+      end
+
+      def with_lock
+        acquire_lock
+
+        yield
+      ensure
+        release_lock
+      end
+
+      def acquire_lock
+        if MRSK.lock_count == 0
+          say "Acquiring the deploy lock"
+          on(MRSK.primary_host) { execute *MRSK.lock.acquire("Automatic deploy lock", MRSK.config.version) }
+        end
+        MRSK.lock_count += 1
+      rescue SSHKit::Runner::ExecuteError => e
+        if e.message =~ /cannot create directory/
+          invoke "mrsk:cli:lock:status", []
+        end
+
+        raise LockError, "Deploy lock found"
+      end
+
+      def release_lock
+        MRSK.lock_count -= 1
+        if MRSK.lock_count == 0
+          say "Releasing the deploy lock"
+          on(MRSK.primary_host) { execute *MRSK.lock.release }
+        end
       end
   end
 end

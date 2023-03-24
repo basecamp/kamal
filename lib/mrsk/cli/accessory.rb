@@ -1,34 +1,38 @@
 class Mrsk::Cli::Accessory < Mrsk::Cli::Base
   desc "boot [NAME]", "Boot new accessory service on host (use NAME=all to boot all accessories)"
   def boot(name)
-    if name == "all"
-      MRSK.accessory_names.each { |accessory_name| boot(accessory_name) }
-    else
-      with_accessory(name) do |accessory|
-        directories(name)
-        upload(name)
+    with_lock do
+      if name == "all"
+        MRSK.accessory_names.each { |accessory_name| boot(accessory_name) }
+      else
+        with_accessory(name) do |accessory|
+          directories(name)
+          upload(name)
 
-        on(accessory.host) do
-          execute *MRSK.registry.login
-          execute *MRSK.auditor.record("Booted #{name} accessory"), verbosity: :debug
-          execute *accessory.run
+          on(accessory.host) do
+            execute *MRSK.registry.login
+            execute *MRSK.auditor.record("Booted #{name} accessory"), verbosity: :debug
+            execute *accessory.run
+          end
+
+          audit_broadcast "Booted accessory #{name}" unless options[:skip_broadcast]
         end
-
-        audit_broadcast "Booted accessory #{name}" unless options[:skip_broadcast]
       end
     end
   end
 
   desc "upload [NAME]", "Upload accessory files to host", hide: true
   def upload(name)
-    with_accessory(name) do |accessory|
-      on(accessory.host) do
-        accessory.files.each do |(local, remote)|
-          accessory.ensure_local_file_present(local)
+    with_lock do
+      with_accessory(name) do |accessory|
+        on(accessory.host) do
+          accessory.files.each do |(local, remote)|
+            accessory.ensure_local_file_present(local)
 
-          execute *accessory.make_directory_for(remote)
-          upload! local, remote
-          execute :chmod, "755", remote
+            execute *accessory.make_directory_for(remote)
+            upload! local, remote
+            execute :chmod, "755", remote
+          end
         end
       end
     end
@@ -36,10 +40,12 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
 
   desc "directories [NAME]", "Create accessory directories on host", hide: true
   def directories(name)
-    with_accessory(name) do |accessory|
-      on(accessory.host) do
-        accessory.directories.keys.each do |host_path|
-          execute *accessory.make_directory(host_path)
+    with_lock do
+      with_accessory(name) do |accessory|
+        on(accessory.host) do
+          accessory.directories.keys.each do |host_path|
+            execute *accessory.make_directory(host_path)
+          end
         end
       end
     end
@@ -47,38 +53,46 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
 
   desc "reboot [NAME]", "Reboot existing accessory on host (stop container, remove container, start new container)"
   def reboot(name)
-    with_accessory(name) do |accessory|
-      stop(name)
-      remove_container(name)
-      boot(name)
+    with_lock do
+      with_accessory(name) do |accessory|
+        stop(name)
+        remove_container(name)
+        boot(name)
+      end
     end
   end
 
   desc "start [NAME]", "Start existing accessory container on host"
   def start(name)
-    with_accessory(name) do |accessory|
-      on(accessory.host) do
-        execute *MRSK.auditor.record("Started #{name} accessory"), verbosity: :debug
-        execute *accessory.start
+    with_lock do
+      with_accessory(name) do |accessory|
+        on(accessory.host) do
+          execute *MRSK.auditor.record("Started #{name} accessory"), verbosity: :debug
+          execute *accessory.start
+        end
       end
     end
   end
 
   desc "stop [NAME]", "Stop existing accessory container on host"
   def stop(name)
-    with_accessory(name) do |accessory|
-      on(accessory.host) do
-        execute *MRSK.auditor.record("Stopped #{name} accessory"), verbosity: :debug
-        execute *accessory.stop, raise_on_non_zero_exit: false
+    with_lock do
+      with_accessory(name) do |accessory|
+        on(accessory.host) do
+          execute *MRSK.auditor.record("Stopped #{name} accessory"), verbosity: :debug
+          execute *accessory.stop, raise_on_non_zero_exit: false
+        end
       end
     end
   end
 
   desc "restart [NAME]", "Restart existing accessory container on host"
   def restart(name)
-    with_accessory(name) do
-      stop(name)
-      start(name)
+    with_lock do
+      with_accessory(name) do
+        stop(name)
+        start(name)
+      end
     end
   end
 

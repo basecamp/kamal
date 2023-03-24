@@ -463,11 +463,11 @@ traefik:
 
 ### Configure docker options for traefik
 
-We allow users to pass additional docker options to the trafik container like 
+We allow users to pass additional docker options to the trafik container like
 
 ```yaml
 traefik:
-  options: 
+  options:
     publish:
     - 8080:8080
     volumes:
@@ -717,6 +717,30 @@ Note that by default old containers are pruned after 3 days when you run `mrsk d
 ### Running removal to clean up servers
 
 If you wish to remove the entire application, including Traefik, containers, images, and registry session, you can run `mrsk remove`. This will leave the servers clean.
+
+## Locking
+
+Commands that are unsafe to run concurrently will take a deploy lock while they run. The lock is the `mrsk_lock` directory on the primary server.
+
+You can check the lock status with:
+
+```
+mrsk lock status
+
+Locked by: AN Other at 2023-03-24 09:49:03 UTC
+Version: 77f45c0686811c68989d6576748475a60bf53fc2
+Message: Automatic deploy lock
+```
+
+You can also manually acquire and release the lock
+
+```
+mrsk lock acquire -m "Doing maintanence"
+```
+
+```
+mrsk lock release
+```
 
 ## Stage of development
 

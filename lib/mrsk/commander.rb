@@ -2,10 +2,11 @@ require "active_support/core_ext/enumerable"
 require "active_support/core_ext/module/delegation"
 
 class Mrsk::Commander
-  attr_accessor :verbosity
+  attr_accessor :verbosity, :lock_count
 
   def initialize
     self.verbosity = :info
+    self.lock_count = 0
   end
 
   def config
@@ -98,6 +99,9 @@ class Mrsk::Commander
     @traefik ||= Mrsk::Commands::Traefik.new(config)
   end
 
+  def lock
+    @lock ||= Mrsk::Commands::Lock.new(config)
+  end
 
   def with_verbosity(level)
     old_level = self.verbosity
@@ -109,14 +113,6 @@ class Mrsk::Commander
   ensure
     self.verbosity = old_level
     SSHKit.config.output_verbosity = old_level
-  end
-
-
-  # Test-induced damage!
-  def reset
-    @config = nil
-    @app = @builder = @traefik = @registry = @prune = @auditor = nil
-    @verbosity = :info
   end
 
   private

@@ -1,26 +1,30 @@
 class Mrsk::Cli::Build < Mrsk::Cli::Base
   desc "deliver", "Build app and push app image to registry then pull image on servers"
   def deliver
-    push
-    pull
+    with_lock do
+      push
+      pull
+    end
   end
 
   desc "push", "Build and push app image to registry"
   def push
-    cli = self
+    with_lock do
+      cli = self
 
-    run_locally do
-      begin
-        MRSK.with_verbosity(:debug) { execute *MRSK.builder.push }
-      rescue SSHKit::Command::Failed => e
-        if e.message =~ /(no builder)|(no such file or directory)/
-          error "Missing compatible builder, so creating a new one first"
+      run_locally do
+        begin
+          MRSK.with_verbosity(:debug) { execute *MRSK.builder.push }
+        rescue SSHKit::Command::Failed => e
+          if e.message =~ /(no builder)|(no such file or directory)/
+            error "Missing compatible builder, so creating a new one first"
 
-          if cli.create
-            MRSK.with_verbosity(:debug) { execute *MRSK.builder.push }
+            if cli.create
+              MRSK.with_verbosity(:debug) { execute *MRSK.builder.push }
+            end
+          else
+            raise
           end
-        else
-          raise
         end
       end
     end
@@ -28,25 +32,29 @@ class Mrsk::Cli::Build < Mrsk::Cli::Base
 
   desc "pull", "Pull app image from registry onto servers"
   def pull
-    on(MRSK.hosts) do
-      execute *MRSK.auditor.record("Pulled image with version #{MRSK.config.version}"), verbosity: :debug
-      execute *MRSK.builder.clean, raise_on_non_zero_exit: false
-      execute *MRSK.builder.pull
+    with_lock do
+      on(MRSK.hosts) do
+        execute *MRSK.auditor.record("Pulled image with version #{MRSK.config.version}"), verbosity: :debug
+        execute *MRSK.builder.clean, raise_on_non_zero_exit: false
+        execute *MRSK.builder.pull
+      end
     end
   end
 
   desc "create", "Create a build setup"
   def create
-    run_locally do
-      begin
-        debug "Using builder: #{MRSK.builder.name}"
-        execute *MRSK.builder.create
-      rescue SSHKit::Command::Failed => e
-        if e.message =~ /stderr=(.*)/
-          error "Couldn't create remote builder: #{$1}"
-          false
-        else
-          raise
+    with_lock do
+      run_locally do
+        begin
+          debug "Using builder: #{MRSK.builder.name}"
+          execute *MRSK.builder.create
+        rescue SSHKit::Command::Failed => e
+          if e.message =~ /stderr=(.*)/
+            error "Couldn't create remote builder: #{$1}"
+            false
+          else
+            raise
+          end
         end
       end
     end
@@ -54,9 +62,11 @@ class Mrsk::Cli::Build < Mrsk::Cli::Base
 
   desc "remove", "Remove build setup"
   def remove
-    run_locally do
-      debug "Using builder: #{MRSK.builder.name}"
-      execute *MRSK.builder.remove
+    with_lock do
+      run_locally do
+        debug "Using builder: #{MRSK.builder.name}"
+        execute *MRSK.builder.remove
+      end
     end
   end
 
