@@ -1,13 +1,20 @@
 class Mrsk::Commands::App < Mrsk::Commands::Base
-  def run(role: :web)
-    role = config.role(role)
+  attr_reader :role
+
+  def initialize(config, role: nil)
+    super(config)
+    @role = role
+  end
+
+  def run
+    role = config.role(self.role)
 
     docker :run,
       "--detach",
       "--restart unless-stopped",
       "--log-opt", "max-size=#{MAX_LOG_SIZE}",
-      "--name", service_with_version_and_destination,
-      "-e", "MRSK_CONTAINER_NAME=\"#{service_with_version_and_destination}\"",
+      "--name", service_with_version_and_destination_and_role,
+      "-e", "MRSK_CONTAINER_NAME=\"#{service_with_version_and_destination_and_role}\"",
       *role.env_args,
       *config.volume_args,
       *role.label_args,
@@ -17,7 +24,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
   end
 
   def start
-    docker :start, service_with_version_and_destination
+    docker :start, service_with_version_and_destination_and_role
   end
 
   DEFAULT_STOP_WAIT_TIME = 10
@@ -66,7 +73,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
   def execute_in_existing_container(*command, interactive: false)
     docker :exec,
       ("-it" if interactive),
-      service_with_version_and_destination,
+      service_with_version_and_destination_and_role,
       *command
   end
 
@@ -101,19 +108,6 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
       "tail -n 1"
   end
 
-  def most_recent_version_from_available_images
-    pipe \
-      docker(:image, :ls, "--format", '"{{.Tag}}"', config.repository),
-      "head -n 1"
-  end
-
-  def all_versions_from_available_containers
-    pipe \
-      docker(:image, :ls, "--format", '"{{.Tag}}"', config.repository),
-      "head -n 1"
-  end
-
-
   def list_containers
     docker :container, :ls, "--all", *filter_args
   end
@@ -124,7 +118,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
 
   def remove_container(version:)
     pipe \
-      container_id_for(container_name: service_with_version_and_destination(version)),
+      container_id_for(container_name: service_with_version_and_destination_and_role(version)),
       xargs(docker(:container, :rm))
   end
 
@@ -142,12 +136,12 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
 
 
   private
-    def service_with_version_and_destination(version = nil)
-      [ config.service, config.destination, version || config.version ].compact.join("-")
+    def service_with_version_and_destination_and_role(version = nil)
+      [ config.service, role, config.destination, version || config.version ].compact.join("-")
     end
 
     def container_id_for_version(version)
-      container_id_for(container_name: service_with_version_and_destination(version))
+      container_id_for(container_name: service_with_version_and_destination_and_role(version))
     end
 
     def filter_args
@@ -157,6 +151,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
     def filters
       [ "label=service=#{config.service}" ].tap do |filters|
         filters << "label=destination=#{config.destination}" if config.destination
+        filters << "label=role=#{role}" if role
       end
     end
 end

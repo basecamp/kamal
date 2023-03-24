@@ -77,7 +77,7 @@ class Mrsk::Configuration
 
 
   def all_hosts
-    roles.flat_map(&:hosts)
+    roles.flat_map(&:hosts).uniq
   end
 
   def primary_web_host
@@ -85,7 +85,7 @@ class Mrsk::Configuration
   end
 
   def traefik_hosts
-    roles.select(&:running_traefik?).flat_map(&:hosts)
+    roles.select(&:running_traefik?).flat_map(&:hosts).uniq
   end
 
 

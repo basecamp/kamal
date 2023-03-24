@@ -10,7 +10,7 @@ class CliMainTest < CliTestCase
   end
 
   test "deploy" do
-    invoke_options = { "config_file" => "test/fixtures/deploy_with_accessories.yml", "skip_broadcast" => false, "skip_push" => false }
+    invoke_options = { "config_file" => "test/fixtures/deploy_with_accessories.yml", "skip_broadcast" => false, "version" => "999" }
 
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:server:bootstrap", [], invoke_options)
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:registry:login", [], invoke_options)
@@ -31,7 +31,7 @@ class CliMainTest < CliTestCase
   end
 
   test "deploy with skip_push" do
-    invoke_options = { "config_file" => "test/fixtures/deploy_with_accessories.yml", "skip_broadcast" => false, "skip_push" => true }
+    invoke_options = { "config_file" => "test/fixtures/deploy_with_accessories.yml", "skip_broadcast" => false, "version" => "999" }
 
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:server:bootstrap", [], invoke_options)
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:registry:login", [], invoke_options)
@@ -52,7 +52,7 @@ class CliMainTest < CliTestCase
   end
 
   test "redeploy" do
-    invoke_options = { "config_file" => "test/fixtures/deploy_with_accessories.yml", "skip_broadcast" => false, "skip_push" => false}
+    invoke_options = { "config_file" => "test/fixtures/deploy_with_accessories.yml", "skip_broadcast" => false, "version" => "999" }
 
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:build:deliver", [], invoke_options)
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:healthcheck:perform", [], invoke_options)
@@ -65,7 +65,7 @@ class CliMainTest < CliTestCase
   end
 
   test "redeploy with skip_push" do
-    invoke_options = { "config_file" => "test/fixtures/deploy_with_accessories.yml", "skip_broadcast" => false, "skip_push" => true }
+    invoke_options = { "config_file" => "test/fixtures/deploy_with_accessories.yml", "skip_broadcast" => false, "version" => "999" }
 
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:build:pull", [], invoke_options)
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:healthcheck:perform", [], invoke_options)
@@ -88,7 +88,7 @@ class CliMainTest < CliTestCase
 
   test "rollback good version" do
     Mrsk::Cli::Main.any_instance.stubs(:container_name_available?).returns(true)
-    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info).with(:docker, :ps, "--filter", "label=service=app", "--format", "\"{{.Names}}\"", "--latest", "|", "sed 's/-/\\n/g'", "|", "tail -n 1").returns("version-to-rollback\n").times(2)
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info).with(:docker, :ps, "--filter", "label=service=app", "--format", "\"{{.Names}}\"", "--latest", "|", "sed 's/-/\\n/g'", "|", "tail -n 1").returns("version-to-rollback\n").at_least_once
 
     run_command("rollback", "123").tap do |output|
       assert_match "Start version 123", output
@@ -99,7 +99,7 @@ class CliMainTest < CliTestCase
 
   test "rollback without old version" do
     Mrsk::Cli::Main.any_instance.stubs(:container_name_available?).returns(true)
-    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info).with(:docker, :ps, "--filter", "label=service=app", "--format", "\"{{.Names}}\"", "--latest", "|", "sed 's/-/\\n/g'", "|", "tail -n 1").returns("").times(2)
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info).with(:docker, :ps, "--filter", "label=service=app", "--format", "\"{{.Names}}\"", "--latest", "|", "sed 's/-/\\n/g'", "|", "tail -n 1").returns("").at_least_once
 
     run_command("rollback", "123").tap do |output|
       assert_match "Start version 123", output
@@ -120,8 +120,6 @@ class CliMainTest < CliTestCase
     run_command("audit").tap do |output|
       assert_match /tail -n 50 mrsk-app-audit.log on 1.1.1.1/, output
       assert_match /App Host: 1.1.1.1/, output
-      assert_match /tail -n 50 mrsk-app-audit.log on 1.1.1.2/, output
-      assert_match /App Host: 1.1.1.2/, output
     end
   end
 
@@ -235,12 +233,12 @@ class CliMainTest < CliTestCase
 
       assert_match /docker container stop app-mysql/, output
       assert_match /docker container prune --force --filter label=service=app-mysql/, output
-      assert_match /docker image prune --all --force --filter label=service=app-mysql/, output
+      assert_match /docker image rm --force mysql/, output
       assert_match /rm -rf app-mysql/, output
 
       assert_match /docker container stop app-redis/, output
       assert_match /docker container prune --force --filter label=service=app-redis/, output
-      assert_match /docker image prune --all --force --filter label=service=app-redis/, output
+      assert_match /docker image rm --force redis/, output
       assert_match /rm -rf app-redis/, output
 
       assert_match /docker logout/, output

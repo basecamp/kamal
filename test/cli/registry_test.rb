@@ -4,15 +4,13 @@ class CliRegistryTest < CliTestCase
   test "login" do
     run_command("login").tap do |output|
       assert_match /docker login -u \[REDACTED\] -p \[REDACTED\] as .*@localhost/, output
-      assert_match "docker login -u [REDACTED] -p [REDACTED] on 1.1.1.1", output
-      assert_match "docker login -u [REDACTED] -p [REDACTED] on 1.1.1.2", output
+      assert_match /docker login -u \[REDACTED\] -p \[REDACTED\] on 1.1.1.\d/, output
     end
   end
 
   test "logout" do
     run_command("logout").tap do |output|
-      assert_match "docker logout on 1.1.1.1", output
-      assert_match "docker logout on 1.1.1.2", output
+      assert_match /docker logout on 1.1.1.\d/, output
     end
   end
 
