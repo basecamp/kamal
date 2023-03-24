@@ -36,7 +36,7 @@ class CliTraefikTest < CliTestCase
 
   test "details" do
     run_command("details").tap do |output|
-      assert_match "docker ps --filter name=traefik", output
+      assert_match "docker ps --filter name=^traefik$", output
     end
   end
 

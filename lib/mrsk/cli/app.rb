@@ -15,22 +15,17 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
             execute *MRSK.auditor(role: role).record("Booted app version #{version}"), verbosity: :debug
 
             begin
+              if capture_with_info(*MRSK.app(role: role).container_id_for_version(version)).present?
+                tmp_version = "#{version}_#{SecureRandom.hex(8)}"
+                info "Renaming container #{version} to #{tmp_version} as already deployed on #{host}"
+                execute *MRSK.auditor(role: role).record("Renaming container #{version} to #{tmp_version}"), verbosity: :debug
+                execute *MRSK.app(role: role).rename_container(version: version, new_version: tmp_version)
+              end
+
               old_version = capture_with_info(*MRSK.app(role: role).current_running_version).strip
               execute *MRSK.app(role: role).run
               sleep MRSK.config.readiness_delay
               execute *MRSK.app(role: role).stop(version: old_version), raise_on_non_zero_exit: false if old_version.present?
-
-            rescue SSHKit::Command::Failed => e
-              if e.message =~ /already in use/
-                error "Rebooting container with same version #{version} already deployed on #{host} (may cause gap in zero-downtime promise!)"
-                execute *MRSK.auditor(role: role).record("Rebooted app version #{version}"), verbosity: :debug
-
-                execute *MRSK.app(role: role).stop(version: version)
-                execute *MRSK.app(role: role).remove_container(version: version)
-                execute *MRSK.app(role: role).run
-              else
-                raise
-              end
             end
           end
         end

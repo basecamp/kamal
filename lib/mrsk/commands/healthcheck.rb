@@ -43,7 +43,7 @@ class Mrsk::Commands::Healthcheck < Mrsk::Commands::Base
     end
 
     def container_id
-      container_id_for(container_name: container_name)
+      container_id_for(container_name: container_name_with_version)
     end
 
     def health_url

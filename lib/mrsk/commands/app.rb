@@ -86,6 +86,10 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
     docker :ps, "--quiet", *filter_args
   end
 
+  def container_id_for_version(version)
+    container_id_for(container_name: container_name(version))
+  end
+
   def current_running_version
     # FIXME: Find more graceful way to extract the version from "app-version" than using sed and tail!
     pipe \
@@ -108,6 +112,10 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
       xargs(docker(:container, :rm))
   end
 
+  def rename_container(version:, new_version:)
+    docker :rename, container_name(version), container_name(new_version)
+  end
+
   def remove_containers
     docker :container, :prune, "--force", *filter_args
   end
@@ -124,10 +132,6 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
   private
     def container_name(version = nil)
       [ config.service, role, config.destination, version || config.version ].compact.join("-")
-    end
-
-    def container_id_for_version(version)
-      container_id_for(container_name: container_name(version))
     end
 
     def filter_args

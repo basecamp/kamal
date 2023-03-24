@@ -53,7 +53,7 @@ class CommandsHealthcheckTest < ActiveSupport::TestCase
 
   test "stop" do
     assert_equal \
-      "docker container ls --all --filter name=healthcheck-app --quiet | xargs docker stop",
+      "docker container ls --all --filter name=^healthcheck-app-123$ --quiet | xargs docker stop",
       new_command.stop.join(" ")
   end
 
@@ -61,13 +61,13 @@ class CommandsHealthcheckTest < ActiveSupport::TestCase
     @destination = "staging"
 
     assert_equal \
-      "docker container ls --all --filter name=healthcheck-app-staging --quiet | xargs docker stop",
+      "docker container ls --all --filter name=^healthcheck-app-staging-123$ --quiet | xargs docker stop",
       new_command.stop.join(" ")
   end
 
   test "remove" do
     assert_equal \
-      "docker container ls --all --filter name=healthcheck-app --quiet | xargs docker container rm",
+      "docker container ls --all --filter name=^healthcheck-app-123$ --quiet | xargs docker container rm",
       new_command.remove.join(" ")
   end
 
@@ -75,13 +75,13 @@ class CommandsHealthcheckTest < ActiveSupport::TestCase
     @destination = "staging"
 
     assert_equal \
-      "docker container ls --all --filter name=healthcheck-app-staging --quiet | xargs docker container rm",
+      "docker container ls --all --filter name=^healthcheck-app-staging-123$ --quiet | xargs docker container rm",
       new_command.remove.join(" ")
   end
 
   test "logs" do
     assert_equal \
-      "docker container ls --all --filter name=healthcheck-app --quiet | xargs docker logs --tail 50 2>&1",
+      "docker container ls --all --filter name=^healthcheck-app-123$ --quiet | xargs docker logs --tail 50 2>&1",
       new_command.logs.join(" ")
   end
 
@@ -89,7 +89,7 @@ class CommandsHealthcheckTest < ActiveSupport::TestCase
     @destination = "staging"
 
     assert_equal \
-      "docker container ls --all --filter name=healthcheck-app-staging --quiet | xargs docker logs --tail 50 2>&1",
+      "docker container ls --all --filter name=^healthcheck-app-staging-123$ --quiet | xargs docker logs --tail 50 2>&1",
       new_command.logs.join(" ")
   end
 

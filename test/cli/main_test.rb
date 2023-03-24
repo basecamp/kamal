@@ -95,7 +95,7 @@ class CliMainTest < CliTestCase
     run_command("rollback", "123").tap do |output|
       assert_match "Start version 123", output
       assert_match "docker start app-123", output
-      assert_match "docker container ls --all --filter name=app-version-to-rollback --quiet | xargs docker stop", output, "Should stop the container that was previously running"
+      assert_match "docker container ls --all --filter name=^app-version-to-rollback$ --quiet | xargs docker stop", output, "Should stop the container that was previously running"
     end
   end
 

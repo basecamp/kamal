@@ -82,7 +82,7 @@ class CommandsTraefikTest < ActiveSupport::TestCase
 
   test "traefik info" do
     assert_equal \
-      "docker ps --filter name=traefik",
+      "docker ps --filter name=^traefik$",
       new_command.info.join(" ")
   end
 
