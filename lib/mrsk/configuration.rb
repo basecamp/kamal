@@ -12,6 +12,8 @@ class Mrsk::Configuration
   attr_accessor :destination
   attr_accessor :raw_config
 
+  MAX_LOG_SIZE = "10m"
+
   class << self
     def create_from(config_file:, destination: nil, version: nil)
       raw_config = load_config_files(config_file, *destination_config_file(config_file, destination))
@@ -123,10 +125,10 @@ class Mrsk::Configuration
 
   def logging_args
     if raw_config.logging.present?
-      [ "--log-driver", raw_config.logging["driver"] || "json-file" ] +
+      [ "--log-driver", raw_config.logging["driver"] ] +
         argumentize("--log-opt", raw_config.logging["options"])
     else
-      []
+      argumentize("--log-opt", { "max-size" => MAX_LOG_SIZE })
     end
   end
 
@@ -182,7 +184,7 @@ class Mrsk::Configuration
       ssh_options: ssh_options,
       builder: raw_config.builder,
       accessories: raw_config.accessories,
-      logging: raw_config.logging,
+      logging: logging_args,
       healthcheck: healthcheck
     }.compact
   end
