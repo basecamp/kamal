@@ -61,6 +61,14 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
       new_command(:busybox).run.join(" ")
   end
 
+  test "run with logging config" do
+    @config[:logging] = { "driver" => "local", "options" => { "max-size" => "100m", "max-file" => "3" } }
+
+    assert_equal \
+      "docker run --name app-busybox --detach --restart unless-stopped --log-driver local --log-opt max-size=\"100m\" --log-opt max-file=\"3\" --label service=\"app-busybox\" busybox:latest",
+      new_command(:busybox).run.join(" ")
+  end
+
   test "start" do
     assert_equal \
       "docker container start app-mysql",
