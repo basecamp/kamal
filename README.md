@@ -8,7 +8,19 @@ Join us on Discord: https://discord.gg/YgHVT7GCXS
 
 ## Installation
 
-Install MRSK globally with `gem install mrsk`. Then, inside your app directory, run `mrsk init` (or `mrsk init --bundle` within Rails apps where you want a bin/mrsk binstub). Now edit the new file `config/deploy.yml`. It could look as simple as this:
+If you have a Ruby environment available, you can install MRSK globally with:
+
+```sh
+gem install mrsk
+```
+
+...otherwise, you can run a dockerized version via an alias (add this to your ${SHELL}rc to simplify re-use):
+
+```sh
+alias mrsk='docker run --rm -it -v $HOME/.ssh:/root/.ssh -v /var/run/docker.sock:/var/run/docker.sock -v ${PWD}/:/workdir  ghcr.io/mrsked/mrsk'
+```
+
+Then, inside your app directory, run `mrsk init` (or `mrsk init --bundle` within Rails apps where you want a bin/mrsk binstub). Now edit the new file `config/deploy.yml`. It could look as simple as this:
 
 ```yaml
 service: hey
@@ -36,7 +48,7 @@ mrsk deploy
 This will:
 
 1. Connect to the servers over SSH (using root by default, authenticated by your ssh key)
-2. Install Docker on any server that might be missing it (using apt-get)
+2. Install Docker on any server that might be missing it (using apt-get): root access is needed via ssh for this.
 3. Log into the registry both locally and remotely
 4. Build the image using the standard Dockerfile in the root of the application.
 5. Push the image to the registry.

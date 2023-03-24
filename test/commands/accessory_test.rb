@@ -140,7 +140,7 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
 
   test "remove image" do
     assert_equal \
-      "docker image prune --all --force --filter label=service=app-mysql",
+      "docker image rm --force private.registry/mysql:8.0",
       new_command(:mysql).remove_image.join(" ")
   end
 
