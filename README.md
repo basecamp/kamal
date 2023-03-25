@@ -439,6 +439,16 @@ RUN --mount=type=secret,id=GITHUB_TOKEN \
   rm -rf /usr/local/bundle/cache
 ```
 
+### Using cache at image build
+
+Specifying a Docker tag allows you to use the cache to save container build time:
+
+```yaml
+builder:
+  cache_from:
+    - latest # 37s/hey:latest
+```
+
 ### Using command arguments for Traefik
 
 You can customize the traefik command line:

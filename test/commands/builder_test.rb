@@ -86,6 +86,13 @@ class CommandsBuilderTest < ActiveSupport::TestCase
       builder.push.join(" ")
   end
 
+  test "build cache_from" do
+    builder = new_builder_command(builder: { "cache_from" => ["master", "1.0.0"] })
+    assert_equal \
+      "-t dhh/app:123 -t dhh/app:latest --label service=\"app\" --cache-from dhh/app:master --cache-from dhh/app:1.0.0 --file Dockerfile",
+      builder.target.build_options.join(" ")
+  end
+
   private
     def new_builder_command(additional_config = {})
       Mrsk::Commands::Builder.new(Mrsk::Configuration.new(@config.merge(additional_config), version: "123"))

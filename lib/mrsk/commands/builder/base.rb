@@ -11,7 +11,7 @@ class Mrsk::Commands::Builder::Base < Mrsk::Commands::Base
   end
 
   def build_options
-    [ *build_tags, *build_labels, *build_args, *build_secrets, *build_dockerfile ]
+    [ *build_tags, *build_labels, *build_args, *build_secrets, *build_cache_from, *build_dockerfile ]
   end
 
   def build_context
@@ -35,6 +35,10 @@ class Mrsk::Commands::Builder::Base < Mrsk::Commands::Base
       argumentize "--secret", secrets.collect { |secret| [ "id", secret ] }
     end
 
+    def build_cache_from
+      argumentize "--cache-from", cache_from_tags.collect { |tag| "#{config.repository}:#{tag}" }
+    end
+
     def build_dockerfile
       argumentize "--file", dockerfile
     end
@@ -45,6 +49,10 @@ class Mrsk::Commands::Builder::Base < Mrsk::Commands::Base
 
     def secrets
       (config.builder && config.builder["secrets"]) || []
+    end
+
+    def cache_from_tags
+      (config.builder && config.builder["cache_from"]) || []
     end
 
     def dockerfile
