@@ -551,7 +551,7 @@ accessories:
     port: 44444
 ```
 
-The hosts that the accessories will run on can be specified by host, role or on all app hosts:
+The hosts that the accessories will run on can be specified by hosts or roles:
 
 ```yaml
   # Single host
