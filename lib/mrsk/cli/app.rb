@@ -142,18 +142,26 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
     if options[:follow]
       run_locally do
         info "Following logs on #{MRSK.primary_host}..."
-        info MRSK.app.follow_logs(host: MRSK.primary_host, grep: grep)
-        exec MRSK.app.follow_logs(host: MRSK.primary_host, grep: grep)
+
+        MRSK.specific_roles ||= ["web"]
+        role = MRSK.roles_on(MRSK.primary_host).first
+
+        info MRSK.app(role: role).follow_logs(host: MRSK.primary_host, grep: grep)
+        exec MRSK.app(role: role).follow_logs(host: MRSK.primary_host, grep: grep)
       end
     else
       since = options[:since]
       lines = options[:lines].presence || ((since || grep) ? nil : 100) # Default to 100 lines if since or grep isn't set
 
       on(MRSK.hosts) do |host|
-        begin
-          puts_by_host host, capture_with_info(*MRSK.app.logs(since: since, lines: lines, grep: grep))
-        rescue SSHKit::Command::Failed
-          puts_by_host host, "Nothing found"
+        roles = MRSK.roles_on(host)
+
+        roles.each do |role|
+          begin
+            puts_by_host host, capture_with_info(*MRSK.app(role: role).logs(since: since, lines: lines, grep: grep))
+          rescue SSHKit::Command::Failed
+            puts_by_host host, "Nothing found"
+          end
         end
       end
     end

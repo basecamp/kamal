@@ -103,16 +103,16 @@ class CliAppTest < CliTestCase
 
   test "logs" do
     SSHKit::Backend::Abstract.any_instance.stubs(:exec)
-      .with("ssh -t root@1.1.1.1 'docker ps --quiet --filter label=service=app | xargs docker logs --timestamps --tail 10 2>&1'")
+      .with("ssh -t root@1.1.1.1 'docker ps --quiet --filter label=service=app --filter label=role=web | xargs docker logs --timestamps --tail 10 2>&1'")
 
-    assert_match "docker ps --quiet --filter label=service=app | xargs docker logs --tail 100 2>&1", run_command("logs")
+    assert_match "docker ps --quiet --filter label=service=app --filter label=role=web | xargs docker logs --tail 100 2>&1", run_command("logs")
   end
 
   test "logs with follow" do
     SSHKit::Backend::Abstract.any_instance.stubs(:exec)
-      .with("ssh -t root@1.1.1.1 'docker ps --quiet --filter label=service=app | xargs docker logs --timestamps --tail 10 --follow 2>&1'")
+      .with("ssh -t root@1.1.1.1 'docker ps --quiet --filter label=service=app --filter label=role=web | xargs docker logs --timestamps --tail 10 --follow 2>&1'")
 
-    assert_match "docker ps --quiet --filter label=service=app | xargs docker logs --timestamps --tail 10 --follow 2>&1", run_command("logs", "--follow")
+    assert_match "docker ps --quiet --filter label=service=app --filter label=role=web | xargs docker logs --timestamps --tail 10 --follow 2>&1", run_command("logs", "--follow")
   end
 
   test "version" do
