@@ -143,12 +143,11 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
       run_locally do
         info "Following logs on #{MRSK.primary_host}..."
 
-        roles = MRSK.roles_on(MRSK.primary_host)
+        MRSK.specific_roles ||= ["web"]
+        role = MRSK.roles_on(MRSK.primary_host).first
 
-        roles.each do |role|
-          info MRSK.app(role: role).follow_logs(host: MRSK.primary_host, grep: grep)
-          exec MRSK.app(role: role).follow_logs(host: MRSK.primary_host, grep: grep)
-        end
+        info MRSK.app(role: role).follow_logs(host: MRSK.primary_host, grep: grep)
+        exec MRSK.app(role: role).follow_logs(host: MRSK.primary_host, grep: grep)
       end
     else
       since = options[:since]
