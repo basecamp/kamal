@@ -27,7 +27,7 @@ module Mrsk::Cli
     def initialize(*)
       super
       load_envs
-      initialize_commander(options)
+      initialize_commander(options_with_subcommand_class_options)
     end
 
     private
@@ -37,6 +37,10 @@ module Mrsk::Cli
         else
           Dotenv.load(".env")
         end
+      end
+
+      def options_with_subcommand_class_options
+        options.merge(@_initializer.last[:class_options] || {})
       end
 
       def initialize_commander(options)

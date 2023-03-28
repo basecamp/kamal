@@ -121,6 +121,13 @@ class CliAppTest < CliTestCase
     end
   end
 
+
+  test "version through main" do
+    stdouted { Mrsk::Cli::Main.start(["app", "version", "-c", "test/fixtures/deploy_with_accessories.yml", "--hosts", "1.1.1.1"]) }.tap do |output|
+      assert_match "docker ps --filter label=service=app --format \"{{.Names}}\" | sed 's/-/\\n/g' | tail -n 1", output
+    end
+  end
+
   private
     def run_command(*command)
       stdouted { Mrsk::Cli::App.start([*command, "-c", "test/fixtures/deploy_with_accessories.yml", "--hosts", "1.1.1.1"]) }
