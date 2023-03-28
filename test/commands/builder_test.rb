@@ -17,7 +17,7 @@ class CommandsBuilderTest < ActiveSupport::TestCase
     builder = new_builder_command(builder: { "multiarch" => false })
     assert_equal "native", builder.name
     assert_equal \
-      "docker build -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile . && docker push dhh/app:123",
+      "docker build -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile . && docker push dhh/app:123 && docker push dhh/app:latest",
       builder.push.join(" ")
   end
 
@@ -68,7 +68,7 @@ class CommandsBuilderTest < ActiveSupport::TestCase
   test "native push with build args" do
     builder = new_builder_command(builder: { "multiarch" => false, "args" => { "a" => 1, "b" => 2 } })
     assert_equal \
-      "docker build -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --build-arg a=\"1\" --build-arg b=\"2\" --file Dockerfile . && docker push dhh/app:123",
+      "docker build -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --build-arg a=\"1\" --build-arg b=\"2\" --file Dockerfile . && docker push dhh/app:123 && docker push dhh/app:latest",
       builder.push.join(" ")
   end
 
@@ -82,7 +82,7 @@ class CommandsBuilderTest < ActiveSupport::TestCase
   test "native push with with build secrets" do
     builder = new_builder_command(builder: { "multiarch" => false, "secrets" => [ "a", "b" ] })
     assert_equal \
-      "docker build -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --secret id=\"a\" --secret id=\"b\" --file Dockerfile . && docker push dhh/app:123",
+      "docker build -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --secret id=\"a\" --secret id=\"b\" --file Dockerfile . && docker push dhh/app:123 && docker push dhh/app:latest",
       builder.push.join(" ")
   end
 
