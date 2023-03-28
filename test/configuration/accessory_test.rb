@@ -4,7 +4,10 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
   setup do
     @deploy = {
       service: "app", image: "dhh/app", registry: { "username" => "dhh", "password" => "secret" },
-      servers: [ "1.1.1.1", "1.1.1.2" ],
+      servers: {
+        "web" => [ "1.1.1.1", "1.1.1.2" ],
+        "workers" => [ "1.1.1.3", "1.1.1.4" ]
+      },
       env: { "REDIS_URL" => "redis://x/y" },
       accessories: {
         "mysql" => {
@@ -29,7 +32,7 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
         },
         "redis" => {
           "image" => "redis:latest",
-          "host" => "1.1.1.6",
+          "hosts" => [ "1.1.1.6", "1.1.1.7" ],
           "port" => "6379:6379",
           "labels" => {
             "cache" => true
@@ -40,6 +43,21 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
           "volumes" => [
             "/var/lib/redis:/data"
           ],
+          "options" => {
+            "cpus" => 4,
+            "memory" => "2GB"
+          }
+        },
+        "monitoring" => {
+          "image" => "monitoring:latest",
+          "roles" => [ "web" ],
+          "port" => "4321:4321",
+          "labels" => {
+            "cache" => true
+          },
+          "env" => {
+            "STATSD_PORT" => "8126"
+          },
           "options" => {
             "cpus" => 4,
             "memory" => "2GB"
@@ -62,8 +80,9 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
   end
 
   test "host" do
-    assert_equal "1.1.1.5", @config.accessory(:mysql).host
-    assert_equal "1.1.1.6", @config.accessory(:redis).host
+    assert_equal ["1.1.1.5"], @config.accessory(:mysql).hosts
+    assert_equal ["1.1.1.6", "1.1.1.7"], @config.accessory(:redis).hosts
+    assert_equal ["1.1.1.1", "1.1.1.2"], @config.accessory(:monitoring).hosts
   end
 
   test "missing host" do
@@ -71,8 +90,19 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
     @config = Mrsk::Configuration.new(@deploy)
 
     assert_raises(ArgumentError) do
-      @config.accessory(:mysql).host
+      @config.accessory(:mysql).hosts
     end
+  end
+
+  test "setting host, hosts and roles" do
+    @deploy[:accessories]["mysql"]["hosts"] = true
+    @deploy[:accessories]["mysql"]["roles"] = true
+    @config = Mrsk::Configuration.new(@deploy)
+
+    exception = assert_raises(ArgumentError) do
+      @config.accessory(:mysql).hosts
+    end
+    assert_equal "Specify one of `host`, `hosts` or `roles` for accessory `mysql`", exception.message
   end
 
   test "label args" do

@@ -1,7 +1,7 @@
 class Mrsk::Commands::Accessory < Mrsk::Commands::Base
   attr_reader :accessory_config
-  delegate :service_name, :image, :host, :port, :files, :directories, :publish_args, :env_args, :volume_args,
-           :label_args, :option_args, to: :accessory_config
+  delegate :service_name, :image, :hosts, :port, :files, :directories, :cmd,
+           :publish_args, :env_args, :volume_args, :label_args, :option_args, to: :accessory_config
 
   def initialize(config, name:)
     super(config)
@@ -19,7 +19,8 @@ class Mrsk::Commands::Accessory < Mrsk::Commands::Base
       *volume_args,
       *label_args,
       *option_args,
-      image
+      image,
+      cmd
   end
 
   def start
@@ -75,7 +76,7 @@ class Mrsk::Commands::Accessory < Mrsk::Commands::Base
   end
 
   def run_over_ssh(command)
-    super command, host: host
+    super command, host: hosts.first
   end
 
 

@@ -59,7 +59,7 @@ class Mrsk::Commander
   end
 
   def accessory_hosts
-    specific_hosts || config.accessories.collect(&:host)
+    specific_hosts || config.accessories.flat_map(&:hosts)
   end
 
   def accessory_names

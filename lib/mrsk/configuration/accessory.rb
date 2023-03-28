@@ -15,8 +15,12 @@ class Mrsk::Configuration::Accessory
     specifics["image"]
   end
 
-  def host
-    specifics["host"] || raise(ArgumentError, "Missing host for accessory")
+  def hosts
+    if (specifics.keys & ["host", "hosts", "roles"]).size != 1
+      raise ArgumentError, "Specify one of `host`, `hosts` or `roles` for accessory `#{name}`"
+    end
+
+    hosts_from_host || hosts_from_hosts || hosts_from_roles
   end
 
   def port
@@ -75,6 +79,10 @@ class Mrsk::Configuration::Accessory
     end
   end
 
+  def cmd
+    specifics["cmd"]
+  end
+
   private
     attr_accessor :config
 
@@ -129,5 +137,33 @@ class Mrsk::Configuration::Accessory
 
     def service_data_directory
       "$PWD/#{service_name}"
+    end
+
+    def hosts_from_host
+      if specifics.key?("host")
+        host = specifics["host"]
+        if host
+          [host]
+        else
+          raise ArgumentError, "Missing host for accessory `#{name}`"
+        end
+      end
+    end
+
+    def hosts_from_hosts
+      if specifics.key?("hosts")
+        hosts = specifics["hosts"]
+        if hosts.is_a?(Array)
+          hosts
+        else
+          raise ArgumentError, "Hosts should be an Array for accessory `#{name}`"
+        end
+      end
+    end
+
+    def hosts_from_roles
+      if specifics.key?("roles")
+        specifics["roles"].flat_map { |role| config.role(role).hosts }
+      end
     end
 end
