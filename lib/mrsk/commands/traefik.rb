@@ -1,6 +1,7 @@
 class Mrsk::Commands::Traefik < Mrsk::Commands::Base
   delegate :optionize, to: Mrsk::Utils
 
+  IMAGE = "traefik:v2.9.9"
   CONTAINER_PORT = 80
 
   def run
@@ -11,7 +12,7 @@ class Mrsk::Commands::Traefik < Mrsk::Commands::Base
       "--volume", "/var/run/docker.sock:/var/run/docker.sock",
       *config.logging_args,
       *docker_options_args,
-      "traefik",
+      IMAGE,
       "--providers.docker",
       "--log.level=DEBUG",
       *cmd_option_args
