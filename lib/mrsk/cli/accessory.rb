@@ -9,7 +9,7 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
           directories(name)
           upload(name)
 
-          on(accessory.host) do
+          on(accessory.hosts) do
             execute *MRSK.registry.login
             execute *MRSK.auditor.record("Booted #{name} accessory"), verbosity: :debug
             execute *accessory.run
@@ -25,7 +25,7 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
   def upload(name)
     with_lock do
       with_accessory(name) do |accessory|
-        on(accessory.host) do
+        on(accessory.hosts) do
           accessory.files.each do |(local, remote)|
             accessory.ensure_local_file_present(local)
 
@@ -42,7 +42,7 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
   def directories(name)
     with_lock do
       with_accessory(name) do |accessory|
-        on(accessory.host) do
+        on(accessory.hosts) do
           accessory.directories.keys.each do |host_path|
             execute *accessory.make_directory(host_path)
           end
@@ -66,7 +66,7 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
   def start(name)
     with_lock do
       with_accessory(name) do |accessory|
-        on(accessory.host) do
+        on(accessory.hosts) do
           execute *MRSK.auditor.record("Started #{name} accessory"), verbosity: :debug
           execute *accessory.start
         end
@@ -78,7 +78,7 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
   def stop(name)
     with_lock do
       with_accessory(name) do |accessory|
-        on(accessory.host) do
+        on(accessory.hosts) do
           execute *MRSK.auditor.record("Stopped #{name} accessory"), verbosity: :debug
           execute *accessory.stop, raise_on_non_zero_exit: false
         end
@@ -102,7 +102,7 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
       MRSK.accessory_names.each { |accessory_name| details(accessory_name) }
     else
       with_accessory(name) do |accessory|
-        on(accessory.host) { puts capture_with_info(*accessory.info) }
+        on(accessory.hosts) { puts capture_with_info(*accessory.info) }
       end
     end
   end
@@ -123,14 +123,14 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
 
       when options[:reuse]
         say "Launching command from existing container...", :magenta
-        on(accessory.host) do
+        on(accessory.hosts) do
           execute *MRSK.auditor.record("Executed cmd '#{cmd}' on #{name} accessory"), verbosity: :debug
           capture_with_info(*accessory.execute_in_existing_container(cmd))
         end
 
       else
         say "Launching command from new container...", :magenta
-        on(accessory.host) do
+        on(accessory.hosts) do
           execute *MRSK.auditor.record("Executed cmd '#{cmd}' on #{name} accessory"), verbosity: :debug
           capture_with_info(*accessory.execute_in_new_container(cmd))
         end
@@ -149,7 +149,7 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
 
       if options[:follow]
         run_locally do
-          info "Following logs on #{accessory.host}..."
+          info "Following logs on #{accessory.hosts}..."
           info accessory.follow_logs(grep: grep)
           exec accessory.follow_logs(grep: grep)
         end
@@ -157,7 +157,7 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
         since = options[:since]
         lines = options[:lines].presence || ((since || grep) ? nil : 100) # Default to 100 lines if since or grep isn't set
 
-        on(accessory.host) do
+        on(accessory.hosts) do
           puts capture_with_info(*accessory.logs(since: since, lines: lines, grep: grep))
         end
       end
@@ -167,15 +167,17 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
   desc "remove [NAME]", "Remove accessory container, image and data directory from host (use NAME=all to remove all accessories)"
   option :confirmed, aliases: "-y", type: :boolean, default: false, desc: "Proceed without confirmation question"
   def remove(name)
-    if name == "all"
-      MRSK.accessory_names.each { |accessory_name| remove(accessory_name) }
-    else
-      if options[:confirmed] || ask("This will remove all containers, images and data directories for #{name}. Are you sure?", limited_to: %w( y N ), default: "N") == "y"
-        with_accessory(name) do
-          stop(name)
-          remove_container(name)
-          remove_image(name)
-          remove_service_directory(name)
+    with_lock do
+      if name == "all"
+        MRSK.accessory_names.each { |accessory_name| remove(accessory_name) }
+      else
+        if options[:confirmed] || ask("This will remove all containers, images and data directories for #{name}. Are you sure?", limited_to: %w( y N ), default: "N") == "y"
+          with_accessory(name) do
+            stop(name)
+            remove_container(name)
+            remove_image(name)
+            remove_service_directory(name)
+          end
         end
       end
     end
@@ -183,29 +185,35 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
 
   desc "remove_container [NAME]", "Remove accessory container from host", hide: true
   def remove_container(name)
-    with_accessory(name) do |accessory|
-      on(accessory.host) do
-        execute *MRSK.auditor.record("Remove #{name} accessory container"), verbosity: :debug
-        execute *accessory.remove_container
+    with_lock do
+      with_accessory(name) do |accessory|
+        on(accessory.hosts) do
+          execute *MRSK.auditor.record("Remove #{name} accessory container"), verbosity: :debug
+          execute *accessory.remove_container
+        end
       end
     end
   end
 
   desc "remove_image [NAME]", "Remove accessory image from host", hide: true
   def remove_image(name)
-    with_accessory(name) do |accessory|
-      on(accessory.host) do
-        execute *MRSK.auditor.record("Removed #{name} accessory image"), verbosity: :debug
-        execute *accessory.remove_image
+    with_lock do
+      with_accessory(name) do |accessory|
+        on(accessory.hosts) do
+          execute *MRSK.auditor.record("Removed #{name} accessory image"), verbosity: :debug
+          execute *accessory.remove_image
+        end
       end
     end
   end
 
   desc "remove_service_directory [NAME]", "Remove accessory directory used for uploaded files and data directories from host", hide: true
   def remove_service_directory(name)
-    with_accessory(name) do |accessory|
-      on(accessory.host) do
-        execute *accessory.remove_service_directory
+    with_lock do
+      with_accessory(name) do |accessory|
+        on(accessory.hosts) do
+          execute *accessory.remove_service_directory
+        end
       end
     end
   end

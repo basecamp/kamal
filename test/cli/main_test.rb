@@ -10,7 +10,7 @@ class CliMainTest < CliTestCase
   end
 
   test "deploy" do
-    invoke_options = { "config_file" => "test/fixtures/deploy_with_accessories.yml", "skip_broadcast" => false, "version" => "999" }
+    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "skip_broadcast" => false, "version" => "999" }
 
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:server:bootstrap", [], invoke_options)
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:registry:login", [], invoke_options)
@@ -31,7 +31,7 @@ class CliMainTest < CliTestCase
   end
 
   test "deploy with skip_push" do
-    invoke_options = { "config_file" => "test/fixtures/deploy_with_accessories.yml", "skip_broadcast" => false, "version" => "999" }
+    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "skip_broadcast" => false, "version" => "999" }
 
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:server:bootstrap", [], invoke_options)
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:registry:login", [], invoke_options)
@@ -54,7 +54,7 @@ class CliMainTest < CliTestCase
   end
 
   test "redeploy" do
-    invoke_options = { "config_file" => "test/fixtures/deploy_with_accessories.yml", "skip_broadcast" => false, "version" => "999" }
+    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "skip_broadcast" => false, "version" => "999" }
 
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:build:deliver", [], invoke_options)
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:healthcheck:perform", [], invoke_options)
@@ -67,7 +67,7 @@ class CliMainTest < CliTestCase
   end
 
   test "redeploy with skip_push" do
-    invoke_options = { "config_file" => "test/fixtures/deploy_with_accessories.yml", "skip_broadcast" => false, "version" => "999" }
+    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "skip_broadcast" => false, "version" => "999" }
 
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:build:pull", [], invoke_options)
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:healthcheck:perform", [], invoke_options)
@@ -92,7 +92,7 @@ class CliMainTest < CliTestCase
     Mrsk::Cli::Main.any_instance.stubs(:container_name_available?).returns(true)
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info).with(:docker, :ps, "--filter", "label=service=app", "--format", "\"{{.Names}}\"", "|", "sed 's/-/\\n/g'", "|", "tail -n 1").returns("version-to-rollback\n").at_least_once
 
-    run_command("rollback", "123").tap do |output|
+    run_command("rollback", "123", config_file: "deploy_with_accessories").tap do |output|
       assert_match "Start version 123", output
       assert_match "docker start app-123", output
       assert_match "docker container ls --all --filter name=^app-version-to-rollback$ --quiet | xargs docker stop", output, "Should stop the container that was previously running"
@@ -126,7 +126,7 @@ class CliMainTest < CliTestCase
   end
 
   test "config" do
-    run_command("config", config_file: "deploy_with_accessories").tap do |output|
+    run_command("config", config_file: "deploy_simple").tap do |output|
       config = YAML.load(output)
 
       assert_equal ["web"], config[:roles]
@@ -224,7 +224,7 @@ class CliMainTest < CliTestCase
   end
 
   test "remove with confirmation" do
-    run_command("remove", "-y").tap do |output|
+    run_command("remove", "-y", config_file: "deploy_with_accessories").tap do |output|
       assert_match /docker container stop traefik/, output
       assert_match /docker container prune --force --filter label=org.opencontainers.image.title=Traefik/, output
       assert_match /docker image prune --all --force --filter label=org.opencontainers.image.title=Traefik/, output
@@ -253,7 +253,7 @@ class CliMainTest < CliTestCase
   end
 
   private
-    def run_command(*command, config_file: "deploy_with_accessories")
+    def run_command(*command, config_file: "deploy_simple")
       stdouted { Mrsk::Cli::Main.start([*command, "-c", "test/fixtures/#{config_file}.yml"]) }
     end
 end

@@ -540,7 +540,8 @@ accessories:
       memory: "2GB"
   redis:
     image: redis:latest
-    host: 1.1.1.4
+    role:
+      - web
     port: "36379:6379"
     volumes:
       - /var/lib/redis:/data
@@ -548,6 +549,24 @@ accessories:
     image: registry.digitalocean.com/user/otherservice:latest
     host: 1.1.1.5
     port: 44444
+```
+
+The hosts that the accessories will run on can be specified by hosts or roles:
+
+```yaml
+  # Single host
+  mysql:
+    host: 1.1.1.1
+  # Multiple hosts
+  redis:
+    hosts:
+      - 1.1.1.1
+      - 1.1.1.2
+  # By role
+  monitoring:
+    roles:
+      - web
+      - jobs
 ```
 
 Now run `mrsk accessory start mysql` to start the MySQL server on 1.1.1.3. See `mrsk accessory` for all the commands possible.
