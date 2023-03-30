@@ -1,4 +1,6 @@
 class Mrsk::Cli::App < Mrsk::Cli::Base
+  TRAEFIK_HEALTHCHECK_DELAY = 1
+
   desc "boot", "Boot app on servers (or reboot app if already running)"
   def boot
     with_lock do
@@ -24,7 +26,23 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
 
               old_version = capture_with_info(*MRSK.app(role: role).current_running_version).strip
               execute *MRSK.app(role: role).run
-              sleep MRSK.config.readiness_delay
+
+              loop do
+                info "Checking container state..."
+                case capture_with_info(*MRSK.app(role: role).health)
+                when "null" # Health check not configured
+                  info "No Health check configured, sleeping #{MRSK.config.readiness_delay}s readiness delay"
+                  sleep MRSK.config.readiness_delay
+                  break
+                when /unhealthy|starting/
+                  sleep 0.1
+                else
+                  info "Container is healthy"
+                  sleep TRAEFIK_HEALTHCHECK_DELAY
+                  break
+                end
+              end
+
               execute *MRSK.app(role: role).stop(version: old_version), raise_on_non_zero_exit: false if old_version.present?
             end
           end

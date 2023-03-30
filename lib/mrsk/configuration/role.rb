@@ -35,6 +35,22 @@ class Mrsk::Configuration::Role
     argumentize_env_with_secrets env
   end
 
+  def health_check_args
+    if specializations["health_check"]
+      optionize(specializations["health_check"])
+    else
+      default_health_check
+    end
+  end
+
+  def default_health_check
+    if role == "web"
+      ["--health-cmd", "'curl -f http://localhost:3000/up || exit 1'", "--health-interval", "1s"] 
+    else
+      []
+    end
+  end
+
   def cmd
     specializations["cmd"]
   end

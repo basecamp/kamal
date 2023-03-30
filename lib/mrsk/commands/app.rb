@@ -15,6 +15,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
       "--name", container_name,
       "-e", "MRSK_CONTAINER_NAME=\"#{container_name}\"",
       *role.env_args,
+      *role.health_check_args,
       *config.logging_args,
       *config.volume_args,
       *role.label_args,
@@ -33,10 +34,15 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
       xargs(config.stop_wait_time ? docker(:stop, "-t", config.stop_wait_time) : docker(:stop))
   end
 
+  def health(version: nil)
+    pipe \
+      version ? container_id_for_version(version) : current_container_id,
+      xargs(docker(:inspect, "-f", "'{{ json .State.Health }}'"))
+  end
+
   def info
     docker :ps, *filter_args
   end
-
 
   def logs(since: nil, lines: nil, grep: nil)
     pipe \
@@ -83,7 +89,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
 
 
   def current_container_id
-    docker :ps, "--quiet", *filter_args
+    docker :ps, "--quiet", "--latest", *filter_args
   end
 
   def container_id_for_version(version)
@@ -93,7 +99,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
   def current_running_version
     # FIXME: Find more graceful way to extract the version from "app-version" than using sed and tail!
     pipe \
-      docker(:ps, *filter_args, "--format", '"{{.Names}}"'),
+      docker(:ps, *filter_args, "--format", '"{{.Names}}"', "--latest"),
       %(sed 's/-/\\n/g'),
       "tail -n 1"
   end
@@ -139,7 +145,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
     end
 
     def filters
-      [ "label=service=#{config.service}" ].tap do |filters|
+      [ "label=service=#{config.service}", "status=running" ].tap do |filters|
         filters << "label=destination=#{config.destination}" if config.destination
         filters << "label=role=#{role}" if role
       end
