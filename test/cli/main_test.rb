@@ -210,13 +210,21 @@ class CliMainTest < CliTestCase
   end
 
   test "envify" do
+    File.expects(:file?).returns(true)
     File.expects(:read).with(".env.erb").returns("HELLO=<%= 'world' %>")
     File.expects(:write).with(".env", "HELLO=world", perm: 0600)
 
     run_command("envify")
   end
 
+  test "envify without template_path" do
+    run_command("envify").tap do |output|
+      assert_equal ".env.erb file does not exist.", output
+    end
+  end
+
   test "envify with destination" do
+    File.expects(:file?).returns(true)
     File.expects(:read).with(".env.staging.erb").returns("HELLO=<%= 'world' %>")
     File.expects(:write).with(".env.staging", "HELLO=world", perm: 0600)
 
