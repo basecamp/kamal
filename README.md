@@ -19,6 +19,12 @@ gem install mrsk
 ```sh
 alias mrsk='docker run --rm -it -v $HOME/.ssh:/root/.ssh -v /var/run/docker.sock:/var/run/docker.sock -v ${PWD}/:/workdir  ghcr.io/mrsked/mrsk'
 ```
+## Linux Distro
+
+- MRSK works on any Debian-based Linux distribution, like Debian, Mint, or Ubuntu. 
+- Start by confirming you can SSH into your Linux distribution. This will store the key in `~/.ssh/known_hosts` and is a prerequesite for MRSK to deploy. 
+
+## Configure MRSK
 
 Then, inside your app directory, run `mrsk init` (or `mrsk init --bundle` within Rails apps where you want a bin/mrsk binstub). Now edit the new file `config/deploy.yml`. It could look as simple as this:
 
@@ -36,6 +42,7 @@ env:
   secret:
     - RAILS_MASTER_KEY
 ```
+If you are using a Linux distro that does not have `root` as the username, be sure to uncomment the `ssh` and set the ssh user here. 
 
 Then edit your `.env` file to add your registry password as `MRSK_REGISTRY_PASSWORD` (and your `RAILS_MASTER_KEY` for production with a Rails app).
 
