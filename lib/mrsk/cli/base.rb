@@ -7,6 +7,7 @@ module Mrsk::Cli
     include SSHKit::DSL
 
     class LockError < StandardError; end
+    class SSHConnectionError < StandardError; end
 
     def self.exit_on_failure?() true end
 
@@ -95,6 +96,8 @@ module Mrsk::Cli
       rescue SSHKit::Runner::ExecuteError => e
         if e.message =~ /cannot create directory/
           invoke "mrsk:cli:lock:status", []
+        elsif e.message =~ /disconnected/
+          raise SSHConnectionError, "Could not conect to the server over SSH"
         end
 
         raise LockError, "Deploy lock found"
