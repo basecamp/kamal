@@ -19,7 +19,7 @@ class CliAppTest < CliTestCase
       .returns("12345678") # running version
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=web", "--format", "\"{{.Names}}\"", "|", "sed 's/-/\\n/g'", "|", "tail -n 1")
+      .with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=web", "--filter", "status=running", "--latest", "--format", "\"{{.Names}}\"", "|", "grep -oP \"(?<=-)[^-]+$\"")
       .returns("123") # old version
 
     run_command("boot").tap do |output|
@@ -39,8 +39,23 @@ class CliAppTest < CliTestCase
   end
 
   test "stop" do
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=web", "--format", "\"{{.Names}}\"", "|", "grep -oP \"(?<=-)[^-]+$\"")
+      .returns("12345678")
+
     run_command("stop").tap do |output|
-      assert_match "docker ps --quiet --filter label=service=app --filter label=role=web | xargs docker stop", output
+      assert_match "docker container ls --all --filter name=^app-web-12345678$ --quiet | xargs docker stop", output
+    end
+  end
+
+  test "stop_stale_containers" do
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=web", "--format", "\"{{.Names}}\"", "|", "grep -oP \"(?<=-)[^-]+$\"")
+      .returns("12345678\n87654321")
+
+    run_command("stop_stale_containers").tap do |output|
+      assert_match /Stopping stale container with version 87654321/, output
+      assert_match /#{Regexp.escape("docker container ls --all --filter name=^app-web-87654321$ --quiet | xargs docker stop")}/, output
     end
   end
 
@@ -51,8 +66,12 @@ class CliAppTest < CliTestCase
   end
 
   test "remove" do
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=web", "--format", "\"{{.Names}}\"", "|", "grep -oP \"(?<=-)[^-]+$\"")
+      .returns("12345678")
+
     run_command("remove").tap do |output|
-      assert_match /#{Regexp.escape("docker ps --quiet --filter label=service=app --filter label=role=web | xargs docker stop")}/, output
+      assert_match "docker container ls --all --filter name=^app-web-12345678$ --quiet | xargs docker stop", output
       assert_match /#{Regexp.escape("docker container prune --force --filter label=service=app")}/, output
       assert_match /#{Regexp.escape("docker image prune --all --force --filter label=service=app")}/, output
     end
@@ -84,7 +103,7 @@ class CliAppTest < CliTestCase
 
   test "exec with reuse" do
     run_command("exec", "--reuse", "ruby -v").tap do |output|
-      assert_match "docker ps --filter label=service=app --format \"{{.Names}}\" | sed 's/-/\\n/g' | tail -n 1", output # Get current version
+      assert_match "docker ps --filter label=service=app --filter status=running --format \"{{.Names}}\" | grep -oP \"(?<=-)[^-]+$\"", output # Get current version
       assert_match "docker exec app-web-999 ruby -v", output
     end
   end
@@ -103,28 +122,28 @@ class CliAppTest < CliTestCase
 
   test "logs" do
     SSHKit::Backend::Abstract.any_instance.stubs(:exec)
-      .with("ssh -t root@1.1.1.1 'docker ps --quiet --filter label=service=app --filter label=role=web | xargs docker logs --timestamps --tail 10 2>&1'")
+      .with("ssh -t root@1.1.1.1 'docker ps --quiet --filter label=service=app --filter label=role=web --filter status=running --latest| xargs docker logs --timestamps --tail 10 2>&1'")
 
-    assert_match "docker ps --quiet --filter label=service=app --filter label=role=web | xargs docker logs --tail 100 2>&1", run_command("logs")
+    assert_match "docker ps --quiet --filter label=service=app --filter label=role=web --filter status=running --latest | xargs docker logs --tail 100 2>&1", run_command("logs")
   end
 
   test "logs with follow" do
     SSHKit::Backend::Abstract.any_instance.stubs(:exec)
-      .with("ssh -t root@1.1.1.1 'docker ps --quiet --filter label=service=app --filter label=role=web | xargs docker logs --timestamps --tail 10 --follow 2>&1'")
+      .with("ssh -t root@1.1.1.1 'docker ps --quiet --filter label=service=app --filter label=role=web --filter status=running --latest | xargs docker logs --timestamps --tail 10 --follow 2>&1'")
 
-    assert_match "docker ps --quiet --filter label=service=app --filter label=role=web | xargs docker logs --timestamps --tail 10 --follow 2>&1", run_command("logs", "--follow")
+    assert_match "docker ps --quiet --filter label=service=app --filter label=role=web --filter status=running --latest | xargs docker logs --timestamps --tail 10 --follow 2>&1", run_command("logs", "--follow")
   end
 
   test "version" do
     run_command("version").tap do |output|
-      assert_match "docker ps --filter label=service=app --format \"{{.Names}}\" | sed 's/-/\\n/g' | tail -n 1", output
+      assert_match "docker ps --filter label=service=app --filter status=running --latest --format \"{{.Names}}\" | grep -oP \"(?<=-)[^-]+$\"", output
     end
   end
 
 
   test "version through main" do
     stdouted { Mrsk::Cli::Main.start(["app", "version", "-c", "test/fixtures/deploy_with_accessories.yml", "--hosts", "1.1.1.1"]) }.tap do |output|
-      assert_match "docker ps --filter label=service=app --format \"{{.Names}}\" | sed 's/-/\\n/g' | tail -n 1", output
+      assert_match "docker ps --filter label=service=app --filter status=running --latest --format \"{{.Names}}\" | grep -oP \"(?<=-)[^-]+$\"", output
     end
   end
 

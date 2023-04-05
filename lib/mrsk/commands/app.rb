@@ -29,7 +29,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
 
   def stop(version: nil)
     pipe \
-      version ? container_id_for_version(version) : current_container_id,
+      version ? container_id_for_version(version) : current_running_container_id,
       xargs(config.stop_wait_time ? docker(:stop, "-t", config.stop_wait_time) : docker(:stop))
   end
 
@@ -40,7 +40,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
 
   def logs(since: nil, lines: nil, grep: nil)
     pipe \
-      current_container_id,
+      current_running_container_id,
       "xargs docker logs#{" --since #{since}" if since}#{" --tail #{lines}" if lines} 2>&1",
       ("grep '#{grep}'" if grep)
   end
@@ -48,7 +48,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
   def follow_logs(host:, grep: nil)
     run_over_ssh \
       pipe(
-        current_container_id,
+        current_running_container_id,
         "xargs docker logs --timestamps --tail 10 --follow 2>&1",
         (%(grep "#{grep}") if grep)
       ),
@@ -82,8 +82,8 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
   end
 
 
-  def current_container_id
-    docker :ps, "--quiet", *filter_args
+  def current_running_container_id
+    docker :ps, "--quiet", *filter_args(status: :running), "--latest"
   end
 
   def container_id_for_version(version)
@@ -91,11 +91,13 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
   end
 
   def current_running_version
-    # FIXME: Find more graceful way to extract the version from "app-version" than using sed and tail!
+    list_versions("--latest", status: :running)
+  end
+
+  def list_versions(*docker_args, status: nil)
     pipe \
-      docker(:ps, *filter_args, "--format", '"{{.Names}}"'),
-      %(sed 's/-/\\n/g'),
-      "tail -n 1"
+      docker(:ps, *filter_args(status: status), *docker_args, "--format", '"{{.Names}}"'),
+      %(grep -oP "(?<=\-)[^-]+$") # Extract SHA from "service-role-dest-SHA"
   end
 
   def list_containers
@@ -134,14 +136,15 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
       [ config.service, role, config.destination, version || config.version ].compact.join("-")
     end
 
-    def filter_args
-      argumentize "--filter", filters
+    def filter_args(status: nil)
+      argumentize "--filter", filters(status: status)
     end
 
-    def filters
+    def filters(status: nil)
       [ "label=service=#{config.service}" ].tap do |filters|
         filters << "label=destination=#{config.destination}" if config.destination
         filters << "label=role=#{role}" if role
+        filters << "status=#{status}" if status
       end
     end
 end

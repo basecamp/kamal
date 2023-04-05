@@ -50,12 +50,32 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
   desc "stop", "Stop app container on servers"
   def stop
     with_lock do
-      on(MRSK.hosts) do |host|
+      MRSK.hosts.each do |host|
         roles = MRSK.roles_on(host)
 
         roles.each do |role|
-          execute *MRSK.auditor(role: role).record("Stopped app"), verbosity: :debug
-          execute *MRSK.app(role: role).stop, raise_on_non_zero_exit: false
+          on(host) { execute *MRSK.auditor(role: role).record("Stopped app"), verbosity: :debug }
+          all_versions = list_versions(host: host, role: role)
+          all_versions.each do |version|
+            on(host) { execute *MRSK.app(role: role).stop(version: version), raise_on_non_zero_exit: false }
+          end
+        end
+      end
+    end
+  end
+
+  desc "stop_stale_containers", "Stop all app stale containers"
+  def stop_stale_containers
+    with_lock do
+      MRSK.hosts.each do |host|
+        roles = MRSK.roles_on(host)
+
+        roles.each do |role|
+          stale_versions = list_versions(host: host, role: role).drop(1)
+          stale_versions.each do |version|
+            say "Stopping stale container with version #{version}", :red
+            on(host) { execute *MRSK.app(role: role).stop(version: version), raise_on_non_zero_exit: false }
+          end
         end
       end
     end
@@ -235,9 +255,13 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
     end
 
     def current_running_version(host: MRSK.primary_host)
-      version = nil
-      on(host) { version = capture_with_info(*MRSK.app.current_running_version).strip }
-      version.presence
+      list_versions(host: host, status: :running).shift.presence
+    end
+
+    def list_versions(host:, role: nil, status: nil)
+      versions = nil
+      on(host) { versions = capture_with_info(*MRSK.app(role: role).list_versions(status: status)).split("\n").map(&:strip) }
+      versions
     end
 
     def version_or_latest

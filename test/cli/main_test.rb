@@ -17,6 +17,7 @@ class CliMainTest < CliTestCase
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:build:deliver", [], invoke_options)
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:traefik:boot", [], invoke_options)
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:healthcheck:perform", [], invoke_options)
+    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:app:stop_stale_containers", [], invoke_options)
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:app:boot", [], invoke_options)
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:prune:all", [], invoke_options)
 
@@ -26,6 +27,7 @@ class CliMainTest < CliTestCase
       assert_match /Build and push app image/, output
       assert_match /Ensure Traefik is running/, output
       assert_match /Ensure app can pass healthcheck/, output
+      assert_match /Stop stale containers/, output
       assert_match /Prune old containers and images/, output
     end
   end
@@ -38,6 +40,7 @@ class CliMainTest < CliTestCase
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:build:pull", [], invoke_options)
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:traefik:boot", [], invoke_options)
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:healthcheck:perform", [], invoke_options)
+    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:app:stop_stale_containers", [], invoke_options)
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:app:boot", [], invoke_options)
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:prune:all", [], invoke_options)
 
@@ -48,6 +51,7 @@ class CliMainTest < CliTestCase
       assert_match /Pull app image/, output
       assert_match /Ensure Traefik is running/, output
       assert_match /Ensure app can pass healthcheck/, output
+      assert_match /Stop stale containers/, output
       assert_match /Prune old containers and images/, output
       assert_match /Releasing the deploy lock/, output
     end
@@ -58,6 +62,7 @@ class CliMainTest < CliTestCase
 
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:build:deliver", [], invoke_options)
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:healthcheck:perform", [], invoke_options)
+    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:app:stop_stale_containers", [], invoke_options)
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:app:boot", [], invoke_options)
 
     run_command("redeploy").tap do |output|
@@ -71,6 +76,7 @@ class CliMainTest < CliTestCase
 
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:build:pull", [], invoke_options)
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:healthcheck:perform", [], invoke_options)
+    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:app:stop_stale_containers", [], invoke_options)
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:app:boot", [], invoke_options)
 
     run_command("redeploy", "--skip_push").tap do |output|
@@ -90,7 +96,7 @@ class CliMainTest < CliTestCase
 
   test "rollback good version" do
     Mrsk::Cli::Main.any_instance.stubs(:container_name_available?).returns(true)
-    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info).with(:docker, :ps, "--filter", "label=service=app", "--format", "\"{{.Names}}\"", "|", "sed 's/-/\\n/g'", "|", "tail -n 1").returns("version-to-rollback\n").at_least_once
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info).with(:docker, :ps, "--filter", "label=service=app", "--filter", "status=running", "--latest", "--format", "\"{{.Names}}\"", "|", "grep -oP \"(?<=-)[^-]+$\"").returns("version-to-rollback\n").at_least_once
 
     run_command("rollback", "123", config_file: "deploy_with_accessories").tap do |output|
       assert_match "Start version 123", output
@@ -101,7 +107,7 @@ class CliMainTest < CliTestCase
 
   test "rollback without old version" do
     Mrsk::Cli::Main.any_instance.stubs(:container_name_available?).returns(true)
-    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info).with(:docker, :ps, "--filter", "label=service=app", "--format", "\"{{.Names}}\"", "|", "sed 's/-/\\n/g'", "|", "tail -n 1").returns("").at_least_once
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info).with(:docker, :ps, "--filter", "label=service=app", "--filter", "status=running", "--latest", "--format", "\"{{.Names}}\"", "|", "grep -oP \"(?<=-)[^-]+$\"").returns("").at_least_once
 
     run_command("rollback", "123").tap do |output|
       assert_match "Start version 123", output
@@ -224,12 +230,19 @@ class CliMainTest < CliTestCase
   end
 
   test "remove with confirmation" do
+    %w[ web workers ].each do |role|
+      SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+        .with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=#{role}", "--format", "\"{{.Names}}\"", "|", "grep -oP \"(?<=-)[^-]+$\"")
+        .times(2)
+        .returns("12345678")
+    end
+
     run_command("remove", "-y", config_file: "deploy_with_accessories").tap do |output|
       assert_match /docker container stop traefik/, output
       assert_match /docker container prune --force --filter label=org.opencontainers.image.title=Traefik/, output
       assert_match /docker image prune --all --force --filter label=org.opencontainers.image.title=Traefik/, output
 
-      assert_match /docker ps --quiet --filter label=service=app | xargs docker stop/, output
+      assert_match "docker container ls --all --filter name=^app-web-12345678$ --quiet | xargs docker stop", output
       assert_match /docker container prune --force --filter label=service=app/, output
       assert_match /docker image prune --all --force --filter label=service=app/, output
 
