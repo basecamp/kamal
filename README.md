@@ -469,9 +469,9 @@ We allow users to pass additional docker options to the trafik container like
 traefik:
   options:
     publish:
-    - 8080:8080
+      - 8080:8080
     volumes:
-    - /tmp/example.json:/tmp/example.json
+      - /tmp/example.json:/tmp/example.json
     memory: 512m
 ```
 
