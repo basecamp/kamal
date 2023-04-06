@@ -199,17 +199,17 @@ class CommandsAppTest < ActiveSupport::TestCase
 
   test "current_running_version" do
     assert_equal \
-      "docker ps --filter label=service=app --filter label=role=web --filter status=running --latest --format \"{{.Names}}\" | grep -oP \"(?<=-)[^-]+$\"",
+      "docker ps --filter label=service=app --filter label=role=web --filter status=running --latest --format \"{{.Names}}\" | grep -oE \"\\-[^-]+$\" | cut -c 2-",
       new_command.current_running_version.join(" ")
   end
 
   test "list_versions" do
     assert_equal \
-      "docker ps --filter label=service=app --filter label=role=web --format \"{{.Names}}\" | grep -oP \"(?<=-)[^-]+$\"",
+      "docker ps --filter label=service=app --filter label=role=web --format \"{{.Names}}\" | grep -oE \"\\-[^-]+$\" | cut -c 2-",
       new_command.list_versions.join(" ")
 
     assert_equal \
-      "docker ps --filter label=service=app --filter label=role=web --filter status=running --latest --format \"{{.Names}}\" | grep -oP \"(?<=-)[^-]+$\"",
+      "docker ps --filter label=service=app --filter label=role=web --filter status=running --latest --format \"{{.Names}}\" | grep -oE \"\\-[^-]+$\" | cut -c 2-",
       new_command.list_versions("--latest", status: :running).join(" ")
   end
 

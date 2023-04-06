@@ -19,7 +19,7 @@ class CliAppTest < CliTestCase
       .returns("12345678") # running version
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=web", "--filter", "status=running", "--latest", "--format", "\"{{.Names}}\"", "|", "grep -oP \"(?<=-)[^-]+$\"")
+      .with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=web", "--filter", "status=running", "--latest", "--format", "\"{{.Names}}\"", "|", "grep -oE \"\\-[^-]+$\"", "|", "cut -c 2-", raise_on_non_zero_exit: false)
       .returns("123") # old version
 
     run_command("boot").tap do |output|
@@ -40,7 +40,7 @@ class CliAppTest < CliTestCase
 
   test "stop" do
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=web", "--format", "\"{{.Names}}\"", "|", "grep -oP \"(?<=-)[^-]+$\"")
+      .with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=web", "--format", "\"{{.Names}}\"", "|", "grep -oE \"\\-[^-]+$\"", "|", "cut -c 2-", raise_on_non_zero_exit: false)
       .returns("12345678")
 
     run_command("stop").tap do |output|
@@ -50,7 +50,7 @@ class CliAppTest < CliTestCase
 
   test "stop_stale_containers" do
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=web", "--format", "\"{{.Names}}\"", "|", "grep -oP \"(?<=-)[^-]+$\"")
+      .with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=web", "--format", "\"{{.Names}}\"", "|", "grep -oE \"\\-[^-]+$\"", "|", "cut -c 2-", raise_on_non_zero_exit: false)
       .returns("12345678\n87654321")
 
     run_command("stop_stale_containers").tap do |output|
@@ -67,7 +67,7 @@ class CliAppTest < CliTestCase
 
   test "remove" do
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=web", "--format", "\"{{.Names}}\"", "|", "grep -oP \"(?<=-)[^-]+$\"")
+      .with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=web", "--format", "\"{{.Names}}\"", "|", "grep -oE \"\\-[^-]+$\"", "|", "cut -c 2-", raise_on_non_zero_exit: false)
       .returns("12345678")
 
     run_command("remove").tap do |output|
@@ -103,7 +103,7 @@ class CliAppTest < CliTestCase
 
   test "exec with reuse" do
     run_command("exec", "--reuse", "ruby -v").tap do |output|
-      assert_match "docker ps --filter label=service=app --filter status=running --format \"{{.Names}}\" | grep -oP \"(?<=-)[^-]+$\"", output # Get current version
+      assert_match "docker ps --filter label=service=app --filter status=running --format \"{{.Names}}\" | grep -oE \"\\-[^-]+$\" | cut -c 2-", output # Get current version
       assert_match "docker exec app-web-999 ruby -v", output
     end
   end
@@ -136,14 +136,14 @@ class CliAppTest < CliTestCase
 
   test "version" do
     run_command("version").tap do |output|
-      assert_match "docker ps --filter label=service=app --filter status=running --latest --format \"{{.Names}}\" | grep -oP \"(?<=-)[^-]+$\"", output
+      assert_match "docker ps --filter label=service=app --filter status=running --latest --format \"{{.Names}}\" | grep -oE \"\\-[^-]+$\" | cut -c 2-", output
     end
   end
 
 
   test "version through main" do
     stdouted { Mrsk::Cli::Main.start(["app", "version", "-c", "test/fixtures/deploy_with_accessories.yml", "--hosts", "1.1.1.1"]) }.tap do |output|
-      assert_match "docker ps --filter label=service=app --filter status=running --latest --format \"{{.Names}}\" | grep -oP \"(?<=-)[^-]+$\"", output
+      assert_match "docker ps --filter label=service=app --filter status=running --latest --format \"{{.Names}}\" | grep -oE \"\\-[^-]+$\" | cut -c 2-", output
     end
   end
 

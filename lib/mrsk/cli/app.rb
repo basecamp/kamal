@@ -22,7 +22,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
                 execute *MRSK.app(role: role).rename_container(version: version, new_version: tmp_version)
               end
 
-              old_version = capture_with_info(*MRSK.app(role: role).current_running_version).strip
+              old_version = capture_with_info(*MRSK.app(role: role).current_running_version, raise_on_non_zero_exit: false).strip
               execute *MRSK.app(role: role).run
               sleep MRSK.config.readiness_delay
               execute *MRSK.app(role: role).stop(version: old_version), raise_on_non_zero_exit: false if old_version.present?
@@ -260,7 +260,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
 
     def list_versions(host:, role: nil, status: nil)
       versions = nil
-      on(host) { versions = capture_with_info(*MRSK.app(role: role).list_versions(status: status)).split("\n").map(&:strip) }
+      on(host) { versions = capture_with_info(*MRSK.app(role: role).list_versions(status: status), raise_on_non_zero_exit: false).split("\n").map(&:strip) }
       versions
     end
 

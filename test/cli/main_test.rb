@@ -96,7 +96,7 @@ class CliMainTest < CliTestCase
 
   test "rollback good version" do
     Mrsk::Cli::Main.any_instance.stubs(:container_name_available?).returns(true)
-    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info).with(:docker, :ps, "--filter", "label=service=app", "--filter", "status=running", "--latest", "--format", "\"{{.Names}}\"", "|", "grep -oP \"(?<=-)[^-]+$\"").returns("version-to-rollback\n").at_least_once
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info).with(:docker, :ps, "--filter", "label=service=app", "--filter", "status=running", "--latest", "--format", "\"{{.Names}}\"", "|", "grep -oE \"\\-[^-]+$\"", "|", "cut -c 2-").returns("version-to-rollback\n").at_least_once
 
     run_command("rollback", "123", config_file: "deploy_with_accessories").tap do |output|
       assert_match "Start version 123", output
@@ -107,7 +107,7 @@ class CliMainTest < CliTestCase
 
   test "rollback without old version" do
     Mrsk::Cli::Main.any_instance.stubs(:container_name_available?).returns(true)
-    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info).with(:docker, :ps, "--filter", "label=service=app", "--filter", "status=running", "--latest", "--format", "\"{{.Names}}\"", "|", "grep -oP \"(?<=-)[^-]+$\"").returns("").at_least_once
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info).with(:docker, :ps, "--filter", "label=service=app", "--filter", "status=running", "--latest", "--format", "\"{{.Names}}\"", "|", "grep -oE \"\\-[^-]+$\"", "|", "cut -c 2-").returns("").at_least_once
 
     run_command("rollback", "123").tap do |output|
       assert_match "Start version 123", output
@@ -232,7 +232,7 @@ class CliMainTest < CliTestCase
   test "remove with confirmation" do
     %w[ web workers ].each do |role|
       SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-        .with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=#{role}", "--format", "\"{{.Names}}\"", "|", "grep -oP \"(?<=-)[^-]+$\"")
+        .with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=#{role}", "--format", "\"{{.Names}}\"", "|", "grep -oE \"\\-[^-]+$\"", "|", "cut -c 2-", raise_on_non_zero_exit: false)
         .times(2)
         .returns("12345678")
     end
