@@ -17,7 +17,6 @@ class CliMainTest < CliTestCase
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:build:deliver", [], invoke_options)
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:traefik:boot", [], invoke_options)
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:healthcheck:perform", [], invoke_options)
-    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:app:stop", [], invoke_options.merge({ "only_old" => true }))
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:app:boot", [], invoke_options)
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:prune:all", [], invoke_options)
 
@@ -27,7 +26,6 @@ class CliMainTest < CliTestCase
       assert_match /Build and push app image/, output
       assert_match /Ensure Traefik is running/, output
       assert_match /Ensure app can pass healthcheck/, output
-      assert_match /Stop old containers/, output
       assert_match /Prune old containers and images/, output
     end
   end
@@ -40,7 +38,6 @@ class CliMainTest < CliTestCase
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:build:pull", [], invoke_options)
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:traefik:boot", [], invoke_options)
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:healthcheck:perform", [], invoke_options)
-    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:app:stop", [], invoke_options.merge({ "only_old" => true }))
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:app:boot", [], invoke_options)
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:prune:all", [], invoke_options)
 
@@ -51,7 +48,6 @@ class CliMainTest < CliTestCase
       assert_match /Pull app image/, output
       assert_match /Ensure Traefik is running/, output
       assert_match /Ensure app can pass healthcheck/, output
-      assert_match /Stop old containers/, output
       assert_match /Prune old containers and images/, output
       assert_match /Releasing the deploy lock/, output
     end
@@ -62,7 +58,6 @@ class CliMainTest < CliTestCase
 
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:build:deliver", [], invoke_options)
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:healthcheck:perform", [], invoke_options)
-    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:app:stop", [], invoke_options.merge({ "only_old" => true }))
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:app:boot", [], invoke_options)
 
     run_command("redeploy").tap do |output|
@@ -76,7 +71,6 @@ class CliMainTest < CliTestCase
 
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:build:pull", [], invoke_options)
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:healthcheck:perform", [], invoke_options)
-    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:app:stop", [], invoke_options.merge({ "only_old" => true }))
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:app:boot", [], invoke_options)
 
     run_command("redeploy", "--skip_push").tap do |output|

@@ -8,13 +8,13 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
 
         cli = self
 
-        on(MRSK.hosts) do |host|
+        MRSK.hosts.each do |host|
           roles = MRSK.roles_on(host)
 
           roles.each do |role|
-            execute *MRSK.auditor(role: role).record("Booted app version #{version}"), verbosity: :debug
+            on(host) do
+              execute *MRSK.auditor(role: role).record("Booted app version #{version}"), verbosity: :debug
 
-            begin
               if capture_with_info(*MRSK.app(role: role).container_id_for_version(version)).present?
                 tmp_version = "#{version}_#{SecureRandom.hex(8)}"
                 info "Renaming container #{version} to #{tmp_version} as already deployed on #{host}"
@@ -22,10 +22,16 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
                 execute *MRSK.app(role: role).rename_container(version: version, new_version: tmp_version)
               end
 
-              old_version = capture_with_info(*MRSK.app(role: role).current_running_version, raise_on_non_zero_exit: false).strip
               execute *MRSK.app(role: role).run
               sleep MRSK.config.readiness_delay
-              execute *MRSK.app(role: role).stop(version: old_version), raise_on_non_zero_exit: false if old_version.present?
+            end
+
+            old_versions = list_versions(host: host, role: role, only_old: true)
+            old_versions.each do |old_version|
+              on(host) do
+                info "Stopping old container with version #{old_version}"
+                execute *MRSK.app(role: role).stop(version: old_version), raise_on_non_zero_exit: false
+              end
             end
           end
         end

@@ -2,8 +2,13 @@ require_relative "cli_test_case"
 
 class CliAppTest < CliTestCase
   test "boot" do
-    # Stub current version fetch
-    SSHKit::Backend::Abstract.any_instance.stubs(:capture).returns("123") # old version
+    # current version not running yet
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-latest$", "--quiet")
+
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=web", "--format", "\"{{.Names}}\"", "|", "grep -oE \"\\-[^-]+$\"", "|", "cut -c 2-", raise_on_non_zero_exit: false)
+      .returns("124\n123") # running + old version
 
     run_command("boot").tap do |output|
       assert_match "docker run --detach --restart unless-stopped", output
@@ -16,17 +21,17 @@ class CliAppTest < CliTestCase
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
       .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-latest$", "--quiet")
-      .returns("12345678") # running version
+      .returns("12345678") # current version already running
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=web", "--filter", "status=running", "--latest", "--format", "\"{{.Names}}\"", "|", "grep -oE \"\\-[^-]+$\"", "|", "cut -c 2-", raise_on_non_zero_exit: false)
-      .returns("123") # old version
+      .with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=web", "--format", "\"{{.Names}}\"", "|", "grep -oE \"\\-[^-]+$\"", "|", "cut -c 2-", raise_on_non_zero_exit: false)
+      .returns("123\n12345678_1") # running + renamed version
 
     run_command("boot").tap do |output|
       assert_match /Renaming container .* to .* as already deployed on 1.1.1.1/, output # Rename
       assert_match /docker rename .* .*/, output
       assert_match "docker run --detach --restart unless-stopped", output
-      assert_match "docker container ls --all --filter name=^app-web-123$ --quiet | xargs docker stop", output
+      assert_match "docker container ls --all --filter name=^app-web-12345678_1$ --quiet | xargs docker stop", output
     end
   ensure
     Thread.report_on_exception = true
