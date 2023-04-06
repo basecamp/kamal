@@ -165,10 +165,10 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
       env_path          = ".env"
     end
 
-    if File.file?(env_path)
+    if File.file?(env_template_path)
       File.write(env_path, ERB.new(File.read(env_template_path)).result, perm: 0600)
     else
-      puts "#{env_template_path} file does not exist"
+      puts "#{env_template_path} does not exist"
     end
 
   end
