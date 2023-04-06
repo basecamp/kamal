@@ -209,6 +209,18 @@ class ConfigurationTest < ActiveSupport::TestCase
     assert_equal ["--volume", "/local/path:/container/path"], @config.volume_args
   end
 
+  test "label args" do
+    assert_equal ["--label", "service=\"app\""], @config.label_args
+  end
+
+  test "label args with destination" do
+    dest_config_file = Pathname.new(File.expand_path("fixtures/deploy_for_dest.yml", __dir__))
+
+    config = Mrsk::Configuration.create_from config_file: dest_config_file, destination: "world"
+
+    assert_equal ["--label", "service=\"app\"", "--label", "destination=\"world\""], config.label_args
+  end
+
   test "logging args default" do
     assert_equal ["--log-opt", "max-size=\"10m\""], @config.logging_args
   end

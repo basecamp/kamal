@@ -76,7 +76,10 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
   desc "exec [CMD]", "Execute a custom command on servers (use --help to show options)"
   option :interactive, aliases: "-i", type: :boolean, default: false, desc: "Execute command over ssh for an interactive shell (use for console/bash)"
   option :reuse, type: :boolean, default: false, desc: "Reuse currently running container instead of starting a new one"
+  option :labels, aliases: "-l", type: :array, default: [], desc: "Labels to apply to the container (not compatible with --reuse)", banner: "label1=value1 label2=value2 label3"
   def exec(cmd)
+    labels = options[:labels]
+    raise ArgumentError, "Cannot add labels to reused containers" if options[:reuse] && labels.any?
     case
     when options[:interactive] && options[:reuse]
       say "Get current version of running container...", :magenta unless options[:version]
@@ -89,7 +92,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
       say "Get most recent version available as an image...", :magenta unless options[:version]
       using_version(version_or_latest) do |version|
         say "Launching interactive command with version #{version} via SSH from new container on #{MRSK.primary_host}...", :magenta
-        run_locally { exec MRSK.app.execute_in_new_container_over_ssh(cmd, host: MRSK.primary_host) }
+        run_locally { exec MRSK.app.execute_in_new_container_over_ssh(cmd, host: MRSK.primary_host, labels: labels) }
       end
 
     when options[:reuse]
@@ -113,7 +116,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
         say "Launching command with version #{version} from new container...", :magenta
         on(MRSK.hosts) do |host|
           execute *MRSK.auditor.record("Executed cmd '#{cmd}' on app version #{version}"), verbosity: :debug
-          puts_by_host host, capture_with_info(*MRSK.app.execute_in_new_container(cmd))
+          puts_by_host host, capture_with_info(*MRSK.app.execute_in_new_container(cmd, labels: labels))
         end
       end
     end

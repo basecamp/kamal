@@ -130,6 +130,9 @@ class Mrsk::Configuration
     end
   end
 
+  def label_args
+    argumentize "--label", { "service" => service, "destination" => destination}.compact
+  end
 
   def ssh_user
     if raw_config.ssh.present?

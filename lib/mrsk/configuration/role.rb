@@ -16,7 +16,7 @@ class Mrsk::Configuration::Role
   end
 
   def labels
-    default_labels.merge(traefik_labels).merge(custom_labels)
+    { "role" => name }.merge(traefik_labels).merge(custom_labels)
   end
 
   def label_args
@@ -60,14 +60,6 @@ class Mrsk::Configuration::Role
       else
         servers = config.servers[name]
         servers.is_a?(Array) ? servers : Array(servers["hosts"])
-      end
-    end
-
-    def default_labels
-      if config.destination
-        { "service" => config.service, "role" => name, "destination" => config.destination }
-      else
-        { "service" => config.service, "role" => name }
       end
     end
 

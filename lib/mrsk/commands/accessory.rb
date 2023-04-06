@@ -18,6 +18,7 @@ class Mrsk::Commands::Accessory < Mrsk::Commands::Base
       *env_args,
       *volume_args,
       *label_args,
+      "--label", "custom=false",
       *option_args,
       image,
       cmd
@@ -57,12 +58,14 @@ class Mrsk::Commands::Accessory < Mrsk::Commands::Base
       *command
   end
 
-  def execute_in_new_container(*command, interactive: false)
+  def execute_in_new_container(*command, interactive: false, labels: [])
     docker :run,
       ("-it" if interactive),
       "--rm",
       *env_args,
       *volume_args,
+      "--label", "custom=true",
+      *argumentize("--label", labels),
       image,
       *command
   end
@@ -71,8 +74,8 @@ class Mrsk::Commands::Accessory < Mrsk::Commands::Base
     run_over_ssh execute_in_existing_container(*command, interactive: true)
   end
 
-  def execute_in_new_container_over_ssh(*command)
-    run_over_ssh execute_in_new_container(*command, interactive: true)
+  def execute_in_new_container_over_ssh(*command, labels: [])
+    run_over_ssh execute_in_new_container(*command, interactive: true, labels: labels)
   end
 
   def run_over_ssh(command)

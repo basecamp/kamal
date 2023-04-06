@@ -7,7 +7,7 @@ class CliAccessoryTest < CliTestCase
 
     run_command("boot", "mysql").tap do |output|
       assert_match /docker login.*on 1.1.1.3/, output
-      assert_match "docker run --name app-mysql --detach --restart unless-stopped --log-opt max-size=\"10m\" --publish 3306:3306 -e [REDACTED] -e MYSQL_ROOT_HOST=\"%\" --volume $PWD/app-mysql/etc/mysql/my.cnf:/etc/mysql/my.cnf --volume $PWD/app-mysql/data:/var/lib/mysql --label service=\"app-mysql\" mysql:5.7 on 1.1.1.3", output
+      assert_match "docker run --name app-mysql --detach --restart unless-stopped --log-opt max-size=\"10m\" --publish 3306:3306 -e [REDACTED] -e MYSQL_ROOT_HOST=\"%\" --volume $PWD/app-mysql/etc/mysql/my.cnf:/etc/mysql/my.cnf --volume $PWD/app-mysql/data:/var/lib/mysql --label service=\"app-mysql\" --label custom=false mysql:5.7 on 1.1.1.3", output
     end
   end
 
@@ -21,9 +21,9 @@ class CliAccessoryTest < CliTestCase
       assert_match /docker login.*on 1.1.1.3/, output
       assert_match /docker login.*on 1.1.1.1/, output
       assert_match /docker login.*on 1.1.1.2/, output
-      assert_match "docker run --name app-mysql --detach --restart unless-stopped --log-opt max-size=\"10m\" --publish 3306:3306 -e [REDACTED] -e MYSQL_ROOT_HOST=\"%\" --volume $PWD/app-mysql/etc/mysql/my.cnf:/etc/mysql/my.cnf --volume $PWD/app-mysql/data:/var/lib/mysql --label service=\"app-mysql\" mysql:5.7 on 1.1.1.3", output
-      assert_match "docker run --name app-redis --detach --restart unless-stopped --log-opt max-size=\"10m\" --publish 6379:6379 --volume $PWD/app-redis/data:/data --label service=\"app-redis\" redis:latest on 1.1.1.1", output
-      assert_match "docker run --name app-redis --detach --restart unless-stopped --log-opt max-size=\"10m\" --publish 6379:6379 --volume $PWD/app-redis/data:/data --label service=\"app-redis\" redis:latest on 1.1.1.2", output
+      assert_match "docker run --name app-mysql --detach --restart unless-stopped --log-opt max-size=\"10m\" --publish 3306:3306 -e [REDACTED] -e MYSQL_ROOT_HOST=\"%\" --volume $PWD/app-mysql/etc/mysql/my.cnf:/etc/mysql/my.cnf --volume $PWD/app-mysql/data:/var/lib/mysql --label service=\"app-mysql\" --label custom=false mysql:5.7 on 1.1.1.3", output
+      assert_match "docker run --name app-redis --detach --restart unless-stopped --log-opt max-size=\"10m\" --publish 6379:6379 --volume $PWD/app-redis/data:/data --label service=\"app-redis\" --label custom=false redis:latest on 1.1.1.1", output
+      assert_match "docker run --name app-redis --detach --restart unless-stopped --log-opt max-size=\"10m\" --publish 6379:6379 --volume $PWD/app-redis/data:/data --label service=\"app-redis\" --label custom=false redis:latest on 1.1.1.2", output
     end
   end
 
@@ -80,10 +80,25 @@ class CliAccessoryTest < CliTestCase
     end
   end
 
+  test "exec with labels" do
+    run_command("exec", "mysql", "mysql -v", "-l", "abc=def", "ghi=jkl").tap do |output|
+      assert_match "Launching command from new container", output
+      assert_match \
+        "docker run --rm -e [REDACTED] -e MYSQL_ROOT_HOST=\"%\" --volume $PWD/app-mysql/etc/mysql/my.cnf:/etc/mysql/my.cnf --volume $PWD/app-mysql/data:/var/lib/mysql --label custom=true --label abc=def --label ghi=jkl mysql:5.7 mysql -v",
+        output
+    end
+  end
+
   test "exec with reuse" do
     run_command("exec", "mysql", "--reuse", "mysql -v").tap do |output|
       assert_match "Launching command from existing container", output
       assert_match "docker exec app-mysql mysql -v", output
+    end
+  end
+
+  test "exec with reuse and labels" do
+    assert_raises(ArgumentError) do
+      run_command("exec", "mysql", "--reuse", "mysql -v", "-l", "foo=bar")
     end
   end
 

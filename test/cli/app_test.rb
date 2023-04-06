@@ -78,7 +78,7 @@ class CliAppTest < CliTestCase
 
   test "exec" do
     run_command("exec", "ruby -v").tap do |output|
-      assert_match "docker run --rm dhh/app:latest ruby -v", output
+      assert_match "docker run --rm --label custom=true dhh/app:latest ruby -v", output
     end
   end
 
@@ -86,6 +86,18 @@ class CliAppTest < CliTestCase
     run_command("exec", "--reuse", "ruby -v").tap do |output|
       assert_match "docker ps --filter label=service=app --format \"{{.Names}}\" | sed 's/-/\\n/g' | tail -n 1", output # Get current version
       assert_match "docker exec app-web-999 ruby -v", output
+    end
+  end
+
+  test "exec with labels" do
+    run_command("exec", "ruby -v", "--labels", "hello=world", "abc=def").tap do |output|
+      assert_match "docker run --rm --label custom=true --label hello=world --label abc=def dhh/app:latest ruby -v", output
+    end
+  end
+
+  test "exec with reuse and labels" do
+    assert_raise(ArgumentError) do
+      run_command("exec", "--reuse", "ruby -v", "--labels", "hello=world", "abc=def")
     end
   end
 

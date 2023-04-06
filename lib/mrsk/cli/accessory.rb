@@ -110,7 +110,10 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
   desc "exec [NAME] [CMD]", "Execute a custom command on servers (use --help to show options)"
   option :interactive, aliases: "-i", type: :boolean, default: false, desc: "Execute command over ssh for an interactive shell (use for console/bash)"
   option :reuse, type: :boolean, default: false, desc: "Reuse currently running container instead of starting a new one"
+  option :labels, aliases: "-l", type: :array, default: [], desc: "Labels to apply to the container (not compatible with --reuse)", banner: "label1=value1 label2=value2 label3"
   def exec(name, cmd)
+    labels = options[:labels]
+    raise ArgumentError, "Cannot add labels to reused containers" if options[:reuse] && labels.any?
     with_accessory(name) do |accessory|
       case
       when options[:interactive] && options[:reuse]
@@ -119,7 +122,7 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
 
       when options[:interactive]
         say "Launching interactive command via SSH from new container...", :magenta
-        run_locally { exec accessory.execute_in_new_container_over_ssh(cmd) }
+        run_locally { exec accessory.execute_in_new_container_over_ssh(cmd, labels: labels) }
 
       when options[:reuse]
         say "Launching command from existing container...", :magenta
@@ -132,7 +135,7 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
         say "Launching command from new container...", :magenta
         on(accessory.hosts) do
           execute *MRSK.auditor.record("Executed cmd '#{cmd}' on #{name} accessory"), verbosity: :debug
-          capture_with_info(*accessory.execute_in_new_container(cmd))
+          capture_with_info(*accessory.execute_in_new_container(cmd, labels: labels))
         end
       end
     end

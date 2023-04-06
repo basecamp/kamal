@@ -17,7 +17,9 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
       *role.env_args,
       *config.logging_args,
       *config.volume_args,
+      *config.label_args,
       *role.label_args,
+      "--label", "custom=false",
       *role.option_args,
       config.absolute_image,
       role.cmd
@@ -63,12 +65,16 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
       *command
   end
 
-  def execute_in_new_container(*command, interactive: false)
+  def execute_in_new_container(*command, interactive: false, labels: [])
+    role = config.role(self.role)
+
     docker :run,
       ("-it" if interactive),
       "--rm",
       *config.env_args,
       *config.volume_args,
+      "--label", "custom=true",
+      *argumentize("--label", labels),
       config.absolute_image,
       *command
   end
@@ -77,8 +83,8 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
     run_over_ssh execute_in_existing_container(*command, interactive: true), host: host
   end
 
-  def execute_in_new_container_over_ssh(*command, host:)
-    run_over_ssh execute_in_new_container(*command, interactive: true), host: host
+  def execute_in_new_container_over_ssh(*command, host:, labels: [])
+    run_over_ssh execute_in_new_container(*command, interactive: true, labels: labels), host: host
   end
 
 
