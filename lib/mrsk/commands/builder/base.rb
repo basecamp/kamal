@@ -28,7 +28,7 @@ class Mrsk::Commands::Builder::Base < Mrsk::Commands::Base
     end
 
     def build_args
-      argumentize "--build-arg", args, redacted: true
+      argumentize "--build-arg", args, sensitive: true
     end
 
     def build_secrets

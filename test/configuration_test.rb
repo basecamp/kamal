@@ -113,12 +113,13 @@ class ConfigurationTest < ActiveSupport::TestCase
 
   test "env args with clear and secrets" do
     ENV["PASSWORD"] = "secret123"
+
     config = Mrsk::Configuration.new(@deploy.tap { |c| c.merge!({
       env: { "clear" => { "PORT" => "3000" }, "secret" => [ "PASSWORD" ] }
     }) })
 
-    assert_equal [ "-e", "PASSWORD=\"secret123\"", "-e", "PORT=\"3000\"" ], config.env_args
-    assert config.env_args[1].is_a?(SSHKit::Redaction)
+    assert_equal [ "-e", "PASSWORD=\"secret123\"", "-e", "PORT=\"3000\"" ], Mrsk::Utils.unredacted(config.env_args)
+    assert_equal [ "-e", "PASSWORD=[REDACTED]", "-e", "PORT=\"3000\"" ], Mrsk::Utils.redacted(config.env_args)
   ensure
     ENV["PASSWORD"] = nil
   end
@@ -133,12 +134,13 @@ class ConfigurationTest < ActiveSupport::TestCase
 
   test "env args with only secrets" do
     ENV["PASSWORD"] = "secret123"
+
     config = Mrsk::Configuration.new(@deploy.tap { |c| c.merge!({
       env: { "secret" => [ "PASSWORD" ] }
     }) })
 
-    assert_equal [ "-e", "PASSWORD=\"secret123\"" ], config.env_args
-    assert config.env_args[1].is_a?(SSHKit::Redaction)
+    assert_equal [ "-e", "PASSWORD=\"secret123\"" ], Mrsk::Utils.unredacted(config.env_args)
+    assert_equal [ "-e", "PASSWORD=[REDACTED]" ], Mrsk::Utils.redacted(config.env_args)
   ensure
     ENV["PASSWORD"] = nil
   end

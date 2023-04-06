@@ -8,13 +8,16 @@ class UtilsTest < ActiveSupport::TestCase
 
   test "argumentize with redacted" do
     assert_kind_of SSHKit::Redaction, \
-      Mrsk::Utils.argumentize("--label", { foo: "bar" }, redacted: true).last
+      Mrsk::Utils.argumentize("--label", { foo: "bar" }, sensitive: true).last
   end
 
   test "argumentize_env_with_secrets" do
     ENV.expects(:fetch).with("FOO").returns("secret")
-    assert_equal [ "-e", "FOO=\"secret\"", "-e", "BAZ=\"qux\"" ], \
-      Mrsk::Utils.argumentize_env_with_secrets({ "secret" => [ "FOO" ], "clear" => { BAZ: "qux" } })
+
+    args = Mrsk::Utils.argumentize_env_with_secrets({ "secret" => [ "FOO" ], "clear" => { BAZ: "qux" } })
+
+    assert_equal [ "-e", "FOO=[REDACTED]", "-e", "BAZ=\"qux\"" ], Mrsk::Utils.redacted(args)
+    assert_equal [ "-e", "FOO=\"secret\"", "-e", "BAZ=\"qux\"" ], Mrsk::Utils.unredacted(args)
   end
 
   test "optionize" do
@@ -27,9 +30,20 @@ class UtilsTest < ActiveSupport::TestCase
       Mrsk::Utils.optionize({ foo: "bar", baz: "qux", quux: true }, with: "=")
   end
 
-  test "redact" do
-    assert_kind_of SSHKit::Redaction, Mrsk::Utils.redact("secret")
-    assert_equal "secret", Mrsk::Utils.redact("secret")
+  test "no redaction from #to_s" do
+    assert_equal "secret", Mrsk::Utils.sensitive("secret").to_s
+  end
+
+  test "redact from #inspect" do
+    assert_equal "[REDACTED]".inspect, Mrsk::Utils.sensitive("secret").inspect
+  end
+
+  test "redact from SSHKit output" do
+    assert_kind_of SSHKit::Redaction, Mrsk::Utils.sensitive("secret")
+  end
+
+  test "redact from YAML output" do
+    assert_equal "--- ! '[REDACTED]'\n", YAML.dump(Mrsk::Utils.sensitive("secret"))
   end
 
   test "escape_shell_value" do

@@ -2,11 +2,12 @@ module Mrsk::Utils
   extend self
 
   # Return a list of escaped shell arguments using the same named argument against the passed attributes (hash or array).
-  def argumentize(argument, attributes, redacted: false)
+  def argumentize(argument, attributes, sensitive: false)
     Array(attributes).flat_map do |key, value|
       if value.present?
-        escaped_pair = [ key, escape_shell_value(value) ].join("=")
-        [ argument, redacted ? redact(escaped_pair) : escaped_pair ]
+        attr = "#{key}=#{escape_shell_value(value)}"
+        attr = self.sensitive(attr, redaction: "#{key}=[REDACTED]") if sensitive
+        [ argument, attr]
       else
         [ argument, key ]
       end
@@ -17,7 +18,7 @@ module Mrsk::Utils
   # but redacts and expands secrets.
   def argumentize_env_with_secrets(env)
     if (secrets = env["secret"]).present?
-      argumentize("-e", secrets.to_h { |key| [ key, ENV.fetch(key) ] }, redacted: true) + argumentize("-e", env["clear"])
+      argumentize("-e", secrets.to_h { |key| [ key, ENV.fetch(key) ] }, sensitive: true) + argumentize("-e", env["clear"])
     else
       argumentize "-e", env.fetch("clear", env)
     end
@@ -39,9 +40,37 @@ module Mrsk::Utils
     args.flat_map { |key, value| value.try(:map) { |entry| [key, entry] } || [ [ key, value ] ] }
   end
 
-  # Copied from SSHKit::Backend::Abstract#redact to be available inside Commands classes
-  def redact(arg) # Used in execute_command to hide redact() args a user passes in
-    arg.to_s.extend(SSHKit::Redaction) # to_s due to our inability to extend Integer, etc
+  # Marks sensitive values for redaction in logs and human-visible output.
+  # Pass `redaction:` to change the default `"[REDACTED]"` redaction, e.g.
+  # `sensitive "#{arg}=#{secret}", redaction: "#{arg}=xxxx"
+  def sensitive(...)
+    Mrsk::Utils::Sensitive.new(...)
+  end
+
+  def redacted(value)
+    case
+    when value.respond_to?(:redaction)
+      value.redaction
+    when value.respond_to?(:transform_values)
+      value.transform_values { |value| redacted value }
+    when value.respond_to?(:map)
+      value.map { |element| redacted element }
+    else
+      value
+    end
+  end
+
+  def unredacted(value)
+    case
+    when value.respond_to?(:unredacted)
+      value.unredacted
+    when value.respond_to?(:transform_values)
+      value.transform_values { |value| unredacted value }
+    when value.respond_to?(:map)
+      value.map { |element| unredacted element }
+    else
+      value
+    end
   end
 
   # Escape a value to make it safe for shell use.
