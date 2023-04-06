@@ -165,12 +165,12 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
       env_path          = ".env"
     end
 
-    unless File.file?(env_path)
-      puts "#{env_template_path} file does not exist."
-      return
+    if File.file?(env_path)
+      File.write(env_path, ERB.new(File.read(env_template_path)).result, perm: 0600)
+    else
+      puts "#{env_template_path} file does not exist"
     end
 
-    File.write(env_path, ERB.new(File.read(env_template_path)).result, perm: 0600)
   end
 
   desc "remove", "Remove Traefik, app, accessories, and registry session from servers"
