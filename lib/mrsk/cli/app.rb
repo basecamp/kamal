@@ -54,7 +54,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
   end
 
   desc "stop", "Stop app container on servers"
-  option :only_old, aliases: "-o", type: :boolean, default: false, desc: "Stop only old containers"
+  option :only_old, aliases: "-o", type: :boolean, default: false, desc: "Stop only old versions containers"
   def stop
     with_lock do
       MRSK.hosts.each do |host|
