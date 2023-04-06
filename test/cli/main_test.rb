@@ -219,7 +219,7 @@ class CliMainTest < CliTestCase
 
   test "envify without template_path" do
     run_command("envify").tap do |output|
-      assert_equal ".env.erb file does not exist.", output
+      assert_equal ".env.erb does not exist", output
     end
   end
 
