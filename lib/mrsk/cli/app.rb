@@ -48,32 +48,18 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
   end
 
   desc "stop", "Stop app container on servers"
+  option :only_old, aliases: "-o", type: :boolean, default: false, desc: "Stop only old containers"
   def stop
     with_lock do
       MRSK.hosts.each do |host|
         roles = MRSK.roles_on(host)
 
         roles.each do |role|
-          on(host) { execute *MRSK.auditor(role: role).record("Stopped app"), verbosity: :debug }
-          all_versions = list_versions(host: host, role: role)
-          all_versions.each do |version|
-            on(host) { execute *MRSK.app(role: role).stop(version: version), raise_on_non_zero_exit: false }
-          end
-        end
-      end
-    end
-  end
+          audit_record = options[:only_old] ? "Stopped old containers" : "Stopped app"
+          on(host) { execute *MRSK.auditor(role: role).record(audit_record), verbosity: :debug }
 
-  desc "stop_stale_containers", "Stop all app stale containers"
-  def stop_stale_containers
-    with_lock do
-      MRSK.hosts.each do |host|
-        roles = MRSK.roles_on(host)
-
-        roles.each do |role|
-          stale_versions = list_versions(host: host, role: role).drop(1)
-          stale_versions.each do |version|
-            say "Stopping stale container with version #{version}", :red
+          versions = list_versions(host: host, role: role, only_old: options[:only_old])
+          versions.each do |version|
             on(host) { execute *MRSK.app(role: role).stop(version: version), raise_on_non_zero_exit: false }
           end
         end
@@ -258,10 +244,10 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
       list_versions(host: host, status: :running).shift.presence
     end
 
-    def list_versions(host:, role: nil, status: nil)
+    def list_versions(host:, role: nil, status: nil, only_old: false)
       versions = nil
       on(host) { versions = capture_with_info(*MRSK.app(role: role).list_versions(status: status), raise_on_non_zero_exit: false).split("\n").map(&:strip) }
-      versions
+      only_old ? versions.drop(1) : versions
     end
 
     def version_or_latest

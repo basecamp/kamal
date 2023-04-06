@@ -48,13 +48,12 @@ class CliAppTest < CliTestCase
     end
   end
 
-  test "stop_stale_containers" do
+  test "stop only old containers" do
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
       .with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=web", "--format", "\"{{.Names}}\"", "|", "grep -oE \"\\-[^-]+$\"", "|", "cut -c 2-", raise_on_non_zero_exit: false)
       .returns("12345678\n87654321")
 
-    run_command("stop_stale_containers").tap do |output|
-      assert_match /Stopping stale container with version 87654321/, output
+    run_command("stop", '--only-old').tap do |output|
       assert_match /#{Regexp.escape("docker container ls --all --filter name=^app-web-87654321$ --quiet | xargs docker stop")}/, output
     end
   end

@@ -37,8 +37,8 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
         say "Ensure app can pass healthcheck...", :magenta
         invoke "mrsk:cli:healthcheck:perform", [], invoke_options
 
-        say "Stop stale containers...", :magenta
-        invoke "mrsk:cli:app:stop_stale_containers", [], invoke_options
+        say "Stop old containers...", :magenta
+        invoke "mrsk:cli:app:stop", [], invoke_options.merge({ "only_old" => true })
 
         invoke "mrsk:cli:app:boot", [], invoke_options
 
@@ -68,8 +68,8 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
         say "Ensure app can pass healthcheck...", :magenta
         invoke "mrsk:cli:healthcheck:perform", [], invoke_options
 
-        say "Stop stale containers...", :magenta
-        invoke "mrsk:cli:app:stop_stale_containers", [], invoke_options
+        say "Stop old containers...", :magenta
+        invoke "mrsk:cli:app:stop", [], invoke_options.merge({ "only_old" => true })
 
         invoke "mrsk:cli:app:boot", [], invoke_options
       end
