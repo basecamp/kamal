@@ -1,7 +1,4 @@
 class Mrsk::Cli::Healthcheck < Mrsk::Cli::Base
-
-  class HealthcheckError < StandardError; end
-
   default_command :perform
 
   desc "perform", "Health check current app version"
@@ -9,38 +6,10 @@ class Mrsk::Cli::Healthcheck < Mrsk::Cli::Base
     on(MRSK.primary_host) do
       begin
         execute *MRSK.healthcheck.run
-
-        target = "Health check against #{MRSK.config.healthcheck["path"]}"
-        attempt = 1
-        max_attempts = MRSK.config.healthcheck["max_attempts"]
-
-        begin
-          status = capture_with_info(*MRSK.healthcheck.curl)
-
-          if status == "200"
-            info "#{target} succeeded with 200 OK!"
-          else
-            raise HealthcheckError, "#{target} failed with status #{status}"
-          end
-        rescue SSHKit::Command::Failed
-          if attempt <= max_attempts
-            info "#{target} failed to respond, retrying in #{attempt}s (attempt #{attempt}/#{max_attempts})..."
-            sleep attempt
-            attempt += 1
-
-            retry
-          else
-            raise
-          end
-        end
-      rescue SSHKit::Command::Failed, HealthcheckError => e
+        Mrsk::Utils::HealthcheckPoller.wait_for_healthy { capture_with_info(*MRSK.healthcheck.status) }
+      rescue Mrsk::Utils::HealthcheckPoller::HealthcheckError => e
         error capture_with_info(*MRSK.healthcheck.logs)
-
-        if e.message =~ /curl/
-          raise SSHKit::Command::Failed, "#{target} failed to return 200 OK!"
-        else
-          raise
-        end
+        raise
       ensure
         execute *MRSK.healthcheck.stop, raise_on_non_zero_exit: false
         execute *MRSK.healthcheck.remove, raise_on_non_zero_exit: false
