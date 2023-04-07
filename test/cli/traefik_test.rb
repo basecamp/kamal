@@ -3,7 +3,8 @@ require_relative "cli_test_case"
 class CliTraefikTest < CliTestCase
   test "boot" do
     run_command("boot").tap do |output|
-      assert_match "docker run --name traefik --detach --restart unless-stopped --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock --log-opt max-size=\"10m\" traefik:v2.9.9 --providers.docker --log.level=DEBUG", output
+      assert_match "docker login", output
+      assert_match "docker run --name traefik --detach --restart unless-stopped --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock --log-opt max-size=\"10m\" #{Mrsk::Commands::Traefik::DEFAULT_IMAGE} --providers.docker --log.level=DEBUG", output
     end
   end
 

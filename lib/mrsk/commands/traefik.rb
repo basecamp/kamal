@@ -1,7 +1,7 @@
 class Mrsk::Commands::Traefik < Mrsk::Commands::Base
   delegate :optionize, to: Mrsk::Utils
 
-  IMAGE = "traefik:v2.9.9"
+  DEFAULT_IMAGE = "traefik:v2.9"
   CONTAINER_PORT = 80
 
   def run
@@ -12,7 +12,7 @@ class Mrsk::Commands::Traefik < Mrsk::Commands::Base
       "--volume", "/var/run/docker.sock:/var/run/docker.sock",
       *config.logging_args,
       *docker_options_args,
-      IMAGE,
+      image,
       "--providers.docker",
       "--log.level=DEBUG",
       *cmd_option_args
@@ -56,6 +56,10 @@ class Mrsk::Commands::Traefik < Mrsk::Commands::Base
   end
 
   private
+    def image
+      config.traefik.fetch("image") { DEFAULT_IMAGE }
+    end
+
     def docker_options_args
       optionize(config.traefik["options"] || {})
     end
