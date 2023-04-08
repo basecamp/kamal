@@ -19,6 +19,12 @@ class ConfigurationTest < ActiveSupport::TestCase
       servers: { "web" => [ "1.1.1.1", "1.1.1.2" ], "workers" => { "hosts" => [ "1.1.1.1", "1.1.1.3" ] } } })
 
     @config_with_roles = Mrsk::Configuration.new(@deploy_with_roles)
+
+    @deploy_without_primary_web_role = {
+      servers: { "workers" => { "hosts" => [ "1.1.1.1", "1.1.1.3" ] }  }
+    }
+
+    @config_without_primary_web_role = Mrsk::Configuration.new(@deploy.dup.merge(@deploy_without_primary_web_role))
   end
 
   teardown do
@@ -61,6 +67,7 @@ class ConfigurationTest < ActiveSupport::TestCase
   test "primary web host" do
     assert_equal "1.1.1.1", @config.primary_web_host
     assert_equal "1.1.1.1", @config_with_roles.primary_web_host
+    assert_nil @config_without_primary_web_role.primary_web_host
   end
 
   test "traefik hosts" do

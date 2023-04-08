@@ -80,7 +80,7 @@ class Mrsk::Configuration
   end
 
   def primary_web_host
-    role(:web).primary_host
+    role(:web)&.primary_host
   end
 
   def traefik_hosts
