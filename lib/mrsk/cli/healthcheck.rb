@@ -1,5 +1,5 @@
 class Mrsk::Cli::Healthcheck < Mrsk::Cli::Base
-  MAX_ATTEMPTS = 7
+  DEFAULT_MAX_ATTEMPTS = 7
 
   class HealthcheckError < StandardError; end
 
@@ -13,6 +13,7 @@ class Mrsk::Cli::Healthcheck < Mrsk::Cli::Base
 
         target = "Health check against #{MRSK.config.healthcheck["path"]}"
         attempt = 1
+        max_attempts = MRSK.config.healthcheck["max_attempts"] || DEFAULT_MAX_ATTEMPTS
 
         begin
           status = capture_with_info(*MRSK.healthcheck.curl)
@@ -23,7 +24,7 @@ class Mrsk::Cli::Healthcheck < Mrsk::Cli::Base
             raise HealthcheckError, "#{target} failed with status #{status}"
           end
         rescue SSHKit::Command::Failed
-          if attempt <= MAX_ATTEMPTS
+          if attempt <= max_attempts
             info "#{target} failed to respond, retrying in #{attempt}s..."
             sleep attempt
             attempt += 1
