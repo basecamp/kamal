@@ -14,7 +14,7 @@ If you have a Ruby environment available, you can install MRSK globally with:
 gem install mrsk
 ```
 
-...otherwise, you can run a dockerized version via an alias (add this to your ${SHELL}rc to simplify re-use):
+...otherwise, you can run a dockerized version via an alias (add this to your .bashrc or similar to simplify re-use):
 
 ```sh
 alias mrsk='docker run --rm -it -v $HOME/.ssh:/root/.ssh -v /var/run/docker.sock:/var/run/docker.sock -v ${PWD}/:/workdir  ghcr.io/mrsked/mrsk'
@@ -189,6 +189,15 @@ The default SSH user is root, but you can change it using `ssh/user`:
 ```yaml
 ssh:
   user: app
+```
+
+If you are using non-root user, you need to bootstrap your servers manually, before using them with MRSK. On Ubuntu, you'd do:
+
+```bash
+sudo apt update
+sudo apt upgrade -y
+sudo apt install -y docker.io curl git
+sudo usermod -a -G docker ubuntu
 ```
 
 ### Using a proxy SSH host
