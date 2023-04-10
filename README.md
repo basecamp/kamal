@@ -6,7 +6,7 @@ Watch the screencast: https://www.youtube.com/watch?v=LL1cV2FXZ5I
 
 Join us on Discord: https://discord.gg/YgHVT7GCXS
 
-Discss on Github: https://github.com/mrsked/mrsk/discussions
+Ask questions: https://github.com/mrsked/mrsk/discussions
 
 ## Installation
 
