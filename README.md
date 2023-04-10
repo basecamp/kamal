@@ -218,6 +218,13 @@ ssh:
   proxy: "app@192.168.0.1"
 ```
 
+Also if you need specific proxy command to connect to the server:
+
+```yaml
+ssh:
+  proxy_command: aws ssm start-session --target %h --document-name AWS-StartSSHSession --parameters 'portNumber=%p' --region=us-east-1 ## ssh via aws ssm
+```
+
 ### Using env variables
 
 You can inject env variables into the app containers using `env`:
