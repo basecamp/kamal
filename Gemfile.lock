@@ -6,6 +6,7 @@ PATH
       bcrypt_pbkdf (~> 1.0)
       dotenv (~> 2.8)
       ed25519 (~> 1.2)
+      net-ssh (~> 7.0)
       sshkit (~> 1.21)
       thor (~> 1.2)
       zeitwerk (~> 2.5)
