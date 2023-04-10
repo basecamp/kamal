@@ -22,4 +22,8 @@ class CliTestCase < ActiveSupport::TestCase
     def stdouted
       capture(:stdout) { yield }.strip
     end
-end
+
+    def stderred
+      capture(:stderr) { yield }.strip
+    end
+  end

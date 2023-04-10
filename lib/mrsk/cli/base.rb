@@ -6,8 +6,6 @@ module Mrsk::Cli
   class Base < Thor
     include SSHKit::DSL
 
-    class LockError < StandardError; end
-
     def self.exit_on_failure?() true end
 
     class_option :verbose, type: :boolean, aliases: "-v", desc: "Detailed logging"
@@ -82,8 +80,11 @@ module Mrsk::Cli
         acquire_lock
 
         yield
-      ensure
+
         release_lock
+      rescue
+        error "  \e[31mDeploy lock was not released\e[0m" if MRSK.lock_count > 0
+        raise
       end
 
       def acquire_lock
@@ -95,9 +96,10 @@ module Mrsk::Cli
       rescue SSHKit::Runner::ExecuteError => e
         if e.message =~ /cannot create directory/
           invoke "mrsk:cli:lock:status", []
+          raise LockError, "Deploy lock found"
+        else
+          raise e
         end
-
-        raise LockError, "Deploy lock found"
       end
 
       def release_lock
