@@ -112,8 +112,11 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
 
   test "env args with secret" do
     ENV["MYSQL_ROOT_PASSWORD"] = "secret123"
-    assert_equal ["-e", "MYSQL_ROOT_PASSWORD=\"secret123\"", "-e", "MYSQL_ROOT_HOST=\"%\""], @config.accessory(:mysql).env_args
-    assert @config.accessory(:mysql).env_args[1].is_a?(SSHKit::Redaction)
+
+    @config.accessory(:mysql).env_args.tap do |env_args|
+      assert_equal ["-e", "MYSQL_ROOT_PASSWORD=\"secret123\"", "-e", "MYSQL_ROOT_HOST=\"%\""], Mrsk::Utils.unredacted(env_args)
+      assert_equal ["-e", "MYSQL_ROOT_PASSWORD=[REDACTED]", "-e", "MYSQL_ROOT_HOST=\"%\""], Mrsk::Utils.redacted(env_args)
+    end
   ensure
     ENV["MYSQL_ROOT_PASSWORD"] = nil
   end

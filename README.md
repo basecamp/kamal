@@ -6,6 +6,8 @@ Watch the screencast: https://www.youtube.com/watch?v=LL1cV2FXZ5I
 
 Join us on Discord: https://discord.gg/YgHVT7GCXS
 
+Ask questions: https://github.com/mrsked/mrsk/discussions
+
 ## Installation
 
 If you have a Ruby environment available, you can install MRSK globally with:
@@ -14,13 +16,13 @@ If you have a Ruby environment available, you can install MRSK globally with:
 gem install mrsk
 ```
 
-...otherwise, you can run a dockerized version via an alias (add this to your ${SHELL}rc to simplify re-use):
+...otherwise, you can run a dockerized version via an alias (add this to your .bashrc or similar to simplify re-use):
 
 ```sh
 alias mrsk='docker run --rm -it -v $HOME/.ssh:/root/.ssh -v /var/run/docker.sock:/var/run/docker.sock -v ${PWD}/:/workdir  ghcr.io/mrsked/mrsk'
 ```
 
-Then, inside your app directory, run `mrsk init` (or `mrsk init --bundle` within Rails apps where you want a bin/mrsk binstub). Now edit the new file `config/deploy.yml`. It could look as simple as this:
+Then, inside your app directory, run `mrsk init` (or `mrsk init --bundle` within Rails 7+ apps where you want a bin/mrsk binstub). Now edit the new file `config/deploy.yml`. It could look as simple as this:
 
 ```yaml
 service: hey
@@ -189,6 +191,15 @@ The default SSH user is root, but you can change it using `ssh/user`:
 ```yaml
 ssh:
   user: app
+```
+
+If you are using non-root user, you need to bootstrap your servers manually, before using them with MRSK. On Ubuntu, you'd do:
+
+```bash
+sudo apt update
+sudo apt upgrade -y
+sudo apt install -y docker.io curl git
+sudo usermod -a -G docker ubuntu
 ```
 
 ### Using a proxy SSH host
@@ -476,9 +487,9 @@ We allow users to pass additional docker options to the trafik container like
 traefik:
   options:
     publish:
-    - 8080:8080
+      - 8080:8080
     volumes:
-    - /tmp/example.json:/tmp/example.json
+      - /tmp/example.json:/tmp/example.json
     memory: 512m
 ```
 

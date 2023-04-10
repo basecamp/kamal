@@ -97,7 +97,10 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
     ENV["REDIS_PASSWORD"] = "secret456"
     ENV["DB_PASSWORD"] = "secret&\"123"
 
-    assert_equal ["-e", "REDIS_PASSWORD=\"secret456\"", "-e", "DB_PASSWORD=\"secret&\\\"123\"", "-e", "REDIS_URL=\"redis://a/b\"", "-e", "WEB_CONCURRENCY=\"4\""], @config_with_roles.role(:workers).env_args
+    @config_with_roles.role(:workers).env_args.tap do |env_args|
+      assert_equal ["-e", "REDIS_PASSWORD=\"secret456\"", "-e", "DB_PASSWORD=\"secret&\\\"123\"", "-e", "REDIS_URL=\"redis://a/b\"", "-e", "WEB_CONCURRENCY=\"4\""], Mrsk::Utils.unredacted(env_args)
+      assert_equal ["-e", "REDIS_PASSWORD=[REDACTED]", "-e", "DB_PASSWORD=[REDACTED]", "-e", "REDIS_URL=\"redis://a/b\"", "-e", "WEB_CONCURRENCY=\"4\""], Mrsk::Utils.redacted(env_args)
+    end
   ensure
     ENV["REDIS_PASSWORD"] = nil
     ENV["DB_PASSWORD"] = nil
@@ -116,7 +119,10 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
 
     ENV["DB_PASSWORD"] = "secret123"
 
-    assert_equal ["-e", "DB_PASSWORD=\"secret123\"", "-e", "REDIS_URL=\"redis://a/b\"", "-e", "WEB_CONCURRENCY=\"4\""], @config_with_roles.role(:workers).env_args
+    @config_with_roles.role(:workers).env_args.tap do |env_args|
+      assert_equal ["-e", "DB_PASSWORD=\"secret123\"", "-e", "REDIS_URL=\"redis://a/b\"", "-e", "WEB_CONCURRENCY=\"4\""], Mrsk::Utils.unredacted(env_args)
+      assert_equal ["-e", "DB_PASSWORD=[REDACTED]", "-e", "REDIS_URL=\"redis://a/b\"", "-e", "WEB_CONCURRENCY=\"4\""], Mrsk::Utils.redacted(env_args)
+    end
   ensure
     ENV["DB_PASSWORD"] = nil
   end
@@ -133,7 +139,10 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
 
     ENV["REDIS_PASSWORD"] = "secret456"
 
-    assert_equal ["-e", "REDIS_PASSWORD=\"secret456\"", "-e", "REDIS_URL=\"redis://a/b\"", "-e", "WEB_CONCURRENCY=\"4\""], @config_with_roles.role(:workers).env_args
+    @config_with_roles.role(:workers).env_args.tap do |env_args|
+      assert_equal ["-e", "REDIS_PASSWORD=\"secret456\"", "-e", "REDIS_URL=\"redis://a/b\"", "-e", "WEB_CONCURRENCY=\"4\""], Mrsk::Utils.unredacted(env_args)
+      assert_equal ["-e", "REDIS_PASSWORD=[REDACTED]", "-e", "REDIS_URL=\"redis://a/b\"", "-e", "WEB_CONCURRENCY=\"4\""], Mrsk::Utils.redacted(env_args)
+    end
   ensure
     ENV["REDIS_PASSWORD"] = nil
   end
