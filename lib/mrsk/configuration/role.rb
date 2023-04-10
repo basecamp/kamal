@@ -74,16 +74,20 @@ class Mrsk::Configuration::Role
     def traefik_labels
       if running_traefik?
         {
-          "traefik.http.routers.#{config.service}.rule" => "PathPrefix(`/`)",
-          "traefik.http.services.#{config.service}.loadbalancer.healthcheck.path" => config.healthcheck["path"],
-          "traefik.http.services.#{config.service}.loadbalancer.healthcheck.interval" => "1s",
-          "traefik.http.middlewares.#{config.service}-retry.retry.attempts" => "5",
-          "traefik.http.middlewares.#{config.service}-retry.retry.initialinterval" => "500ms",
-          "traefik.http.routers.#{config.service}.middlewares" => "#{config.service}-retry@docker"
+          "traefik.http.routers.#{traefik_service}.rule" => "PathPrefix(`/`)",
+          "traefik.http.services.#{traefik_service}.loadbalancer.healthcheck.path" => config.healthcheck["path"],
+          "traefik.http.services.#{traefik_service}.loadbalancer.healthcheck.interval" => "1s",
+          "traefik.http.middlewares.#{traefik_service}-retry.retry.attempts" => "5",
+          "traefik.http.middlewares.#{traefik_service}-retry.retry.initialinterval" => "500ms",
+          "traefik.http.routers.#{traefik_service}.middlewares" => "#{traefik_service}-retry@docker"
         }
       else
         {}
       end
+    end
+
+    def traefik_service
+      [ config.service, name, config.destination ].compact.join("-")
     end
 
     def custom_labels
