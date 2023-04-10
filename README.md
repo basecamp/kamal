@@ -450,9 +450,9 @@ RUN --mount=type=secret,id=GITHUB_TOKEN \
   rm -rf /usr/local/bundle/cache
 ```
 
-### Using command arguments for Traefik
+### Traefik command arguments
 
-You can customize the traefik command line:
+Customize the Traefik command line using `args`:
 
 ```yaml
 traefik:
@@ -461,20 +461,38 @@ traefik:
     accesslog.format: json
 ```
 
-This will start the traefik container with `--accesslog=true accesslog.format=json`.
+This starts the Traefik container with `--accesslog=true --accesslog.format=json` arguments.
 
-### Traefik's host port binding
+### Traefik host port binding
 
-By default Traefik binds to port 80 of the host machine, it can be configured to use an alternative port:
+Traefik binds to port 80 by default. Specify an alternative port using `host_port`:
 
 ```yaml
 traefik:
   host_port: 8080
 ```
 
-### Configure docker options for traefik
+### Traefik version, upgrades, and custom images
 
-We allow users to pass additional docker options to the trafik container like
+MRSK runs the traefik:v2.9 image to track Traefik 2.9.x releases.
+
+To pin Traefik to a specific version or an image published to your registry,
+specify `image`:
+
+```yaml
+traefik:
+  image: traefik:v2.10.0-rc1
+```
+
+This is useful for downgrading Traefik if there's an unexpected breaking
+change in a minor version release, upgrading Traefik to test forthcoming
+releases, or running your own Traefik-derived image.
+
+MRSK has not been tested for compatibility with Traefik 3 betas. Please do!
+
+### Traefik container configuration
+
+Pass additional Docker configuration for the Traefik container using `options`:
 
 ```yaml
 traefik:
@@ -486,12 +504,12 @@ traefik:
     memory: 512m
 ```
 
-This will start the traefik container with a command like: `docker run ... --volume /tmp/example.json:/tmp/example.json --publish 8080:8080 `
+This starts the Traefik container with `--volume /tmp/example.json:/tmp/example.json --publish 8080:8080 --memory 512m` arguments to `docker run`.
 
 
-### Configure alternate entrypoints for traefik
+### Traefik alternate entrypoints
 
-You can configure multiple entrypoints for traefik like so:
+You can configure multiple entrypoints for Traefik like so:
 
 ```yaml
 service: myservice
