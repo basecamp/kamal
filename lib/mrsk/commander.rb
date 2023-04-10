@@ -84,6 +84,10 @@ class Mrsk::Commander
     @builder ||= Mrsk::Commands::Builder.new(config)
   end
 
+  def docker
+    @docker ||= Mrsk::Commands::Docker.new(config)
+  end
+
   def healthcheck
     @healthcheck ||= Mrsk::Commands::Healthcheck.new(config)
   end
