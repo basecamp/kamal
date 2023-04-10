@@ -191,10 +191,14 @@ ssh:
   user: app
 ```
 
-If you are using non-root user, you need to *bootstrap* your server manually, before using it with mrsk. Here is some bootstrap one-liners for popular VMs:
+If you are using non-root user, you need to bootstrap your servers manually, before using them with MRSK. On Ubuntu, you'd do:
 
-* Amazon Linux 2: `sudo yum update -y; sudo yum install -y docker curl git; sudo usermod -a -G docker ec2-user; sudo chkconfig docker on; sudo service docker start`
-* Ubuntu: `sudo apt update; sudo apt upgrade -y; sudo apt install -y docker.io curl git; sudo usermod -a -G docker ubuntu` 
+```bash
+sudo apt update
+sudo apt upgrade -y
+sudo apt install -y docker.io curl git
+sudo usermod -a -G docker ubuntu
+```
 
 ### Using a proxy SSH host
 
