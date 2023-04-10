@@ -53,6 +53,46 @@ class CliMainTest < CliTestCase
     end
   end
 
+  test "deploy when locked" do
+    Thread.report_on_exception = false
+
+    SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+      .with { |*arg| arg[0..1] == [:mkdir, :mrsk_lock] }
+      .raises(RuntimeError, "mkdir: cannot create directory ‘mrsk_lock’: File exists")
+
+    Mrsk::Cli::Base.any_instance.expects(:invoke).with("mrsk:cli:lock:status", [])
+
+    assert_raises(Mrsk::Cli::LockError) do
+      run_command("deploy")
+    end
+  end
+
+  test "deploy error when locking" do
+    Thread.report_on_exception = false
+
+    SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+      .with { |*arg| arg[0..1] == [:mkdir, :mrsk_lock] }
+      .raises(SocketError, "getaddrinfo: nodename nor servname provided, or not known")
+
+    assert_raises(SSHKit::Runner::ExecuteError) do
+      run_command("deploy")
+    end
+  end
+
+  test "deploy errors leave lock in place" do
+    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "skip_broadcast" => false, "version" => "999" }
+
+    Mrsk::Cli::Main.any_instance.expects(:invoke)
+      .with("mrsk:cli:server:bootstrap", [], invoke_options)
+      .raises(RuntimeError)
+
+    assert_equal 0, MRSK.lock_count
+    assert_raises(RuntimeError) do
+      stderred { run_command("deploy") }
+    end
+    assert_equal 1, MRSK.lock_count
+  end
+
   test "redeploy" do
     invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "skip_broadcast" => false, "version" => "999" }
 
