@@ -87,7 +87,7 @@ class Mrsk::Configuration::Role
     end
 
     def traefik_service
-      [config.service, name, config.destination].compact.join("-")
+      [ config.service, name, config.destination ].compact.join("-")
     end
 
     def custom_labels
