@@ -14,7 +14,7 @@ If you have a Ruby environment available, you can install MRSK globally with:
 gem install mrsk
 ```
 
-...otherwise, you can run a dockerized version via an alias (add this to your ${SHELL}rc to simplify re-use):
+...otherwise, you can run a dockerized version via an alias (add this to your .bashrc or similar to simplify re-use):
 
 ```sh
 alias mrsk='docker run --rm -it -v $HOME/.ssh:/root/.ssh -v /var/run/docker.sock:/var/run/docker.sock -v ${PWD}/:/workdir  ghcr.io/mrsked/mrsk'
