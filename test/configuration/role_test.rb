@@ -70,7 +70,6 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
   end
 
   test "default traefik label for non-web role with destination" do
-
     config = Mrsk::Configuration.new(@deploy_with_roles.tap { |c|
       c[:servers]["beta"] = { "traefik" => "true", "hosts" => [ "1.1.1.5" ] }
     }, destination: "staging")
