@@ -23,8 +23,8 @@ class CliHealthcheckTest < CliTestCase
       .returns("200")
 
     run_command("perform").tap do |output|
-      assert_match "Health check against /up failed to respond, retrying in 1s...", output
-      assert_match "Health check against /up failed to respond, retrying in 2s...", output
+      assert_match "Health check against /up failed to respond, retrying in 1s (attempt 1/7)...", output
+      assert_match "Health check against /up failed to respond, retrying in 2s (attempt 2/7)...", output
       assert_match "Health check against /up succeeded with 200 OK!", output
     end
   end
