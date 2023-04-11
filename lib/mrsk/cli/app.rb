@@ -125,7 +125,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
   end
 
   desc "stale_containers", "Detect app stale containers"
-  option :stop, aliases: "-s", type: :boolean, default: false, desc: "Stop the stale containers found."
+  option :stop, aliases: "-s", type: :boolean, default: false, desc: "Stop the stale containers found"
   def stale_containers
     with_lock do
       stop = options[:stop]
