@@ -246,14 +246,14 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
 
   no_commands do
     def stale_versions(host:, role:)
-      stale_versions = nil
+      versions = nil
       on(host) do
-        stale_versions = \
+        versions = \
           capture_with_info(*MRSK.app(role: role).list_versions, raise_on_non_zero_exit: false)
           .split("\n")
           .drop(1)
       end
-      stale_versions
+      versions
     end
   end
 
