@@ -130,11 +130,13 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
     with_lock do
       stop = options[:stop]
 
+      cli = self
+
       on(MRSK.hosts) do |host|
         roles = MRSK.roles_on(host)
 
         roles.each do |role|
-          stale_versions(role: role).each do |version|
+          cli.stale_versions(host: host, role: role).each do |version|
             if stop
               puts_by_host host, "Stopping stale container for role #{role} with version #{version}"
               execute *MRSK.app(role: role).stop(version: version), raise_on_non_zero_exit: false
@@ -240,6 +242,17 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
   desc "version", "Show app version currently running on servers"
   def version
     on(MRSK.hosts) { |host| puts_by_host host, capture_with_info(*MRSK.app.current_running_version).strip }
+  end
+
+  def stale_versions(host:, role:)
+    stale_versions = nil
+    on(host) do
+      stale_versions = \
+        capture_with_info(*MRSK.app(role: role).list_versions, raise_on_non_zero_exit: false)
+        .split("\n")
+        .drop(1)
+    end
+    stale_versions
   end
 
   private
