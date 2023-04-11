@@ -97,8 +97,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
   def list_versions(*docker_args, status: nil)
     pipe \
       docker(:ps, *filter_args(status: status), *docker_args, "--format", '"{{.Names}}"'),
-      # Extract SHA from "service-role-dest-SHA"
-      %(grep -oE "\\-[^-]+$"), 
+      %(grep -oE "\\-[^-]+$"), # Extract SHA from "service-role-dest-SHA"
       %(cut -c 2-)
   end
 

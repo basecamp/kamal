@@ -8,13 +8,13 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
 
         cli = self
 
-        MRSK.hosts.each do |host|
+        on(MRSK.hosts) do |host|
           roles = MRSK.roles_on(host)
 
           roles.each do |role|
-            on(host) do
-              execute *MRSK.auditor(role: role).record("Booted app version #{version}"), verbosity: :debug
+            execute *MRSK.auditor(role: role).record("Booted app version #{version}"), verbosity: :debug
 
+            begin
               if capture_with_info(*MRSK.app(role: role).container_id_for_version(version)).present?
                 tmp_version = "#{version}_#{SecureRandom.hex(8)}"
                 info "Renaming container #{version} to #{tmp_version} as already deployed on #{host}"
@@ -22,16 +22,10 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
                 execute *MRSK.app(role: role).rename_container(version: version, new_version: tmp_version)
               end
 
+              old_version = capture_with_info(*MRSK.app(role: role).current_running_version, raise_on_non_zero_exit: false).strip
               execute *MRSK.app(role: role).run
               sleep MRSK.config.readiness_delay
-            end
-
-            old_versions = list_versions(host: host, role: role, only_old: true)
-            old_versions.each do |old_version|
-              on(host) do
-                info "Stopping old container with version #{old_version}"
-                execute *MRSK.app(role: role).stop(version: old_version), raise_on_non_zero_exit: false
-              end
+              execute *MRSK.app(role: role).stop(version: old_version), raise_on_non_zero_exit: false if old_version.present?
             end
           end
         end
@@ -54,20 +48,14 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
   end
 
   desc "stop", "Stop app container on servers"
-  option :only_old, aliases: "-o", type: :boolean, default: false, desc: "Stop only old versions containers"
   def stop
     with_lock do
-      MRSK.hosts.each do |host|
+      on(MRSK.hosts) do |host|
         roles = MRSK.roles_on(host)
 
         roles.each do |role|
-          audit_record = options[:only_old] ? "Stopped old containers" : "Stopped app"
-          on(host) { execute *MRSK.auditor(role: role).record(audit_record), verbosity: :debug }
-
-          versions = list_versions(host: host, role: role, only_old: options[:only_old])
-          versions.each do |version|
-            on(host) { execute *MRSK.app(role: role).stop(version: version), raise_on_non_zero_exit: false }
-          end
+          execute *MRSK.auditor(role: role).record("Stopped app"), verbosity: :debug
+          execute *MRSK.app(role: role).stop, raise_on_non_zero_exit: false
         end
       end
     end
@@ -134,6 +122,35 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
   desc "containers", "Show app containers on servers"
   def containers
     on(MRSK.hosts) { |host| puts_by_host host, capture_with_info(*MRSK.app.list_containers) }
+  end
+
+  desc "stale_containers", "Detect app stale containers"
+  option :stop, aliases: "-s", type: :boolean, default: false, desc: "Stop the stale containers found."
+  def stale_containers
+    with_lock do
+      stop = options[:stop]
+
+      on(MRSK.hosts) do |host|
+        roles = MRSK.roles_on(host)
+
+        roles.each do |role|
+          stale_versions = \
+            capture_with_info(*MRSK.app(role: role).list_versions, raise_on_non_zero_exit: false)
+            .split("\n")
+            .map(&:strip)
+            .drop(1)
+
+          stale_versions.each do |version|
+            if stop
+              puts_by_host host, "Stopping stale container with version #{version}"
+              execute *MRSK.app(role: role).stop(version: version), raise_on_non_zero_exit: false
+            else
+              puts_by_host host,  "Detected stale container with version #{version} (use `mrsk app stale_containers --stop` to stop)"
+            end
+          end
+        end
+      end
+    end
   end
 
   desc "images", "Show app images on servers"
@@ -247,13 +264,9 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
     end
 
     def current_running_version(host: MRSK.primary_host)
-      list_versions(host: host, status: :running).shift.presence
-    end
-
-    def list_versions(host:, role: nil, status: nil, only_old: false)
-      versions = nil
-      on(host) { versions = capture_with_info(*MRSK.app(role: role).list_versions(status: status), raise_on_non_zero_exit: false).split("\n").map(&:strip) }
-      only_old ? versions.drop(1) : versions
+      version = nil
+      on(host) { version = capture_with_info(*MRSK.app.current_running_version).strip }
+      version.presence
     end
 
     def version_or_latest
