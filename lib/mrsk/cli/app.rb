@@ -134,13 +134,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
         roles = MRSK.roles_on(host)
 
         roles.each do |role|
-          stale_versions = \
-            capture_with_info(*MRSK.app(role: role).list_versions, raise_on_non_zero_exit: false)
-            .split("\n")
-            .map(&:strip)
-            .drop(1)
-
-          stale_versions.each do |version|
+          stale_versions(role: role).each do |version|
             if stop
               puts_by_host host, "Stopping stale container for role #{role} with version #{version}"
               execute *MRSK.app(role: role).stop(version: version), raise_on_non_zero_exit: false
