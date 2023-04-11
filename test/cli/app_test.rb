@@ -50,7 +50,7 @@ class CliAppTest < CliTestCase
       .returns("12345678\n87654321")
 
     run_command("stale_containers").tap do |output|
-      assert_match /Detected stale container with version 87654321/, output
+      assert_match /Detected stale container for role web with version 87654321/, output
     end
   end
 
@@ -60,7 +60,7 @@ class CliAppTest < CliTestCase
       .returns("12345678\n87654321")
 
     run_command("stale_containers", "--stop").tap do |output|
-      assert_match /Stopping stale container with version 87654321/, output
+      assert_match /Stopping stale container for role web with version 87654321/, output
       assert_match /#{Regexp.escape("docker container ls --all --filter name=^app-web-87654321$ --quiet | xargs docker stop")}/, output
     end
   end

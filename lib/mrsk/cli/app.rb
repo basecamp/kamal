@@ -142,10 +142,10 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
 
           stale_versions.each do |version|
             if stop
-              puts_by_host host, "Stopping stale container with version #{version}"
+              puts_by_host host, "Stopping stale container for role #{role} with version #{version}"
               execute *MRSK.app(role: role).stop(version: version), raise_on_non_zero_exit: false
             else
-              puts_by_host host,  "Detected stale container with version #{version} (use `mrsk app stale_containers --stop` to stop)"
+              puts_by_host host,  "Detected stale container for role #{role} with version #{version} (use `mrsk app stale_containers --stop` to stop)"
             end
           end
         end
