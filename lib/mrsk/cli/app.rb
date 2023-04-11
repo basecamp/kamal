@@ -244,15 +244,17 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
     on(MRSK.hosts) { |host| puts_by_host host, capture_with_info(*MRSK.app.current_running_version).strip }
   end
 
-  def stale_versions(host:, role:)
-    stale_versions = nil
-    on(host) do
-      stale_versions = \
-        capture_with_info(*MRSK.app(role: role).list_versions, raise_on_non_zero_exit: false)
-        .split("\n")
-        .drop(1)
+  no_commands do
+    def stale_versions(host:, role:)
+      stale_versions = nil
+      on(host) do
+        stale_versions = \
+          capture_with_info(*MRSK.app(role: role).list_versions, raise_on_non_zero_exit: false)
+          .split("\n")
+          .drop(1)
+      end
+      stale_versions
     end
-    stale_versions
   end
 
   private
