@@ -529,13 +529,13 @@ traefik:
 
 This starts the Traefik container with `--volume /tmp/example.json:/tmp/example.json --publish 8080:8080 --memory 512m` arguments to `docker run`.
 
-### Traefik container lables
+### Traefik container labels
 
 Add labels to Traefik Docker container.
 
 ```yaml
 traefik:
-  lables:
+  labels:
     traefik.enable: true
     traefik.http.routers.dashboard.rule: Host(`traefik.example.com`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))
     traefik.http.routers.dashboard.service: api@internal
