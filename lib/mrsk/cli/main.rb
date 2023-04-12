@@ -77,21 +77,26 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
     with_lock do
       MRSK.config.version = version
 
-      if container_name_available?(MRSK.config.service_with_version)
+      if container_available?(version)
         say "Start version #{version}, then wait #{MRSK.config.readiness_delay}s for app to boot before stopping the old version...", :magenta
 
         cli = self
         old_version = nil
 
         on(MRSK.hosts) do |host|
-          old_version = capture_with_info(*MRSK.app.current_running_version).strip.presence
+          roles = MRSK.roles_on(host)
 
-          execute *MRSK.app.start
+          roles.each do |role|
+            app = MRSK.app(role: role)
+            old_version = capture_with_info(*app.current_running_version).strip.presence
 
-          if old_version
-            sleep MRSK.config.readiness_delay
+            execute *app.start
 
-            execute *MRSK.app.stop(version: old_version), raise_on_non_zero_exit: false
+            if old_version
+              sleep MRSK.config.readiness_delay
+
+              execute *app.stop(version: old_version), raise_on_non_zero_exit: false
+            end
           end
         end
 
@@ -214,10 +219,15 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
   subcommand "lock", Mrsk::Cli::Lock
 
   private
-    def container_name_available?(container_name, host: MRSK.primary_host)
-      container_names = nil
-      on(host) { container_names = capture_with_info(*MRSK.app.list_container_names).split("\n") }
-      Array(container_names).include?(container_name)
+    def container_available?(version, host: MRSK.primary_host)
+      available = nil
+
+      on(host) do
+        first_role = MRSK.roles_on(host).first
+        available = capture_with_info(*MRSK.app(role: first_role).container_id_for_version(version)).present?
+      end
+
+      available
     end
 
     def deploy_options

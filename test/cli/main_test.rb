@@ -120,32 +120,34 @@ class CliMainTest < CliTestCase
   end
 
   test "rollback bad version" do
+    # Mrsk::Cli::Main.any_instance.stubs(:container_available?).returns(false)
     run_command("details") # Preheat MRSK const
 
     run_command("rollback", "nonsense").tap do |output|
-      assert_match /docker container ls --all --filter label=service=app --format '{{ .Names }}'/, output
+      assert_match /docker container ls --all --filter name=\^app-web-nonsense\$ --quiet/, output
       assert_match /The app version 'nonsense' is not available as a container/, output
     end
   end
 
   test "rollback good version" do
-    Mrsk::Cli::Main.any_instance.stubs(:container_name_available?).returns(true)
-    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info).with(:docker, :ps, "--filter", "label=service=app", "--format", "\"{{.Names}}\"", "|", "sed 's/-/\\n/g'", "|", "tail -n 1").returns("version-to-rollback\n").at_least_once
+    Mrsk::Cli::Main.any_instance.stubs(:container_available?).returns(true)
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info).with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=web", "--format", "\"{{.Names}}\"", "|", "sed 's/-/\\n/g'", "|", "tail -n 1").returns("version-to-rollback\n").at_least_once
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info).with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=workers", "--format", "\"{{.Names}}\"", "|", "sed 's/-/\\n/g'", "|", "tail -n 1").returns("version-to-rollback\n").at_least_once
 
     run_command("rollback", "123", config_file: "deploy_with_accessories").tap do |output|
       assert_match "Start version 123", output
-      assert_match "docker start app-123", output
-      assert_match "docker container ls --all --filter name=^app-version-to-rollback$ --quiet | xargs docker stop", output, "Should stop the container that was previously running"
+      assert_match "docker start app-web-123", output
+      assert_match "docker container ls --all --filter name=^app-web-version-to-rollback$ --quiet | xargs docker stop", output, "Should stop the container that was previously running"
     end
   end
 
   test "rollback without old version" do
-    Mrsk::Cli::Main.any_instance.stubs(:container_name_available?).returns(true)
-    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info).with(:docker, :ps, "--filter", "label=service=app", "--format", "\"{{.Names}}\"", "|", "sed 's/-/\\n/g'", "|", "tail -n 1").returns("").at_least_once
+    Mrsk::Cli::Main.any_instance.stubs(:container_available?).returns(true)
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info).with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=web", "--format", "\"{{.Names}}\"", "|", "sed 's/-/\\n/g'", "|", "tail -n 1").returns("").at_least_once
 
     run_command("rollback", "123").tap do |output|
       assert_match "Start version 123", output
-      assert_match "docker start app-123", output
+      assert_match "docker start app-web-123", output
       assert_no_match "docker stop", output
     end
   end
