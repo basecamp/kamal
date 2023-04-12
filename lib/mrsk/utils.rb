@@ -1,6 +1,8 @@
 module Mrsk::Utils
   extend self
 
+  DOLLAR_SIGN_WITHOUT_SHELL_EXPANSION_REGEX = /\$(?!{[^\}]*\})/
+
   # Return a list of escaped shell arguments using the same named argument against the passed attributes (hash or array).
   def argumentize(argument, attributes, sensitive: false)
     Array(attributes).flat_map do |key, value|
@@ -75,7 +77,9 @@ module Mrsk::Utils
 
   # Escape a value to make it safe for shell use.
   def escape_shell_value(value)
-    value.to_s.dump.gsub(/`/, '\\\\`')
+    value.to_s.dump
+      .gsub(/`/, '\\\\`')
+      .gsub(DOLLAR_SIGN_WITHOUT_SHELL_EXPANSION_REGEX, '\$')
   end
 
   # Abbreviate a git revhash for concise display
