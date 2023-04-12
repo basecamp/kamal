@@ -136,7 +136,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
         roles = MRSK.roles_on(host)
 
         roles.each do |role|
-          cli.stale_versions(host: host, role: role).each do |version|
+          cli.send(:stale_versions, host: host, role: role).each do |version|
             if stop
               puts_by_host host, "Stopping stale container for role #{role} with version #{version}"
               execute *MRSK.app(role: role).stop(version: version), raise_on_non_zero_exit: false
@@ -244,19 +244,6 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
     on(MRSK.hosts) { |host| puts_by_host host, capture_with_info(*MRSK.app.current_running_version).strip }
   end
 
-  no_commands do
-    def stale_versions(host:, role:)
-      versions = nil
-      on(host) do
-        versions = \
-          capture_with_info(*MRSK.app(role: role).list_versions, raise_on_non_zero_exit: false)
-          .split("\n")
-          .drop(1)
-      end
-      versions
-    end
-  end
-
   private
     def using_version(new_version)
       if new_version
@@ -276,6 +263,17 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
       version = nil
       on(host) { version = capture_with_info(*MRSK.app.current_running_version).strip }
       version.presence
+    end
+
+    def stale_versions(host:, role:)
+      versions = nil
+      on(host) do
+        versions = \
+          capture_with_info(*MRSK.app(role: role).list_versions, raise_on_non_zero_exit: false)
+          .split("\n")
+          .drop(1)
+      end
+      versions
     end
 
     def version_or_latest
