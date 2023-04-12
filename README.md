@@ -331,6 +331,21 @@ servers:
       my-label: "50"
 ```
 
+### Using shell expansion
+
+You can use shell expansion to interpolate values from the host machine into labels and env variables with the `${}` syntax.
+Anything within the curly braces will be executed on the host machine and the result will be interpolated into the label or env variable.
+
+```yaml
+labels:
+  host-machine: "${cat /etc/hostname}"
+
+env:
+  HOST_DEPLOYMENT_DIR: "${PWD}"
+```
+
+Note: Any other occurrence of `$` will be escaped to prevent unwanted shell expansion!
+
 ### Using container options
 
 You can specialize the options used to start containers using the `options` definitions:
@@ -521,11 +536,11 @@ Add labels to Traefik Docker container.
 ```yaml
 traefik:
   labels:
-    - traefik.enable: true
-    - traefik.http.routers.dashboard.rule: Host(`traefik.example.com`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))
-    - traefik.http.routers.dashboard.service: api@internal
-    - traefik.http.routers.dashboard.middlewares: auth
-    - traefik.http.middlewares.auth.basicauth.users: test:$2y$05$H2o72tMaO.TwY1wNQUV1K.fhjRgLHRDWohFvUZOJHBEtUXNKrqUKi # test:password
+    traefik.enable: true
+    traefik.http.routers.dashboard.rule: Host(`traefik.example.com`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))
+    traefik.http.routers.dashboard.service: api@internal
+    traefik.http.routers.dashboard.middlewares: auth
+    traefik.http.middlewares.auth.basicauth.users: test:$2y$05$H2o72tMaO.TwY1wNQUV1K.fhjRgLHRDWohFvUZOJHBEtUXNKrqUKi # test:password
 ```
 
 This labels Traefik container with `--label traefik.http.routers.dashboard.middlewares=\"auth\"` and so on.
