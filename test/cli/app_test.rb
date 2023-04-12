@@ -6,6 +6,7 @@ class CliAppTest < CliTestCase
     SSHKit::Backend::Abstract.any_instance.stubs(:capture).returns("123") # old version
 
     run_command("boot").tap do |output|
+      assert_match "docker tag dhh/app:latest dhh/app:latest", output
       assert_match "docker run --detach --restart unless-stopped", output
       assert_match "docker container ls --all --filter name=^app-web-123$ --quiet | xargs docker stop", output
     end

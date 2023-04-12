@@ -2,11 +2,12 @@ require "active_support/core_ext/enumerable"
 require "active_support/core_ext/module/delegation"
 
 class Mrsk::Commander
-  attr_accessor :verbosity, :lock_count
+  attr_accessor :verbosity, :holding_lock, :hold_lock_on_error
 
   def initialize
     self.verbosity = :info
-    self.lock_count = 0
+    self.holding_lock = false
+    self.hold_lock_on_error = false
   end
 
   def config
@@ -113,6 +114,14 @@ class Mrsk::Commander
   ensure
     self.verbosity = old_level
     SSHKit.config.output_verbosity = old_level
+  end
+
+  def holding_lock?
+    self.holding_lock
+  end
+
+  def hold_lock_on_error?
+    self.hold_lock_on_error
   end
 
   private
