@@ -19,14 +19,14 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
           roles.each do |role|
             execute *MRSK.auditor(role: role).record("Booted app version #{version}"), verbosity: :debug
 
-            if capture_with_info(*MRSK.app(role: role).container_id_for_version(version)).present?
+            if capture_with_info(*MRSK.app(role: role).container_id_for_version(version), raise_on_non_zero_exit: false).present?
               tmp_version = "#{version}_#{SecureRandom.hex(8)}"
               info "Renaming container #{version} to #{tmp_version} as already deployed on #{host}"
               execute *MRSK.auditor(role: role).record("Renaming container #{version} to #{tmp_version}"), verbosity: :debug
               execute *MRSK.app(role: role).rename_container(version: version, new_version: tmp_version)
             end
 
-            old_version = capture_with_info(*MRSK.app(role: role).current_running_version).strip
+            old_version = capture_with_info(*MRSK.app(role: role).current_running_version, raise_on_non_zero_exit: false).strip
             execute *MRSK.app(role: role).run
             sleep MRSK.config.readiness_delay
             execute *MRSK.app(role: role).stop(version: old_version), raise_on_non_zero_exit: false if old_version.present?
@@ -125,6 +125,31 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
   desc "containers", "Show app containers on servers"
   def containers
     on(MRSK.hosts) { |host| puts_by_host host, capture_with_info(*MRSK.app.list_containers) }
+  end
+
+  desc "stale_containers", "Detect app stale containers"
+  option :stop, aliases: "-s", type: :boolean, default: false, desc: "Stop the stale containers found"
+  def stale_containers
+    with_lock do
+      stop = options[:stop]
+
+      cli = self
+
+      on(MRSK.hosts) do |host|
+        roles = MRSK.roles_on(host)
+
+        roles.each do |role|
+          cli.send(:stale_versions, host: host, role: role).each do |version|
+            if stop
+              puts_by_host host, "Stopping stale container for role #{role} with version #{version}"
+              execute *MRSK.app(role: role).stop(version: version), raise_on_non_zero_exit: false
+            else
+              puts_by_host host,  "Detected stale container for role #{role} with version #{version} (use `mrsk app stale_containers --stop` to stop)"
+            end
+          end
+        end
+      end
+    end
   end
 
   desc "images", "Show app images on servers"
@@ -241,6 +266,17 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
       version = nil
       on(host) { version = capture_with_info(*MRSK.app.current_running_version).strip }
       version.presence
+    end
+
+    def stale_versions(host:, role:)
+      versions = nil
+      on(host) do
+        versions = \
+          capture_with_info(*MRSK.app(role: role).list_versions, raise_on_non_zero_exit: false)
+          .split("\n")
+          .drop(1)
+      end
+      versions
     end
 
     def version_or_latest

@@ -37,6 +37,9 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
         say "Ensure app can pass healthcheck...", :magenta
         invoke "mrsk:cli:healthcheck:perform", [], invoke_options
 
+        say "Detect stale containers...", :magenta
+        invoke "mrsk:cli:app:stale_containers", [], invoke_options
+
         hold_lock_on_error do
           invoke "mrsk:cli:app:boot", [], invoke_options
         end
@@ -66,6 +69,9 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
 
         say "Ensure app can pass healthcheck...", :magenta
         invoke "mrsk:cli:healthcheck:perform", [], invoke_options
+
+        say "Detect stale containers...", :magenta
+        invoke "mrsk:cli:app:stale_containers", [], invoke_options
 
         hold_lock_on_error do
           invoke "mrsk:cli:app:boot", [], invoke_options
