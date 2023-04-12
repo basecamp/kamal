@@ -35,7 +35,7 @@ class Mrsk::Commander
   end
 
   def primary_host
-    specific_hosts&.first || config.primary_web_host
+    specific_hosts&.first || specific_roles&.first&.primary_host || config.primary_web_host
   end
 
   def roles
