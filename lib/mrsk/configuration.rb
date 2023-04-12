@@ -143,6 +143,8 @@ class Mrsk::Configuration
     if raw_config.ssh.present? && raw_config.ssh["proxy"]
       Net::SSH::Proxy::Jump.new \
         raw_config.ssh["proxy"].include?("@") ? raw_config.ssh["proxy"] : "root@#{raw_config.ssh["proxy"]}"
+    elsif raw_config.ssh.present? && raw_config.ssh["proxy_command"]
+      Net::SSH::Proxy::Command.new(raw_config.ssh["proxy_command"])
     end
   end
 
@@ -156,7 +158,7 @@ class Mrsk::Configuration
   end
 
   def healthcheck
-    { "path" => "/up", "port" => 3000 }.merge(raw_config.healthcheck || {})
+    { "path" => "/up", "port" => 3000, "max_attempts" => 7 }.merge(raw_config.healthcheck || {})
   end
 
   def readiness_delay

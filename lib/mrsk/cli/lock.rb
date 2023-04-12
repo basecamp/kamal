@@ -12,7 +12,7 @@ class Mrsk::Cli::Lock < Mrsk::Cli::Base
     message = options[:message]
     handle_missing_lock do
       on(MRSK.primary_host) { execute *MRSK.lock.acquire(message, MRSK.config.version) }
-      say "Set the deploy lock"
+      say "Acquired the deploy lock"
     end
   end
 
@@ -20,7 +20,7 @@ class Mrsk::Cli::Lock < Mrsk::Cli::Base
   def release
     handle_missing_lock do
       on(MRSK.primary_host) { execute *MRSK.lock.release }
-      say "Removed the deploy lock"
+      say "Released the deploy lock"
     end
   end
 

@@ -57,6 +57,46 @@ class CliMainTest < CliTestCase
     end
   end
 
+  test "deploy when locked" do
+    Thread.report_on_exception = false
+
+    SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+      .with { |*arg| arg[0..1] == [:mkdir, :mrsk_lock] }
+      .raises(RuntimeError, "mkdir: cannot create directory ‘mrsk_lock’: File exists")
+
+    Mrsk::Cli::Base.any_instance.expects(:invoke).with("mrsk:cli:lock:status", [])
+
+    assert_raises(Mrsk::Cli::LockError) do
+      run_command("deploy")
+    end
+  end
+
+  test "deploy error when locking" do
+    Thread.report_on_exception = false
+
+    SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+      .with { |*arg| arg[0..1] == [:mkdir, :mrsk_lock] }
+      .raises(SocketError, "getaddrinfo: nodename nor servname provided, or not known")
+
+    assert_raises(SSHKit::Runner::ExecuteError) do
+      run_command("deploy")
+    end
+  end
+
+  test "deploy errors leave lock in place" do
+    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "skip_broadcast" => false, "version" => "999" }
+
+    Mrsk::Cli::Main.any_instance.expects(:invoke)
+      .with("mrsk:cli:server:bootstrap", [], invoke_options)
+      .raises(RuntimeError)
+
+    assert_equal 0, MRSK.lock_count
+    assert_raises(RuntimeError) do
+      stderred { run_command("deploy") }
+    end
+    assert_equal 1, MRSK.lock_count
+  end
+
   test "redeploy" do
     invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "skip_broadcast" => false, "version" => "999" }
 
@@ -86,32 +126,34 @@ class CliMainTest < CliTestCase
   end
 
   test "rollback bad version" do
+    # Mrsk::Cli::Main.any_instance.stubs(:container_available?).returns(false)
     run_command("details") # Preheat MRSK const
 
     run_command("rollback", "nonsense").tap do |output|
-      assert_match /docker container ls --all --filter label=service=app --format '{{ .Names }}'/, output
+      assert_match /docker container ls --all --filter name=\^app-web-nonsense\$ --quiet/, output
       assert_match /The app version 'nonsense' is not available as a container/, output
     end
   end
 
   test "rollback good version" do
-    Mrsk::Cli::Main.any_instance.stubs(:container_name_available?).returns(true)
-    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info).with(:docker, :ps, "--filter", "label=service=app", "--filter", "status=running", "--latest", "--format", "\"{{.Names}}\"", "|", "grep -oE \"\\-[^-]+$\"", "|", "cut -c 2-").returns("version-to-rollback\n").at_least_once
+    Mrsk::Cli::Main.any_instance.stubs(:container_available?).returns(true)
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info).with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=web", "--filter", "status=running", "--latest", "--format", "\"{{.Names}}\"", "|", "grep -oE \"\\-[^-]+$\"", "|", "cut -c 2-").returns("version-to-rollback\n").at_least_once
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info).with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=workers", "--filter", "status=running", "--latest", "--format", "\"{{.Names}}\"", "|", "grep -oE \"\\-[^-]+$\"", "|", "cut -c 2-").returns("version-to-rollback\n").at_least_once
 
     run_command("rollback", "123", config_file: "deploy_with_accessories").tap do |output|
       assert_match "Start version 123", output
-      assert_match "docker start app-123", output
-      assert_match "docker container ls --all --filter name=^app-version-to-rollback$ --quiet | xargs docker stop", output, "Should stop the container that was previously running"
+      assert_match "docker start app-web-123", output
+      assert_match "docker container ls --all --filter name=^app-web-version-to-rollback$ --quiet | xargs docker stop", output, "Should stop the container that was previously running"
     end
   end
 
   test "rollback without old version" do
-    Mrsk::Cli::Main.any_instance.stubs(:container_name_available?).returns(true)
-    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info).with(:docker, :ps, "--filter", "label=service=app", "--filter", "status=running", "--latest", "--format", "\"{{.Names}}\"", "|", "grep -oE \"\\-[^-]+$\"", "|", "cut -c 2-").returns("").at_least_once
+    Mrsk::Cli::Main.any_instance.stubs(:container_available?).returns(true)
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info).with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=web", "--filter", "status=running", "--latest", "--format", "\"{{.Names}}\"", "|", "grep -oE \"\\-[^-]+$\"", "|", "cut -c 2-").returns("").at_least_once
 
     run_command("rollback", "123").tap do |output|
       assert_match "Start version 123", output
-      assert_match "docker start app-123", output
+      assert_match "docker start app-web-123", output
       assert_no_match "docker stop", output
     end
   end

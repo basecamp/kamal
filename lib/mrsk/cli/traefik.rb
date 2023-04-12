@@ -2,7 +2,10 @@ class Mrsk::Cli::Traefik < Mrsk::Cli::Base
   desc "boot", "Boot Traefik on servers"
   def boot
     with_lock do
-      on(MRSK.traefik_hosts) { execute *MRSK.traefik.run, raise_on_non_zero_exit: false }
+      on(MRSK.traefik_hosts) do
+        execute *MRSK.registry.login
+        execute *MRSK.traefik.run, raise_on_non_zero_exit: false
+      end
     end
   end
 

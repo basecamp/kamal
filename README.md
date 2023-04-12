@@ -6,6 +6,8 @@ Watch the screencast: https://www.youtube.com/watch?v=LL1cV2FXZ5I
 
 Join us on Discord: https://discord.gg/YgHVT7GCXS
 
+Ask questions: https://github.com/mrsked/mrsk/discussions
+
 ## Installation
 
 If you have a Ruby environment available, you can install MRSK globally with:
@@ -14,13 +16,13 @@ If you have a Ruby environment available, you can install MRSK globally with:
 gem install mrsk
 ```
 
-...otherwise, you can run a dockerized version via an alias (add this to your ${SHELL}rc to simplify re-use):
+...otherwise, you can run a dockerized version via an alias (add this to your .bashrc or similar to simplify re-use):
 
 ```sh
 alias mrsk='docker run --rm -it -v $HOME/.ssh:/root/.ssh -v /var/run/docker.sock:/var/run/docker.sock -v ${PWD}/:/workdir  ghcr.io/mrsked/mrsk'
 ```
 
-Then, inside your app directory, run `mrsk init` (or `mrsk init --bundle` within Rails apps where you want a bin/mrsk binstub). Now edit the new file `config/deploy.yml`. It could look as simple as this:
+Then, inside your app directory, run `mrsk init` (or `mrsk init --bundle` within Rails 7+ apps where you want a bin/mrsk binstub). Now edit the new file `config/deploy.yml`. It could look as simple as this:
 
 ```yaml
 service: hey
@@ -191,6 +193,15 @@ ssh:
   user: app
 ```
 
+If you are using non-root user, you need to bootstrap your servers manually, before using them with MRSK. On Ubuntu, you'd do:
+
+```bash
+sudo apt update
+sudo apt upgrade -y
+sudo apt install -y docker.io curl git
+sudo usermod -a -G docker ubuntu
+```
+
 ### Using a proxy SSH host
 
 If you need to connect to server through a proxy host, you can use `ssh/proxy`:
@@ -205,6 +216,13 @@ Or with specific user:
 ```yaml
 ssh:
   proxy: "app@192.168.0.1"
+```
+
+Also if you need specific proxy command to connect to the server:
+
+```yaml
+ssh:
+  proxy_command: aws ssm start-session --target %h --document-name AWS-StartSSHSession --parameters 'portNumber=%p' --region=us-east-1 ## ssh via aws ssm
 ```
 
 ### Using env variables
@@ -288,8 +306,9 @@ You can specialize the default Traefik rules by setting labels on the containers
 
 ```yaml
 labels:
-  traefik.http.routers.hey.rule: Host(`app.hey.com`)
+  traefik.http.routers.hey-web.rule: Host(`app.hey.com`)
 ```
+Traefik rules are in the "service-role-destination" format. The default role will be `web` if no rule is specified. If the destination is not specified, it is not included. To give an example, the above rule would become "traefik.http.routers.hey-web.rule" if it was for the "staging" destination.
 
 Note: The backticks are needed to ensure the rule is passed in correctly and not treated as command substitution by Bash!
 
@@ -439,9 +458,9 @@ RUN --mount=type=secret,id=GITHUB_TOKEN \
   rm -rf /usr/local/bundle/cache
 ```
 
-### Using command arguments for Traefik
+### Traefik command arguments
 
-You can customize the traefik command line:
+Customize the Traefik command line using `args`:
 
 ```yaml
 traefik:
@@ -450,20 +469,38 @@ traefik:
     accesslog.format: json
 ```
 
-This will start the traefik container with `--accesslog=true accesslog.format=json`.
+This starts the Traefik container with `--accesslog=true --accesslog.format=json` arguments.
 
-### Traefik's host port binding
+### Traefik host port binding
 
-By default Traefik binds to port 80 of the host machine, it can be configured to use an alternative port:
+Traefik binds to port 80 by default. Specify an alternative port using `host_port`:
 
 ```yaml
 traefik:
   host_port: 8080
 ```
 
-### Configure docker options for traefik
+### Traefik version, upgrades, and custom images
 
-We allow users to pass additional docker options to the trafik container like
+MRSK runs the traefik:v2.9 image to track Traefik 2.9.x releases.
+
+To pin Traefik to a specific version or an image published to your registry,
+specify `image`:
+
+```yaml
+traefik:
+  image: traefik:v2.10.0-rc1
+```
+
+This is useful for downgrading Traefik if there's an unexpected breaking
+change in a minor version release, upgrading Traefik to test forthcoming
+releases, or running your own Traefik-derived image.
+
+MRSK has not been tested for compatibility with Traefik 3 betas. Please do!
+
+### Traefik container configuration
+
+Pass additional Docker configuration for the Traefik container using `options`:
 
 ```yaml
 traefik:
@@ -475,12 +512,27 @@ traefik:
     memory: 512m
 ```
 
-This will start the traefik container with a command like: `docker run ... --volume /tmp/example.json:/tmp/example.json --publish 8080:8080 `
+This starts the Traefik container with `--volume /tmp/example.json:/tmp/example.json --publish 8080:8080 --memory 512m` arguments to `docker run`.
 
+### Traefik container lables
 
-### Configure alternate entrypoints for traefik
+Add labels to Traefik Docker container.
 
-You can configure multiple entrypoints for traefik like so:
+```yaml
+traefik:
+  lables:
+    - traefik.enable: true
+    - traefik.http.routers.dashboard.rule: Host(`traefik.example.com`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))
+    - traefik.http.routers.dashboard.service: api@internal
+    - traefik.http.routers.dashboard.middlewares: auth
+    - traefik.http.middlewares.auth.basicauth.users: test:$2y$05$H2o72tMaO.TwY1wNQUV1K.fhjRgLHRDWohFvUZOJHBEtUXNKrqUKi # test:password
+```
+
+This labels Traefik container with `--label traefik.http.routers.dashboard.middlewares=\"auth\"` and so on.
+
+### Traefik alternate entrypoints
+
+You can configure multiple entrypoints for Traefik like so:
 
 ```yaml
 service: myservice
@@ -540,7 +592,7 @@ accessories:
       memory: "2GB"
   redis:
     image: redis:latest
-    role:
+    roles:
       - web
     port: "36379:6379"
     volumes:
@@ -610,17 +662,20 @@ That'll post a line like follows to a preconfigured chatbot in Basecamp:
 [My App] [dhh] Rolled back to version d264c4e92470ad1bd18590f04466787262f605de
 ```
 
-### Using custom healthcheck path or port
+### Custom healthcheck
 
-MRSK defaults to checking the health of your application again `/up` on port 3000. You can tailor both with the `healthcheck` setting:
+MRSK defaults to checking the health of your application again `/up` on port 3000 up to 7 times. You can tailor the behaviour with the `healthcheck` setting:
 
 ```yaml
 healthcheck:
   path: /healthz
   port: 4000
+  max_attempts: 7
 ```
 
 This will ensure your application is configured with a traefik label for the healthcheck against `/healthz` and that the pre-deploy healthcheck that MRSK performs is done against the same path on port 4000.
+
+The healthcheck also allows for an optional `max_attempts` setting, which will attempt the healthcheck up to the specified number of times before failing the deploy. This is useful for applications that take a while to start up. The default is 7.
 
 ## Commands
 
