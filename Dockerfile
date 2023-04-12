@@ -14,7 +14,7 @@ COPY Gemfile Gemfile.lock mrsk.gemspec ./
 COPY lib/mrsk/version.rb /mrsk/lib/mrsk/version.rb
 
 # Install system dependencies
-RUN apk add --no-cache --update build-base git docker openrc \
+RUN apk add --no-cache --update build-base git docker openrc openssh-client-default \
     && rc-update add docker boot \
     && gem install bundler --version=2.4.3 \
     && bundle install
