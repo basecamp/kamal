@@ -540,7 +540,7 @@ accessories:
       memory: "2GB"
   redis:
     image: redis:latest
-    role:
+    roles:
       - web
     port: "36379:6379"
     volumes:
