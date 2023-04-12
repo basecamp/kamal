@@ -131,6 +131,10 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
     docker :image, :prune, "--all", "--force", *filter_args
   end
 
+  def tag_current_as_latest
+    docker :tag, config.absolute_image, config.latest_image
+  end
+
 
   private
     def container_name(version = nil)

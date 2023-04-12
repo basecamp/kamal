@@ -77,22 +77,32 @@ module Mrsk::Cli
       end
 
       def with_lock
-        acquire_lock
+        if MRSK.holding_lock?
+          yield
+        else
+          acquire_lock
 
-        yield
+          begin
+            yield
+          rescue
+            if MRSK.hold_lock_on_error?
+              error "  \e[31mDeploy lock was not released\e[0m"
+            else
+              release_lock
+            end
 
-        release_lock
-      rescue
-        error "  \e[31mDeploy lock was not released\e[0m" if MRSK.lock_count > 0
-        raise
+            raise
+          end
+
+          release_lock
+        end
       end
 
       def acquire_lock
-        if MRSK.lock_count == 0
-          say "Acquiring the deploy lock"
-          on(MRSK.primary_host) { execute *MRSK.lock.acquire("Automatic deploy lock", MRSK.config.version) }
-        end
-        MRSK.lock_count += 1
+        say "Acquiring the deploy lock"
+        on(MRSK.primary_host) { execute *MRSK.lock.acquire("Automatic deploy lock", MRSK.config.version) }
+
+        MRSK.holding_lock = true
       rescue SSHKit::Runner::ExecuteError => e
         if e.message =~ /cannot create directory/
           invoke "mrsk:cli:lock:status", []
@@ -103,10 +113,19 @@ module Mrsk::Cli
       end
 
       def release_lock
-        MRSK.lock_count -= 1
-        if MRSK.lock_count == 0
-          say "Releasing the deploy lock"
-          on(MRSK.primary_host) { execute *MRSK.lock.release }
+        say "Releasing the deploy lock"
+        on(MRSK.primary_host) { execute *MRSK.lock.release }
+
+        MRSK.holding_lock = false
+      end
+
+      def hold_lock_on_error
+        if MRSK.hold_lock_on_error?
+          yield
+        else
+          MRSK.hold_lock_on_error = true
+          yield
+          MRSK.hold_lock_on_error = false
         end
       end
   end

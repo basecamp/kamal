@@ -7,7 +7,6 @@ class Mrsk::Commands::Builder::Base < Mrsk::Commands::Base
 
   def pull
     docker :pull, config.absolute_image
-    docker :pull, config.latest_image
   end
 
   def build_options

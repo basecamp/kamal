@@ -277,6 +277,12 @@ class CommandsAppTest < ActiveSupport::TestCase
       new_command.remove_images.join(" ")
   end
 
+  test "tag_current_as_latest" do
+    assert_equal \
+      "docker tag dhh/app:999 dhh/app:latest",
+      new_command.tag_current_as_latest.join(" ")
+  end
+
   private
     def new_command(role: "web")
       Mrsk::Commands::App.new(Mrsk::Configuration.new(@config, destination: @destination, version: "999"), role: role)

@@ -83,18 +83,36 @@ class CliMainTest < CliTestCase
     end
   end
 
-  test "deploy errors leave lock in place" do
+  test "deploy errors during critical section leave lock in place" do
+    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "skip_broadcast" => false, "version" => "999" }
+
+    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:server:bootstrap", [], invoke_options)
+    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:registry:login", [], invoke_options)
+    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:build:deliver", [], invoke_options)
+    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:app:stale_containers", [], invoke_options)
+    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:traefik:boot", [], invoke_options)
+    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:healthcheck:perform", [], invoke_options)
+    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:app:boot", [], invoke_options).raises(RuntimeError)
+
+    assert !MRSK.holding_lock?
+    assert_raises(RuntimeError) do
+      stderred { run_command("deploy") }
+    end
+    assert MRSK.holding_lock?
+  end
+
+  test "deploy errors during outside section leave remove lock" do
     invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "skip_broadcast" => false, "version" => "999" }
 
     Mrsk::Cli::Main.any_instance.expects(:invoke)
       .with("mrsk:cli:server:bootstrap", [], invoke_options)
       .raises(RuntimeError)
 
-    assert_equal 0, MRSK.lock_count
+    assert !MRSK.holding_lock?
     assert_raises(RuntimeError) do
       stderred { run_command("deploy") }
     end
-    assert_equal 1, MRSK.lock_count
+    assert !MRSK.holding_lock?
   end
 
   test "redeploy" do
@@ -142,6 +160,7 @@ class CliMainTest < CliTestCase
 
     run_command("rollback", "123", config_file: "deploy_with_accessories").tap do |output|
       assert_match "Start version 123", output
+      assert_match "docker tag dhh/app:123 dhh/app:latest", output
       assert_match "docker start app-web-123", output
       assert_match "docker container ls --all --filter name=^app-web-version-to-rollback$ --quiet | xargs docker stop", output, "Should stop the container that was previously running"
     end

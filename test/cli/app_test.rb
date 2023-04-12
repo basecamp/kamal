@@ -6,6 +6,7 @@ class CliAppTest < CliTestCase
     SSHKit::Backend::Abstract.any_instance.stubs(:capture).returns("123") # old version
 
     run_command("boot").tap do |output|
+      assert_match "docker tag dhh/app:latest dhh/app:latest", output
       assert_match "docker run --detach --restart unless-stopped", output
       assert_match "docker container ls --all --filter name=^app-web-123$ --quiet | xargs docker stop", output
     end
@@ -15,7 +16,7 @@ class CliAppTest < CliTestCase
     run_command("details") # Preheat MRSK const
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-latest$", "--quiet")
+      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-latest$", "--quiet", raise_on_non_zero_exit: false)
       .returns("12345678") # running version
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
