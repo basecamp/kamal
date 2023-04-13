@@ -73,7 +73,9 @@ module Mrsk::Cli
       end
 
       def audit_broadcast(line)
-        run_locally { execute *MRSK.auditor.broadcast(line), verbosity: :debug }
+        if broadcast = MRSK.auditor.broadcast(line)
+          system(MRSK.auditor.broadcast_environment(line), broadcast)
+        end
       end
 
       def with_lock

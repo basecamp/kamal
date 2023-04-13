@@ -22,6 +22,15 @@ class Mrsk::Commands::Auditor < Mrsk::Commands::Base
     end
   end
 
+  def broadcast_environment(line)
+    {
+      "MRSK_PERFORMER" => performer,
+      "MRSK_ROLE" => role,
+      "MRSK_DESTINATION" => config.destination,
+      "MRSK_EVENT" => line
+    }
+  end
+
   def reveal
     [ :tail, "-n", 50, audit_log_file ]
   end
@@ -36,7 +45,7 @@ class Mrsk::Commands::Auditor < Mrsk::Commands::Base
     end
 
     def tagged_broadcast_line(line)
-      tagged_line performer_tag, role_tag, line
+      tagged_line performer_tag, role_tag, destination_tag, line
     end
 
     def tagged_line(*tags_and_line)
@@ -47,11 +56,19 @@ class Mrsk::Commands::Auditor < Mrsk::Commands::Base
       "[#{Time.now.to_fs(:db)}]"
     end
 
+    def performer
+      `whoami`.strip
+    end
+
     def performer_tag
-      "[#{`whoami`.strip}]"
+      "[#{performer}]"
     end
 
     def role_tag
       "[#{role}]" if role
+    end
+
+    def destination_tag
+      "[#{config.destination}]" if config.destination
     end
 end

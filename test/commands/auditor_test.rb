@@ -31,9 +31,26 @@ class CommandsAuditorTest < ActiveSupport::TestCase
   end
 
   test "broadcast" do
-    assert_match \
-      /bin\/audit_broadcast '\[.*\] app removed container'/,
-      new_command.broadcast("app removed container").join(" ")
+    Mrsk::Commands::Auditor.any_instance.stubs(:performer).returns("bob")
+    @role = "web"
+    @destination = "staging"
+
+    assert_equal \
+      ["bin/audit_broadcast", "'[bob] [web] [staging] app removed container'"],
+      new_command.broadcast("app removed container")
+  end
+
+  test "broadcast environment" do
+    Mrsk::Commands::Auditor.any_instance.stubs(:performer).returns("bob")
+    @role = "web"
+    @destination = "staging"
+
+    env = new_command.broadcast_environment("app removed container")
+
+    assert_equal "bob", env["MRSK_PERFORMER"]
+    assert_equal "web", env["MRSK_ROLE"]
+    assert_equal "staging", env["MRSK_DESTINATION"]
+    assert_equal "app removed container", env["MRSK_EVENT"]
   end
 
   private

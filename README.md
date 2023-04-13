@@ -677,6 +677,15 @@ That'll post a line like follows to a preconfigured chatbot in Basecamp:
 [My App] [dhh] Rolled back to version d264c4e92470ad1bd18590f04466787262f605de
 ```
 
+In addition to the formatted message, MRSK sets a number of environment variables with the components of the broadcast.
+You can use these (rather than the command argument) if you want more control over how the message is formatted.
+MRSK currently sets:
+
+- `MRSK_PERFORMER` - the user performing the command
+- `MRSK_DESTINATION` - the destination
+- `MRSK_ROLE` - the specific role being targetted, if any
+- `MRSK_EVENT` - text of the action (e.g. "Deployed app@150b24f")
+
 ### Custom healthcheck
 
 MRSK defaults to checking the health of your application again `/up` on port 3000 up to 7 times. You can tailor the behaviour with the `healthcheck` setting:
