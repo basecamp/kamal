@@ -153,6 +153,15 @@ class Mrsk::Configuration
   end
 
 
+  def group_strategy
+    if group_limit.present?
+      { in: :groups, limit: group_limit, wait: group_wait }
+    else
+      {}
+    end
+  end
+
+
   def audit_broadcast_cmd
     raw_config.audit_broadcast_cmd
   end
@@ -236,5 +245,13 @@ class Mrsk::Configuration
         else
           raise "Can't use commit hash as version, no git repository found in #{Dir.pwd}"
         end
+    end
+
+    def group_limit
+      raw_config.group_limit&.to_i
+    end
+
+    def group_wait
+      raw_config.group_wait&.to_i
     end
 end

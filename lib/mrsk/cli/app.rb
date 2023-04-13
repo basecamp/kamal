@@ -13,7 +13,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
           execute *MRSK.app.tag_current_as_latest
         end
 
-        on(MRSK.hosts) do |host|
+        on(MRSK.hosts, **MRSK.config.group_strategy) do |host|
           roles = MRSK.roles_on(host)
 
           roles.each do |role|
@@ -39,7 +39,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
   desc "start", "Start existing app container on servers"
   def start
     with_lock do
-      on(MRSK.hosts) do |host|
+      on(MRSK.hosts, **MRSK.config.group_strategy) do |host|
         roles = MRSK.roles_on(host)
 
         roles.each do |role|
