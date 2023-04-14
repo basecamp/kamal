@@ -38,7 +38,7 @@ class CliAppTest < CliTestCase
     Mrsk::Cli::App.any_instance.stubs(:on).with([ "1.1.1.1" ]) # tag container
 
     # Strategy is used when booting the containers
-    Mrsk::Cli::App.any_instance.expects(:on).with([ "1.1.1.1" ], in: :groups, limit: 3, wait: 30).with_block_given
+    Mrsk::Cli::App.any_instance.expects(:on).with([ "1.1.1.1" ], in: :groups, limit: 3, wait: 2).with_block_given
 
     run_command("boot", config: :with_group_strategy)
   end

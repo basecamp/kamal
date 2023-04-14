@@ -1,9 +1,19 @@
 class Mrsk::Configuration::Boot
-  attr_reader :group_wait, :group_limit
+  def initialize(config:)
+    @options = config.raw_config.boot || {}
+    @host_count = config.all_hosts.count
+  end
 
-  def initialize(section:)
-    section = section || {}
-    @group_limit = section["group_limit"]
-    @group_wait = section["group_wait"]
+  def group_limit
+    limit = @options["group_limit"]
+    if limit.to_s.end_with?("%")
+      @host_count * limit.to_i / 100
+    else
+      limit
+    end
+  end
+
+  def group_wait
+    @options["group_wait"]
   end
 end

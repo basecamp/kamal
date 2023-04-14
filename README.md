@@ -841,7 +841,7 @@ MRSK's default is to boot new containers on all hosts in parallel. But you can c
 service: myservice
 
 boot:
-  group_limit: 10
+  group_limit: 10 # Can also specify as a percentage of total hosts, such as "25%"
   group_wait: 2
 ```
 

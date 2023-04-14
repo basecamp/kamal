@@ -88,7 +88,7 @@ class Mrsk::Configuration
   end
 
   def boot
-    Mrsk::Configuration::Boot.new(section: raw_config.boot)
+    Mrsk::Configuration::Boot.new(config: self)
   end
 
 
