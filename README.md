@@ -684,7 +684,7 @@ MRSK currently sets:
 - `MRSK_PERFORMER` - the user performing the command
 - `MRSK_DESTINATION` - the destination
 - `MRSK_ROLE` - the specific role being targetted, if any
-- `MRSK_EVENT` - text of the action (e.g. "Deployed app@150b24f")
+- `MRSK_MESSAGE` - full text of the action (e.g. "Deployed app@150b24f")
 
 ### Custom healthcheck
 
