@@ -27,7 +27,7 @@ class Mrsk::Commands::Auditor < Mrsk::Commands::Base
       "MRSK_PERFORMER" => performer,
       "MRSK_ROLE" => role,
       "MRSK_DESTINATION" => config.destination,
-      "MRSK_EVENT" => line
+      "MRSK_MESSAGE" => line
     }
   end
 

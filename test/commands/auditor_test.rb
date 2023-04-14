@@ -50,7 +50,7 @@ class CommandsAuditorTest < ActiveSupport::TestCase
     assert_equal "bob", env["MRSK_PERFORMER"]
     assert_equal "web", env["MRSK_ROLE"]
     assert_equal "staging", env["MRSK_DESTINATION"]
-    assert_equal "app removed container", env["MRSK_EVENT"]
+    assert_equal "app removed container", env["MRSK_MESSAGE"]
   end
 
   private
