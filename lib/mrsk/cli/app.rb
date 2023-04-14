@@ -13,7 +13,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
           execute *MRSK.app.tag_current_as_latest
         end
 
-        on(MRSK.hosts, **MRSK.config.group_strategy) do |host|
+        on(MRSK.hosts, **MRSK.group_strategy) do |host|
           roles = MRSK.roles_on(host)
 
           roles.each do |role|

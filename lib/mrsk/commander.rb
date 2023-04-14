@@ -51,6 +51,14 @@ class Mrsk::Commander
     end
   end
 
+  def group_strategy
+    if config.boot.group_limit.present?
+      { in: :groups, limit: config.boot.group_limit, wait: config.boot.group_wait }
+    else
+      {}
+    end
+  end
+
   def roles_on(host)
     roles.select { |role| role.hosts.include?(host.to_s) }.map(&:name)
   end

@@ -87,6 +87,10 @@ class Mrsk::Configuration
     roles.select(&:running_traefik?).flat_map(&:hosts).uniq
   end
 
+  def boot
+    Mrsk::Configuration::Boot.new(section: raw_config.boot)
+  end
+
 
   def repository
     [ raw_config.registry["server"], image ].compact.join("/")
@@ -150,15 +154,6 @@ class Mrsk::Configuration
 
   def ssh_options
     { user: ssh_user, proxy: ssh_proxy, auth_methods: [ "publickey" ] }.compact
-  end
-
-
-  def group_strategy
-    if group_limit.present?
-      { in: :groups, limit: group_limit, wait: group_wait }
-    else
-      {}
-    end
   end
 
 
@@ -245,13 +240,5 @@ class Mrsk::Configuration
         else
           raise "Can't use commit hash as version, no git repository found in #{Dir.pwd}"
         end
-    end
-
-    def group_limit
-      raw_config.group_limit&.to_i
-    end
-
-    def group_wait
-      raw_config.group_wait&.to_i
     end
 end
