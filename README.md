@@ -831,11 +831,11 @@ mrsk lock acquire -m "Doing maintanence"
 mrsk lock release
 ```
 
-## Gradual restarts
+## Rolling deployments
 
 When deploying to large numbers of hosts, you might prefer not to restart your services on every host at the same time.
 
-MRSK's default is to start new containers on all hosts in parallel. But you can control this by configuring `group_limit` and `group_wait`.
+MRSK's default is to boot new containers on all hosts in parallel. But you can control this by configuring `group_limit` and `group_wait`.
 
 ```yaml
 service: myservice
@@ -844,9 +844,9 @@ group_limit: 10
 group_wait: 30
 ```
 
-When `group_limit` is specified, containers will be started on, at most, `group_limit` hosts at once. MRSK will pause for `group_wait` seconds between batches.
+When `group_limit` is specified, containers will be booted on, at most, `group_limit` hosts at once. MRSK will pause for `group_wait` seconds between batches.
 
-These settings only apply when starting containers (using `mrsk deploy`, `mrsk app boot` or `mrsk app start`). For other commands, MRSK continues to run commands in parallel across all hosts.
+These settings only apply when booting containers (using `mrsk deploy`, or `mrsk app boot`). For other commands, MRSK continues to run commands in parallel across all hosts.
 
 ## Stage of development
 

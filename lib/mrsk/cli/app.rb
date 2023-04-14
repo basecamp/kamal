@@ -39,7 +39,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
   desc "start", "Start existing app container on servers"
   def start
     with_lock do
-      on(MRSK.hosts, **MRSK.config.group_strategy) do |host|
+      on(MRSK.hosts) do |host|
         roles = MRSK.roles_on(host)
 
         roles.each do |role|
