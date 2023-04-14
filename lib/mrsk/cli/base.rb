@@ -30,11 +30,17 @@ module Mrsk::Cli
 
     private
       def load_envs
+        env_files = [
+          ".env.deploy.local",
+          ".env.local",
+          ".env.deploy",
+          ".env"
+        ]
         if destination = options[:destination]
-          Dotenv.load(".env.#{destination}", ".env")
-        else
-          Dotenv.load(".env")
+          env_files.unshift(".env.#{destination}")
+          env_files.unshift(".env.#{destination}.local")
         end
+        Dotenv.load(*env_files)
       end
 
       def options_with_subcommand_class_options

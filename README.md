@@ -104,6 +104,19 @@ MRSK_REGISTRY_PASSWORD=pw
 DB_PASSWORD=secret123
 ```
 
+environment variables will override in the following order (highest defined variable overrides lower):
+
+| Hierarchy Priority | Filename                   | Should I `.gitignore`it?                            | Notes                                                        |
+| ------------------ | -------------------------- | --------------------------------------------------- | ------------------------------------------------------------ |
+| 1st (highest)      | `.env.[destination].local` | Yes!                                                | Local overrides of destination-specific settings.             |
+| 1st                | `.env.[destination]`       | Depends                                             | Declared destination-specific settings.                       |
+| 1st                | `.env.deploy.local`        | Yes!                                                | Local overrides of deploy-specific settings.                  |
+| 2nd                | `.env.local`               | Definitely.                                          | Local overrides of settings                                  |
+| 3rd                | `.env.deploy`              | Depends                                             | Declared deploy-specific settings                             |
+| Last               | `.env`                     | Depends                                             | The Original®                                                |
+
+> NOTE: this priority is based on the order in which [dotenv loads the files](https://github.com/bkeepers/dotenv/blob/master/README.md#what-other-env-files-can-i-use).
+
 ### Using a generated .env file
 
 #### 1Password as a secret store
