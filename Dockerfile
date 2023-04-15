@@ -31,6 +31,10 @@ RUN gem build mrsk.gemspec && \
 # Set the working directory to /workdir
 WORKDIR /workdir
 
+# Tell git it's safe to access /workdir/.git even if
+# the directory is owned by a different user
+RUN git config --global --add safe.directory /workdir
+
 # Set the entrypoint to run the installed binary in /workdir
 # Example:  docker run -it -v "$PWD:/workdir" mrsk init
 ENTRYPOINT ["mrsk"]
