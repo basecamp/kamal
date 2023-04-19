@@ -1,0 +1,50 @@
+version: "3.7"
+name: "mrsk-test"
+
+volumes:
+  shared:
+
+services:
+  shared:
+    build:
+      context: docker/shared
+    volumes:
+      - shared:/shared
+
+  deployer:
+    privileged: true
+    build:
+      context: docker/deployer
+    volumes:
+      - ../..:/mrsk
+      - shared:/shared
+
+  registry:
+    build:
+      context: docker/registry
+    environment:
+      - REGISTRY_HTTP_ADDR=0.0.0.0:4443
+      - REGISTRY_HTTP_TLS_CERTIFICATE=/certs/domain.crt
+      - REGISTRY_HTTP_TLS_KEY=/certs/domain.key
+    volumes:
+      - shared:/shared
+
+  vm1:
+    privileged: true
+    build:
+      context: docker/vm
+    volumes:
+      - shared:/shared
+
+  vm2:
+    privileged: true
+    build:
+      context: docker/vm
+    volumes:
+      - shared:/shared
+
+  load_balancer:
+    build:
+      context: docker/load_balancer
+    ports:
+      - "12345:80"

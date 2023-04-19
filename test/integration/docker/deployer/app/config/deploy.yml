@@ -1,0 +1,14 @@
+service: app
+image: app
+servers:
+  - vm1
+  - vm2
+registry:
+  server: registry:4443
+  username: root
+  password: root
+builder:
+  multiarch: false
+healthcheck:
+  path: /
+  port: 80
