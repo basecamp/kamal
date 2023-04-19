@@ -2,7 +2,7 @@ require "test_helper"
 
 class UtilsTest < ActiveSupport::TestCase
   test "argumentize" do
-    assert_equal [ "--label", "foo=\"\\`bar\\`\"", "--label", "baz=\"qux\"", "--label", :quux ], \
+    assert_equal [ "--label", "foo=\\`bar\\`", "--label", "baz=qux", "--label", :quux ], \
       Mrsk::Utils.argumentize("--label", { foo: "`bar`", baz: "qux", quux: nil })
   end
 
@@ -16,17 +16,17 @@ class UtilsTest < ActiveSupport::TestCase
 
     args = Mrsk::Utils.argumentize_env_with_secrets({ "secret" => [ "FOO" ], "clear" => { BAZ: "qux" } })
 
-    assert_equal [ "-e", "FOO=[REDACTED]", "-e", "BAZ=\"qux\"" ], Mrsk::Utils.redacted(args)
-    assert_equal [ "-e", "FOO=\"secret\"", "-e", "BAZ=\"qux\"" ], Mrsk::Utils.unredacted(args)
+    assert_equal [ "-e", "FOO=[REDACTED]", "-e", "BAZ=qux" ], Mrsk::Utils.redacted(args)
+    assert_equal [ "-e", "FOO=secret", "-e", "BAZ=qux" ], Mrsk::Utils.unredacted(args)
   end
 
   test "optionize" do
-    assert_equal [ "--foo", "\"bar\"", "--baz", "\"qux\"", "--quux" ], \
+    assert_equal [ "--foo", "bar", "--baz", "qux", "--quux" ], \
       Mrsk::Utils.optionize({ foo: "bar", baz: "qux", quux: true })
   end
 
   test "optionize with" do
-    assert_equal [ "--foo=\"bar\"", "--baz=\"qux\"", "--quux" ], \
+    assert_equal [ "--foo=bar", "--baz=qux", "--quux" ], \
       Mrsk::Utils.optionize({ foo: "bar", baz: "qux", quux: true }, with: "=")
   end
 
@@ -47,18 +47,19 @@ class UtilsTest < ActiveSupport::TestCase
   end
 
   test "escape_shell_value" do
-    assert_equal "\"foo\"", Mrsk::Utils.escape_shell_value("foo")
-    assert_equal "\"\\`foo\\`\"", Mrsk::Utils.escape_shell_value("`foo`")
+    assert_equal "foo", Mrsk::Utils.escape_shell_value("foo")
+    assert_equal "\\`foo\\`", Mrsk::Utils.escape_shell_value("`foo`")
+    assert_equal "say\\ \\你\\好\\ means\\ hello\\!", Mrsk::Utils.escape_shell_value("say 你好 means hello!")
 
-    assert_equal "\"${PWD}\"", Mrsk::Utils.escape_shell_value("${PWD}")
-    assert_equal "\"${cat /etc/hostname}\"", Mrsk::Utils.escape_shell_value("${cat /etc/hostname}")
-    assert_equal "\"\\${PWD]\"", Mrsk::Utils.escape_shell_value("${PWD]")
-    assert_equal "\"\\$(PWD)\"", Mrsk::Utils.escape_shell_value("$(PWD)")
-    assert_equal "\"\\$PWD\"", Mrsk::Utils.escape_shell_value("$PWD")
+    assert_equal "${PWD}", Mrsk::Utils.escape_shell_value("${PWD}")
+    assert_equal "${cat /etc/hostname}", Mrsk::Utils.escape_shell_value("${cat /etc/hostname}")
+    assert_equal "\\$\\{PWD\\]", Mrsk::Utils.escape_shell_value("${PWD]")
+    assert_equal "\\$\\(PWD\\)", Mrsk::Utils.escape_shell_value("$(PWD)")
+    assert_equal "\\$PWD", Mrsk::Utils.escape_shell_value("$PWD")
 
-    assert_equal "\"^(https?://)www.example.com/(.*)\\$\"",
+    assert_equal "\\^\\(https\\?://\\)www.example.com/\\(.\\*\\)\\$",
       Mrsk::Utils.escape_shell_value("^(https?://)www.example.com/(.*)$")
-    assert_equal "\"https://example.com/\\$2\"",
+    assert_equal "https://example.com/\\$2",
       Mrsk::Utils.escape_shell_value("https://example.com/$2")
   end
 end
