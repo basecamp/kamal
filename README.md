@@ -585,6 +585,22 @@ ARG RUBY_VERSION
 FROM ruby:$RUBY_VERSION-slim as base
 ```
 
+### Forward your existing SSH agent connection to docker
+
+Clone your private repositories during build.
+
+```yaml
+  builder:
+    ssh: $HOME/.ssh/name_of_your_ssh_key
+```
+
+Then, include the following in your Dockerfile:
+
+```dockerfile
+RUN mkdir -p -m 0700 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
+RUN --mount=type=ssh bundle install
+```
+
 ### Using accessories for database, cache, search services
 
 You can manage your accessory services via MRSK as well. Accessories are long-lived services that your app depends on. They are not updated when you deploy.

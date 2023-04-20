@@ -10,7 +10,7 @@ class Mrsk::Commands::Builder::Base < Mrsk::Commands::Base
   end
 
   def build_options
-    [ *build_tags, *build_labels, *build_args, *build_secrets, *build_dockerfile ]
+    [ *build_tags, *build_labels, *build_args, *build_secrets, *build_ssh, *build_dockerfile ]
   end
 
   def build_context
@@ -34,12 +34,24 @@ class Mrsk::Commands::Builder::Base < Mrsk::Commands::Base
       argumentize "--secret", secrets.collect { |secret| [ "id", secret ] }
     end
 
+    def build_ssh
+      argumentize "--ssh", ssh_args
+    end
+
     def build_dockerfile
       argumentize "--file", dockerfile
     end
 
     def args
       (config.builder && config.builder["args"]) || {}
+    end
+
+    def ssh_args
+      if config.builder && config.builder["ssh"]
+        "default=#{config.builder["ssh"]}"
+      else
+        "default"
+      end
     end
 
     def secrets
