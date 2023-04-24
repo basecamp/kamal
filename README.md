@@ -686,11 +686,14 @@ healthcheck:
   path: /healthz
   port: 4000
   max_attempts: 7
+  skip: false
 ```
 
 This will ensure your application is configured with a traefik label for the healthcheck against `/healthz` and that the pre-deploy healthcheck that MRSK performs is done against the same path on port 4000.
 
 The healthcheck also allows for an optional `max_attempts` setting, which will attempt the healthcheck up to the specified number of times before failing the deploy. This is useful for applications that take a while to start up. The default is 7.
+
+Optional setting `skip` can be useful for deploying bots (Discord bots, Twitch bots, regular jobs) or anything that does not require an incoming HTTP connection. The default is false.
 
 ## Commands
 
