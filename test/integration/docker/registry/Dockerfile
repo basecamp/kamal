@@ -1,3 +1,4 @@
+# syntax = docker/dockerfile:experimental
 FROM registry
 
 COPY boot.sh .

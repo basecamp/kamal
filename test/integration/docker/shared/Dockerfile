@@ -1,3 +1,4 @@
+# syntax = docker/dockerfile:experimental
 FROM ubuntu:22.10
 
 WORKDIR /work
