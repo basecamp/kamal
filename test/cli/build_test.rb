@@ -10,7 +10,7 @@ class CliBuildTest < CliTestCase
 
   test "push" do
     run_command("push").tap do |output|
-      assert_match /docker buildx build --push --platform linux\/amd64,linux\/arm64 --builder mrsk-app-multiarch -t dhh\/app:999 -t dhh\/app:latest --label service="app" --file Dockerfile \. as .*@localhost/, output
+      assert_match /docker buildx build --push --platform linux\/amd64,linux\/arm64 --builder mrsk-app-multiarch -t dhh\/app:999 -t dhh\/app:latest --label service="app" --ssh default --file Dockerfile \. as .*@localhost/, output
     end
   end
 
