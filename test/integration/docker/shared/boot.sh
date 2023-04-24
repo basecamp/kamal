@@ -2,6 +2,4 @@
 
 cp -r * /shared
 
-trap "pkill -f sleep" term
-
-sleep infinity & wait
+exec sleep infinity
