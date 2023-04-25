@@ -105,7 +105,7 @@ module Mrsk::Cli
         MRSK.holding_lock = true
       rescue SSHKit::Runner::ExecuteError => e
         if e.message =~ /cannot create directory/
-          invoke "mrsk:cli:lock:status", []
+          on(MRSK.primary_host) { execute *MRSK.lock.status }
           raise LockError, "Deploy lock found"
         else
           raise e
