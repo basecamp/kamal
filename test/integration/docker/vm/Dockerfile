@@ -9,4 +9,6 @@ RUN mkdir -p /etc/docker/certs.d/registry:4443 && ln -s /shared/certs/domain.crt
 
 COPY boot.sh .
 
+HEALTHCHECK --interval=1s CMD pgrep dockerd
+
 CMD ["./boot.sh"]
