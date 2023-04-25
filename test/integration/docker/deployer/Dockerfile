@@ -24,4 +24,6 @@ RUN git config --global user.email "deployer@example.com"
 RUN git config --global user.name "Deployer"
 RUN git init && git add . && git commit -am "Initial version"
 
+HEALTHCHECK --interval=1s CMD pgrep sleep
+
 CMD ["./boot.sh"]
