@@ -10,7 +10,7 @@ class CommandsHealthcheckTest < ActiveSupport::TestCase
 
   test "run" do
     assert_equal \
-      "docker run --detach --name healthcheck-app-123 --publish 3999:3000 --label service=healthcheck-app -e MRSK_CONTAINER_NAME=\"healthcheck-app\" dhh/app:123",
+      "docker run --detach --name healthcheck-app-123 --publish 3999:3000 --label service=healthcheck-app -e MRSK_CONTAINER_NAME=\"healthcheck-app\" --health-cmd \"curl -f http://localhost:3000/up || exit 1\" --health-interval \"1s\" dhh/app:123",
       new_command.run.join(" ")
   end
 
@@ -18,7 +18,7 @@ class CommandsHealthcheckTest < ActiveSupport::TestCase
     @config[:healthcheck] = { "port" => 3001 }
 
     assert_equal \
-      "docker run --detach --name healthcheck-app-123 --publish 3999:3001 --label service=healthcheck-app -e MRSK_CONTAINER_NAME=\"healthcheck-app\" dhh/app:123",
+      "docker run --detach --name healthcheck-app-123 --publish 3999:3001 --label service=healthcheck-app -e MRSK_CONTAINER_NAME=\"healthcheck-app\" --health-cmd \"curl -f http://localhost:3001/up || exit 1\" --health-interval \"1s\" dhh/app:123",
       new_command.run.join(" ")
   end
 
@@ -26,29 +26,29 @@ class CommandsHealthcheckTest < ActiveSupport::TestCase
     @destination = "staging"
 
     assert_equal \
-      "docker run --detach --name healthcheck-app-staging-123 --publish 3999:3000 --label service=healthcheck-app-staging -e MRSK_CONTAINER_NAME=\"healthcheck-app-staging\" dhh/app:123",
+      "docker run --detach --name healthcheck-app-staging-123 --publish 3999:3000 --label service=healthcheck-app-staging -e MRSK_CONTAINER_NAME=\"healthcheck-app-staging\" --health-cmd \"curl -f http://localhost:3000/up || exit 1\" --health-interval \"1s\" dhh/app:123",
+      new_command.run.join(" ")
+  end
+
+  test "run with custom healthcheck" do
+    @config[:healthcheck] = { "cmd" => "/bin/up" }
+
+    assert_equal \
+      "docker run --detach --name healthcheck-app-123 --publish 3999:3000 --label service=healthcheck-app -e MRSK_CONTAINER_NAME=\"healthcheck-app\" --health-cmd \"/bin/up\" --health-interval \"1s\" dhh/app:123",
       new_command.run.join(" ")
   end
 
   test "run with custom options" do
     @config[:servers] = { "web" => { "hosts" => [ "1.1.1.1" ], "options" => { "mount" => "somewhere" } } }
     assert_equal \
-      "docker run --detach --name healthcheck-app-123 --publish 3999:3000 --label service=healthcheck-app -e MRSK_CONTAINER_NAME=\"healthcheck-app\" --mount \"somewhere\" dhh/app:123",
+      "docker run --detach --name healthcheck-app-123 --publish 3999:3000 --label service=healthcheck-app -e MRSK_CONTAINER_NAME=\"healthcheck-app\" --health-cmd \"curl -f http://localhost:3000/up || exit 1\" --health-interval \"1s\" --mount \"somewhere\" dhh/app:123",
       new_command.run.join(" ")
   end
 
-  test "curl" do
+  test "status" do
     assert_equal \
-      "curl --silent --output /dev/null --write-out '%{http_code}' --max-time 2 http://localhost:3999/up",
-      new_command.curl.join(" ")
-  end
-
-  test "curl with custom path" do
-    @config[:healthcheck] = { "path" => "/healthz" }
-
-    assert_equal \
-      "curl --silent --output /dev/null --write-out '%{http_code}' --max-time 2 http://localhost:3999/healthz",
-      new_command.curl.join(" ")
+      "docker container ls --all --filter name=^healthcheck-app-123$ --quiet | xargs docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'",
+      new_command.status.join(" ")
   end
 
   test "stop" do

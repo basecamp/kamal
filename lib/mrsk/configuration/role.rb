@@ -35,6 +35,21 @@ class Mrsk::Configuration::Role
     argumentize_env_with_secrets env
   end
 
+  def health_check_args
+    if health_check_cmd.present?
+      optionize({ "health-cmd" => health_check_cmd, "health-interval" => "1s" })
+    else
+      []
+    end
+  end
+
+  def health_check_cmd
+    options = specializations["healthcheck"] || {}
+    options = config.healthcheck.merge(options) if running_traefik?
+
+    options["cmd"] || http_health_check(port: options["port"], path: options["path"])
+  end
+
   def cmd
     specializations["cmd"]
   end
@@ -75,8 +90,6 @@ class Mrsk::Configuration::Role
       if running_traefik?
         {
           "traefik.http.routers.#{traefik_service}.rule" => "PathPrefix(`/`)",
-          "traefik.http.services.#{traefik_service}.loadbalancer.healthcheck.path" => config.healthcheck["path"],
-          "traefik.http.services.#{traefik_service}.loadbalancer.healthcheck.interval" => "1s",
           "traefik.http.middlewares.#{traefik_service}-retry.retry.attempts" => "5",
           "traefik.http.middlewares.#{traefik_service}-retry.retry.initialinterval" => "500ms",
           "traefik.http.routers.#{traefik_service}.middlewares" => "#{traefik_service}-retry@docker"
@@ -124,5 +137,9 @@ class Mrsk::Configuration::Role
 
         new_env["clear"] = (clear_app_env + clear_role_env).uniq
       end
+    end
+
+    def http_health_check(port:, path:)
+      "curl -f #{URI.join("http://localhost:#{port}", path)} || exit 1" if path.present? || port.present?
     end
 end

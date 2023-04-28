@@ -15,6 +15,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
       "--name", container_name,
       "-e", "MRSK_CONTAINER_NAME=\"#{container_name}\"",
       *role.env_args,
+      *role.health_check_args,
       *config.logging_args,
       *config.volume_args,
       *role.label_args,
@@ -25,6 +26,10 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
 
   def start
     docker :start, container_name
+  end
+
+  def status(version:)
+    pipe container_id_for_version(version), xargs(docker(:inspect, "--format", DOCKER_HEALTH_STATUS_FORMAT))
   end
 
   def stop(version: nil)

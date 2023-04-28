@@ -6,8 +6,6 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
       using_version(version_or_latest) do |version|
         say "Start container with version #{version} using a #{MRSK.config.readiness_delay}s readiness delay (or reboot if already running)...", :magenta
 
-        cli = self
-
         on(MRSK.hosts) do
           execute *MRSK.auditor.record("Tagging #{MRSK.config.absolute_image} as the latest image"), verbosity: :debug
           execute *MRSK.app.tag_current_as_latest
@@ -17,19 +15,24 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
           roles = MRSK.roles_on(host)
 
           roles.each do |role|
-            execute *MRSK.auditor(role: role).record("Booted app version #{version}"), verbosity: :debug
+            app = MRSK.app(role: role)
+            auditor = MRSK.auditor(role: role)
 
-            if capture_with_info(*MRSK.app(role: role).container_id_for_version(version), raise_on_non_zero_exit: false).present?
+            execute *auditor.record("Booted app version #{version}"), verbosity: :debug
+
+            if capture_with_info(*app.container_id_for_version(version), raise_on_non_zero_exit: false).present?
               tmp_version = "#{version}_#{SecureRandom.hex(8)}"
               info "Renaming container #{version} to #{tmp_version} as already deployed on #{host}"
-              execute *MRSK.auditor(role: role).record("Renaming container #{version} to #{tmp_version}"), verbosity: :debug
-              execute *MRSK.app(role: role).rename_container(version: version, new_version: tmp_version)
+              execute *auditor.record("Renaming container #{version} to #{tmp_version}"), verbosity: :debug
+              execute *app.rename_container(version: version, new_version: tmp_version)
             end
 
-            old_version = capture_with_info(*MRSK.app(role: role).current_running_version, raise_on_non_zero_exit: false).strip
-            execute *MRSK.app(role: role).run
-            sleep MRSK.config.readiness_delay
-            execute *MRSK.app(role: role).stop(version: old_version), raise_on_non_zero_exit: false if old_version.present?
+            old_version = capture_with_info(*app.current_running_version, raise_on_non_zero_exit: false).strip
+            execute *app.run
+
+            Mrsk::Utils::HealthcheckPoller.wait_for_healthy(pause_after_ready: true) { capture_with_info(*app.status(version: version)) }
+
+            execute *app.stop(version: old_version), raise_on_non_zero_exit: false if old_version.present?
           end
         end
       end

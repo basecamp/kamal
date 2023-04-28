@@ -11,14 +11,15 @@ class Mrsk::Commands::Healthcheck < Mrsk::Commands::Base
       "--label", "service=#{container_name}",
       "-e", "MRSK_CONTAINER_NAME=\"#{container_name}\"",
       *web.env_args,
+      *web.health_check_args,
       *config.volume_args,
       *web.option_args,
       config.absolute_image,
       web.cmd
   end
 
-  def curl
-    [ :curl, "--silent", "--output", "/dev/null", "--write-out", "'%{http_code}'", "--max-time", "2", health_url ]
+  def status
+    pipe container_id, xargs(docker(:inspect, "--format", DOCKER_HEALTH_STATUS_FORMAT))
   end
 
   def logs
