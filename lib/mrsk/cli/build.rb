@@ -1,4 +1,7 @@
 class Mrsk::Cli::Build < Mrsk::Cli::Base
+
+  class BuildError < StandardError; end
+
   desc "deliver", "Build app and push app image to registry then pull image on servers"
   def deliver
     with_lock do
@@ -10,16 +13,18 @@ class Mrsk::Cli::Build < Mrsk::Cli::Base
   desc "push", "Build and push app image to registry"
   def push
     with_lock do
-      cli = self
+      cli_build = self
 
       run_locally do
         begin
-          MRSK.with_verbosity(:debug) { execute *MRSK.builder.push }
+          if cli_build.dependencies
+            MRSK.with_verbosity(:debug) { execute *MRSK.builder.push }
+          end
         rescue SSHKit::Command::Failed => e
           if e.message =~ /(no builder)|(no such file or directory)/
             error "Missing compatible builder, so creating a new one first"
 
-            if cli.create
+            if cli_build.create
               MRSK.with_verbosity(:debug) { execute *MRSK.builder.push }
             end
           else
@@ -76,5 +81,20 @@ class Mrsk::Cli::Build < Mrsk::Cli::Base
       puts "Builder: #{MRSK.builder.name}"
       puts capture(*MRSK.builder.info)
     end
+  end
+
+  desc "dependencies", "Check local dependencies"
+  def dependencies
+    run_locally do
+      begin
+        execute *MRSK.builder.dependencies
+      rescue SSHKit::Command::Failed => e
+        build_error = e.message =~ /command not found/ ?
+          "Docker is not installed locally" :
+          "Docker buildx plugin is not installed locally"
+        raise BuildError, build_error
+      end
+    end
+    true
   end
 end

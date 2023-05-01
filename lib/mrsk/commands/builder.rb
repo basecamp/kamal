@@ -33,4 +33,28 @@ class Mrsk::Commands::Builder < Mrsk::Commands::Base
   def multiarch_remote
     @multiarch_remote ||= Mrsk::Commands::Builder::Multiarch::Remote.new(config)
   end
+
+  def native_and_local?
+    name == 'native'
+  end
+
+  def dependencies
+    if native_and_local?
+      docker_version
+    else
+    combine \
+      docker_version,
+      docker_buildx_version
+    end
+  end
+
+  private
+
+    def docker_version
+      docker "--version"
+    end
+
+    def docker_buildx_version
+      docker :buildx, "version"
+    end
 end

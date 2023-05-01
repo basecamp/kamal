@@ -1,5 +1,8 @@
+
 class Mrsk::Commands::Builder::Base < Mrsk::Commands::Base
   delegate :argumentize, to: Mrsk::Utils
+
+  class BuilderError < StandardError; end
 
   def clean
     docker :image, :rm, "--force", config.absolute_image
@@ -16,6 +19,7 @@ class Mrsk::Commands::Builder::Base < Mrsk::Commands::Base
   def build_context
     context
   end
+
 
   private
     def build_tags
@@ -35,7 +39,11 @@ class Mrsk::Commands::Builder::Base < Mrsk::Commands::Base
     end
 
     def build_dockerfile
-      argumentize "--file", dockerfile
+      if Pathname.new(File.expand_path(dockerfile)).exist?
+        argumentize "--file", dockerfile
+      else
+        raise BuilderError, "Missing Dockerfile"
+      end
     end
 
     def args
