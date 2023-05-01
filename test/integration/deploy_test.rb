@@ -55,8 +55,9 @@ class DeployTest < ActiveSupport::TestCase
       if code != "200"
         puts "Got response code #{code}, here are the traefik logs:"
         mrsk :traefik, :logs
-        puts "Add here are the load balancer logs"
+        puts "And here are the load balancer logs"
         docker_compose :logs, :load_balancer
+        puts "Tried to get the response code again and got #{app_response.code}"
       end
       assert_equal "200", code
     end
