@@ -51,7 +51,12 @@ class DeployTest < ActiveSupport::TestCase
     end
 
     def assert_app_is_up
-      assert_equal "200", app_response.code
+      code = app_response.code
+      if code != "200"
+        puts "Got response code #{code}, here are the traefik logs:"
+        mrsk :traefik, :logs
+      end
+      assert_equal "200", code
     end
 
     def app_response
