@@ -11,3 +11,7 @@ builder:
   multiarch: false
 healthcheck:
   cmd: wget -qO- http://localhost > /dev/null
+traefik:
+  args:
+    accesslog: true
+    accesslog.format: json
