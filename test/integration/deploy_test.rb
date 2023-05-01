@@ -61,7 +61,10 @@ class DeployTest < ActiveSupport::TestCase
     def wait_for_healthy(timeout: 20)
       timeout_at = Time.now + timeout
       while docker_compose("ps -a | tail -n +2 | grep -v '(healthy)' | wc -l", capture: true) != "0"
-        raise "Container not healthy after #{timeout} seconds" if timeout_at < Time.now
+        if timeout_at < Time.now
+          docker_compose("ps -a | tail -n +2 | grep -v '(healthy)'")
+          raise "Container not healthy after #{timeout} seconds" if timeout_at < Time.now
+        end
         sleep 0.1
       end
     end
