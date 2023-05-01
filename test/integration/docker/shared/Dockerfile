@@ -2,7 +2,7 @@ FROM ubuntu:22.10
 
 WORKDIR /work
 
-RUN apt-get update && apt-get -y install openssh-client openssl
+RUN apt-get update --fix-missing && apt-get -y install openssh-client openssl
 
 RUN mkdir ssh && \
   ssh-keygen -t rsa -f ssh/id_rsa -N ""
