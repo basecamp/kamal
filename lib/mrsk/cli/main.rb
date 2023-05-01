@@ -246,7 +246,7 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
         end
       rescue SSHKit::Runner::ExecuteError => e
         if e.message =~ /Container not found/
-          say "Cannot rollback: #{e.message}"
+          say "Error looking for container version #{version}: #{e.message}"
           return false
         else
           raise
