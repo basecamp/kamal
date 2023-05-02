@@ -42,7 +42,7 @@ class Mrsk::Commands::Builder::Base < Mrsk::Commands::Base
       if Pathname.new(File.expand_path(dockerfile)).exist?
         argumentize "--file", dockerfile
       else
-        raise BuilderError, "Missing Dockerfile"
+        raise BuilderError, "Missing #{dockerfile}"
       end
     end
 
