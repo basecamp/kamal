@@ -13,7 +13,7 @@ class CommandsAppTest < ActiveSupport::TestCase
 
   test "run" do
     assert_equal \
-      "docker run --detach --restart unless-stopped --name app-web-999 -e MRSK_CONTAINER_NAME=\"app-web-999\" -e RAILS_MASTER_KEY=\"456\" --log-opt max-size=\"10m\" --label service=\"app\" --label role=\"web\" --label traefik.http.routers.app-web.rule=\"PathPrefix(\\`/\\`)\" --label traefik.http.services.app-web.loadbalancer.healthcheck.path=\"/up\" --label traefik.http.services.app-web.loadbalancer.healthcheck.interval=\"1s\" --label traefik.http.middlewares.app-web-retry.retry.attempts=\"5\" --label traefik.http.middlewares.app-web-retry.retry.initialinterval=\"500ms\" --label traefik.http.routers.app-web.middlewares=\"app-web-retry@docker\" dhh/app:999",
+      "docker run --detach --restart unless-stopped --name app-web-999 -e MRSK_CONTAINER_NAME=\"app-web-999\" -e RAILS_MASTER_KEY=\"456\" --health-cmd \"curl -f http://localhost:3000/up || exit 1\" --health-interval \"1s\" --log-opt max-size=\"10m\" --label service=\"app\" --label role=\"web\" --label traefik.http.routers.app-web.rule=\"PathPrefix(\\`/\\`)\" --label traefik.http.middlewares.app-web-retry.retry.attempts=\"5\" --label traefik.http.middlewares.app-web-retry.retry.initialinterval=\"500ms\" --label traefik.http.routers.app-web.middlewares=\"app-web-retry@docker\" dhh/app:999",
       new_command.run.join(" ")
   end
 
@@ -21,7 +21,7 @@ class CommandsAppTest < ActiveSupport::TestCase
     @config[:volumes] = ["/local/path:/container/path" ]
 
     assert_equal \
-      "docker run --detach --restart unless-stopped --name app-web-999 -e MRSK_CONTAINER_NAME=\"app-web-999\" -e RAILS_MASTER_KEY=\"456\" --log-opt max-size=\"10m\" --volume /local/path:/container/path --label service=\"app\" --label role=\"web\" --label traefik.http.routers.app-web.rule=\"PathPrefix(\\`/\\`)\" --label traefik.http.services.app-web.loadbalancer.healthcheck.path=\"/up\" --label traefik.http.services.app-web.loadbalancer.healthcheck.interval=\"1s\" --label traefik.http.middlewares.app-web-retry.retry.attempts=\"5\" --label traefik.http.middlewares.app-web-retry.retry.initialinterval=\"500ms\" --label traefik.http.routers.app-web.middlewares=\"app-web-retry@docker\" dhh/app:999",
+      "docker run --detach --restart unless-stopped --name app-web-999 -e MRSK_CONTAINER_NAME=\"app-web-999\" -e RAILS_MASTER_KEY=\"456\" --health-cmd \"curl -f http://localhost:3000/up || exit 1\" --health-interval \"1s\" --log-opt max-size=\"10m\" --volume /local/path:/container/path --label service=\"app\" --label role=\"web\" --label traefik.http.routers.app-web.rule=\"PathPrefix(\\`/\\`)\" --label traefik.http.middlewares.app-web-retry.retry.attempts=\"5\" --label traefik.http.middlewares.app-web-retry.retry.initialinterval=\"500ms\" --label traefik.http.routers.app-web.middlewares=\"app-web-retry@docker\" dhh/app:999",
       new_command.run.join(" ")
   end
 
@@ -29,7 +29,23 @@ class CommandsAppTest < ActiveSupport::TestCase
     @config[:healthcheck] = { "path" => "/healthz" }
 
     assert_equal \
-      "docker run --detach --restart unless-stopped --name app-web-999 -e MRSK_CONTAINER_NAME=\"app-web-999\" -e RAILS_MASTER_KEY=\"456\" --log-opt max-size=\"10m\" --label service=\"app\" --label role=\"web\" --label traefik.http.routers.app-web.rule=\"PathPrefix(\\`/\\`)\" --label traefik.http.services.app-web.loadbalancer.healthcheck.path=\"/healthz\" --label traefik.http.services.app-web.loadbalancer.healthcheck.interval=\"1s\" --label traefik.http.middlewares.app-web-retry.retry.attempts=\"5\" --label traefik.http.middlewares.app-web-retry.retry.initialinterval=\"500ms\" --label traefik.http.routers.app-web.middlewares=\"app-web-retry@docker\" dhh/app:999",
+      "docker run --detach --restart unless-stopped --name app-web-999 -e MRSK_CONTAINER_NAME=\"app-web-999\" -e RAILS_MASTER_KEY=\"456\" --health-cmd \"curl -f http://localhost:3000/healthz || exit 1\" --health-interval \"1s\" --log-opt max-size=\"10m\" --label service=\"app\" --label role=\"web\" --label traefik.http.routers.app-web.rule=\"PathPrefix(\\`/\\`)\" --label traefik.http.middlewares.app-web-retry.retry.attempts=\"5\" --label traefik.http.middlewares.app-web-retry.retry.initialinterval=\"500ms\" --label traefik.http.routers.app-web.middlewares=\"app-web-retry@docker\" dhh/app:999",
+      new_command.run.join(" ")
+  end
+
+  test "run with custom healthcheck command" do
+    @config[:healthcheck] = { "cmd" => "/bin/up" }
+
+    assert_equal \
+      "docker run --detach --restart unless-stopped --name app-web-999 -e MRSK_CONTAINER_NAME=\"app-web-999\" -e RAILS_MASTER_KEY=\"456\" --health-cmd \"/bin/up\" --health-interval \"1s\" --log-opt max-size=\"10m\" --label service=\"app\" --label role=\"web\" --label traefik.http.routers.app-web.rule=\"PathPrefix(\\`/\\`)\" --label traefik.http.middlewares.app-web-retry.retry.attempts=\"5\" --label traefik.http.middlewares.app-web-retry.retry.initialinterval=\"500ms\" --label traefik.http.routers.app-web.middlewares=\"app-web-retry@docker\" dhh/app:999",
+      new_command.run.join(" ")
+  end
+
+  test "run with role-specific healthcheck options" do
+    @config[:servers] = { "web" => { "hosts" => [ "1.1.1.1" ], "healthcheck" => { "cmd" => "/bin/healthy" } } }
+
+    assert_equal \
+      "docker run --detach --restart unless-stopped --name app-web-999 -e MRSK_CONTAINER_NAME=\"app-web-999\" -e RAILS_MASTER_KEY=\"456\" --health-cmd \"/bin/healthy\" --health-interval \"1s\" --log-opt max-size=\"10m\" --label service=\"app\" --label role=\"web\" --label traefik.http.routers.app-web.rule=\"PathPrefix(\\`/\\`)\" --label traefik.http.middlewares.app-web-retry.retry.attempts=\"5\" --label traefik.http.middlewares.app-web-retry.retry.initialinterval=\"500ms\" --label traefik.http.routers.app-web.middlewares=\"app-web-retry@docker\" dhh/app:999",
       new_command.run.join(" ")
   end
 
@@ -44,7 +60,7 @@ class CommandsAppTest < ActiveSupport::TestCase
     @config[:logging] = { "driver" => "local", "options" => { "max-size" => "100m", "max-file" => "3" } }
 
     assert_equal \
-      "docker run --detach --restart unless-stopped --name app-web-999 -e MRSK_CONTAINER_NAME=\"app-web-999\" -e RAILS_MASTER_KEY=\"456\" --log-driver \"local\" --log-opt max-size=\"100m\" --log-opt max-file=\"3\" --label service=\"app\" --label role=\"web\" --label traefik.http.routers.app-web.rule=\"PathPrefix(\\`/\\`)\" --label traefik.http.services.app-web.loadbalancer.healthcheck.path=\"/up\" --label traefik.http.services.app-web.loadbalancer.healthcheck.interval=\"1s\" --label traefik.http.middlewares.app-web-retry.retry.attempts=\"5\" --label traefik.http.middlewares.app-web-retry.retry.initialinterval=\"500ms\" --label traefik.http.routers.app-web.middlewares=\"app-web-retry@docker\" dhh/app:999",
+      "docker run --detach --restart unless-stopped --name app-web-999 -e MRSK_CONTAINER_NAME=\"app-web-999\" -e RAILS_MASTER_KEY=\"456\" --health-cmd \"curl -f http://localhost:3000/up || exit 1\" --health-interval \"1s\" --log-driver \"local\" --log-opt max-size=\"100m\" --log-opt max-file=\"3\" --label service=\"app\" --label role=\"web\" --label traefik.http.routers.app-web.rule=\"PathPrefix(\\`/\\`)\" --label traefik.http.middlewares.app-web-retry.retry.attempts=\"5\" --label traefik.http.middlewares.app-web-retry.retry.initialinterval=\"500ms\" --label traefik.http.routers.app-web.middlewares=\"app-web-retry@docker\" dhh/app:999",
       new_command.run.join(" ")
   end
 

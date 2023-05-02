@@ -1,5 +1,4 @@
 require "test_helper"
-require "active_support/testing/stream"
 
 class CliTestCase < ActiveSupport::TestCase
   include ActiveSupport::Testing::Stream
@@ -17,13 +16,4 @@ class CliTestCase < ActiveSupport::TestCase
     ENV.delete("MYSQL_ROOT_PASSWORD")
     ENV.delete("VERSION")
   end
-
-  private
-    def stdouted
-      capture(:stdout) { yield }.strip
-    end
-
-    def stderred
-      capture(:stderr) { yield }.strip
-    end
-  end
+end

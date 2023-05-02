@@ -686,9 +686,11 @@ MRSK currently sets:
 - `MRSK_ROLE` - the specific role being targetted, if any
 - `MRSK_MESSAGE` - full text of the action (e.g. "Deployed app@150b24f")
 
-### Custom healthcheck
+### Healthcheck
 
-MRSK defaults to checking the health of your application again `/up` on port 3000 up to 7 times. You can tailor the behaviour with the `healthcheck` setting:
+MRSK uses Docker healtchecks to check the health of your application during deployment. Traefik uses this same healthcheck status to determine when a container is ready to receive traffic.
+
+The healthcheck defaults to testing the HTTP response to the path `/up` on port 3000, up to 7 times. You can tailor this behaviour with the `healthcheck` setting:
 
 ```yaml
 healthcheck:
@@ -699,7 +701,29 @@ healthcheck:
 
 This will ensure your application is configured with a traefik label for the healthcheck against `/healthz` and that the pre-deploy healthcheck that MRSK performs is done against the same path on port 4000.
 
-The healthcheck also allows for an optional `max_attempts` setting, which will attempt the healthcheck up to the specified number of times before failing the deploy. This is useful for applications that take a while to start up. The default is 7.
+You can also specify a custom healthcheck command, which is useful for non-HTTP services:
+
+```yaml
+healthcheck:
+  cmd: /bin/check_health
+```
+
+The top-level healthcheck configuration applies to all services that use
+Traefik, by default. You can also specialize the configuration at the role
+level:
+
+```yaml
+servers:
+  job:
+    hosts: ...
+    cmd: bin/jobs
+    healthcheck:
+      cmd: bin/check
+```
+
+The healthcheck allows for an optional `max_attempts` setting, which will attempt the healthcheck up to the specified number of times before failing the deploy. This is useful for applications that take a while to start up. The default is 7.
+
+Note that the HTTP health checks assume that the `curl` command is avilable inside the container. If that's not the case, use the healthcheck's `cmd` option to specify an alternative check that the container supports.
 
 ## Commands
 

@@ -94,7 +94,7 @@ class Mrsk::Cli::Traefik < Mrsk::Cli::Base
     end
   end
 
-  desc "remove_container", "Remove Traefik image from servers", hide: true
+  desc "remove_image", "Remove Traefik image from servers", hide: true
   def remove_image
     with_lock do
       on(MRSK.traefik_hosts) do

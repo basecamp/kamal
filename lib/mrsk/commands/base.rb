@@ -2,6 +2,8 @@ module Mrsk::Commands
   class Base
     delegate :sensitive, :argumentize, to: Mrsk::Utils
 
+    DOCKER_HEALTH_STATUS_FORMAT = "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'"
+
     attr_accessor :config
 
     def initialize(config)

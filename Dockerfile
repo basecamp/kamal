@@ -14,7 +14,7 @@ COPY Gemfile Gemfile.lock mrsk.gemspec ./
 COPY lib/mrsk/version.rb /mrsk/lib/mrsk/version.rb
 
 # Install system dependencies
-RUN apk add --no-cache --update build-base git docker openrc \
+RUN apk add --no-cache --update build-base git docker openrc openssh-client-default \
     && rc-update add docker boot \
     && gem install bundler --version=2.4.3 \
     && bundle install
@@ -30,6 +30,10 @@ RUN gem build mrsk.gemspec && \
 
 # Set the working directory to /workdir
 WORKDIR /workdir
+
+# Tell git it's safe to access /workdir/.git even if
+# the directory is owned by a different user
+RUN git config --global --add safe.directory /workdir
 
 # Set the entrypoint to run the installed binary in /workdir
 # Example:  docker run -it -v "$PWD:/workdir" mrsk init
