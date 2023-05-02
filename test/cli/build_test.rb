@@ -70,7 +70,7 @@ class CliBuildTest < CliTestCase
     end
   end
 
-  test "verify dependencies" do
+  test "verify local dependencies" do
     Mrsk::Commands::Builder.any_instance.stubs(:name).returns("remote".inquiry)
 
     run_command("verify_dependencies").tap do |output|
@@ -78,7 +78,7 @@ class CliBuildTest < CliTestCase
     end
   end
 
-  test "dependencies with no buildx plugin" do
+  test "verify local dependencies with no buildx plugin" do
     SSHKit::Backend::Abstract.any_instance.stubs(:execute)
       .with(:docker, "--version", "&&", :docker, :buildx, "version")
       .raises(SSHKit::Command::Failed.new("no buildx"))
