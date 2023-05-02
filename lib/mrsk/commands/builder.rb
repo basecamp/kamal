@@ -42,14 +42,13 @@ class Mrsk::Commands::Builder < Mrsk::Commands::Base
     if native_and_local?
       docker_version
     else
-    combine \
-      docker_version,
-      docker_buildx_version
+      combine \
+        docker_version,
+        docker_buildx_version
     end
   end
 
   private
-
     def docker_version
       docker "--version"
     end
