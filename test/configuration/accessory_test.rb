@@ -106,23 +106,23 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
   end
 
   test "label args" do
-    assert_equal ["--label", "service=\"app-mysql\""], @config.accessory(:mysql).label_args
-    assert_equal ["--label", "service=\"app-redis\"", "--label", "cache=\"true\""], @config.accessory(:redis).label_args
+    assert_equal ["--label", "service=app-mysql"], @config.accessory(:mysql).label_args
+    assert_equal ["--label", "service=app-redis", "--label", "cache=true"], @config.accessory(:redis).label_args
   end
 
   test "env args with secret" do
     ENV["MYSQL_ROOT_PASSWORD"] = "secret123"
 
     @config.accessory(:mysql).env_args.tap do |env_args|
-      assert_equal ["-e", "MYSQL_ROOT_PASSWORD=\"secret123\"", "-e", "MYSQL_ROOT_HOST=\"%\""], Mrsk::Utils.unredacted(env_args)
-      assert_equal ["-e", "MYSQL_ROOT_PASSWORD=[REDACTED]", "-e", "MYSQL_ROOT_HOST=\"%\""], Mrsk::Utils.redacted(env_args)
+      assert_equal ["-e", "MYSQL_ROOT_PASSWORD=secret123", "-e", "MYSQL_ROOT_HOST=\\%"], Mrsk::Utils.unredacted(env_args)
+      assert_equal ["-e", "MYSQL_ROOT_PASSWORD=[REDACTED]", "-e", "MYSQL_ROOT_HOST=\\%"], Mrsk::Utils.redacted(env_args)
     end
   ensure
     ENV["MYSQL_ROOT_PASSWORD"] = nil
   end
 
   test "env args without secret" do
-    assert_equal ["-e", "SOMETHING=\"else\""], @config.accessory(:redis).env_args
+    assert_equal ["-e", "SOMETHING=else"], @config.accessory(:redis).env_args
   end
 
   test "volume args" do
@@ -143,6 +143,6 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
   end
 
   test "options" do
-    assert_equal ["--cpus", "\"4\"", "--memory", "\"2GB\""], @config.accessory(:redis).option_args
+    assert_equal ["--cpus", "4", "--memory", "2GB"], @config.accessory(:redis).option_args
   end
 end

@@ -108,7 +108,7 @@ class ConfigurationTest < ActiveSupport::TestCase
   end
 
   test "env args" do
-    assert_equal [ "-e", "REDIS_URL=\"redis://x/y\"" ], @config.env_args
+    assert_equal [ "-e", "REDIS_URL=redis://x/y" ], @config.env_args
   end
 
   test "env args with clear and secrets" do
@@ -118,8 +118,8 @@ class ConfigurationTest < ActiveSupport::TestCase
       env: { "clear" => { "PORT" => "3000" }, "secret" => [ "PASSWORD" ] }
     }) })
 
-    assert_equal [ "-e", "PASSWORD=\"secret123\"", "-e", "PORT=\"3000\"" ], Mrsk::Utils.unredacted(config.env_args)
-    assert_equal [ "-e", "PASSWORD=[REDACTED]", "-e", "PORT=\"3000\"" ], Mrsk::Utils.redacted(config.env_args)
+    assert_equal [ "-e", "PASSWORD=secret123", "-e", "PORT=3000" ], Mrsk::Utils.unredacted(config.env_args)
+    assert_equal [ "-e", "PASSWORD=[REDACTED]", "-e", "PORT=3000" ], Mrsk::Utils.redacted(config.env_args)
   ensure
     ENV["PASSWORD"] = nil
   end
@@ -129,7 +129,7 @@ class ConfigurationTest < ActiveSupport::TestCase
       env: { "clear" => { "PORT" => "3000" } }
     }) })
 
-    assert_equal [ "-e", "PORT=\"3000\"" ], config.env_args
+    assert_equal [ "-e", "PORT=3000" ], config.env_args
   end
 
   test "env args with only secrets" do
@@ -139,7 +139,7 @@ class ConfigurationTest < ActiveSupport::TestCase
       env: { "secret" => [ "PASSWORD" ] }
     }) })
 
-    assert_equal [ "-e", "PASSWORD=\"secret123\"" ], Mrsk::Utils.unredacted(config.env_args)
+    assert_equal [ "-e", "PASSWORD=secret123" ], Mrsk::Utils.unredacted(config.env_args)
     assert_equal [ "-e", "PASSWORD=[REDACTED]" ], Mrsk::Utils.redacted(config.env_args)
   ensure
     ENV["PASSWORD"] = nil
@@ -212,17 +212,17 @@ class ConfigurationTest < ActiveSupport::TestCase
   end
 
   test "logging args default" do
-    assert_equal ["--log-opt", "max-size=\"10m\""], @config.logging_args
+    assert_equal ["--log-opt", "max-size=10m"], @config.logging_args
   end
 
   test "logging args with configured options" do
     config = Mrsk::Configuration.new(@deploy.tap { |c| c.merge!(logging: { "options" => { "max-size" => "100m", "max-file" => 5 } }) })
-    assert_equal ["--log-opt", "max-size=\"100m\"", "--log-opt", "max-file=\"5\""], @config.logging_args
+    assert_equal ["--log-opt", "max-size=100m", "--log-opt", "max-file=5"], @config.logging_args
   end
 
   test "logging args with configured driver and options" do
     config = Mrsk::Configuration.new(@deploy.tap { |c| c.merge!(logging: { "driver" => "local", "options" => { "max-size" => "100m", "max-file" => 5 } }) })
-    assert_equal ["--log-driver", "\"local\"", "--log-opt", "max-size=\"100m\"", "--log-opt", "max-file=\"5\""], @config.logging_args
+    assert_equal ["--log-driver", "local", "--log-opt", "max-size=100m", "--log-opt", "max-file=5"], @config.logging_args
   end
 
   test "erb evaluation of yml config" do
@@ -249,6 +249,6 @@ class ConfigurationTest < ActiveSupport::TestCase
   end
 
   test "to_h" do
-    assert_equal({ :roles=>["web"], :hosts=>["1.1.1.1", "1.1.1.2"], :primary_host=>"1.1.1.1", :version=>"missing", :repository=>"dhh/app", :absolute_image=>"dhh/app:missing", :service_with_version=>"app-missing", :env_args=>["-e", "REDIS_URL=\"redis://x/y\""], :ssh_options=>{:user=>"root", :auth_methods=>["publickey"]}, :volume_args=>["--volume", "/local/path:/container/path"], :logging=>["--log-opt", "max-size=\"10m\""], :healthcheck=>{"path"=>"/up", "port"=>3000, "max_attempts" => 7 }}, @config.to_h)
+    assert_equal({ :roles=>["web"], :hosts=>["1.1.1.1", "1.1.1.2"], :primary_host=>"1.1.1.1", :version=>"missing", :repository=>"dhh/app", :absolute_image=>"dhh/app:missing", :service_with_version=>"app-missing", :env_args=>["-e", "REDIS_URL=redis://x/y"], :ssh_options=>{:user=>"root", :auth_methods=>["publickey"]}, :volume_args=>["--volume", "/local/path:/container/path"], :logging=>["--log-opt", "max-size=10m"], :healthcheck=>{"path"=>"/up", "port"=>3000, "max_attempts" => 7 }}, @config.to_h)
   end
 end
