@@ -16,7 +16,7 @@ class Mrsk::Cli::Build < Mrsk::Cli::Base
 
       run_locally do
         begin
-          if cli.dependencies
+          if cli.verify_dependencies
             MRSK.with_verbosity(:debug) { execute *MRSK.builder.push }
           end
         rescue SSHKit::Command::Failed => e
@@ -82,15 +82,17 @@ class Mrsk::Cli::Build < Mrsk::Cli::Base
     end
   end
 
-  desc "dependencies", "Check local dependencies"
-  def dependencies
+
+  desc "", "" # Really a private method, but needed to be invoked from #push
+  def verify_dependencies
     run_locally do
       begin
-        execute *MRSK.builder.dependencies
+        execute *MRSK.builder.ensure_dependencies_installed
       rescue SSHKit::Command::Failed => e
         build_error = e.message =~ /command not found/ ?
           "Docker is not installed locally" :
           "Docker buildx plugin is not installed locally"
+
         raise BuildError, build_error
       end
     end

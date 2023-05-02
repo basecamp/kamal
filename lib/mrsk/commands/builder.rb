@@ -2,7 +2,7 @@ class Mrsk::Commands::Builder < Mrsk::Commands::Base
   delegate :create, :remove, :push, :clean, :pull, :info, to: :target
 
   def name
-    target.class.to_s.remove("Mrsk::Commands::Builder::").underscore
+    target.class.to_s.remove("Mrsk::Commands::Builder::").underscore.inquiry
   end
 
   def target
@@ -34,26 +34,23 @@ class Mrsk::Commands::Builder < Mrsk::Commands::Base
     @multiarch_remote ||= Mrsk::Commands::Builder::Multiarch::Remote.new(config)
   end
 
-  def native_and_local?
-    name == 'native'
-  end
 
-  def dependencies
-    if native_and_local?
-      docker_version
+  def ensure_dependencies_installed
+    if name.native?
+      ensure_docker_installed
     else
       combine \
-        docker_version,
-        docker_buildx_version
+        ensure_docker_installed,
+        ensure_buildx_installed
     end
   end
 
   private
-    def docker_version
+    def ensure_docker_installed
       docker "--version"
     end
 
-    def docker_buildx_version
+    def ensure_buildx_installed
       docker :buildx, "version"
     end
 end

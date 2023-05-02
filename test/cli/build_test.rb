@@ -9,7 +9,7 @@ class CliBuildTest < CliTestCase
   end
 
   test "push" do
-    Mrsk::Cli::Build.any_instance.stubs(:dependencies).returns(true)
+    Mrsk::Cli::Build.any_instance.stubs(:verify_dependencies).returns(true)
     run_command("push").tap do |output|
       assert_match /docker buildx build --push --platform linux\/amd64,linux\/arm64 --builder mrsk-app-multiarch -t dhh\/app:999 -t dhh\/app:latest --label service="app" --file Dockerfile \. as .*@localhost/, output
     end
@@ -17,7 +17,7 @@ class CliBuildTest < CliTestCase
 
   test "push without builder" do
     stub_locking
-    Mrsk::Cli::Build.any_instance.stubs(:dependencies).returns(true)
+    Mrsk::Cli::Build.any_instance.stubs(:verify_dependencies).returns(true)
     SSHKit::Backend::Abstract.any_instance.stubs(:execute)
       .with { |arg| arg == :docker }
       .raises(SSHKit::Command::Failed.new("no builder"))
@@ -70,9 +70,10 @@ class CliBuildTest < CliTestCase
     end
   end
 
-  test "dependencies" do
-    Mrsk::Commands::Builder.any_instance.stubs(:native_and_local?).returns(false)
-    run_command("dependencies").tap do |output|
+  test "verify dependencies" do
+    Mrsk::Commands::Builder.any_instance.stubs(:name).returns("remote".inquiry)
+
+    run_command("verify_dependencies").tap do |output|
       assert_match /docker --version && docker buildx version/, output
     end
   end
@@ -83,7 +84,7 @@ class CliBuildTest < CliTestCase
       .raises(SSHKit::Command::Failed.new("no buildx"))
 
     Mrsk::Commands::Builder.any_instance.stubs(:native_and_local?).returns(false)
-    assert_raises(Mrsk::Cli::Build::BuildError) { run_command("dependencies") }
+    assert_raises(Mrsk::Cli::Build::BuildError) { run_command("verify_dependencies") }
   end
 
   private
