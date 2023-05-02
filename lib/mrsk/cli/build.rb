@@ -12,18 +12,18 @@ class Mrsk::Cli::Build < Mrsk::Cli::Base
   desc "push", "Build and push app image to registry"
   def push
     with_lock do
-      cli_build = self
+      cli = self
 
       run_locally do
         begin
-          if cli_build.dependencies
+          if cli.dependencies
             MRSK.with_verbosity(:debug) { execute *MRSK.builder.push }
           end
         rescue SSHKit::Command::Failed => e
           if e.message =~ /(no builder)|(no such file or directory)/
             error "Missing compatible builder, so creating a new one first"
 
-            if cli_build.create
+            if cli.create
               MRSK.with_verbosity(:debug) { execute *MRSK.builder.push }
             end
           else
@@ -94,6 +94,7 @@ class Mrsk::Cli::Build < Mrsk::Cli::Base
         raise BuildError, build_error
       end
     end
+
     true
   end
 end
