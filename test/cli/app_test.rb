@@ -40,6 +40,16 @@ class CliAppTest < CliTestCase
     Thread.report_on_exception = true
   end
 
+  test "boot uses group strategy when specified" do
+    Mrsk::Cli::App.any_instance.stubs(:on).with("1.1.1.1").twice # acquire & release lock
+    Mrsk::Cli::App.any_instance.stubs(:on).with([ "1.1.1.1" ]) # tag container
+
+    # Strategy is used when booting the containers
+    Mrsk::Cli::App.any_instance.expects(:on).with([ "1.1.1.1" ], in: :groups, limit: 3, wait: 2).with_block_given
+
+    run_command("boot", config: :with_boot_strategy)
+  end
+
   test "start" do
     run_command("start").tap do |output|
       assert_match "docker start app-web-999", output
@@ -158,7 +168,7 @@ class CliAppTest < CliTestCase
   end
 
   private
-    def run_command(*command)
-      stdouted { Mrsk::Cli::App.start([*command, "-c", "test/fixtures/deploy_with_accessories.yml", "--hosts", "1.1.1.1"]) }
+    def run_command(*command, config: :with_accessories)
+      stdouted { Mrsk::Cli::App.start([*command, "-c", "test/fixtures/deploy_#{config}.yml", "--hosts", "1.1.1.1"]) }
     end
 end
