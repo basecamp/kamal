@@ -1,4 +1,7 @@
+
 class Mrsk::Commands::Builder::Base < Mrsk::Commands::Base
+  class BuilderError < StandardError; end
+
   delegate :argumentize, to: Mrsk::Utils
 
   def clean
@@ -16,6 +19,7 @@ class Mrsk::Commands::Builder::Base < Mrsk::Commands::Base
   def build_context
     context
   end
+
 
   private
     def build_tags
@@ -35,7 +39,11 @@ class Mrsk::Commands::Builder::Base < Mrsk::Commands::Base
     end
 
     def build_dockerfile
-      argumentize "--file", dockerfile
+      if Pathname.new(File.expand_path(dockerfile)).exist?
+        argumentize "--file", dockerfile
+      else
+        raise BuilderError, "Missing #{dockerfile}"
+      end
     end
 
     def args

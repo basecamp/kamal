@@ -12,7 +12,6 @@ class CliMainTest < CliTestCase
   test "deploy" do
     invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "skip_broadcast" => false, "version" => "999" }
 
-    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:server:bootstrap", [], invoke_options)
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:registry:login", [], invoke_options)
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:build:deliver", [], invoke_options)
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:traefik:boot", [], invoke_options)
@@ -22,7 +21,6 @@ class CliMainTest < CliTestCase
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:prune:all", [], invoke_options)
 
     run_command("deploy").tap do |output|
-      assert_match /Ensure curl and Docker are installed/, output
       assert_match /Log into image registry/, output
       assert_match /Build and push app image/, output
       assert_match /Ensure Traefik is running/, output
@@ -35,7 +33,6 @@ class CliMainTest < CliTestCase
   test "deploy with skip_push" do
     invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "skip_broadcast" => false, "version" => "999" }
 
-    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:server:bootstrap", [], invoke_options)
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:registry:login", [], invoke_options)
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:build:pull", [], invoke_options)
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:traefik:boot", [], invoke_options)
@@ -46,7 +43,6 @@ class CliMainTest < CliTestCase
 
     run_command("deploy", "--skip_push").tap do |output|
       assert_match /Acquiring the deploy lock/, output
-      assert_match /Ensure curl and Docker are installed/, output
       assert_match /Log into image registry/, output
       assert_match /Pull app image/, output
       assert_match /Ensure Traefik is running/, output
@@ -87,7 +83,6 @@ class CliMainTest < CliTestCase
   test "deploy errors during critical section leave lock in place" do
     invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "skip_broadcast" => false, "version" => "999" }
 
-    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:server:bootstrap", [], invoke_options)
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:registry:login", [], invoke_options)
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:build:deliver", [], invoke_options)
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:app:stale_containers", [], invoke_options)
@@ -106,7 +101,7 @@ class CliMainTest < CliTestCase
     invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "skip_broadcast" => false, "version" => "999" }
 
     Mrsk::Cli::Main.any_instance.expects(:invoke)
-      .with("mrsk:cli:server:bootstrap", [], invoke_options)
+      .with("mrsk:cli:registry:login", [], invoke_options)
       .raises(RuntimeError)
 
     assert !MRSK.holding_lock?
