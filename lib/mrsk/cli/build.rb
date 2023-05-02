@@ -87,7 +87,7 @@ class Mrsk::Cli::Build < Mrsk::Cli::Base
   def verify_dependencies
     run_locally do
       begin
-        execute *MRSK.builder.ensure_dependencies_installed
+        execute *MRSK.builder.ensure_local_dependencies_installed
       rescue SSHKit::Command::Failed => e
         build_error = e.message =~ /command not found/ ?
           "Docker is not installed locally" :

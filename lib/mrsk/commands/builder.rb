@@ -35,22 +35,22 @@ class Mrsk::Commands::Builder < Mrsk::Commands::Base
   end
 
 
-  def ensure_dependencies_installed
+  def ensure_local_dependencies_installed
     if name.native?
-      ensure_docker_installed
+      ensure_local_docker_installed
     else
       combine \
-        ensure_docker_installed,
-        ensure_buildx_installed
+        ensure_local_docker_installed,
+        ensure_local_buildx_installed
     end
   end
 
   private
-    def ensure_docker_installed
+    def ensure_local_docker_installed
       docker "--version"
     end
 
-    def ensure_buildx_installed
+    def ensure_local_buildx_installed
       docker :buildx, "version"
     end
 end
