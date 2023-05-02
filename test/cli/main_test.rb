@@ -145,7 +145,8 @@ class CliMainTest < CliTestCase
   end
 
   test "rollback bad version" do
-    # Mrsk::Cli::Main.any_instance.stubs(:container_available?).returns(false)
+    Thread.report_on_exception = false
+
     run_command("details") # Preheat MRSK const
 
     run_command("rollback", "nonsense").tap do |output|
@@ -155,9 +156,19 @@ class CliMainTest < CliTestCase
   end
 
   test "rollback good version" do
-    Mrsk::Cli::Main.any_instance.stubs(:container_available?).returns(true)
-    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info).with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=web", "--filter", "status=running", "--latest", "--format", "\"{{.Names}}\"", "|", "grep -oE \"\\-[^-]+$\"", "|", "cut -c 2-").returns("version-to-rollback\n").at_least_once
-    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info).with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=workers", "--filter", "status=running", "--latest", "--format", "\"{{.Names}}\"", "|", "grep -oE \"\\-[^-]+$\"", "|", "cut -c 2-").returns("version-to-rollback\n").at_least_once
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-123$", "--quiet")
+      .returns("version-to-rollback\n").at_least_once
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-workers-123$", "--quiet")
+      .returns("version-to-rollback\n").at_least_once
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=web", "--filter", "status=running", "--latest", "--format", "\"{{.Names}}\"", "|", "grep -oE \"\\-[^-]+$\"", "|", "cut -c 2-")
+      .returns("version-to-rollback\n").at_least_once
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=workers", "--filter", "status=running", "--latest", "--format", "\"{{.Names}}\"", "|", "grep -oE \"\\-[^-]+$\"", "|", "cut -c 2-")
+      .returns("version-to-rollback\n").at_least_once
+
 
     run_command("rollback", "123", config_file: "deploy_with_accessories").tap do |output|
       assert_match "Start version 123", output

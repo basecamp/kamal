@@ -2,9 +2,7 @@ require "test_helper"
 
 class CommanderTest < ActiveSupport::TestCase
   setup do
-    @mrsk = Mrsk::Commander.new.tap do |mrsk|
-      mrsk.configure config_file: Pathname.new(File.expand_path("fixtures/deploy_with_roles.yml", __dir__))
-    end
+    configure_with(:deploy_with_roles)
   end
 
   test "lazy configuration" do
@@ -55,4 +53,27 @@ class CommanderTest < ActiveSupport::TestCase
     assert_equal [ "web" ], @mrsk.roles_on("1.1.1.1")
     assert_equal [ "workers" ], @mrsk.roles_on("1.1.1.3")
   end
+
+  test "default group strategy" do
+    assert_empty @mrsk.boot_strategy
+  end
+
+  test "specific limit group strategy" do
+    configure_with(:deploy_with_boot_strategy)
+
+    assert_equal({ in: :groups, limit: 3, wait: 2 }, @mrsk.boot_strategy)
+  end
+
+  test "percentage-based group strategy" do
+    configure_with(:deploy_with_precentage_boot_strategy)
+
+    assert_equal({ in: :groups, limit: 1, wait: 2 }, @mrsk.boot_strategy)
+  end
+
+  private
+    def configure_with(variant)
+      @mrsk = Mrsk::Commander.new.tap do |mrsk|
+        mrsk.configure config_file: Pathname.new(File.expand_path("fixtures/#{variant}.yml", __dir__))
+      end
+    end
 end
