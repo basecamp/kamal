@@ -7,7 +7,7 @@ class Mrsk::Cli::Prune < Mrsk::Cli::Base
     end
   end
 
-  desc "images", "Prune unused images older than 7 days"
+  desc "images", "Prune dangling images"
   def images
     with_lock do
       on(MRSK.hosts) do
@@ -17,7 +17,7 @@ class Mrsk::Cli::Prune < Mrsk::Cli::Base
     end
   end
 
-  desc "containers", "Prune stopped containers older than 3 days"
+  desc "containers", "Prune all stopped containers, except the last 5"
   def containers
     with_lock do
       on(MRSK.hosts) do

@@ -10,13 +10,13 @@ class CommandsPruneTest < ActiveSupport::TestCase
 
   test "images" do
     assert_equal \
-      "docker image prune --all --force --filter label=service=app --filter until=168h",
+      "docker image prune --all --force --filter label=service=app --filter dangling=true",
       new_command.images.join(" ")
   end
 
   test "containers" do
     assert_equal \
-      "docker container prune --force --filter label=service=app --filter until=72h",
+      "docker ps -q -a --filter label=service=app --filter status=created --filter status=exited --filter status=dead | tail -n +6 | while read container_id; do docker rm $container_id; done",
       new_command.containers.join(" ")
   end
 
