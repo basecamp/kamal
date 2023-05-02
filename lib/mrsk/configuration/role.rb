@@ -89,6 +89,9 @@ class Mrsk::Configuration::Role
     def traefik_labels
       if running_traefik?
         {
+          # Setting a service property ensures that the generated service name will be consistent between versions
+          "traefik.http.services.#{traefik_service}.loadbalancer.server.scheme" => "http",
+
           "traefik.http.routers.#{traefik_service}.rule" => "PathPrefix(`/`)",
           "traefik.http.middlewares.#{traefik_service}-retry.retry.attempts" => "5",
           "traefik.http.middlewares.#{traefik_service}-retry.retry.initialinterval" => "500ms",
