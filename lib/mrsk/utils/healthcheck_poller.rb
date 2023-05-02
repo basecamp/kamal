@@ -1,5 +1,5 @@
 class Mrsk::Utils::HealthcheckPoller
-  TRAEFIK_HEALTHY_DELAY = 1
+  TRAEFIK_HEALTHY_DELAY = 2
 
   class HealthcheckError < StandardError; end
 

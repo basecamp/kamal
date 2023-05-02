@@ -10,5 +10,8 @@ registry:
 builder:
   multiarch: false
 healthcheck:
-  path: /
-  port: 80
+  cmd: wget -qO- http://localhost > /dev/null
+traefik:
+  args:
+    accesslog: true
+    accesslog.format: json

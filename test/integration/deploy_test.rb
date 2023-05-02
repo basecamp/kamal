@@ -51,7 +51,15 @@ class DeployTest < ActiveSupport::TestCase
     end
 
     def assert_app_is_up
-      assert_equal "200", app_response.code
+      code = app_response.code
+      if code != "200"
+        puts "Got response code #{code}, here are the traefik logs:"
+        mrsk :traefik, :logs
+        puts "And here are the load balancer logs"
+        docker_compose :logs, :load_balancer
+        puts "Tried to get the response code again and got #{app_response.code}"
+      end
+      assert_equal "200", code
     end
 
     def app_response
@@ -61,7 +69,10 @@ class DeployTest < ActiveSupport::TestCase
     def wait_for_healthy(timeout: 20)
       timeout_at = Time.now + timeout
       while docker_compose("ps -a | tail -n +2 | grep -v '(healthy)' | wc -l", capture: true) != "0"
-        raise "Container not healthy after #{timeout} seconds" if timeout_at < Time.now
+        if timeout_at < Time.now
+          docker_compose("ps -a | tail -n +2 | grep -v '(healthy)'")
+          raise "Container not healthy after #{timeout} seconds" if timeout_at < Time.now
+        end
         sleep 0.1
       end
     end
