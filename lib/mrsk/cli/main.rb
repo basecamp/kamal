@@ -17,9 +17,6 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
       invoke_options = deploy_options
 
       runtime = print_runtime do
-        say "Ensure curl and Docker are installed on servers...", :magenta
-        invoke "mrsk:cli:server:bootstrap", [], invoke_options
-
         say "Log into image registry...", :magenta
         invoke "mrsk:cli:registry:login", [], invoke_options
 
