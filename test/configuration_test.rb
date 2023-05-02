@@ -48,7 +48,7 @@ class ConfigurationTest < ActiveSupport::TestCase
   end
 
   test "role" do
-    assert_equal "web", @config.role(:web).name
+    assert @config.role(:web).name.web?
     assert_equal "workers", @config_with_roles.role(:workers).name
     assert_nil @config.role(:missing)
   end

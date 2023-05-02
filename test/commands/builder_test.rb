@@ -52,10 +52,19 @@ class CommandsBuilderTest < ActiveSupport::TestCase
   end
 
   test "build dockerfile" do
+    Pathname.any_instance.expects(:exist?).returns(true).once
     builder = new_builder_command(builder: { "dockerfile" => "Dockerfile.xyz" })
     assert_equal \
       "-t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile.xyz",
       builder.target.build_options.join(" ")
+  end
+
+  test "missing dockerfile" do
+    Pathname.any_instance.expects(:exist?).returns(false).once
+    builder = new_builder_command(builder: { "dockerfile" => "Dockerfile.xyz" })
+    assert_raises(Mrsk::Commands::Builder::Base::BuilderError) do
+      builder.target.build_options.join(" ")
+    end
   end
 
   test "build context" do
