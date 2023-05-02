@@ -87,6 +87,10 @@ class Mrsk::Configuration
     roles.select(&:running_traefik?).flat_map(&:hosts).uniq
   end
 
+  def boot
+    Mrsk::Configuration::Boot.new(config: self)
+  end
+
 
   def repository
     [ raw_config.registry["server"], image ].compact.join("/")
