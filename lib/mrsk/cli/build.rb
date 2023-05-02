@@ -1,5 +1,4 @@
 class Mrsk::Cli::Build < Mrsk::Cli::Base
-
   class BuildError < StandardError; end
 
   desc "deliver", "Build app and push app image to registry then pull image on servers"
