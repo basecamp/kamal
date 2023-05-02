@@ -16,7 +16,7 @@ class Mrsk::Cli::Build < Mrsk::Cli::Base
 
       run_locally do
         begin
-          if cli.verify_dependencies
+          if cli.verify_local_dependencies
             MRSK.with_verbosity(:debug) { execute *MRSK.builder.push }
           end
         rescue SSHKit::Command::Failed => e
@@ -84,7 +84,7 @@ class Mrsk::Cli::Build < Mrsk::Cli::Base
 
 
   desc "", "" # Really a private method, but needed to be invoked from #push
-  def verify_dependencies
+  def verify_local_dependencies
     run_locally do
       begin
         execute *MRSK.builder.ensure_local_dependencies_installed
