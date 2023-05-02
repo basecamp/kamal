@@ -13,5 +13,5 @@ registry:
   password: pw
 
 boot:
-  group_limit: 25%
-  group_wait: 2
+  limit: 25%
+  wait: 2

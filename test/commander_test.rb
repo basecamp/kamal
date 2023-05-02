@@ -55,19 +55,19 @@ class CommanderTest < ActiveSupport::TestCase
   end
 
   test "default group strategy" do
-    assert_empty @mrsk.group_strategy
+    assert_empty @mrsk.boot_strategy
   end
 
   test "specific limit group strategy" do
-    configure_with(:deploy_with_group_strategy)
+    configure_with(:deploy_with_boot_strategy)
 
-    assert_equal({ in: :groups, limit: 3, wait: 2 }, @mrsk.group_strategy)
+    assert_equal({ in: :groups, limit: 3, wait: 2 }, @mrsk.boot_strategy)
   end
 
   test "percentage-based group strategy" do
-    configure_with(:deploy_with_precentage_group_strategy)
+    configure_with(:deploy_with_precentage_boot_strategy)
 
-    assert_equal({ in: :groups, limit: 1, wait: 2 }, @mrsk.group_strategy)
+    assert_equal({ in: :groups, limit: 1, wait: 2 }, @mrsk.boot_strategy)
   end
 
   private

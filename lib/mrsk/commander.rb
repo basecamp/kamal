@@ -51,9 +51,9 @@ class Mrsk::Commander
     end
   end
 
-  def group_strategy
-    if config.boot.group_limit.present?
-      { in: :groups, limit: config.boot.group_limit, wait: config.boot.group_wait }
+  def boot_strategy
+    if config.boot.limit.present?
+      { in: :groups, limit: config.boot.limit, wait: config.boot.wait }
     else
       {}
     end

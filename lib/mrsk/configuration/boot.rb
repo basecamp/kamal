@@ -4,8 +4,9 @@ class Mrsk::Configuration::Boot
     @host_count = config.all_hosts.count
   end
 
-  def group_limit
-    limit = @options["group_limit"]
+  def limit
+    limit = @options["limit"]
+
     if limit.to_s.end_with?("%")
       @host_count * limit.to_i / 100
     else
@@ -13,7 +14,7 @@ class Mrsk::Configuration::Boot
     end
   end
 
-  def group_wait
-    @options["group_wait"]
+  def wait
+    @options["wait"]
   end
 end
