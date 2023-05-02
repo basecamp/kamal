@@ -1,34 +1,25 @@
-require "active_support/core_ext/time/conversions"
+require "time"
 
 class Mrsk::Commands::Auditor < Mrsk::Commands::Base
-  attr_reader :role
+  attr_reader :details
 
-  def initialize(config, role: nil)
+  def initialize(config, **details)
     super(config)
-    @role = role
+    @details = default_details.merge(details)
   end
 
   # Runs remotely
-  def record(line)
+  def record(line, **details)
     append \
-      [ :echo, tagged_record_line(line) ],
+      [ :echo, *audit_tags(**details), line ],
       audit_log_file
   end
 
   # Runs locally
-  def broadcast(line)
+  def broadcast(line, **details)
     if broadcast_cmd = config.audit_broadcast_cmd
-      [ broadcast_cmd, tagged_broadcast_line(line) ]
+      [ broadcast_cmd, *broadcast_args(line, **details), env: env_for(event: line, **details) ]
     end
-  end
-
-  def broadcast_environment(line)
-    {
-      "MRSK_PERFORMER" => performer,
-      "MRSK_ROLE" => role,
-      "MRSK_DESTINATION" => config.destination,
-      "MRSK_MESSAGE" => line
-    }
   end
 
   def reveal
@@ -40,35 +31,29 @@ class Mrsk::Commands::Auditor < Mrsk::Commands::Base
       [ "mrsk", config.service, config.destination, "audit.log" ].compact.join("-")
     end
 
-    def tagged_record_line(line)
-      tagged_line recorded_at_tag, performer_tag, role_tag, line
+    def default_details
+      { recorded_at: Time.now.utc.iso8601,
+        performer: `whoami`.chomp,
+        destination: config.destination }
     end
 
-    def tagged_broadcast_line(line)
-      tagged_line performer_tag, role_tag, destination_tag, line
+    def audit_tags(**details)
+      tags_for **self.details.merge(details)
     end
 
-    def tagged_line(*tags_and_line)
-      "'#{tags_and_line.compact.join(" ")}'"
+    def broadcast_args(line, **details)
+      "'#{broadcast_tags(**details).join(" ")} #{line}'"
     end
 
-    def recorded_at_tag
-      "[#{Time.now.to_fs(:db)}]"
+    def broadcast_tags(**details)
+      tags_for **self.details.merge(details).except(:recorded_at)
     end
 
-    def performer
-      `whoami`.strip
+    def tags_for(**details)
+      details.compact.values.map { |value| "[#{value}]" }
     end
 
-    def performer_tag
-      "[#{performer}]"
-    end
-
-    def role_tag
-      "[#{role}]" if role
-    end
-
-    def destination_tag
-      "[#{config.destination}]" if config.destination
+    def env_for(**details)
+      self.details.merge(details).compact.transform_keys { |detail| "MRSK_#{detail.upcase}" }
     end
 end

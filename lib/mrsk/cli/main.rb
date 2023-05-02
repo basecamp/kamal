@@ -200,6 +200,13 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
     end
   end
 
+  desc "broadcast", "Broadcast an audit message"
+  option :message, aliases: "-m", type: :string, desc: "Audit mesasge", required: true
+  def broadcast
+    say "Broadcast: #{options[:message]}", :magenta
+    audit_broadcast options[:message]
+  end
+
   desc "version", "Show MRSK version"
   def version
     puts Mrsk::VERSION

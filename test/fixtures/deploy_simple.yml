@@ -6,3 +6,4 @@ servers:
 registry:
   username: user
   password: pw
+audit_broadcast_cmd: "bin/audit_broadcast"

@@ -677,14 +677,20 @@ That'll post a line like follows to a preconfigured chatbot in Basecamp:
 [My App] [dhh] Rolled back to version d264c4e92470ad1bd18590f04466787262f605de
 ```
 
-In addition to the formatted message, MRSK sets a number of environment variables with the components of the broadcast.
-You can use these (rather than the command argument) if you want more control over how the message is formatted.
-MRSK currently sets:
+`MRSK_*` environment variables are available to the broadcast command for
+fine-grained audit reporting, e.g. for triggering deployment reports or
+firing a JSON webhook. These variables include:
+- `MRSK_RECORDED_AT` - UTC timestamp in ISO 8601 format, e.g. `2023-04-14T17:07:31Z`
+- `MRSK_PERFORMER` - the local user performing the command (from `whoami`)
+- `MRSK_MESSAGE` - the full audit message, e.g. "Deployed app@150b24f"
+- `MRSK_DESTINATION` - optional: destination, e.g. "staging"
+- `MRSK_ROLE` - optional: role targeted, e.g. "web"
 
-- `MRSK_PERFORMER` - the user performing the command
-- `MRSK_DESTINATION` - the destination
-- `MRSK_ROLE` - the specific role being targetted, if any
-- `MRSK_MESSAGE` - full text of the action (e.g. "Deployed app@150b24f")
+Use `mrsk broadcast` to test and troubleshoot your broadcast command:
+
+```bash
+mrsk broadcast -m "test audit message"
+```
 
 ### Healthcheck
 

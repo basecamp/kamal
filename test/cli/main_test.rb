@@ -321,6 +321,19 @@ class CliMainTest < CliTestCase
     end
   end
 
+  test "broadcast" do
+    SSHKit::Backend::Abstract.any_instance.expects(:execute).with do |command, line, options, verbosity:|
+      command == "bin/audit_broadcast" &&
+        line =~ /\A'\[[^\]]+\] message'\z/ &&
+        options[:env].keys == %w[ MRSK_RECORDED_AT MRSK_PERFORMER MRSK_EVENT ] &&
+        verbosity == :debug
+    end.returns("Broadcast audit message: message")
+
+    run_command("broadcast", "-m", "message").tap do |output|
+      assert_match "Broadcast: message", output
+    end
+  end
+
   test "version" do
     version = stdouted { Mrsk::Cli::Main.new.version }
     assert_equal Mrsk::VERSION, version

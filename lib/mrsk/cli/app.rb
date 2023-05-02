@@ -60,7 +60,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
         roles = MRSK.roles_on(host)
 
         roles.each do |role|
-          execute *MRSK.auditor(role: role).record("Stopped app"), verbosity: :debug
+          execute *MRSK.auditor.record("Stopped app", role: role), verbosity: :debug
           execute *MRSK.app(role: role).stop, raise_on_non_zero_exit: false
         end
       end
@@ -107,7 +107,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
           roles = MRSK.roles_on(host)
 
           roles.each do |role|
-            execute *MRSK.auditor(role: role).record("Executed cmd '#{cmd}' on app version #{version}"), verbosity: :debug
+            execute *MRSK.auditor.record("Executed cmd '#{cmd}' on app version #{version}", role: role), verbosity: :debug
             puts_by_host host, capture_with_info(*MRSK.app(role: role).execute_in_existing_container(cmd))
           end
         end
@@ -214,7 +214,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
         roles = MRSK.roles_on(host)
 
         roles.each do |role|
-          execute *MRSK.auditor(role: role).record("Removed app container with version #{version}"), verbosity: :debug
+          execute *MRSK.auditor.record("Removed app container with version #{version}", role: role), verbosity: :debug
           execute *MRSK.app(role: role).remove_container(version: version)
         end
       end
@@ -228,7 +228,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
         roles = MRSK.roles_on(host)
 
         roles.each do |role|
-          execute *MRSK.auditor(role: role).record("Removed all app containers"), verbosity: :debug
+          execute *MRSK.auditor.record("Removed all app containers", role: role), verbosity: :debug
           execute *MRSK.app(role: role).remove_containers
         end
       end
