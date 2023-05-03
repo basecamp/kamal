@@ -22,6 +22,10 @@ class Mrsk::Commands::Healthcheck < Mrsk::Commands::Base
     pipe container_id, xargs(docker(:inspect, "--format", DOCKER_HEALTH_STATUS_FORMAT))
   end
 
+  def container_health_log
+    pipe container_id, xargs(docker(:inspect, "--format", DOCKER_HEALTH_LOG_FORMAT))
+  end
+
   def logs
     pipe container_id, xargs(docker(:logs, "--tail", 50, "2>&1"))
   end
