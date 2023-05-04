@@ -22,9 +22,11 @@ class SSHKit::Backend::Abstract
 
     # Override to merge options returned by commands in the args list with
     # options passed by the CLI and pass them along as kwargs.
-    def command(*args_and_options)
-      options, args = args_and_options.partition { |a| a.is_a? Hash }
-      build_command(*args, **options.reduce(:deep_merge))
+    def command(args, options)
+      more_options, args = args.partition { |a| a.is_a? Hash }
+      more_options << options
+
+      build_command(args, **more_options.reduce(:deep_merge))
     end
 
     # Destructure options to pluck out env for merge
