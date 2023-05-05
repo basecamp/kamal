@@ -3,6 +3,7 @@ require "test_helper"
 
 class IntegrationTest < ActiveSupport::TestCase
   setup do
+    ENV["TEST_ID"] = SecureRandom.hex
     docker_compose "up --build -d"
     wait_for_healthy
     setup_deployer
@@ -14,7 +15,7 @@ class IntegrationTest < ActiveSupport::TestCase
 
   private
     def docker_compose(*commands, capture: false, raise_on_error: true)
-      command = "docker compose #{commands.join(" ")}"
+      command = "TEST_ID=#{ENV["TEST_ID"]} docker compose #{commands.join(" ")}"
       succeeded = false
       if capture
         result = stdouted { succeeded = system("cd test/integration && #{command}") }
@@ -80,6 +81,13 @@ class IntegrationTest < ActiveSupport::TestCase
 
     def assert_app_version(version, response)
       assert_equal version, response.body.strip
+    end
+
+    def assert_hooks_ran
+      [ "pre-build", "post-push" ].each do |hook|
+        file = "/tmp/#{ENV["TEST_ID"]}/#{hook}"
+        assert_match /File: #{file}/, deployer_exec("stat #{file}", capture: true)
+      end
     end
 
     def wait_for_healthy(timeout: 20)

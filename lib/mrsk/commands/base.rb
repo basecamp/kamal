@@ -53,5 +53,9 @@ module Mrsk::Commands
       def docker(*args)
         args.compact.unshift :docker
       end
+
+      def tags(**details)
+        Mrsk::Tags.from_config(config, **details)
+      end
   end
 end

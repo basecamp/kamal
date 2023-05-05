@@ -132,6 +132,14 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
       puts "Created .env file"
     end
 
+    unless (hooks_dir = Pathname.new(File.expand_path(".mrsk/hooks"))).exist?
+      hooks_dir.mkpath
+      Pathname.new(File.expand_path("templates/sample_hooks", __dir__)).each_child do |sample_hook|
+        FileUtils.cp sample_hook, hooks_dir
+      end
+      puts "Created sample hooks in .mrsk/hooks"
+    end
+
     if options[:bundle]
       if (binstub = Pathname.new(File.expand_path("bin/mrsk"))).exist?
         puts "Binstub already exists in bin/mrsk (remove first to create a new one)"

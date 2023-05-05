@@ -8,6 +8,8 @@ class MainTest < IntegrationTest
 
     mrsk :deploy
 
+    assert_hooks_ran
+
     assert_app_is_up version: first_version
 
     second_version = update_app_rev

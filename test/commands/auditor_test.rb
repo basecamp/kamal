@@ -1,19 +1,26 @@
 require "test_helper"
+require "active_support/testing/time_helpers"
 
 class CommandsAuditorTest < ActiveSupport::TestCase
+  include ActiveSupport::Testing::TimeHelpers
+
   setup do
+    freeze_time
+
     @config = {
       service: "app", image: "dhh/app", registry: { "username" => "dhh", "password" => "secret" }, servers: [ "1.1.1.1" ],
       audit_broadcast_cmd: "bin/audit_broadcast"
     }
 
     @auditor = new_command
+    @performer = `whoami`.strip
+    @recorded_at = Time.now.utc.iso8601
   end
 
   test "record" do
     assert_equal [
       :echo,
-      "[#{@auditor.details[:recorded_at]}]", "[#{@auditor.details[:performer]}]",
+      "[#{@recorded_at}] [#{@performer}]",
       "app removed container",
       ">>", "mrsk-app-audit.log"
     ], @auditor.record("app removed container")
@@ -23,7 +30,7 @@ class CommandsAuditorTest < ActiveSupport::TestCase
     new_command(destination: "staging").tap do |auditor|
       assert_equal [
         :echo,
-        "[#{auditor.details[:recorded_at]}]", "[#{auditor.details[:performer]}]", "[#{auditor.details[:destination]}]",
+        "[#{@recorded_at}] [#{@performer}] [staging]",
         "app removed container",
         ">>", "mrsk-app-staging-audit.log"
       ], auditor.record("app removed container")
@@ -34,7 +41,7 @@ class CommandsAuditorTest < ActiveSupport::TestCase
     new_command(role: "web").tap do |auditor|
       assert_equal [
         :echo,
-        "[#{auditor.details[:recorded_at]}]", "[#{auditor.details[:performer]}]", "[#{auditor.details[:role]}]",
+        "[#{@recorded_at}] [#{@performer}] [web]",
         "app removed container",
         ">>", "mrsk-app-audit.log"
       ], auditor.record("app removed container")
@@ -44,7 +51,7 @@ class CommandsAuditorTest < ActiveSupport::TestCase
   test "record with arg details" do
     assert_equal [
       :echo,
-      "[#{@auditor.details[:recorded_at]}]", "[#{@auditor.details[:performer]}]", "[value]",
+      "[#{@recorded_at}] [#{@performer}] [value]",
       "app removed container",
       ">>", "mrsk-app-audit.log"
     ], @auditor.record("app removed container", detail: "value")
@@ -53,10 +60,11 @@ class CommandsAuditorTest < ActiveSupport::TestCase
   test "broadcast" do
     assert_equal [
       "bin/audit_broadcast",
-      "'[#{@auditor.details[:performer]}] [value] app removed container'",
+      "'[#{@performer}] [value] app removed container'",
       env: {
-        "MRSK_RECORDED_AT" => @auditor.details[:recorded_at],
-        "MRSK_PERFORMER" => @auditor.details[:performer],
+        "MRSK_RECORDED_AT" => @recorded_at,
+        "MRSK_PERFORMER" => @performer,
+        "MRSK_VERSION" => "123",
         "MRSK_EVENT" => "app removed container",
         "MRSK_DETAIL" => "value"
       }

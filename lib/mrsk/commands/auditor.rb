@@ -1,24 +1,23 @@
-require "time"
-
 class Mrsk::Commands::Auditor < Mrsk::Commands::Base
   attr_reader :details
 
   def initialize(config, **details)
     super(config)
-    @details = default_details.merge(details)
+    @details = details
   end
 
   # Runs remotely
   def record(line, **details)
     append \
-      [ :echo, *audit_tags(**details), line ],
+      [ :echo, audit_tags(**details).except(:version).to_s, line ],
       audit_log_file
   end
 
   # Runs locally
   def broadcast(line, **details)
     if broadcast_cmd = config.audit_broadcast_cmd
-      [ broadcast_cmd, *broadcast_args(line, **details), env: env_for(event: line, **details) ]
+      tags = audit_tags(**details, event: line)
+      [ broadcast_cmd,  "'#{tags.except(:recorded_at, :event, :version)} #{line}'", env: tags.env ]
     end
   end
 
@@ -31,29 +30,7 @@ class Mrsk::Commands::Auditor < Mrsk::Commands::Base
       [ "mrsk", config.service, config.destination, "audit.log" ].compact.join("-")
     end
 
-    def default_details
-      { recorded_at: Time.now.utc.iso8601,
-        performer: `whoami`.chomp,
-        destination: config.destination }
-    end
-
     def audit_tags(**details)
-      tags_for **self.details.merge(details)
-    end
-
-    def broadcast_args(line, **details)
-      "'#{broadcast_tags(**details).join(" ")} #{line}'"
-    end
-
-    def broadcast_tags(**details)
-      tags_for **self.details.merge(details).except(:recorded_at)
-    end
-
-    def tags_for(**details)
-      details.compact.values.map { |value| "[#{value}]" }
-    end
-
-    def env_for(**details)
-      self.details.merge(details).compact.transform_keys { |detail| "MRSK_#{detail.upcase}" }
+      tags(**self.details, **details)
     end
 end

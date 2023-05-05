@@ -1,0 +1,20 @@
+#!/bin/sh
+
+# A sample post-push hook
+#
+# Checks:
+# 1. We have a clean checkout
+#
+# These environment variables are available:
+# MRSK_RECORDED_AT
+# MRSK_PERFORMER
+# MRSK_VERSION
+# MRSK_DESTINATION (if set)
+
+if [ -n "$(git status --porcelain)" ]; then
+  echo "Git checkout is not clean, aborting..."
+  git status --porcelain >&2
+  exit 1
+fi
+
+exit 0

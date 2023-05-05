@@ -100,6 +100,14 @@ class Mrsk::Commander
     @healthcheck ||= Mrsk::Commands::Healthcheck.new(config)
   end
 
+  def hook
+    @hook ||= Mrsk::Commands::Hook.new(config)
+  end
+
+  def lock
+    @lock ||= Mrsk::Commands::Lock.new(config)
+  end
+
   def prune
     @prune ||= Mrsk::Commands::Prune.new(config)
   end
@@ -110,10 +118,6 @@ class Mrsk::Commander
 
   def traefik
     @traefik ||= Mrsk::Commands::Traefik.new(config)
-  end
-
-  def lock
-    @lock ||= Mrsk::Commands::Lock.new(config)
   end
 
   def with_verbosity(level)

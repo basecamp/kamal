@@ -235,9 +235,11 @@ class CliMainTest < CliTestCase
   end
 
   test "init" do
-    Pathname.any_instance.expects(:exist?).returns(false).twice
+    Pathname.any_instance.expects(:exist?).returns(false).times(3)
+    Pathname.any_instance.stubs(:mkpath)
     FileUtils.stubs(:mkdir_p)
     FileUtils.stubs(:cp_r)
+    FileUtils.stubs(:cp)
 
     run_command("init").tap do |output|
       assert_match /Created configuration file in config\/deploy.yml/, output
@@ -246,7 +248,7 @@ class CliMainTest < CliTestCase
   end
 
   test "init with existing config" do
-    Pathname.any_instance.expects(:exist?).returns(true).twice
+    Pathname.any_instance.expects(:exist?).returns(true).times(3)
 
     run_command("init").tap do |output|
       assert_match /Config file already exists in config\/deploy.yml \(remove first to create a new one\)/, output
@@ -254,9 +256,11 @@ class CliMainTest < CliTestCase
   end
 
   test "init with bundle option" do
-    Pathname.any_instance.expects(:exist?).returns(false).times(3)
+    Pathname.any_instance.expects(:exist?).returns(false).times(4)
+    Pathname.any_instance.stubs(:mkpath)
     FileUtils.stubs(:mkdir_p)
     FileUtils.stubs(:cp_r)
+    FileUtils.stubs(:cp)
 
     run_command("init", "--bundle").tap do |output|
       assert_match /Created configuration file in config\/deploy.yml/, output
@@ -269,9 +273,11 @@ class CliMainTest < CliTestCase
   end
 
   test "init with bundle option and existing binstub" do
-    Pathname.any_instance.expects(:exist?).returns(true).times(3)
+    Pathname.any_instance.expects(:exist?).returns(true).times(4)
+    Pathname.any_instance.stubs(:mkpath)
     FileUtils.stubs(:mkdir_p)
     FileUtils.stubs(:cp_r)
+    FileUtils.stubs(:cp)
 
     run_command("init", "--bundle").tap do |output|
       assert_match /Config file already exists in config\/deploy.yml \(remove first to create a new one\)/, output
@@ -321,7 +327,7 @@ class CliMainTest < CliTestCase
     SSHKit::Backend::Abstract.any_instance.expects(:execute).with do |command, line, options, verbosity:|
       command == "bin/audit_broadcast" &&
         line =~ /\A'\[[^\]]+\] message'\z/ &&
-        options[:env].keys == %w[ MRSK_RECORDED_AT MRSK_PERFORMER MRSK_EVENT ] &&
+        options[:env].keys == %w[ MRSK_RECORDED_AT MRSK_PERFORMER MRSK_VERSION MRSK_EVENT ] &&
         verbosity == :debug
     end.returns("Broadcast audit message: message")
 

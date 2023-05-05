@@ -134,5 +134,17 @@ module Mrsk::Cli
           MRSK.hold_lock_on_error = false
         end
       end
+
+      def run_hook(hook)
+        run_locally do
+          if MRSK.hook.hook_exists?(hook)
+            begin
+              MRSK.with_verbosity(:debug) { execute(*MRSK.hook.run(hook)) }
+            rescue SSHKit::Command::Failed
+              raise HookError.new("Hook `#{hook}` failed")
+            end
+          end
+        end
+      end
   end
 end

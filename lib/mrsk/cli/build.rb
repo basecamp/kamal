@@ -16,6 +16,7 @@ class Mrsk::Cli::Build < Mrsk::Cli::Base
 
       verify_local_dependencies
 
+      run_hook("pre-build")
       run_locally do
         begin
           MRSK.with_verbosity(:debug) { execute *MRSK.builder.push }
@@ -31,6 +32,7 @@ class Mrsk::Cli::Build < Mrsk::Cli::Base
           end
         end
       end
+      run_hook("post-push")
     end
   end
 

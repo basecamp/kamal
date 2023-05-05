@@ -902,6 +902,19 @@ When `limit` is specified, containers will be booted on, at most, `limit` hosts 
 
 These settings only apply when booting containers (using `mrsk deploy`, or `mrsk app boot`). For other commands, MRSK continues to run commands in parallel across all hosts.
 
+## Hooks
+
+You can run custom scripts at specific points with hooks.
+
+Hooks should be stored in the .mrsk/hooks folder. Running mrsk init will build that folder and add some sample scripts.
+
+If the script returns a non-zero exit code the command will be aborted.
+
+There are currently two hooks:
+
+- pre-build
+- post-push
+
 ## Stage of development
 
 This is beta software. Commands may still move around. But we're live in production at [37signals](https://37signals.com).

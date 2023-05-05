@@ -14,4 +14,17 @@ class CliTestCase < ActiveSupport::TestCase
     ENV.delete("MYSQL_ROOT_PASSWORD")
     ENV.delete("VERSION")
   end
+
+  private
+    def fail_hook(hook)
+      @executions = []
+      Mrsk::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
+
+      SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+        .with { |*args| @executions << args; args != [".mrsk/hooks/#{hook}"] }
+      SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+        .with { |*args| args.first == ".mrsk/hooks/#{hook}" }
+        .raises(SSHKit::Command::Failed.new("failed"))
+    end
+
 end

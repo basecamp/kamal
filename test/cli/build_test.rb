@@ -41,6 +41,22 @@ class CliBuildTest < CliTestCase
     assert_raises(Mrsk::Cli::Build::BuildError) { run_command("push") }
   end
 
+  test "push pre-build hook failure" do
+    fail_hook("pre-build")
+
+    assert_raises(Mrsk::Cli::HookError) { run_command("push") }
+
+    assert @executions.none? { |args| args[0..2] == [:docker, :buildx, :build] }
+  end
+
+  test "push post-push hook failure" do
+    fail_hook("post-push")
+
+    assert_raises(Mrsk::Cli::HookError) { run_command("push") }
+
+    assert @executions.any? { |args| args[0..2] == [:docker, :buildx, :build] }
+  end
+
   test "pull" do
     run_command("pull").tap do |output|
       assert_match /docker image rm --force dhh\/app:999/, output
@@ -92,5 +108,12 @@ class CliBuildTest < CliTestCase
         .with { |arg1, arg2| arg1 == :mkdir && arg2 == :mrsk_lock }
       SSHKit::Backend::Abstract.any_instance.stubs(:execute)
         .with { |arg1, arg2| arg1 == :rm && arg2 == "mrsk_lock/details" }
+    end
+
+    def stub_dependency_checks
+      SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+        .with(:docker, "--version", "&&", :docker, :buildx, "version")
+      SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+        .with { |*args| args[0..1] == [:docker, :buildx] }
     end
 end

@@ -2,12 +2,7 @@ require_relative "cli_test_case"
 
 class CliAppTest < CliTestCase
   test "boot" do
-    SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info).returns("123") # old version
-
-    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-    .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-latest$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
-    .returns("running") # health check
-
+    stub_running
     run_command("boot").tap do |output|
       assert_match "docker tag dhh/app:latest dhh/app:latest", output
       assert_match "docker run --detach --restart unless-stopped", output
@@ -182,5 +177,13 @@ class CliAppTest < CliTestCase
   private
     def run_command(*command, config: :with_accessories)
       stdouted { Mrsk::Cli::App.start([*command, "-c", "test/fixtures/deploy_#{config}.yml", "--hosts", "1.1.1.1"]) }
+    end
+
+    def stub_running
+      SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info).returns("123") # old version
+
+      SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+        .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-latest$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
+        .returns("running") # health check
     end
 end
