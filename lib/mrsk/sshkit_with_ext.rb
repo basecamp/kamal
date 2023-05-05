@@ -1,10 +1,15 @@
 require "sshkit"
 require "sshkit/dsl"
 require "active_support/core_ext/hash/deep_merge"
+require "json"
 
 class SSHKit::Backend::Abstract
   def capture_with_info(*args, **kwargs)
     capture(*args, **kwargs, verbosity: Logger::INFO)
+  end
+
+  def capture_with_pretty_json(*args, **kwargs)
+    JSON.pretty_generate(JSON.parse(capture(*args, **kwargs)))
   end
 
   def puts_by_host(host, output, type: "App")

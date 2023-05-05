@@ -3,6 +3,7 @@ module Mrsk::Commands
     delegate :sensitive, :argumentize, to: Mrsk::Utils
 
     DOCKER_HEALTH_STATUS_FORMAT = "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'"
+    DOCKER_HEALTH_LOG_FORMAT    = "'{{json .State.Health}}'"
 
     attr_accessor :config
 

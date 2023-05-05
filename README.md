@@ -308,7 +308,7 @@ You can specialize the default Traefik rules by setting labels on the containers
 labels:
   traefik.http.routers.hey-web.rule: Host(`app.hey.com`)
 ```
-Traefik rules are in the "service-role-destination" format. The default role will be `web` if no rule is specified. If the destination is not specified, it is not included. To give an example, the above rule would become "traefik.http.routers.hey-web.rule" if it was for the "staging" destination.
+Traefik rules are in the "service-role-destination" format. The default role will be `web` if no rule is specified. If the destination is not specified, it is not included. To give an example, the above rule would become "traefik.http.routers.hey-web-staging.rule" if it was for the "staging" destination.
 
 Note: The backticks are needed to ensure the rule is passed in correctly and not treated as command substitution by Bash!
 
@@ -729,7 +729,7 @@ servers:
 
 The healthcheck allows for an optional `max_attempts` setting, which will attempt the healthcheck up to the specified number of times before failing the deploy. This is useful for applications that take a while to start up. The default is 7.
 
-Note that the HTTP health checks assume that the `curl` command is avilable inside the container. If that's not the case, use the healthcheck's `cmd` option to specify an alternative check that the container supports.
+Note: The HTTP health checks assume that the `curl` command is available inside the container. If that's not the case, use the healthcheck's `cmd` option to specify an alternative check that the container supports.
 
 ## Commands
 
