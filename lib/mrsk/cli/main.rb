@@ -37,9 +37,7 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
         say "Detect stale containers...", :magenta
         invoke "mrsk:cli:app:stale_containers", [], invoke_options
 
-        hold_lock_on_error do
-          invoke "mrsk:cli:app:boot", [], invoke_options
-        end
+        invoke "mrsk:cli:app:boot", [], invoke_options
 
         say "Prune old containers and images...", :magenta
         invoke "mrsk:cli:prune:all", [], invoke_options
@@ -70,9 +68,7 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
         say "Detect stale containers...", :magenta
         invoke "mrsk:cli:app:stale_containers", [], invoke_options
 
-        hold_lock_on_error do
-          invoke "mrsk:cli:app:boot", [], invoke_options
-        end
+        invoke "mrsk:cli:app:boot", [], invoke_options
       end
     end
 
@@ -84,39 +80,15 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
     with_lock do
       invoke_options = deploy_options
 
-      hold_lock_on_error do
-        MRSK.config.version = version
-        old_version = nil
+      MRSK.config.version = version
+      old_version = nil
 
-        if container_available?(version)
-          say "Start version #{version}, then wait #{MRSK.config.readiness_delay}s for app to boot before stopping the old version...", :magenta
+      if container_available?(version)
+        invoke "mrsk:cli:app:boot", [], invoke_options.merge(version: version)
 
-          on(MRSK.hosts) do
-            execute *MRSK.auditor.record("Tagging #{MRSK.config.absolute_image} as the latest image"), verbosity: :debug
-            execute *MRSK.app.tag_current_as_latest
-          end
-
-          on(MRSK.hosts) do |host|
-            roles = MRSK.roles_on(host)
-
-            roles.each do |role|
-              app = MRSK.app(role: role)
-              old_version = capture_with_info(*app.current_running_version).strip.presence
-
-              execute *app.start
-
-              if old_version
-                sleep MRSK.config.readiness_delay
-
-                execute *app.stop(version: old_version), raise_on_non_zero_exit: false
-              end
-            end
-          end
-
-          audit_broadcast "Rolled back #{service_version(Mrsk::Utils.abbreviate_version(old_version))} to #{service_version}" unless options[:skip_broadcast]
-        else
-          say "The app version '#{version}' is not available as a container (use 'mrsk app containers' for available versions)", :red
-        end
+        audit_broadcast "Rolled back #{service_version(Mrsk::Utils.abbreviate_version(old_version))} to #{service_version}" unless options[:skip_broadcast]
+      else
+        say "The app version '#{version}' is not available as a container (use 'mrsk app containers' for available versions)", :red
       end
     end
   end

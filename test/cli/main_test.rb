@@ -80,23 +80,6 @@ class CliMainTest < CliTestCase
     end
   end
 
-  test "deploy errors during critical section leave lock in place" do
-    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "skip_broadcast" => false, "version" => "999" }
-
-    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:registry:login", [], invoke_options)
-    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:build:deliver", [], invoke_options)
-    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:app:stale_containers", [], invoke_options)
-    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:traefik:boot", [], invoke_options)
-    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:healthcheck:perform", [], invoke_options)
-    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:app:boot", [], invoke_options).raises(RuntimeError)
-
-    assert !MRSK.holding_lock?
-    assert_raises(RuntimeError) do
-      stderred { run_command("deploy") }
-    end
-    assert MRSK.holding_lock?
-  end
-
   test "deploy errors during outside section leave remove lock" do
     invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "skip_broadcast" => false, "version" => "999" }
 
@@ -151,22 +134,24 @@ class CliMainTest < CliTestCase
   end
 
   test "rollback good version" do
-    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-123$", "--quiet")
-      .returns("version-to-rollback\n").at_least_once
-    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-workers-123$", "--quiet")
-      .returns("version-to-rollback\n").at_least_once
-    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=web", "--filter", "status=running", "--latest", "--format", "\"{{.Names}}\"", "|", "grep -oE \"\\-[^-]+$\"", "|", "cut -c 2-")
-      .returns("version-to-rollback\n").at_least_once
-    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=workers", "--filter", "status=running", "--latest", "--format", "\"{{.Names}}\"", "|", "grep -oE \"\\-[^-]+$\"", "|", "cut -c 2-")
-      .returns("version-to-rollback\n").at_least_once
+    [ "web", "workers" ].each do |role|
+      SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+        .with(:docker, :container, :ls, "--filter", "name=^app-#{role}-123$", "--quiet", raise_on_non_zero_exit: false)
+        .returns("").at_least_once
+      SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+        .with(:docker, :container, :ls, "--all", "--filter", "name=^app-#{role}-123$", "--quiet")
+        .returns("version-to-rollback\n").at_least_once
+      SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+        .with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=#{role}", "--filter", "status=running", "--latest", "--format", "\"{{.Names}}\"", "|", "grep -oE \"\\-[^-]+$\"", "|", "cut -c 2-", raise_on_non_zero_exit: false)
+        .returns("version-to-rollback\n").at_least_once
+      SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+        .with(:docker, :container, :ls, "--all", "--filter", "name=^app-#{role}-123$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
+        .returns("running").at_least_once # health check
+    end
 
 
     run_command("rollback", "123", config_file: "deploy_with_accessories").tap do |output|
-      assert_match "Start version 123", output
+      assert_match "Start container with version 123", output
       assert_match "docker tag dhh/app:123 dhh/app:latest", output
       assert_match "docker start app-web-123", output
       assert_match "docker container ls --all --filter name=^app-web-version-to-rollback$ --quiet | xargs docker stop", output, "Should stop the container that was previously running"
@@ -175,11 +160,22 @@ class CliMainTest < CliTestCase
 
   test "rollback without old version" do
     Mrsk::Cli::Main.any_instance.stubs(:container_available?).returns(true)
-    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info).with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=web", "--filter", "status=running", "--latest", "--format", "\"{{.Names}}\"", "|", "grep -oE \"\\-[^-]+$\"", "|", "cut -c 2-").returns("").at_least_once
+
+    Mrsk::Utils::HealthcheckPoller.stubs(:sleep)
+
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :container, :ls, "--filter", "name=^app-web-123$", "--quiet", raise_on_non_zero_exit: false)
+      .returns("").at_least_once
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=web", "--filter", "status=running", "--latest", "--format", "\"{{.Names}}\"", "|", "grep -oE \"\\-[^-]+$\"", "|", "cut -c 2-", raise_on_non_zero_exit: false)
+      .returns("").at_least_once
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-123$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
+      .returns("running").at_least_once # health check
 
     run_command("rollback", "123").tap do |output|
-      assert_match "Start version 123", output
-      assert_match "docker start app-web-123", output
+      assert_match "Start container with version 123", output
+      assert_match "docker start app-web-123 || docker run --detach --restart unless-stopped --name app-web-123", output
       assert_no_match "docker stop", output
     end
   end
