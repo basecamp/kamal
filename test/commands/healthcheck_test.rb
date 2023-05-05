@@ -51,6 +51,12 @@ class CommandsHealthcheckTest < ActiveSupport::TestCase
       new_command.status.join(" ")
   end
 
+  test "container_health_log" do
+    assert_equal \
+      "docker container ls --all --filter name=^healthcheck-app-123$ --quiet | xargs docker inspect --format '{{json .State.Health}}'",
+      new_command.container_health_log.join(" ")
+  end
+
   test "stop" do
     assert_equal \
       "docker container ls --all --filter name=^healthcheck-app-123$ --quiet | xargs docker stop",

@@ -53,6 +53,11 @@ class CliHealthcheckTest < CliTestCase
       .with(:docker, :container, :ls, "--all", "--filter", "name=^healthcheck-app-999$", "--quiet", "|", :xargs, :docker, :logs, "--tail", 50, "2>&1")
       .returns("some log output")
 
+    # Capture container health log when failing
+    SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_pretty_json)
+      .with(:docker, :container, :ls, "--all", "--filter", "name=^healthcheck-app-999$", "--quiet", "|", :xargs, :docker, :inspect, "--format",  "'{{json .State.Health}}'")
+      .returns('{"Status":"unhealthy","Log":[{"ExitCode": 1,"Output": "/bin/sh: 1: curl: not found\n"}]}"')
+
     exception = assert_raises do
       run_command("perform")
     end
