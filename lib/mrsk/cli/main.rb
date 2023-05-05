@@ -201,7 +201,7 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
   end
 
   desc "broadcast", "Broadcast an audit message"
-  option :message, aliases: "-m", type: :string, desc: "Audit mesasge", required: true
+  option :message, aliases: "-m", type: :string, desc: "Audit message", required: true
   def broadcast
     say "Broadcast: #{options[:message]}", :magenta
     audit_broadcast options[:message]
