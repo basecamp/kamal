@@ -14,7 +14,7 @@ RUN echo \
 
 RUN apt-get update --fix-missing && apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
-COPY boot.sh .
+COPY *.sh .
 COPY app/ .
 
 RUN ln -s /shared/ssh /root/.ssh
@@ -23,6 +23,7 @@ RUN mkdir -p /etc/docker/certs.d/registry:4443 && ln -s /shared/certs/domain.crt
 RUN git config --global user.email "deployer@example.com"
 RUN git config --global user.name "Deployer"
 RUN git init && git add . && git commit -am "Initial version"
+RUN git rev-parse HEAD > version
 
 HEALTHCHECK --interval=1s CMD pgrep sleep
 
