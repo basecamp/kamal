@@ -10,7 +10,7 @@ class CliPruneTest < CliTestCase
 
   test "images" do
     run_command("images").tap do |output|
-      assert_match /docker image prune --all --force --filter label=service=app --filter dangling=true on 1.1.1.\d/, output
+      assert_match /docker image prune --force --filter label=service=app --filter dangling=true on 1.1.1.\d/, output
     end
   end
 

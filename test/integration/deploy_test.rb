@@ -13,11 +13,36 @@ class DeployTest < ActiveSupport::TestCase
   end
 
   test "deploy" do
+    first_version = latest_app_version
+
     assert_app_is_down
 
     mrsk :deploy
 
-    assert_app_is_up
+    assert_app_is_up version: first_version
+
+    second_version = update_app_rev
+
+    mrsk :redeploy
+
+    assert_app_is_up version: second_version
+
+    mrsk :rollback, first_version
+
+    assert_app_is_up version: first_version
+
+    details = mrsk :details, capture: true
+
+    assert_match /Traefik Host: vm1/, details
+    assert_match /Traefik Host: vm2/, details
+    assert_match /App Host: vm1/, details
+    assert_match /App Host: vm2/, details
+    assert_match /traefik:v2.9/, details
+    assert_match /registry:4443\/app:#{first_version}/, details
+
+    audit = mrsk :audit, capture: true
+
+    assert_match /Booted app version #{first_version}.*Booted app version #{second_version}.*Booted app version #{first_version}.*/m, audit
   end
 
   private
@@ -34,23 +59,19 @@ class DeployTest < ActiveSupport::TestCase
       result
     end
 
-    def deployer_exec(*commands, capture: false)
-      if capture
-        stdouted { docker_compose("exec deployer #{commands.join(" ")}") }
-      else
-        docker_compose("exec deployer #{commands.join(" ")}", capture: capture)
-      end
+    def deployer_exec(*commands, **options)
+      docker_compose("exec deployer #{commands.join(" ")}", **options)
     end
 
-    def mrsk(*commands, capture: false)
-      deployer_exec(:mrsk, *commands, capture: capture)
+    def mrsk(*commands, **options)
+      deployer_exec(:mrsk, *commands, **options)
     end
 
     def assert_app_is_down
       assert_equal "502", app_response.code
     end
 
-    def assert_app_is_up
+    def assert_app_is_up(version: nil)
       code = app_response.code
       if code != "200"
         puts "Got response code #{code}, here are the traefik logs:"
@@ -60,10 +81,42 @@ class DeployTest < ActiveSupport::TestCase
         puts "Tried to get the response code again and got #{app_response.code}"
       end
       assert_equal "200", code
+      assert_app_version(version) if version
+    end
+
+    def assert_app_not_found
+      assert_equal "404", app_response.code
+    end
+
+    def wait_for_app_to_be_up(timeout: 10, up_count: 3)
+      timeout_at = Time.now + timeout
+      up_times = 0
+      response = app_response
+      while up_times < up_count && timeout_at > Time.now
+        sleep 0.1
+        up_times += 1 if response.code == "200"
+        response = app_response
+      end
+      assert_equal up_times, up_count
     end
 
     def app_response
       Net::HTTP.get_response(URI.parse("http://localhost:12345"))
+    end
+
+    def update_app_rev
+      deployer_exec "./update_app_rev.sh"
+      latest_app_version
+    end
+
+    def latest_app_version
+      deployer_exec("cat version", capture: true)
+    end
+
+    def assert_app_version(version)
+      actual_version = Net::HTTP.get_response(URI.parse("http://localhost:12345/version")).body.strip
+
+      assert_equal version, actual_version
     end
 
     def wait_for_healthy(timeout: 20)

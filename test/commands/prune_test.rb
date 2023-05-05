@@ -10,7 +10,7 @@ class CommandsPruneTest < ActiveSupport::TestCase
 
   test "images" do
     assert_equal \
-      "docker image prune --all --force --filter label=service=app --filter dangling=true",
+      "docker image prune --force --filter label=service=app --filter dangling=true",
       new_command.images.join(" ")
   end
 

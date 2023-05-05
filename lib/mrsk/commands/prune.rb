@@ -3,7 +3,7 @@ require "active_support/core_ext/numeric/time"
 
 class Mrsk::Commands::Prune < Mrsk::Commands::Base
   def images
-    docker :image, :prune, "--all", "--force", "--filter", "label=service=#{config.service}", "--filter", "dangling=true"
+    docker :image, :prune, "--force", "--filter", "label=service=#{config.service}", "--filter", "dangling=true"
   end
 
   def containers(keep_last: 5)
