@@ -8,6 +8,10 @@ class SSHKit::Backend::Abstract
     capture(*args, **kwargs, verbosity: Logger::INFO)
   end
 
+  def capture_with_debug(*args, **kwargs)
+    capture(*args, **kwargs, verbosity: Logger::DEBUG)
+  end
+
   def capture_with_pretty_json(*args, **kwargs)
     JSON.pretty_generate(JSON.parse(capture(*args, **kwargs)))
   end

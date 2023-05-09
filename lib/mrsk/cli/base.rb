@@ -99,24 +99,30 @@ module Mrsk::Cli
       end
 
       def acquire_lock
-        say "Acquiring the deploy lock"
-        on(MRSK.primary_host) { execute *MRSK.lock.acquire("Automatic deploy lock", MRSK.config.version) }
+        raise_if_locked do
+          say "Acquiring the deploy lock...", :magenta
+          on(MRSK.primary_host) { execute *MRSK.lock.acquire("Automatic deploy lock", MRSK.config.version), verbosity: :debug }
+        end
 
         MRSK.holding_lock = true
+      end
+
+      def release_lock
+        say "Releasing the deploy lock...", :magenta
+        on(MRSK.primary_host) { execute *MRSK.lock.release, verbosity: :debug }
+
+        MRSK.holding_lock = false
+      end
+
+      def raise_if_locked
+        yield
       rescue SSHKit::Runner::ExecuteError => e
         if e.message =~ /cannot create directory/
-          on(MRSK.primary_host) { execute *MRSK.lock.status }
+          on(MRSK.primary_host) { puts capture_with_debug(*MRSK.lock.status) }
           raise LockError, "Deploy lock found"
         else
           raise e
         end
-      end
-
-      def release_lock
-        say "Releasing the deploy lock"
-        on(MRSK.primary_host) { execute *MRSK.lock.release }
-
-        MRSK.holding_lock = false
       end
 
       def hold_lock_on_error
