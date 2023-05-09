@@ -39,7 +39,26 @@ env:
     - RAILS_MASTER_KEY
 ```
 
-Then edit your `.env` file to add your registry password as `MRSK_REGISTRY_PASSWORD` (and your `RAILS_MASTER_KEY` for production with a Rails app).
+Edit your `.env` file to add your registry password as `MRSK_REGISTRY_PASSWORD` (unless you are committing the `.env` file to source control, in which case you'll want to pass it in as builder arg, see below). 
+
+The `RAILS_MASTER_KEY` might be needed during asset precompile, which happens on the build container (not the running app). 
+
+If migrating a legacy Rails app that requires env settings during precompile, then you'll need to make your `RAILS_MASTER_KEY` available to the deploy process. However, this is typcially bad practice and you probably should remove depenencies around requiring env settings during pre-compile. 
+
+In Rails 7.0, you'll need to make the `RAILS_MASTER_KEY` available to the precompile step. Starting with Rails 7.1, you can use the new `SECRET_KEY_BASE_DUMMY=1` setting to bypass the need for the `RAILS_MASTER_KEY` during precompile.
+
+If your precompile step does need `RAILS_MASTER_KEY` or you are on Rails 7.0, you have two choices:
+
+1) Add your `RAILS_MASTER_KEY` for production to `.env`
+2) Alternatively, you can pass the RAILS_MASTER_KEY in as a builder arg in your Dockerfile (be sure to do this before the asset:precompile line in your Dockerfile), like so:
+
+```
+ARG RAILS_MASTER_KEY
+ENV RAILS_MASTER_KEY=$RAILS_MASTER_KEY
+```
+You should not put your `RAILS_MASTER_KEY` into your `.env` file if the `.env` file is checked-in to your source control, but if that file is not checked into source control, you can. 
+
+For guideance about whether or not to commit your `.env` file, (https://github.com/bkeepers/dotenv#should-i-commit-my-env-file)[see this].
 
 Now you're ready to deploy to the servers:
 
