@@ -1,8 +1,8 @@
 class Mrsk::Cli::Main < Mrsk::Cli::Base
   desc "setup", "Setup all accessories and deploy app to servers"
   def setup
-    with_lock do
-      print_runtime do
+    print_runtime do
+      with_lock do
         invoke "mrsk:cli:server:bootstrap"
         invoke "mrsk:cli:accessory:boot", [ "all" ]
         deploy
@@ -13,10 +13,10 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
   desc "deploy", "Deploy app to servers"
   option :skip_push, aliases: "-P", type: :boolean, default: false, desc: "Skip image build and push"
   def deploy
-    with_lock do
-      invoke_options = deploy_options
+    runtime = print_runtime do
+      with_lock do
+        invoke_options = deploy_options
 
-      runtime = print_runtime do
         say "Log into image registry...", :magenta
         invoke "mrsk:cli:registry:login", [], invoke_options
 
@@ -44,18 +44,18 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
         say "Prune old containers and images...", :magenta
         invoke "mrsk:cli:prune:all", [], invoke_options
       end
-
-      audit_broadcast "Deployed #{service_version} in #{runtime.round} seconds" unless options[:skip_broadcast]
     end
+
+    audit_broadcast "Deployed #{service_version} in #{runtime.round} seconds" unless options[:skip_broadcast]
   end
 
   desc "redeploy", "Deploy app to servers without bootstrapping servers, starting Traefik, pruning, and registry login"
   option :skip_push, aliases: "-P", type: :boolean, default: false, desc: "Skip image build and push"
   def redeploy
-    with_lock do
-      invoke_options = deploy_options
+    runtime = print_runtime do
+      with_lock do
+        invoke_options = deploy_options
 
-      runtime = print_runtime do
         if options[:skip_push]
           say "Pull app image...", :magenta
           invoke "mrsk:cli:build:pull", [], invoke_options
@@ -74,9 +74,9 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
           invoke "mrsk:cli:app:boot", [], invoke_options
         end
       end
-
-      audit_broadcast "Redeployed #{service_version} in #{runtime.round} seconds" unless options[:skip_broadcast]
     end
+
+    audit_broadcast "Redeployed #{service_version} in #{runtime.round} seconds" unless options[:skip_broadcast]
   end
 
   desc "rollback [VERSION]", "Rollback app to VERSION"

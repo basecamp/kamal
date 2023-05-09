@@ -60,7 +60,7 @@ class CliMainTest < CliTestCase
       .with { |*arg| arg[0..1] == [:mkdir, :mrsk_lock] }
       .raises(RuntimeError, "mkdir: cannot create directory ‘mrsk_lock’: File exists")
 
-    SSHKit::Backend::Abstract.any_instance.expects(:execute)
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_debug)
       .with(:stat, :mrsk_lock, ">", "/dev/null", "&&", :cat, "mrsk_lock/details", "|", :base64, "-d")
 
     assert_raises(Mrsk::Cli::LockError) do
