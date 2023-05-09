@@ -522,7 +522,7 @@ traefik:
   options:
     publish:
       - 8080:8080
-    volumes:
+    volume:
       - /tmp/example.json:/tmp/example.json
     memory: 512m
 ```
