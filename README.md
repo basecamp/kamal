@@ -56,7 +56,7 @@ This will:
 5. Push the image to the registry.
 6. Pull the image from the registry onto the servers.
 7. Ensure Traefik is running and accepting traffic on port 80.
-8. Ensure your app responds with `200 OK` to `GET /up`.
+8. Ensure your app responds with `200 OK` to `GET /up` (you must have curl installed inside your app image!).
 9. Start a new container with the version of the app that matches the current git version hash.
 10. Stop the old container running the previous version of the app.
 11. Prune unused images and stopped containers to ensure servers don't fill up.
