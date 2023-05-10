@@ -88,7 +88,7 @@ class CommandsBuilderTest < ActiveSupport::TestCase
       builder.push.join(" ")
   end
 
-  test "native push with with build secrets" do
+  test "native push with build secrets" do
     builder = new_builder_command(builder: { "multiarch" => false, "secrets" => [ "a", "b" ] })
     assert_equal \
       "docker build -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --secret id=\"a\" --secret id=\"b\" --file Dockerfile . && docker push dhh/app:123 && docker push dhh/app:latest",
