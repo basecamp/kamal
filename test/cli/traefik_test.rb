@@ -8,6 +8,23 @@ class CliTraefikTest < CliTestCase
     end
   end
 
+  test "boot failure will attempt reboot" do
+    SSHKit::Backend::Abstract.any_instance.stubs(:execute) # stub deploy lock and docker login
+
+    SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+      .with { |arg1, arg2| arg1 == :docker && arg2 == :run }
+      .raises(SSHKit::Command::Failed.new("Bind for 0.0.0.0:80 failed: port is already allocated"))
+      .then
+      .returns(true)
+
+    Mrsk::Cli::Traefik.any_instance.expects(:stop)
+    Mrsk::Cli::Traefik.any_instance.expects(:remove_container)
+
+    run_command("boot").tap do |output|
+      assert_match "Attempting reboot", output
+    end
+  end
+
   test "reboot" do
     Mrsk::Cli::Traefik.any_instance.expects(:stop)
     Mrsk::Cli::Traefik.any_instance.expects(:remove_container)

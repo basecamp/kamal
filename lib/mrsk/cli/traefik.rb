@@ -2,9 +2,23 @@ class Mrsk::Cli::Traefik < Mrsk::Cli::Base
   desc "boot", "Boot Traefik on servers"
   def boot
     with_lock do
+      cli = self
       on(MRSK.traefik_hosts) do
         execute *MRSK.registry.login
-        execute *MRSK.traefik.run, raise_on_non_zero_exit: false
+
+        attempts = 0
+        begin
+          execute *MRSK.traefik.run
+        rescue SSHKit::Command::Failed
+          if attempts < 1
+            info "There was an issue booting traefik. Attempting reboot..."
+            cli.stop
+            cli.remove_container
+            attempts += 1
+            retry
+          end
+          raise
+        end
       end
     end
   end
