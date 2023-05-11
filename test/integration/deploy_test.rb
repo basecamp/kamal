@@ -110,7 +110,7 @@ class DeployTest < ActiveSupport::TestCase
     end
 
     def latest_app_version
-      deployer_exec("cat version", capture: true)
+      deployer_exec("git rev-parse HEAD", capture: true)
     end
 
     def assert_app_version(version)

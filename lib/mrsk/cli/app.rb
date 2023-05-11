@@ -21,7 +21,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
             execute *auditor.record("Booted app version #{version}"), verbosity: :debug
 
             if capture_with_info(*app.container_id_for_version(version), raise_on_non_zero_exit: false).present?
-              tmp_version = "#{version}_#{SecureRandom.hex(8)}"
+              tmp_version = "#{version}_replaced_#{SecureRandom.hex(8)}"
               info "Renaming container #{version} to #{tmp_version} as already deployed on #{host}"
               execute *auditor.record("Renaming container #{version} to #{tmp_version}"), verbosity: :debug
               execute *app.rename_container(version: version, new_version: tmp_version)

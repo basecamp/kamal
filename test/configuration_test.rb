@@ -72,19 +72,36 @@ class ConfigurationTest < ActiveSupport::TestCase
     assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3" ], config.traefik_hosts
   end
 
-  test "version" do
+  test "version no git repo" do
     ENV.delete("VERSION")
 
     @config.expects(:system).with("git rev-parse").returns(nil)
     error = assert_raises(RuntimeError) { @config.version}
     assert_match /no git repository found/, error.message
+  end
 
-    @config.expects(:current_commit_hash).returns("git-version")
+  test "version from git committed" do
+    ENV.delete("VERSION")
+
+    @config.expects(:`).with("git rev-parse HEAD").returns("git-version")
+    @config.expects(:`).with("git status --porcelain").returns("")
     assert_equal "git-version", @config.version
+  end
 
+  test "version from git uncommitted" do
+    ENV.delete("VERSION")
+
+    @config.expects(:`).with("git rev-parse HEAD").returns("git-version")
+    @config.expects(:`).with("git status --porcelain").returns("M   file\n")
+    assert_match /^git-version_uncommitted_[0-9a-f]{16}$/, @config.version
+  end
+
+  test "version from env" do
     ENV["VERSION"] = "env-version"
     assert_equal "env-version", @config.version
+  end
 
+  test "version from arg" do
     @config.version = "arg-version"
     assert_equal "arg-version", @config.version
   end
