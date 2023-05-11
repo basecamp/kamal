@@ -37,7 +37,7 @@ class Mrsk::Configuration::Role
 
   def health_check_args
     if health_check_cmd.present?
-      optionize({ "health-cmd" => health_check_cmd, "health-interval" => "1s" })
+      optionize({ "health-cmd" => health_check_cmd, "health-interval" => health_check_interval })
     else
       []
     end
@@ -48,6 +48,13 @@ class Mrsk::Configuration::Role
     options = config.healthcheck.merge(options) if running_traefik?
 
     options["cmd"] || http_health_check(port: options["port"], path: options["path"])
+  end
+
+  def health_check_interval
+    options = specializations["healthcheck"] || {}
+    options = config.healthcheck.merge(options) if running_traefik?
+
+    options["interval"] || "1s"
   end
 
   def cmd

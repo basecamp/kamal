@@ -703,6 +703,7 @@ healthcheck:
   path: /healthz
   port: 4000
   max_attempts: 7
+  interval: 20s
 ```
 
 This will ensure your application is configured with a traefik label for the healthcheck against `/healthz` and that the pre-deploy healthcheck that MRSK performs is done against the same path on port 4000.
