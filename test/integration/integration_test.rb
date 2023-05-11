@@ -90,6 +90,18 @@ class IntegrationTest < ActiveSupport::TestCase
       end
     end
 
+    def assert_200(response)
+      code = response.code
+      if code != "200"
+        puts "Got response code #{code}, here are the traefik logs:"
+        mrsk :traefik, :logs
+        puts "And here are the load balancer logs"
+        docker_compose :logs, :load_balancer
+        puts "Tried to get the response code again and got #{app_response.code}"
+      end
+      assert_equal "200", code
+    end
+
     def wait_for_healthy(timeout: 20)
       timeout_at = Time.now + timeout
       while docker_compose("ps -a | tail -n +2 | grep -v '(healthy)' | wc -l", capture: true) != "0"
