@@ -486,6 +486,14 @@ traefik:
 
 This starts the Traefik container with `--accesslog=true --accesslog.format=json` arguments.
 
+Use args to enable Traefik dashboard:
+
+```yaml
+traefik:
+  args:
+    api.dashboard: true
+```
+
 ### Traefik host port binding
 
 Traefik binds to port 80 by default. Specify an alternative port using `host_port`:
