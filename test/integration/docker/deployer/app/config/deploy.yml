@@ -9,6 +9,8 @@ registry:
   password: root
 builder:
   multiarch: false
+  args:
+    COMMIT_SHA: <%= `git rev-parse HEAD` %>
 healthcheck:
   cmd: wget -qO- http://localhost > /dev/null
 traefik:

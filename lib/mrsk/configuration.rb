@@ -50,7 +50,7 @@ class Mrsk::Configuration
   end
 
   def version
-    @declared_version.presence || ENV["VERSION"] || current_commit_hash
+    @declared_version.presence || ENV["VERSION"] || git_version
   end
 
   def abbreviated_version
@@ -233,10 +233,12 @@ class Mrsk::Configuration
       raw_config.servers.is_a?(Array) ? [ "web" ] : raw_config.servers.keys.sort
     end
 
-    def current_commit_hash
-      @current_commit_hash ||=
+    def git_version
+      @git_version ||=
         if system("git rev-parse")
-          `git rev-parse HEAD`.strip
+          uncommitted_suffix = `git status --porcelain`.strip.present? ? "_uncommitted_#{SecureRandom.hex(8)}" : ""
+
+          "#{`git rev-parse HEAD`.strip}#{uncommitted_suffix}"
         else
           raise "Can't use commit hash as version, no git repository found in #{Dir.pwd}"
         end
