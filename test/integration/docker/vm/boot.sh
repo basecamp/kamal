@@ -6,6 +6,4 @@ service ssh restart
 
 dockerd &
 
-trap "pkill -f sleep" term
-
-sleep infinity & wait
+exec sleep infinity

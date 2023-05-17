@@ -3,6 +3,8 @@ name: "mrsk-test"
 
 volumes:
   shared:
+  registry:
+  deployer_bundle:
 
 services:
   shared:
@@ -18,6 +20,8 @@ services:
     volumes:
       - ../..:/mrsk
       - shared:/shared
+      - registry:/registry
+      - deployer_bundle:/usr/local/bundle/
 
   registry:
     build:
@@ -28,6 +32,7 @@ services:
       - REGISTRY_HTTP_TLS_KEY=/certs/domain.key
     volumes:
       - shared:/shared
+      - registry:/var/lib/registry/
 
   vm1:
     privileged: true

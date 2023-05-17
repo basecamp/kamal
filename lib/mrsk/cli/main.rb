@@ -224,6 +224,9 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
   desc "healthcheck", "Healthcheck application"
   subcommand "healthcheck", Mrsk::Cli::Healthcheck
 
+  desc "lock", "Manage the deploy lock"
+  subcommand "lock", Mrsk::Cli::Lock
+
   desc "prune", "Prune old application images and containers"
   subcommand "prune", Mrsk::Cli::Prune
 
@@ -235,9 +238,6 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
 
   desc "traefik", "Manage Traefik load balancer"
   subcommand "traefik", Mrsk::Cli::Traefik
-
-  desc "lock", "Manage the deploy lock"
-  subcommand "lock", Mrsk::Cli::Lock
 
   private
     def container_available?(version)

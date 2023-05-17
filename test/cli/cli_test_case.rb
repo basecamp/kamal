@@ -1,8 +1,6 @@
 require "test_helper"
 
 class CliTestCase < ActiveSupport::TestCase
-  include ActiveSupport::Testing::Stream
-
   setup do
     ENV["VERSION"]             = "999"
     ENV["RAILS_MASTER_KEY"]    = "123"
