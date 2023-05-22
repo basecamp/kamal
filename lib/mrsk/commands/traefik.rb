@@ -1,5 +1,5 @@
 class Mrsk::Commands::Traefik < Mrsk::Commands::Base
-  delegate :argumentize, :optionize, to: Mrsk::Utils
+  delegate :argumentize, :argumentize_env_with_secrets, :optionize, to: Mrsk::Utils
 
   DEFAULT_IMAGE = "traefik:v2.9"
   CONTAINER_PORT = 80
@@ -10,6 +10,7 @@ class Mrsk::Commands::Traefik < Mrsk::Commands::Base
       "--restart", "unless-stopped",
       "--publish", port,
       "--volume", "/var/run/docker.sock:/var/run/docker.sock",
+      *env_args,
       *config.logging_args,
       *label_args,
       *docker_options_args,
@@ -59,6 +60,16 @@ class Mrsk::Commands::Traefik < Mrsk::Commands::Base
   private
     def label_args
       argumentize "--label", labels
+    end
+
+    def env_args
+      env_config = config.traefik["env"] || {}
+
+      if env_config.present?
+        argumentize_env_with_secrets(env_config)
+      else
+        []
+      end
     end
 
     def labels
