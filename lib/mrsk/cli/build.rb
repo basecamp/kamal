@@ -32,8 +32,6 @@ class Mrsk::Cli::Build < Mrsk::Cli::Base
           end
         end
       end
-
-      run_hook "post-push"
     end
   end
 

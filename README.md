@@ -912,10 +912,9 @@ You can change their location by setting `hooks_path` in the configuration file.
 
 If the script returns a non-zero exit code the command will be aborted.
 
-There are currently two hooks:
+There is currently one hook:
 
 - pre-build
-- post-push
 
 ## Stage of development
 

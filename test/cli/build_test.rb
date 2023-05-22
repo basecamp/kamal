@@ -49,14 +49,6 @@ class CliBuildTest < CliTestCase
     assert @executions.none? { |args| args[0..2] == [:docker, :buildx, :build] }
   end
 
-  test "push post-push hook failure" do
-    fail_hook("post-push")
-
-    assert_raises(Mrsk::Cli::HookError) { run_command("push") }
-
-    assert @executions.any? { |args| args[0..2] == [:docker, :buildx, :build] }
-  end
-
   test "pull" do
     run_command("pull").tap do |output|
       assert_match /docker image rm --force dhh\/app:999/, output

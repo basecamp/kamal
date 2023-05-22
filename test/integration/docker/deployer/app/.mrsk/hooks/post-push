@@ -1,3 +1,0 @@
-#!/bin/sh
-echo "Built and pushed!"
-mkdir -p /tmp/${TEST_ID} && touch /tmp/${TEST_ID}/post-push

@@ -84,7 +84,7 @@ class IntegrationTest < ActiveSupport::TestCase
     end
 
     def assert_hooks_ran
-      [ "pre-build", "post-push" ].each do |hook|
+      [ "pre-build" ].each do |hook|
         file = "/tmp/#{ENV["TEST_ID"]}/#{hook}"
         assert_match /File: #{file}/, deployer_exec("stat #{file}", capture: true)
       end
