@@ -1,6 +1,6 @@
 class Mrsk::Commands::Hook < Mrsk::Commands::Base
   def run(hook, **details)
-    [ ".mrsk/hooks/#{hook}", env: tags(**details).env ]
+    [ hook_file(hook), env: tags(**details).env ]
   end
 
   def hook_exists?(hook)
@@ -9,6 +9,6 @@ class Mrsk::Commands::Hook < Mrsk::Commands::Base
 
   private
     def hook_file(hook)
-      ".mrsk/hooks/#{hook}"
+      "#{config.hooks_path}/#{hook}"
     end
 end

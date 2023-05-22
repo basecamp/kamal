@@ -908,6 +908,8 @@ You can run custom scripts at specific points with hooks.
 
 Hooks should be stored in the .mrsk/hooks folder. Running mrsk init will build that folder and add some sample scripts.
 
+You can change their location by setting `hooks_path` in the configuration file.
+
 If the script returns a non-zero exit code the command will be aborted.
 
 There are currently two hooks:

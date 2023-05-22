@@ -25,8 +25,18 @@ class CommandsHookTest < ActiveSupport::TestCase
     ], new_command.run("foo")
   end
 
+  test "run with custom hooks_path" do
+    assert_equal [
+      "custom/hooks/path/foo",
+      { env: {
+        "MRSK_RECORDED_AT" => @recorded_at,
+        "MRSK_PERFORMER" => @performer,
+        "MRSK_VERSION" => "123" } }
+    ], new_command(hooks_path: "custom/hooks/path").run("foo")
+  end
+
   private
-    def new_command
-      Mrsk::Commands::Hook.new(Mrsk::Configuration.new(@config, version: "123"))
+    def new_command(**extra_config)
+      Mrsk::Commands::Hook.new(Mrsk::Configuration.new(@config.merge(**extra_config), version: "123"))
     end
 end
