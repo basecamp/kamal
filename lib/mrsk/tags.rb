@@ -12,7 +12,12 @@ class Mrsk::Tags
       { recorded_at: Time.now.utc.iso8601,
         performer: `whoami`.chomp,
         destination: config.destination,
-        version: config.version }
+        version: config.version,
+        service_version: service_version(config) }
+    end
+
+    def service_version(config)
+      [ config.service, config.abbreviated_version ].compact.join("@")
     end
   end
 

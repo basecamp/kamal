@@ -132,13 +132,12 @@ module Mrsk::Cli
       end
 
       def run_hook(hook, **details)
-        run_locally do
-          if MRSK.hook.hook_exists?(hook)
-            begin
-              MRSK.with_verbosity(:debug) { execute(*MRSK.hook.run(hook, **details)) }
-            rescue SSHKit::Command::Failed
-              raise HookError.new("Hook `#{hook}` failed")
-            end
+        if MRSK.hook.hook_exists?(hook)
+          say "Running the #{hook} hook...", :magenta
+          run_locally do
+            MRSK.with_verbosity(:debug) { execute *MRSK.hook.run(hook, **details) }
+          rescue SSHKit::Command::Failed
+            raise HookError.new("Hook `#{hook}` failed")
           end
         end
       end

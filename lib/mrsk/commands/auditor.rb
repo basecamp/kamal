@@ -9,7 +9,7 @@ class Mrsk::Commands::Auditor < Mrsk::Commands::Base
   # Runs remotely
   def record(line, **details)
     append \
-      [ :echo, audit_tags(**details).except(:version).to_s, line ],
+      [ :echo, audit_tags(**details).except(:version, :service_version).to_s, line ],
       audit_log_file
   end
 

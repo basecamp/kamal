@@ -238,8 +238,4 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
     def deploy_options
       { "version" => MRSK.config.version }.merge(options.without("skip_push"))
     end
-
-    def service_version(version = MRSK.config.abbreviated_version)
-      [ MRSK.config.service, version ].compact.join("@")
-    end
 end

@@ -881,6 +881,7 @@ firing a JSON webhook. These variables include:
 - `MRSK_RECORDED_AT` - UTC timestamp in ISO 8601 format, e.g. `2023-04-14T17:07:31Z`
 - `MRSK_PERFORMER` - the local user performing the command (from `whoami`)
 - `MRSK_MESSAGE` - the full audit message, e.g. "Deployed app@150b24f"
+- `MRSK_SERVICE_VERSION` - an abbreviated version (for use in messages)
 - `MRSK_DESTINATION` - optional: destination, e.g. "staging"
 - `MRSK_ROLE` - optional: role targeted, e.g. "web"
 
