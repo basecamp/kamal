@@ -6,6 +6,10 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
     @role = role
   end
 
+  def start_or_run
+    combine start, run, by: "||"
+  end
+
   def run
     role = config.role(self.role)
 
@@ -91,8 +95,8 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
     docker :ps, "--quiet", *filter_args(status: :running), "--latest"
   end
 
-  def container_id_for_version(version)
-    container_id_for(container_name: container_name(version))
+  def container_id_for_version(version, only_running: false)
+    container_id_for(container_name: container_name(version), only_running: only_running)
   end
 
   def current_running_version

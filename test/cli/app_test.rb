@@ -19,7 +19,7 @@ class CliAppTest < CliTestCase
     run_command("details") # Preheat MRSK const
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-latest$", "--quiet", raise_on_non_zero_exit: false)
+      .with(:docker, :container, :ls, "--filter", "name=^app-web-latest$", "--quiet", raise_on_non_zero_exit: false)
       .returns("12345678") # running version
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
@@ -48,6 +48,18 @@ class CliAppTest < CliTestCase
     Mrsk::Cli::App.any_instance.expects(:on).with([ "1.1.1.1" ], in: :groups, limit: 3, wait: 2).with_block_given
 
     run_command("boot", config: :with_boot_strategy)
+  end
+
+  test "boot errors leave lock in place" do
+    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "skip_broadcast" => false, "version" => "999" }
+
+    Mrsk::Cli::App.any_instance.expects(:using_version).raises(RuntimeError)
+
+    assert !MRSK.holding_lock?
+    assert_raises(RuntimeError) do
+      stderred { run_command("boot") }
+    end
+    assert MRSK.holding_lock?
   end
 
   test "start" do
