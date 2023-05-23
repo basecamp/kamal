@@ -20,8 +20,6 @@ module Mrsk::Cli
     class_option :config_file, aliases: "-c", default: "config/deploy.yml", desc: "Path to config file"
     class_option :destination, aliases: "-d", desc: "Specify destination to be used for config file (staging -> deploy.staging.yml)"
 
-    class_option :skip_broadcast, aliases: "-B", type: :boolean, default: false, desc: "Skip audit broadcasts"
-
     def initialize(*)
       super
       load_envs
