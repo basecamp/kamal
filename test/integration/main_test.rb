@@ -7,21 +7,20 @@ class MainTest < IntegrationTest
     assert_app_is_down
 
     mrsk :deploy
-
     assert_app_is_up version: first_version
+    assert_hooks_ran "pre-build", "post-deploy"
 
     second_version = update_app_rev
 
     mrsk :redeploy
-
     assert_app_is_up version: second_version
+    assert_hooks_ran "pre-build", "post-deploy"
 
     mrsk :rollback, first_version
-
+    assert_hooks_ran "post-deploy"
     assert_app_is_up version: first_version
 
     details = mrsk :details, capture: true
-
     assert_match /Traefik Host: vm1/, details
     assert_match /Traefik Host: vm2/, details
     assert_match /App Host: vm1/, details
@@ -30,7 +29,6 @@ class MainTest < IntegrationTest
     assert_match /registry:4443\/app:#{first_version}/, details
 
     audit = mrsk :audit, capture: true
-
     assert_match /Booted app version #{first_version}.*Booted app version #{second_version}.*Booted app version #{first_version}.*/m, audit
   end
 

@@ -9,17 +9,19 @@ class CliBuildTest < CliTestCase
   end
 
   test "push" do
-    Mrsk::Cli::Build.any_instance.stubs(:verify_local_dependencies).returns(true)
     run_command("push").tap do |output|
+      assert_match /docker --version && docker buildx version/, output
       assert_match /docker buildx build --push --platform linux\/amd64,linux\/arm64 --builder mrsk-app-multiarch -t dhh\/app:999 -t dhh\/app:latest --label service="app" --file Dockerfile \. as .*@localhost/, output
     end
   end
 
   test "push without builder" do
     stub_locking
-    Mrsk::Cli::Build.any_instance.stubs(:verify_local_dependencies).returns(true)
     SSHKit::Backend::Abstract.any_instance.stubs(:execute)
-      .with { |arg| arg == :docker }
+      .with(:docker, "--version", "&&", :docker, :buildx, "version")
+
+    SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+      .with { |*args| args[0..1] == [:docker, :buildx] }
       .raises(SSHKit::Command::Failed.new("no builder"))
       .then
       .returns(true)
@@ -27,6 +29,24 @@ class CliBuildTest < CliTestCase
     run_command("push").tap do |output|
       assert_match /Missing compatible builder, so creating a new one first/, output
     end
+  end
+
+  test "push with no buildx plugin" do
+    stub_locking
+    SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+      .with(:docker, "--version", "&&", :docker, :buildx, "version")
+      .raises(SSHKit::Command::Failed.new("no buildx"))
+
+    Mrsk::Commands::Builder.any_instance.stubs(:native_and_local?).returns(false)
+    assert_raises(Mrsk::Cli::Build::BuildError) { run_command("push") }
+  end
+
+  test "push pre-build hook failure" do
+    fail_hook("pre-build")
+
+    assert_raises(Mrsk::Cli::HookError) { run_command("push") }
+
+    assert @executions.none? { |args| args[0..2] == [:docker, :buildx, :build] }
   end
 
   test "pull" do
@@ -70,32 +90,15 @@ class CliBuildTest < CliTestCase
     end
   end
 
-  test "verify local dependencies" do
-    Mrsk::Commands::Builder.any_instance.stubs(:name).returns("remote".inquiry)
-
-    run_command("verify_local_dependencies").tap do |output|
-      assert_match /docker --version && docker buildx version/, output
-    end
-  end
-
-  test "verify local dependencies with no buildx plugin" do
-    SSHKit::Backend::Abstract.any_instance.stubs(:execute)
-      .with(:docker, "--version", "&&", :docker, :buildx, "version")
-      .raises(SSHKit::Command::Failed.new("no buildx"))
-
-    Mrsk::Commands::Builder.any_instance.stubs(:native_and_local?).returns(false)
-    assert_raises(Mrsk::Cli::Build::BuildError) { run_command("verify_local_dependencies") }
-  end
-
   private
     def run_command(*command)
       stdouted { Mrsk::Cli::Build.start([*command, "-c", "test/fixtures/deploy_with_accessories.yml"]) }
     end
 
-    def stub_locking
+    def stub_dependency_checks
       SSHKit::Backend::Abstract.any_instance.stubs(:execute)
-        .with { |arg1, arg2| arg1 == :mkdir && arg2 == :mrsk_lock }
+        .with(:docker, "--version", "&&", :docker, :buildx, "version")
       SSHKit::Backend::Abstract.any_instance.stubs(:execute)
-        .with { |arg1, arg2| arg1 == :rm && arg2 == "mrsk_lock/details" }
+        .with { |*args| args[0..1] == [:docker, :buildx] }
     end
 end

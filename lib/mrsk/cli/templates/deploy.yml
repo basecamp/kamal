@@ -25,10 +25,6 @@ registry:
 #   secret:
 #     - RAILS_MASTER_KEY
 
-# Call a broadcast command on deploys.
-# audit_broadcast_cmd:
-#   bin/broadcast_to_bc
-
 # Use a different ssh user than root
 # ssh:
 #   user: app

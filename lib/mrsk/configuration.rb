@@ -6,7 +6,7 @@ require "erb"
 require "net/ssh/proxy/jump"
 
 class Mrsk::Configuration
-  delegate :service, :image, :servers, :env, :labels, :registry, :builder, :stop_wait_time, to: :raw_config, allow_nil: true
+  delegate :service, :image, :servers, :env, :labels, :registry, :builder, :stop_wait_time, :hooks_path, to: :raw_config, allow_nil: true
   delegate :argumentize, :argumentize_env_with_secrets, :optionize, to: Mrsk::Utils
 
   attr_accessor :destination
@@ -157,10 +157,6 @@ class Mrsk::Configuration
   end
 
 
-  def audit_broadcast_cmd
-    raw_config.audit_broadcast_cmd
-  end
-
   def healthcheck
     { "path" => "/up", "port" => 3000, "max_attempts" => 7 }.merge(raw_config.healthcheck || {})
   end
@@ -195,6 +191,10 @@ class Mrsk::Configuration
 
   def traefik
     raw_config.traefik || {}
+  end
+
+  def hooks_path
+    raw_config.hooks_path || ".mrsk/hooks"
   end
 
   private

@@ -3,6 +3,7 @@ require "test_helper"
 
 class IntegrationTest < ActiveSupport::TestCase
   setup do
+    ENV["TEST_ID"] = SecureRandom.hex
     docker_compose "up --build -d"
     wait_for_healthy
     setup_deployer
@@ -14,7 +15,7 @@ class IntegrationTest < ActiveSupport::TestCase
 
   private
     def docker_compose(*commands, capture: false, raise_on_error: true)
-      command = "docker compose #{commands.join(" ")}"
+      command = "TEST_ID=#{ENV["TEST_ID"]} docker compose #{commands.join(" ")}"
       succeeded = false
       if capture
         result = stdouted { succeeded = system("cd test/integration && #{command}") }
@@ -80,6 +81,25 @@ class IntegrationTest < ActiveSupport::TestCase
 
     def assert_app_version(version, response)
       assert_equal version, response.body.strip
+    end
+
+    def assert_hooks_ran(*hooks)
+      hooks.each do |hook|
+        file = "/tmp/#{ENV["TEST_ID"]}/#{hook}"
+        assert_equal "removed '#{file}'", deployer_exec("rm -v #{file}", capture: true).strip
+      end
+    end
+
+    def assert_200(response)
+      code = response.code
+      if code != "200"
+        puts "Got response code #{code}, here are the traefik logs:"
+        mrsk :traefik, :logs
+        puts "And here are the load balancer logs"
+        docker_compose :logs, :load_balancer
+        puts "Tried to get the response code again and got #{app_response.code}"
+      end
+      assert_equal "200", code
     end
 
     def wait_for_healthy(timeout: 20)

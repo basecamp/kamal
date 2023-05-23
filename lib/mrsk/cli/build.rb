@@ -14,11 +14,12 @@ class Mrsk::Cli::Build < Mrsk::Cli::Base
     with_lock do
       cli = self
 
+      verify_local_dependencies
+      run_hook "pre-build"
+
       run_locally do
         begin
-          if cli.verify_local_dependencies
-            MRSK.with_verbosity(:debug) { execute *MRSK.builder.push }
-          end
+          MRSK.with_verbosity(:debug) { execute *MRSK.builder.push }
         rescue SSHKit::Command::Failed => e
           if e.message =~ /(no builder)|(no such file or directory)/
             error "Missing compatible builder, so creating a new one first"
@@ -82,21 +83,18 @@ class Mrsk::Cli::Build < Mrsk::Cli::Base
     end
   end
 
+  private
+    def verify_local_dependencies
+      run_locally do
+        begin
+          execute *MRSK.builder.ensure_local_dependencies_installed
+        rescue SSHKit::Command::Failed => e
+          build_error = e.message =~ /command not found/ ?
+            "Docker is not installed locally" :
+            "Docker buildx plugin is not installed locally"
 
-  desc "", "" # Really a private method, but needed to be invoked from #push
-  def verify_local_dependencies
-    run_locally do
-      begin
-        execute *MRSK.builder.ensure_local_dependencies_installed
-      rescue SSHKit::Command::Failed => e
-        build_error = e.message =~ /command not found/ ?
-          "Docker is not installed locally" :
-          "Docker buildx plugin is not installed locally"
-
-        raise BuildError, build_error
+          raise BuildError, build_error
+        end
       end
     end
-
-    true
-  end
 end

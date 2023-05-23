@@ -668,43 +668,6 @@ servers:
 
 This assumes the Cron settings are stored in `config/crontab`.
 
-### Using audit broadcasts
-
-If you'd like to broadcast audits of deploys, rollbacks, etc to a chatroom or elsewhere, you can configure the `audit_broadcast_cmd` setting with the path to a bin file that will be passed the audit line as the first argument:
-
-```yaml
-audit_broadcast_cmd:
-  bin/audit_broadcast
-```
-
-The broadcast command could look something like:
-
-```bash
-#!/usr/bin/env bash
-curl -q -d content="[My App] ${1}" https://3.basecamp.com/XXXXX/integrations/XXXXX/buckets/XXXXX/chats/XXXXX/lines
-```
-
-That'll post a line like follows to a preconfigured chatbot in Basecamp:
-
-```
-[My App] [dhh] Rolled back to version d264c4e92470ad1bd18590f04466787262f605de
-```
-
-`MRSK_*` environment variables are available to the broadcast command for
-fine-grained audit reporting, e.g. for triggering deployment reports or
-firing a JSON webhook. These variables include:
-- `MRSK_RECORDED_AT` - UTC timestamp in ISO 8601 format, e.g. `2023-04-14T17:07:31Z`
-- `MRSK_PERFORMER` - the local user performing the command (from `whoami`)
-- `MRSK_MESSAGE` - the full audit message, e.g. "Deployed app@150b24f"
-- `MRSK_DESTINATION` - optional: destination, e.g. "staging"
-- `MRSK_ROLE` - optional: role targeted, e.g. "web"
-
-Use `mrsk broadcast` to test and troubleshoot your broadcast command:
-
-```bash
-mrsk broadcast -m "test audit message"
-```
-
 ### Healthcheck
 
 MRSK uses Docker healtchecks to check the health of your application during deployment. Traefik uses this same healthcheck status to determine when a container is ready to receive traffic.
@@ -901,6 +864,52 @@ boot:
 When `limit` is specified, containers will be booted on, at most, `limit` hosts at once. MRSK will pause for `wait` seconds between batches.
 
 These settings only apply when booting containers (using `mrsk deploy`, or `mrsk app boot`). For other commands, MRSK continues to run commands in parallel across all hosts.
+
+## Hooks
+
+You can run custom scripts at specific points with hooks.
+
+Hooks should be stored in the .mrsk/hooks folder. Running mrsk init will build that folder and add some sample scripts.
+
+You can change their location by setting `hooks_path` in the configuration file.
+
+If the script returns a non-zero exit code the command will be aborted.
+
+`MRSK_*` environment variables are available to the hooks command for
+fine-grained audit reporting, e.g. for triggering deployment reports or
+firing a JSON webhook. These variables include:
+- `MRSK_RECORDED_AT` - UTC timestamp in ISO 8601 format, e.g. `2023-04-14T17:07:31Z`
+- `MRSK_PERFORMER` - the local user performing the command (from `whoami`)
+- `MRSK_MESSAGE` - the full audit message, e.g. "Deployed app@150b24f"
+- `MRSK_SERVICE_VERSION` - an abbreviated version (for use in messages)
+- `MRSK_DESTINATION` - optional: destination, e.g. "staging"
+- `MRSK_ROLE` - optional: role targeted, e.g. "web"
+
+There are two hooks:
+
+1. pre-build
+Used for pre-build checks - e.g. there are no uncommitted changes or that CI has passed.
+
+2. post-deploy - run after a deploy, redeploy or rollback
+
+This hook is also passed a `MRSK_RUNTIME` env variable.
+
+This could be used to broadcast a deployment message, or register the new version with an APM.
+
+The command could look something like:
+
+```bash
+#!/usr/bin/env bash
+curl -q -d content="[My App] ${MRSK_PERFORMER} Rolled back to version ${MRSK_VERSION}" https://3.basecamp.com/XXXXX/integrations/XXXXX/buckets/XXXXX/chats/XXXXX/lines
+```
+
+That'll post a line like follows to a preconfigured chatbot in Basecamp:
+
+```
+[My App] [dhh] Rolled back to version d264c4e92470ad1bd18590f04466787262f605de
+```
+
+Set `--skip_hooks` to avoid running the hooks.
 
 ## Stage of development
 

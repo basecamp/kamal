@@ -10,7 +10,7 @@ class CliMainTest < CliTestCase
   end
 
   test "deploy" do
-    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "skip_broadcast" => false, "version" => "999" }
+    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false }
 
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:registry:login", [], invoke_options)
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:build:deliver", [], invoke_options)
@@ -20,6 +20,8 @@ class CliMainTest < CliTestCase
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:app:boot", [], invoke_options)
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:prune:all", [], invoke_options)
 
+    Mrsk::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
+
     run_command("deploy").tap do |output|
       assert_match /Log into image registry/, output
       assert_match /Build and push app image/, output
@@ -27,11 +29,12 @@ class CliMainTest < CliTestCase
       assert_match /Ensure app can pass healthcheck/, output
       assert_match /Detect stale containers/, output
       assert_match /Prune old containers and images/, output
+      assert_match /Running the post-deploy hook.../, output
     end
   end
 
   test "deploy with skip_push" do
-    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "skip_broadcast" => false, "version" => "999" }
+    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false }
 
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:registry:login", [], invoke_options)
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:build:pull", [], invoke_options)
@@ -81,7 +84,7 @@ class CliMainTest < CliTestCase
   end
 
   test "deploy errors during outside section leave remove lock" do
-    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "skip_broadcast" => false, "version" => "999" }
+    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false }
 
     Mrsk::Cli::Main.any_instance.expects(:invoke)
       .with("mrsk:cli:registry:login", [], invoke_options)
@@ -94,22 +97,41 @@ class CliMainTest < CliTestCase
     assert !MRSK.holding_lock?
   end
 
+  test "deploy with skipped hooks" do
+    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => true }
+
+    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:registry:login", [], invoke_options)
+    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:build:deliver", [], invoke_options)
+    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:traefik:boot", [], invoke_options)
+    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:healthcheck:perform", [], invoke_options)
+    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:app:stale_containers", [], invoke_options)
+    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:app:boot", [], invoke_options)
+    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:prune:all", [], invoke_options)
+
+    run_command("deploy", "--skip_hooks") do
+      refute_match /Running the post-deploy hook.../, output
+    end
+  end
+
   test "redeploy" do
-    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "skip_broadcast" => false, "version" => "999" }
+    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false }
 
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:build:deliver", [], invoke_options)
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:healthcheck:perform", [], invoke_options)
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:app:stale_containers", [], invoke_options)
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:app:boot", [], invoke_options)
 
+    Mrsk::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
+
     run_command("redeploy").tap do |output|
       assert_match /Build and push app image/, output
       assert_match /Ensure app can pass healthcheck/, output
+      assert_match /Running the post-deploy hook.../, output
     end
   end
 
   test "redeploy with skip_push" do
-    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "skip_broadcast" => false, "version" => "999" }
+    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false }
 
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:build:pull", [], invoke_options)
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:healthcheck:perform", [], invoke_options)
@@ -149,12 +171,14 @@ class CliMainTest < CliTestCase
         .returns("running").at_least_once # health check
     end
 
+    Mrsk::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
 
     run_command("rollback", "123", config_file: "deploy_with_accessories").tap do |output|
       assert_match "Start container with version 123", output
       assert_match "docker tag dhh/app:123 dhh/app:latest", output
       assert_match "docker start app-web-123", output
       assert_match "docker container ls --all --filter name=^app-web-version-to-rollback$ --quiet | xargs docker stop", output, "Should stop the container that was previously running"
+      assert_match "Running the post-deploy hook...", output
     end
   end
 
@@ -235,9 +259,11 @@ class CliMainTest < CliTestCase
   end
 
   test "init" do
-    Pathname.any_instance.expects(:exist?).returns(false).twice
+    Pathname.any_instance.expects(:exist?).returns(false).times(3)
+    Pathname.any_instance.stubs(:mkpath)
     FileUtils.stubs(:mkdir_p)
     FileUtils.stubs(:cp_r)
+    FileUtils.stubs(:cp)
 
     run_command("init").tap do |output|
       assert_match /Created configuration file in config\/deploy.yml/, output
@@ -246,7 +272,7 @@ class CliMainTest < CliTestCase
   end
 
   test "init with existing config" do
-    Pathname.any_instance.expects(:exist?).returns(true).twice
+    Pathname.any_instance.expects(:exist?).returns(true).times(3)
 
     run_command("init").tap do |output|
       assert_match /Config file already exists in config\/deploy.yml \(remove first to create a new one\)/, output
@@ -254,9 +280,11 @@ class CliMainTest < CliTestCase
   end
 
   test "init with bundle option" do
-    Pathname.any_instance.expects(:exist?).returns(false).times(3)
+    Pathname.any_instance.expects(:exist?).returns(false).times(4)
+    Pathname.any_instance.stubs(:mkpath)
     FileUtils.stubs(:mkdir_p)
     FileUtils.stubs(:cp_r)
+    FileUtils.stubs(:cp)
 
     run_command("init", "--bundle").tap do |output|
       assert_match /Created configuration file in config\/deploy.yml/, output
@@ -269,9 +297,11 @@ class CliMainTest < CliTestCase
   end
 
   test "init with bundle option and existing binstub" do
-    Pathname.any_instance.expects(:exist?).returns(true).times(3)
+    Pathname.any_instance.expects(:exist?).returns(true).times(4)
+    Pathname.any_instance.stubs(:mkpath)
     FileUtils.stubs(:mkdir_p)
     FileUtils.stubs(:cp_r)
+    FileUtils.stubs(:cp)
 
     run_command("init", "--bundle").tap do |output|
       assert_match /Config file already exists in config\/deploy.yml \(remove first to create a new one\)/, output
@@ -314,19 +344,6 @@ class CliMainTest < CliTestCase
       assert_match /rm -rf app-redis/, output
 
       assert_match /docker logout/, output
-    end
-  end
-
-  test "broadcast" do
-    SSHKit::Backend::Abstract.any_instance.expects(:execute).with do |command, line, options, verbosity:|
-      command == "bin/audit_broadcast" &&
-        line =~ /\A'\[[^\]]+\] message'\z/ &&
-        options[:env].keys == %w[ MRSK_RECORDED_AT MRSK_PERFORMER MRSK_EVENT ] &&
-        verbosity == :debug
-    end.returns("Broadcast audit message: message")
-
-    run_command("broadcast", "-m", "message").tap do |output|
-      assert_match "Broadcast: message", output
     end
   end
 

@@ -44,7 +44,7 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
       end
     end
 
-    audit_broadcast "Deployed #{service_version} in #{runtime.round} seconds" unless options[:skip_broadcast]
+    run_hook "post-deploy", runtime: runtime.round
   end
 
   desc "redeploy", "Deploy app to servers without bootstrapping servers, starting Traefik, pruning, and registry login"
@@ -72,25 +72,29 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
       end
     end
 
-    audit_broadcast "Redeployed #{service_version} in #{runtime.round} seconds" unless options[:skip_broadcast]
+    run_hook "post-deploy", runtime: runtime.round
   end
 
   desc "rollback [VERSION]", "Rollback app to VERSION"
   def rollback(version)
-    with_lock do
-      invoke_options = deploy_options
+    rolled_back = false
+    runtime = print_runtime do
+      with_lock do
+        invoke_options = deploy_options
 
-      MRSK.config.version = version
-      old_version = nil
+        MRSK.config.version = version
+        old_version = nil
 
-      if container_available?(version)
-        invoke "mrsk:cli:app:boot", [], invoke_options.merge(version: version)
-
-        audit_broadcast "Rolled back #{service_version(Mrsk::Utils.abbreviate_version(old_version))} to #{service_version}" unless options[:skip_broadcast]
-      else
-        say "The app version '#{version}' is not available as a container (use 'mrsk app containers' for available versions)", :red
+        if container_available?(version)
+          invoke "mrsk:cli:app:boot", [], invoke_options.merge(version: version)
+          rolled_back = true
+        else
+          say "The app version '#{version}' is not available as a container (use 'mrsk app containers' for available versions)", :red
+        end
       end
     end
+
+    run_hook "post-deploy", runtime: runtime.round if rolled_back
   end
 
   desc "details", "Show details about all containers"
@@ -132,6 +136,14 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
       puts "Created .env file"
     end
 
+    unless (hooks_dir = Pathname.new(File.expand_path(".mrsk/hooks"))).exist?
+      hooks_dir.mkpath
+      Pathname.new(File.expand_path("templates/sample_hooks", __dir__)).each_child do |sample_hook|
+        FileUtils.cp sample_hook, hooks_dir, preserve: true
+      end
+      puts "Created sample hooks in .mrsk/hooks"
+    end
+
     if options[:bundle]
       if (binstub = Pathname.new(File.expand_path("bin/mrsk"))).exist?
         puts "Binstub already exists in bin/mrsk (remove first to create a new one)"
@@ -170,13 +182,6 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
         invoke "mrsk:cli:registry:logout", [], options.without(:confirmed)
       end
     end
-  end
-
-  desc "broadcast", "Broadcast an audit message"
-  option :message, aliases: "-m", type: :string, desc: "Audit message", required: true
-  def broadcast
-    say "Broadcast: #{options[:message]}", :magenta
-    audit_broadcast options[:message]
   end
 
   desc "version", "Show MRSK version"
@@ -234,9 +239,5 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
 
     def deploy_options
       { "version" => MRSK.config.version }.merge(options.without("skip_push"))
-    end
-
-    def service_version(version = MRSK.config.abbreviated_version)
-      [ MRSK.config.service, version ].compact.join("@")
     end
 end

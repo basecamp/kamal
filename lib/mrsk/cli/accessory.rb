@@ -14,8 +14,6 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
             execute *MRSK.auditor.record("Booted #{name} accessory"), verbosity: :debug
             execute *accessory.run
           end
-
-          audit_broadcast "Booted accessory #{name}" unless options[:skip_broadcast]
         end
       end
     end

@@ -1,5 +1,5 @@
 #!/bin/bash
 
-dockerd &
+dockerd --max-concurrent-downloads 1 &
 
 exec sleep infinity
