@@ -205,7 +205,7 @@ class CliMainTest < CliTestCase
   test "rollback runs post deploy hook" do
     Mrsk::Cli::Main.any_instance.stubs(:container_available?).returns(true)
 
-    ensure_hook_runs("post-rollback")
+    ensure_hook_runs("post-deploy")
     run_command("rollback", "123")
   end
 

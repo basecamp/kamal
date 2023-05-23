@@ -17,7 +17,7 @@ class MainTest < IntegrationTest
     assert_hooks_ran "pre-build", "post-deploy"
 
     mrsk :rollback, first_version
-    assert_hooks_ran "post-rollback"
+    assert_hooks_ran "post-deploy"
     assert_app_is_up version: first_version
 
     details = mrsk :details, capture: true

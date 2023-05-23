@@ -885,14 +885,14 @@ firing a JSON webhook. These variables include:
 - `MRSK_DESTINATION` - optional: destination, e.g. "staging"
 - `MRSK_ROLE` - optional: role targeted, e.g. "web"
 
-There are three hooks:
+There are two hooks:
 
 1. pre-build
 Used for pre-build checks - e.g. there are no uncommitted changes or that CI has passed.
 
-2. post-deploy and post-rollback
+2. post-deploy - run after a deploy, redeploy or rollback
 
-These two hooks are also passed a `MRSK_RUNTIME` env variable.
+This hook is also passed a `MRSK_RUNTIME` env variable.
 
 This could be used to broadcast a deployment message, or register the new version with an APM.
 
