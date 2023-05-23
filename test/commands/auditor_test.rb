@@ -8,8 +8,7 @@ class CommandsAuditorTest < ActiveSupport::TestCase
     freeze_time
 
     @config = {
-      service: "app", image: "dhh/app", registry: { "username" => "dhh", "password" => "secret" }, servers: [ "1.1.1.1" ],
-      audit_broadcast_cmd: "bin/audit_broadcast"
+      service: "app", image: "dhh/app", registry: { "username" => "dhh", "password" => "secret" }, servers: [ "1.1.1.1" ]
     }
 
     @auditor = new_command
@@ -57,19 +56,6 @@ class CommandsAuditorTest < ActiveSupport::TestCase
     ], @auditor.record("app removed container", detail: "value")
   end
 
-  test "broadcast" do
-    assert_equal [
-      "bin/audit_broadcast",
-      "'[#{@performer}] [value] app removed container'",
-      env: {
-        "MRSK_RECORDED_AT" => @recorded_at,
-        "MRSK_PERFORMER" => @performer,
-        "MRSK_VERSION" => "123",
-        "MRSK_EVENT" => "app removed container",
-        "MRSK_DETAIL" => "value"
-      }
-    ], @auditor.broadcast("app removed container", detail: "value")
-  end
 
   private
     def new_command(destination: nil, **details)

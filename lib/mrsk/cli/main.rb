@@ -44,7 +44,7 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
       end
     end
 
-    audit_broadcast "Deployed #{service_version} in #{runtime.round} seconds" unless options[:skip_broadcast]
+    run_hook "post-deploy", runtime: runtime.round
   end
 
   desc "redeploy", "Deploy app to servers without bootstrapping servers, starting Traefik, pruning, and registry login"
@@ -72,13 +72,15 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
       end
     end
 
-    audit_broadcast "Redeployed #{service_version} in #{runtime.round} seconds" unless options[:skip_broadcast]
+    run_hook "post-deploy", runtime: runtime.round
   end
 
   desc "rollback [VERSION]", "Rollback app to VERSION"
   def rollback(version)
-    with_lock do
-      invoke_options = deploy_options
+    rolled_back = false
+    runtime = print_runtime do
+      with_lock do
+        invoke_options = deploy_options
 
       MRSK.config.version = version
       old_version = nil
@@ -86,7 +88,7 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
       if container_available?(version)
         invoke "mrsk:cli:app:boot", [], invoke_options.merge(version: version)
 
-        audit_broadcast "Rolled back #{service_version(Mrsk::Utils.abbreviate_version(old_version))} to #{service_version}" unless options[:skip_broadcast]
+        run_hook "post-deploy", runtime: runtime.round
       else
         say "The app version '#{version}' is not available as a container (use 'mrsk app containers' for available versions)", :red
       end
@@ -178,13 +180,6 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
         invoke "mrsk:cli:registry:logout", [], options.without(:confirmed)
       end
     end
-  end
-
-  desc "broadcast", "Broadcast an audit message"
-  option :message, aliases: "-m", type: :string, desc: "Audit message", required: true
-  def broadcast
-    say "Broadcast: #{options[:message]}", :magenta
-    audit_broadcast options[:message]
   end
 
   desc "version", "Show MRSK version"

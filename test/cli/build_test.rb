@@ -95,13 +95,6 @@ class CliBuildTest < CliTestCase
       stdouted { Mrsk::Cli::Build.start([*command, "-c", "test/fixtures/deploy_with_accessories.yml"]) }
     end
 
-    def stub_locking
-      SSHKit::Backend::Abstract.any_instance.stubs(:execute)
-        .with { |arg1, arg2| arg1 == :mkdir && arg2 == :mrsk_lock }
-      SSHKit::Backend::Abstract.any_instance.stubs(:execute)
-        .with { |arg1, arg2| arg1 == :rm && arg2 == "mrsk_lock/details" }
-    end
-
     def stub_dependency_checks
       SSHKit::Backend::Abstract.any_instance.stubs(:execute)
         .with(:docker, "--version", "&&", :docker, :buildx, "version")

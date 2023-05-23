@@ -20,6 +20,9 @@ class CliMainTest < CliTestCase
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:app:boot", [], invoke_options)
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:prune:all", [], invoke_options)
 
+    stub_locking
+    ensure_hook_runs("post-deploy")
+
     run_command("deploy").tap do |output|
       assert_match /Log into image registry/, output
       assert_match /Build and push app image/, output
@@ -102,6 +105,9 @@ class CliMainTest < CliTestCase
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:app:stale_containers", [], invoke_options)
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:app:boot", [], invoke_options)
 
+    stub_locking
+    ensure_hook_runs("post-deploy")
+
     run_command("redeploy").tap do |output|
       assert_match /Build and push app image/, output
       assert_match /Ensure app can pass healthcheck/, output
@@ -149,7 +155,6 @@ class CliMainTest < CliTestCase
         .returns("running").at_least_once # health check
     end
 
-
     run_command("rollback", "123", config_file: "deploy_with_accessories").tap do |output|
       assert_match "Start container with version 123", output
       assert_match "docker tag dhh/app:123 dhh/app:latest", output
@@ -178,6 +183,13 @@ class CliMainTest < CliTestCase
       assert_match "docker start app-web-123 || docker run --detach --restart unless-stopped --name app-web-123", output
       assert_no_match "docker stop", output
     end
+  end
+
+  test "rollback runs post deploy hook" do
+    Mrsk::Cli::Main.any_instance.stubs(:container_available?).returns(true)
+
+    ensure_hook_runs("post-rollback")
+    run_command("rollback", "123")
   end
 
   test "details" do
@@ -320,19 +332,6 @@ class CliMainTest < CliTestCase
       assert_match /rm -rf app-redis/, output
 
       assert_match /docker logout/, output
-    end
-  end
-
-  test "broadcast" do
-    SSHKit::Backend::Abstract.any_instance.expects(:execute).with do |command, line, options, verbosity:|
-      command == "bin/audit_broadcast" &&
-        line =~ /\A'\[[^\]]+\] message'\z/ &&
-        options[:env].keys == %w[ MRSK_RECORDED_AT MRSK_PERFORMER MRSK_VERSION MRSK_EVENT ] &&
-        verbosity == :debug
-    end.returns("Broadcast audit message: message")
-
-    run_command("broadcast", "-m", "message").tap do |output|
-      assert_match "Broadcast: message", output
     end
   end
 

@@ -83,10 +83,10 @@ class IntegrationTest < ActiveSupport::TestCase
       assert_equal version, response.body.strip
     end
 
-    def assert_hooks_ran
-      [ "pre-build" ].each do |hook|
+    def assert_hooks_ran(*hooks)
+      hooks.each do |hook|
         file = "/tmp/#{ENV["TEST_ID"]}/#{hook}"
-        assert_match /File: #{file}/, deployer_exec("stat #{file}", capture: true)
+        assert_equal "removed '#{file}'", deployer_exec("rm -v #{file}", capture: true).strip
       end
     end
 

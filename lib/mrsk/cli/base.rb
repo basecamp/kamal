@@ -72,10 +72,6 @@ module Mrsk::Cli
         puts "  Finished all in #{sprintf("%.1f seconds", runtime)}"
       end
 
-      def audit_broadcast(line)
-        run_locally { execute *MRSK.auditor.broadcast(line), verbosity: :debug }
-      end
-
       def with_lock
         if MRSK.holding_lock?
           yield
@@ -135,11 +131,11 @@ module Mrsk::Cli
         end
       end
 
-      def run_hook(hook)
+      def run_hook(hook, **details)
         run_locally do
           if MRSK.hook.hook_exists?(hook)
             begin
-              MRSK.with_verbosity(:debug) { execute(*MRSK.hook.run(hook)) }
+              MRSK.with_verbosity(:debug) { execute(*MRSK.hook.run(hook, **details)) }
             rescue SSHKit::Command::Failed
               raise HookError.new("Hook `#{hook}` failed")
             end

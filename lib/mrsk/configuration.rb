@@ -157,10 +157,6 @@ class Mrsk::Configuration
   end
 
 
-  def audit_broadcast_cmd
-    raw_config.audit_broadcast_cmd
-  end
-
   def healthcheck
     { "path" => "/up", "port" => 3000, "max_attempts" => 7 }.merge(raw_config.healthcheck || {})
   end

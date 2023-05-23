@@ -27,4 +27,19 @@ class CliTestCase < ActiveSupport::TestCase
         .raises(SSHKit::Command::Failed.new("failed"))
     end
 
+    def ensure_hook_runs(hook)
+      Mrsk::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
+      SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+        .with { |*args| args != [".mrsk/hooks/#{hook}"] }
+      SSHKit::Backend::Abstract.any_instance.expects(:execute)
+        .with { |*args| args.first == ".mrsk/hooks/#{hook}" }
+        .once
+    end
+
+    def stub_locking
+      SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+        .with { |arg1, arg2| arg1 == :mkdir && arg2 == :mrsk_lock }
+      SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+        .with { |arg1, arg2| arg1 == :rm && arg2 == "mrsk_lock/details" }
+    end
 end
