@@ -137,7 +137,7 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
     unless (hooks_dir = Pathname.new(File.expand_path(".mrsk/hooks"))).exist?
       hooks_dir.mkpath
       Pathname.new(File.expand_path("templates/sample_hooks", __dir__)).each_child do |sample_hook|
-        FileUtils.cp sample_hook, hooks_dir
+        FileUtils.cp sample_hook, hooks_dir, preserve: true
       end
       puts "Created sample hooks in .mrsk/hooks"
     end
