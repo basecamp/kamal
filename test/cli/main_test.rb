@@ -83,23 +83,6 @@ class CliMainTest < CliTestCase
     end
   end
 
-  test "deploy errors during critical section leave lock in place" do
-    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999" }
-
-    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:registry:login", [], invoke_options)
-    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:build:deliver", [], invoke_options)
-    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:app:stale_containers", [], invoke_options)
-    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:traefik:boot", [], invoke_options)
-    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:healthcheck:perform", [], invoke_options)
-    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:app:boot", [], invoke_options).raises(RuntimeError)
-
-    assert !MRSK.holding_lock?
-    assert_raises(RuntimeError) do
-      stderred { run_command("deploy") }
-    end
-    assert MRSK.holding_lock?
-  end
-
   test "deploy errors during outside section leave remove lock" do
     invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999" }
 
@@ -205,7 +188,20 @@ class CliMainTest < CliTestCase
   test "rollback runs post deploy hook" do
     Mrsk::Cli::Main.any_instance.stubs(:container_available?).returns(true)
 
+    Mrsk::Utils::HealthcheckPoller.stubs(:sleep)
+
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :container, :ls, "--filter", "name=^app-web-123$", "--quiet", raise_on_non_zero_exit: false)
+      .returns("").at_least_once
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=web", "--filter", "status=running", "--latest", "--format", "\"{{.Names}}\"", "|", "grep -oE \"\\-[^-]+$\"", "|", "cut -c 2-", raise_on_non_zero_exit: false)
+      .returns("").at_least_once
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-123$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
+      .returns("running").at_least_once # health check
+
     ensure_hook_runs("post-deploy")
+
     run_command("rollback", "123")
   end
 

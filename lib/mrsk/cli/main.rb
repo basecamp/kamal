@@ -82,17 +82,19 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
       with_lock do
         invoke_options = deploy_options
 
-      MRSK.config.version = version
-      old_version = nil
+        MRSK.config.version = version
+        old_version = nil
 
-      if container_available?(version)
-        invoke "mrsk:cli:app:boot", [], invoke_options.merge(version: version)
-
-        run_hook "post-deploy", runtime: runtime.round
-      else
-        say "The app version '#{version}' is not available as a container (use 'mrsk app containers' for available versions)", :red
+        if container_available?(version)
+          invoke "mrsk:cli:app:boot", [], invoke_options.merge(version: version)
+          rolled_back = true
+        else
+          say "The app version '#{version}' is not available as a container (use 'mrsk app containers' for available versions)", :red
+        end
       end
     end
+
+    run_hook "post-deploy", runtime: runtime.round if rolled_back
   end
 
   desc "details", "Show details about all containers"
