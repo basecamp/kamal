@@ -10,7 +10,7 @@ class CliMainTest < CliTestCase
   end
 
   test "deploy" do
-    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999" }
+    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false }
 
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:registry:login", [], invoke_options)
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:build:deliver", [], invoke_options)
@@ -20,8 +20,7 @@ class CliMainTest < CliTestCase
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:app:boot", [], invoke_options)
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:prune:all", [], invoke_options)
 
-    stub_locking
-    ensure_hook_runs("post-deploy")
+    Mrsk::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
 
     run_command("deploy").tap do |output|
       assert_match /Log into image registry/, output
@@ -30,11 +29,12 @@ class CliMainTest < CliTestCase
       assert_match /Ensure app can pass healthcheck/, output
       assert_match /Detect stale containers/, output
       assert_match /Prune old containers and images/, output
+      assert_match /Running the post-deploy hook.../, output
     end
   end
 
   test "deploy with skip_push" do
-    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999" }
+    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false }
 
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:registry:login", [], invoke_options)
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:build:pull", [], invoke_options)
@@ -84,7 +84,7 @@ class CliMainTest < CliTestCase
   end
 
   test "deploy errors during outside section leave remove lock" do
-    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999" }
+    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false }
 
     Mrsk::Cli::Main.any_instance.expects(:invoke)
       .with("mrsk:cli:registry:login", [], invoke_options)
@@ -97,25 +97,41 @@ class CliMainTest < CliTestCase
     assert !MRSK.holding_lock?
   end
 
+  test "deploy with skipped hooks" do
+    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => true }
+
+    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:registry:login", [], invoke_options)
+    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:build:deliver", [], invoke_options)
+    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:traefik:boot", [], invoke_options)
+    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:healthcheck:perform", [], invoke_options)
+    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:app:stale_containers", [], invoke_options)
+    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:app:boot", [], invoke_options)
+    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:prune:all", [], invoke_options)
+
+    run_command("deploy", "--skip_hooks") do
+      refute_match /Running the post-deploy hook.../, output
+    end
+  end
+
   test "redeploy" do
-    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999" }
+    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false }
 
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:build:deliver", [], invoke_options)
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:healthcheck:perform", [], invoke_options)
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:app:stale_containers", [], invoke_options)
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:app:boot", [], invoke_options)
 
-    stub_locking
-    ensure_hook_runs("post-deploy")
+    Mrsk::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
 
     run_command("redeploy").tap do |output|
       assert_match /Build and push app image/, output
       assert_match /Ensure app can pass healthcheck/, output
+      assert_match /Running the post-deploy hook.../, output
     end
   end
 
   test "redeploy with skip_push" do
-    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999" }
+    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false }
 
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:build:pull", [], invoke_options)
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:healthcheck:perform", [], invoke_options)
@@ -155,11 +171,14 @@ class CliMainTest < CliTestCase
         .returns("running").at_least_once # health check
     end
 
+    Mrsk::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
+
     run_command("rollback", "123", config_file: "deploy_with_accessories").tap do |output|
       assert_match "Start container with version 123", output
       assert_match "docker tag dhh/app:123 dhh/app:latest", output
       assert_match "docker start app-web-123", output
       assert_match "docker container ls --all --filter name=^app-web-version-to-rollback$ --quiet | xargs docker stop", output, "Should stop the container that was previously running"
+      assert_match "Running the post-deploy hook...", output
     end
   end
 
@@ -183,26 +202,6 @@ class CliMainTest < CliTestCase
       assert_match "docker start app-web-123 || docker run --detach --restart unless-stopped --name app-web-123", output
       assert_no_match "docker stop", output
     end
-  end
-
-  test "rollback runs post deploy hook" do
-    Mrsk::Cli::Main.any_instance.stubs(:container_available?).returns(true)
-
-    Mrsk::Utils::HealthcheckPoller.stubs(:sleep)
-
-    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :container, :ls, "--filter", "name=^app-web-123$", "--quiet", raise_on_non_zero_exit: false)
-      .returns("").at_least_once
-    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=web", "--filter", "status=running", "--latest", "--format", "\"{{.Names}}\"", "|", "grep -oE \"\\-[^-]+$\"", "|", "cut -c 2-", raise_on_non_zero_exit: false)
-      .returns("").at_least_once
-    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-123$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
-      .returns("running").at_least_once # health check
-
-    ensure_hook_runs("post-deploy")
-
-    run_command("rollback", "123")
   end
 
   test "details" do

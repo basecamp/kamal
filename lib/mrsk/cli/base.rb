@@ -20,6 +20,8 @@ module Mrsk::Cli
     class_option :config_file, aliases: "-c", default: "config/deploy.yml", desc: "Path to config file"
     class_option :destination, aliases: "-d", desc: "Specify destination to be used for config file (staging -> deploy.staging.yml)"
 
+    class_option :skip_hooks, aliases: "-H", type: :boolean, default: false, desc: "Don't run hooks"
+
     def initialize(*)
       super
       load_envs
@@ -130,7 +132,7 @@ module Mrsk::Cli
       end
 
       def run_hook(hook, **details)
-        if MRSK.hook.hook_exists?(hook)
+        if !options[:skip_hooks] && MRSK.hook.hook_exists?(hook)
           say "Running the #{hook} hook...", :magenta
           run_locally do
             MRSK.with_verbosity(:debug) { execute *MRSK.hook.run(hook, **details) }

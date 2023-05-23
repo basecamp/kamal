@@ -909,6 +909,8 @@ That'll post a line like follows to a preconfigured chatbot in Basecamp:
 [My App] [dhh] Rolled back to version d264c4e92470ad1bd18590f04466787262f605de
 ```
 
+Set `--skip_hooks` to avoid running the hooks.
+
 ## Stage of development
 
 This is beta software. Commands may still move around. But we're live in production at [37signals](https://37signals.com).

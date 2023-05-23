@@ -46,7 +46,7 @@ class CliAppTest < CliTestCase
   end
 
   test "boot errors leave lock in place" do
-    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "skip_broadcast" => false, "version" => "999" }
+    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999" }
 
     Mrsk::Cli::App.any_instance.expects(:using_version).raises(RuntimeError)
 
