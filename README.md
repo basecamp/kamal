@@ -44,13 +44,13 @@ Then edit your `.env` file to add your registry password as `MRSK_REGISTRY_PASSW
 Now you're ready to deploy to the servers:
 
 ```
-mrsk deploy
+mrsk setup
 ```
 
 This will:
 
 1. Connect to the servers over SSH (using root by default, authenticated by your ssh key)
-2. Install Docker on any server that might be missing it (using apt-get): root access is needed via ssh for this.
+2. Install Docker and curl on any server that might be missing it (using apt-get): root access is needed via ssh for this.
 3. Log into the registry both locally and remotely
 4. Build the image using the standard Dockerfile in the root of the application.
 5. Push the image to the registry.
@@ -61,7 +61,7 @@ This will:
 10. Stop the old container running the previous version of the app.
 11. Prune unused images and stopped containers to ensure servers don't fill up.
 
-Voila! All the servers are now serving the app on port 80. If you're just running a single server, you're ready to go. If you're running multiple servers, you need to put a load balancer in front of them.
+Voila! All the servers are now serving the app on port 80. If you're just running a single server, you're ready to go. If you're running multiple servers, you need to put a load balancer in front of them. For subsequent deploys, or if your servers already have Docker and curl installed, you can just run `mrsk deploy`.
 
 ## Vision
 
