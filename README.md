@@ -883,14 +883,18 @@ firing a JSON webhook. These variables include:
 - `MRSK_MESSAGE` - the full audit message, e.g. "Deployed app@150b24f"
 - `MRSK_SERVICE_VERSION` - an abbreviated version (for use in messages)
 - `MRSK_DESTINATION` - optional: destination, e.g. "staging"
+- `MRSK_HOSTS` - a comma separated list of the hosts targeted by the command
 - `MRSK_ROLE` - optional: role targeted, e.g. "web"
 
-There are two hooks:
+There are three hooks:
 
-1. pre-build
+1. pre-lock
+Called before taking the deploy lock. For checks that need to run before connecting to remote hosts - e.g. DNS warming.
+
+2. pre-build
 Used for pre-build checks - e.g. there are no uncommitted changes or that CI has passed.
 
-2. post-deploy - run after a deploy, redeploy or rollback
+3. post-deploy - run after a deploy, redeploy or rollback
 
 This hook is also passed a `MRSK_RUNTIME` env variable.
 

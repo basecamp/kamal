@@ -8,16 +8,16 @@ class MainTest < IntegrationTest
 
     mrsk :deploy
     assert_app_is_up version: first_version
-    assert_hooks_ran "pre-build", "post-deploy"
+    assert_hooks_ran "pre-lock", "pre-build", "post-deploy"
 
     second_version = update_app_rev
 
     mrsk :redeploy
     assert_app_is_up version: second_version
-    assert_hooks_ran "pre-build", "post-deploy"
+    assert_hooks_ran "pre-lock", "pre-build", "post-deploy"
 
     mrsk :rollback, first_version
-    assert_hooks_ran "post-deploy"
+    assert_hooks_ran "pre-lock", "post-deploy"
     assert_app_is_up version: first_version
 
     details = mrsk :details, capture: true
