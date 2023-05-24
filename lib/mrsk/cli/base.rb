@@ -76,6 +76,8 @@ module Mrsk::Cli
         if MRSK.holding_lock?
           yield
         else
+          run_hook "pre-connect"
+
           acquire_lock
 
           begin
@@ -135,7 +137,7 @@ module Mrsk::Cli
         if !options[:skip_hooks] && MRSK.hook.hook_exists?(hook)
           say "Running the #{hook} hook...", :magenta
           run_locally do
-            MRSK.with_verbosity(:debug) { execute *MRSK.hook.run(hook, **details) }
+            MRSK.with_verbosity(:debug) { execute *MRSK.hook.run(hook, **details, hosts: MRSK.hosts.join(",")) }
           rescue SSHKit::Command::Failed
             raise HookError.new("Hook `#{hook}` failed")
           end
