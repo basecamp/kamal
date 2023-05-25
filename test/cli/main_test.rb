@@ -164,7 +164,7 @@ class CliMainTest < CliTestCase
         .with(:docker, :container, :ls, "--all", "--filter", "name=^app-#{role}-123$", "--quiet")
         .returns("version-to-rollback\n").at_least_once
       SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-        .with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=#{role}", "--filter", "status=running", "--latest", "--format", "\"{{.Names}}\"", "|", "grep -oE \"\\-[^-]+$\"", "|", "cut -c 2-", raise_on_non_zero_exit: false)
+        .with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=#{role}", "--filter", "status=running", "--filter", "status=restarting", "--latest", "--format", "\"{{.Names}}\"", "|", "grep -oE \"\\-[^-]+$\"", "|", "cut -c 2-", raise_on_non_zero_exit: false)
         .returns("version-to-rollback\n").at_least_once
       SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
         .with(:docker, :container, :ls, "--all", "--filter", "name=^app-#{role}-123$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
@@ -191,7 +191,7 @@ class CliMainTest < CliTestCase
       .with(:docker, :container, :ls, "--filter", "name=^app-web-123$", "--quiet", raise_on_non_zero_exit: false)
       .returns("").at_least_once
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=web", "--filter", "status=running", "--latest", "--format", "\"{{.Names}}\"", "|", "grep -oE \"\\-[^-]+$\"", "|", "cut -c 2-", raise_on_non_zero_exit: false)
+      .with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=web", "--filter", "status=running", "--filter", "status=restarting", "--latest", "--format", "\"{{.Names}}\"", "|", "grep -oE \"\\-[^-]+$\"", "|", "cut -c 2-", raise_on_non_zero_exit: false)
       .returns("").at_least_once
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
       .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-123$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")

@@ -79,14 +79,14 @@ class CommandsAppTest < ActiveSupport::TestCase
 
   test "stop" do
     assert_equal \
-      "docker ps --quiet --filter label=service=app --filter label=role=web --filter status=running --latest | xargs docker stop",
+      "docker ps --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --latest | xargs docker stop",
       new_command.stop.join(" ")
   end
 
   test "stop with custom stop wait time" do
     @config[:stop_wait_time] = 30
     assert_equal \
-      "docker ps --quiet --filter label=service=app --filter label=role=web --filter status=running --latest | xargs docker stop -t 30",
+      "docker ps --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --latest | xargs docker stop -t 30",
       new_command.stop.join(" ")
   end
 
@@ -112,37 +112,37 @@ class CommandsAppTest < ActiveSupport::TestCase
 
   test "logs" do
     assert_equal \
-      "docker ps --quiet --filter label=service=app --filter label=role=web --filter status=running --latest | xargs docker logs 2>&1",
+      "docker ps --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --latest | xargs docker logs 2>&1",
       new_command.logs.join(" ")
 
     assert_equal \
-      "docker ps --quiet --filter label=service=app --filter label=role=web --filter status=running --latest | xargs docker logs --since 5m 2>&1",
+      "docker ps --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --latest | xargs docker logs --since 5m 2>&1",
       new_command.logs(since: "5m").join(" ")
 
     assert_equal \
-      "docker ps --quiet --filter label=service=app --filter label=role=web --filter status=running --latest | xargs docker logs --tail 100 2>&1",
+      "docker ps --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --latest | xargs docker logs --tail 100 2>&1",
       new_command.logs(lines: "100").join(" ")
 
     assert_equal \
-      "docker ps --quiet --filter label=service=app --filter label=role=web --filter status=running --latest | xargs docker logs --since 5m --tail 100 2>&1",
+      "docker ps --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --latest | xargs docker logs --since 5m --tail 100 2>&1",
       new_command.logs(since: "5m", lines: "100").join(" ")
 
     assert_equal \
-      "docker ps --quiet --filter label=service=app --filter label=role=web --filter status=running --latest | xargs docker logs 2>&1 | grep 'my-id'",
+      "docker ps --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --latest | xargs docker logs 2>&1 | grep 'my-id'",
       new_command.logs(grep: "my-id").join(" ")
 
     assert_equal \
-      "docker ps --quiet --filter label=service=app --filter label=role=web --filter status=running --latest | xargs docker logs --since 5m 2>&1 | grep 'my-id'",
+      "docker ps --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --latest | xargs docker logs --since 5m 2>&1 | grep 'my-id'",
       new_command.logs(since: "5m", grep: "my-id").join(" ")
   end
 
   test "follow logs" do
     assert_match \
-      "docker ps --quiet --filter label=service=app --filter label=role=web --filter status=running --latest | xargs docker logs --timestamps --tail 10 --follow 2>&1",
+      "docker ps --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --latest | xargs docker logs --timestamps --tail 10 --follow 2>&1",
       new_command.follow_logs(host: "app-1")
 
     assert_match \
-      "docker ps --quiet --filter label=service=app --filter label=role=web --filter status=running --latest | xargs docker logs --timestamps --tail 10 --follow 2>&1 | grep \"Completed\"",
+      "docker ps --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --latest | xargs docker logs --timestamps --tail 10 --follow 2>&1 | grep \"Completed\"",
       new_command.follow_logs(host: "app-1", grep: "Completed")
   end
 
@@ -196,14 +196,14 @@ class CommandsAppTest < ActiveSupport::TestCase
 
   test "current_running_container_id" do
     assert_equal \
-      "docker ps --quiet --filter label=service=app --filter label=role=web --filter status=running --latest",
+      "docker ps --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --latest",
       new_command.current_running_container_id.join(" ")
   end
 
   test "current_running_container_id with destination" do
     @destination = "staging"
     assert_equal \
-      "docker ps --quiet --filter label=service=app --filter label=destination=staging --filter label=role=web --filter status=running --latest",
+      "docker ps --quiet --filter label=service=app --filter label=destination=staging --filter label=role=web --filter status=running --filter status=restarting --latest",
       new_command.current_running_container_id.join(" ")
   end
 
@@ -215,7 +215,7 @@ class CommandsAppTest < ActiveSupport::TestCase
 
   test "current_running_version" do
     assert_equal \
-      "docker ps --filter label=service=app --filter label=role=web --filter status=running --latest --format \"{{.Names}}\" | grep -oE \"\\-[^-]+$\" | cut -c 2-",
+      "docker ps --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --latest --format \"{{.Names}}\" | grep -oE \"\\-[^-]+$\" | cut -c 2-",
       new_command.current_running_version.join(" ")
   end
 
@@ -225,8 +225,8 @@ class CommandsAppTest < ActiveSupport::TestCase
       new_command.list_versions.join(" ")
 
     assert_equal \
-      "docker ps --filter label=service=app --filter label=role=web --filter status=running --latest --format \"{{.Names}}\" | grep -oE \"\\-[^-]+$\" | cut -c 2-",
-      new_command.list_versions("--latest", status: :running).join(" ")
+      "docker ps --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --latest --format \"{{.Names}}\" | grep -oE \"\\-[^-]+$\" | cut -c 2-",
+      new_command.list_versions("--latest", statuses: [ :running, :restarting ]).join(" ")
   end
 
   test "list_containers" do

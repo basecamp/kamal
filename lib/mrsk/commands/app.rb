@@ -1,4 +1,6 @@
 class Mrsk::Commands::App < Mrsk::Commands::Base
+  ACTIVE_DOCKER_STATUSES = [ :running, :restarting ]
+
   attr_reader :role
 
   def initialize(config, role: nil)
@@ -92,7 +94,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
 
 
   def current_running_container_id
-    docker :ps, "--quiet", *filter_args(status: :running), "--latest"
+    docker :ps, "--quiet", *filter_args(statuses: ACTIVE_DOCKER_STATUSES), "--latest"
   end
 
   def container_id_for_version(version, only_running: false)
@@ -100,12 +102,12 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
   end
 
   def current_running_version
-    list_versions("--latest", status: :running)
+    list_versions("--latest", statuses: ACTIVE_DOCKER_STATUSES)
   end
 
-  def list_versions(*docker_args, status: nil)
+  def list_versions(*docker_args, statuses: nil)
     pipe \
-      docker(:ps, *filter_args(status: status), *docker_args, "--format", '"{{.Names}}"'),
+      docker(:ps, *filter_args(statuses: statuses), *docker_args, "--format", '"{{.Names}}"'),
       %(grep -oE "\\-[^-]+$"), # Extract SHA from "service-role-dest-SHA"
       %(cut -c 2-)
   end
@@ -150,15 +152,17 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
       [ config.service, role, config.destination, version || config.version ].compact.join("-")
     end
 
-    def filter_args(status: nil)
-      argumentize "--filter", filters(status: status)
+    def filter_args(statuses: nil)
+      argumentize "--filter", filters(statuses: statuses)
     end
 
-    def filters(status: nil)
+    def filters(statuses: nil)
       [ "label=service=#{config.service}" ].tap do |filters|
         filters << "label=destination=#{config.destination}" if config.destination
         filters << "label=role=#{role}" if role
-        filters << "status=#{status}" if status
+        statuses&.each do |status|
+          filters << "status=#{status}"
+        end
       end
     end
 end
