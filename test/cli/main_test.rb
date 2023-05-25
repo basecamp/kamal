@@ -23,6 +23,7 @@ class CliMainTest < CliTestCase
     Mrsk::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
 
     run_command("deploy").tap do |output|
+      assert_match /Running the pre-connect hook.../, output
       assert_match /Log into image registry/, output
       assert_match /Build and push app image/, output
       assert_match /Ensure Traefik is running/, output

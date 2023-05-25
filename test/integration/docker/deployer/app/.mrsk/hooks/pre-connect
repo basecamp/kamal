@@ -1,0 +1,8 @@
+#!/bin/sh
+
+echo "About to lock..."
+if [ "$MRSK_HOSTS" != "vm1,vm2" ]; then
+  echo "Expected hosts to be 'vm1,vm2', got $MRSK_HOSTS"
+  exit 1
+fi
+mkdir -p /tmp/${TEST_ID} && touch /tmp/${TEST_ID}/pre-connect
