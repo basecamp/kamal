@@ -2,12 +2,6 @@
 
 # A sample post-deploy hook
 #
-# Checks:
-# 1. We have a clean checkout
-# 2. A remote is configured
-# 3. The branch has been pushed to the remote
-# 4. The version we are deploying matches the remote
-#
 # These environment variables are available:
 # MRSK_RECORDED_AT
 # MRSK_PERFORMER
