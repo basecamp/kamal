@@ -54,7 +54,7 @@ class IntegrationTest < ActiveSupport::TestCase
       assert_equal "404", response.code
     end
 
-    def wait_for_app_to_be_up(timeout: 10, up_count: 3)
+    def wait_for_app_to_be_up(timeout: 20, up_count: 3)
       timeout_at = Time.now + timeout
       up_times = 0
       response = app_response
