@@ -10,7 +10,7 @@ class CommandsPruneTest < ActiveSupport::TestCase
 
   test "images" do
     assert_equal \
-      "docker image prune --force --filter label=service=app --filter dangling=true",
+      "docker image ls --filter label=service=app --format '{{.Repository}}:{{.Tag}}' | grep -v -w \"$(docker container ls -a --format '{{.Image}}\\|' --filter label=service=app | tr -d '\\n')dhh/app:latest\" | while read tag; do docker rmi $tag; done",
       new_command.images.join(" ")
   end
 
