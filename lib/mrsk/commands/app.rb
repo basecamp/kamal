@@ -8,17 +8,18 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
     @role = role
   end
 
-  def start_or_run
-    combine start, run, by: "||"
+  def start_or_run(hostname: nil)
+    combine start, run(hostname: hostname), by: "||"
   end
 
-  def run
+  def run(hostname: nil)
     role = config.role(self.role)
 
     docker :run,
       "--detach",
       "--restart unless-stopped",
       "--name", container_name,
+      *(["--hostname", hostname] if hostname),
       "-e", "MRSK_CONTAINER_NAME=\"#{container_name}\"",
       *role.env_args,
       *role.health_check_args,

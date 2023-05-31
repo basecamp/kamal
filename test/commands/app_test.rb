@@ -17,6 +17,12 @@ class CommandsAppTest < ActiveSupport::TestCase
       new_command.run.join(" ")
   end
 
+  test "run with hostname" do
+    assert_equal \
+      "docker run --detach --restart unless-stopped --name app-web-999 --hostname myhost -e MRSK_CONTAINER_NAME=\"app-web-999\" -e RAILS_MASTER_KEY=\"456\" --health-cmd \"curl -f http://localhost:3000/up || exit 1\" --health-interval \"1s\" --log-opt max-size=\"10m\" --label service=\"app\" --label role=\"web\" --label traefik.http.services.app-web.loadbalancer.server.scheme=\"http\" --label traefik.http.routers.app-web.rule=\"PathPrefix(\\`/\\`)\" --label traefik.http.middlewares.app-web-retry.retry.attempts=\"5\" --label traefik.http.middlewares.app-web-retry.retry.initialinterval=\"500ms\" --label traefik.http.routers.app-web.middlewares=\"app-web-retry@docker\" dhh/app:999",
+      new_command.run(hostname: "myhost").join(" ")
+  end
+
   test "run with volumes" do
     @config[:volumes] = ["/local/path:/container/path" ]
 
@@ -75,6 +81,18 @@ class CommandsAppTest < ActiveSupport::TestCase
     assert_equal \
       "docker start app-web-staging-999",
       new_command.start.join(" ")
+  end
+
+  test "start_or_run" do
+    assert_equal \
+      "docker start app-web-999 || docker run --detach --restart unless-stopped --name app-web-999 -e MRSK_CONTAINER_NAME=\"app-web-999\" -e RAILS_MASTER_KEY=\"456\" --health-cmd \"curl -f http://localhost:3000/up || exit 1\" --health-interval \"1s\" --log-opt max-size=\"10m\" --label service=\"app\" --label role=\"web\" --label traefik.http.services.app-web.loadbalancer.server.scheme=\"http\" --label traefik.http.routers.app-web.rule=\"PathPrefix(\\`/\\`)\" --label traefik.http.middlewares.app-web-retry.retry.attempts=\"5\" --label traefik.http.middlewares.app-web-retry.retry.initialinterval=\"500ms\" --label traefik.http.routers.app-web.middlewares=\"app-web-retry@docker\" dhh/app:999",
+      new_command.start_or_run.join(" ")
+  end
+
+  test "start_or_run with hostname" do
+    assert_equal \
+      "docker start app-web-999 || docker run --detach --restart unless-stopped --name app-web-999 --hostname myhost -e MRSK_CONTAINER_NAME=\"app-web-999\" -e RAILS_MASTER_KEY=\"456\" --health-cmd \"curl -f http://localhost:3000/up || exit 1\" --health-interval \"1s\" --log-opt max-size=\"10m\" --label service=\"app\" --label role=\"web\" --label traefik.http.services.app-web.loadbalancer.server.scheme=\"http\" --label traefik.http.routers.app-web.rule=\"PathPrefix(\\`/\\`)\" --label traefik.http.middlewares.app-web-retry.retry.attempts=\"5\" --label traefik.http.middlewares.app-web-retry.retry.initialinterval=\"500ms\" --label traefik.http.routers.app-web.middlewares=\"app-web-retry@docker\" dhh/app:999",
+      new_command.start_or_run(hostname: "myhost").join(" ")
   end
 
   test "stop" do
