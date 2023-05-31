@@ -1,0 +1,82 @@
+#!/bin/sh
+
+# A sample pre-deploy hook
+#
+# Checks the Github status of the build, waiting for a pending build to complete for up to 720 seconds.
+#
+# Fails unless the combined status is "success"
+#
+# These environment variables are available:
+# MRSK_RECORDED_AT
+# MRSK_PERFORMER
+# MRSK_VERSION
+# MRSK_HOSTS
+# MRSK_COMMAND
+# MRSK_SUBCOMMAND
+# MRSK_ROLE (if set)
+# MRSK_DESTINATION (if set)
+
+#!/usr/bin/env ruby
+
+# Only check the build status for production deployments
+if ENV["MRSK_COMMAND"] == "rollback" || ENV["MRSK_DESTINATION"] != "production"
+  exit 0
+end
+
+require "bundler/inline"
+
+# true = install gems so this is fast on repeat invocations
+gemfile(true, quiet: true) do
+  source "https://rubygems.org"
+
+  gem "octokit"
+  gem "faraday-retry"
+end
+
+MAX_ATTEMPTS = 72
+ATTEMPTS_GAP = 10
+
+def exit_with_error(message)
+  $stderr.puts message
+  exit 1
+end
+
+def first_status_url(combined_status, state)
+  first_status = combined_status[:statuses].find { |status| status[:state] == state }
+  first_status && first_status[:target_url]
+end
+
+remote_url = `git config --get remote.origin.url`.strip.delete_prefix("https://github.com/")
+git_sha = `git rev-parse HEAD`.strip
+
+repository = Octokit::Repository.from_url(remote_url)
+github_client = Octokit::Client.new(access_token: ENV["GITHUB_TOKEN"])
+attempts = 0
+
+begin
+  loop do
+    combined_status = github_client.combined_status(remote_url, git_sha)
+    state = combined_status[:state]
+    first_status_url = first_status_url(combined_status, state)
+
+    case state
+    when "success"
+      puts "Build passed, see #{first_status_url}"
+      exit 0
+    when "failure"
+      exit_with_error "Build failed, see #{first_status_url}"
+    when "pending"
+      attempts += 1
+    end
+
+    puts "Waiting #{ATTEMPTS_GAP} more seconds for build to complete#{", see #{first_status_url}" if first_status_url}..."
+
+    if attempts == MAX_ATTEMPTS
+      exit_with_error "Build status is still pending, gave up after #{MAX_ATTEMPTS * ATTEMPTS_GAP} seconds"
+    end
+
+    sleep(ATTEMPTS_GAP)
+  end
+rescue Octokit::NotFound
+  exit_with_error "Build status could not be found"
+end

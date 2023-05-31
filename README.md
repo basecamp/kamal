@@ -882,17 +882,22 @@ firing a JSON webhook. These variables include:
 - `MRSK_PERFORMER` - the local user performing the command (from `whoami`)
 - `MRSK_SERVICE_VERSION` - an abbreviated service and version for use in messages, e.g. app@150b24f
 - `MRSK_VERSION` - an full version being deployed
-- `MRSK_DESTINATION` - optional: destination, e.g. "staging"
 - `MRSK_HOSTS` - a comma separated list of the hosts targeted by the command
+- `MRSK_COMMAND` - The command we are running
+- `MRSK_SUBCOMMAND` - optional: The subcommand we are running
+- `MRSK_DESTINATION` - optional: destination, e.g. "staging"
 - `MRSK_ROLE` - optional: role targeted, e.g. "web"
 
-There are three hooks:
+There are four hooks:
 
 1. pre-connect
 Called before taking the deploy lock. For checks that need to run before connecting to remote hosts - e.g. DNS warming.
 
 2. pre-build
 Used for pre-build checks - e.g. there are no uncommitted changes or that CI has passed.
+
+3. pre-deploy
+For final checks before deploying, e.g. checking CI completed
 
 3. post-deploy - run after a deploy, redeploy or rollback
 

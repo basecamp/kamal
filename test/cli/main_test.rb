@@ -21,16 +21,18 @@ class CliMainTest < CliTestCase
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:prune:all", [], invoke_options)
 
     Mrsk::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
+    hook_variables = { version: 999, service_version: "app@999", hosts: "1.1.1.1,1.1.1.2", command: "deploy" }
 
     run_command("deploy").tap do |output|
-      assert_match /Running the pre-connect hook.../, output
+      assert_hook_ran "pre-connect", output, **hook_variables
       assert_match /Log into image registry/, output
       assert_match /Build and push app image/, output
+      assert_hook_ran "pre-deploy", output, **hook_variables
       assert_match /Ensure Traefik is running/, output
       assert_match /Ensure app can pass healthcheck/, output
       assert_match /Detect stale containers/, output
       assert_match /Prune old containers and images/, output
-      assert_match /Running the post-deploy hook.../, output
+      assert_hook_ran "post-deploy", output, **hook_variables, runtime: 0
     end
   end
 
@@ -124,10 +126,15 @@ class CliMainTest < CliTestCase
 
     Mrsk::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
 
+    hook_variables = { version: 999, service_version: "app@999", hosts: "1.1.1.1,1.1.1.2", command: "redeploy" }
+
     run_command("redeploy").tap do |output|
+      assert_hook_ran "pre-connect", output, **hook_variables
       assert_match /Build and push app image/, output
+      assert_hook_ran "pre-deploy", output, **hook_variables
+      assert_match /Running the pre-deploy hook.../, output
       assert_match /Ensure app can pass healthcheck/, output
-      assert_match /Running the post-deploy hook.../, output
+      assert_hook_ran "post-deploy", output, **hook_variables, runtime: "0"
     end
   end
 
@@ -173,13 +180,15 @@ class CliMainTest < CliTestCase
     end
 
     Mrsk::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
+    hook_variables = { version: 123, service_version: "app@123", hosts: "1.1.1.1,1.1.1.2,1.1.1.3,1.1.1.4", command: "rollback" }
 
     run_command("rollback", "123", config_file: "deploy_with_accessories").tap do |output|
       assert_match "Start container with version 123", output
+      assert_hook_ran "pre-deploy", output, **hook_variables
       assert_match "docker tag dhh/app:123 dhh/app:latest", output
       assert_match "docker start app-web-123", output
       assert_match "docker container ls --all --filter name=^app-web-version-to-rollback$ --quiet | xargs docker stop", output, "Should stop the container that was previously running"
-      assert_match "Running the post-deploy hook...", output
+      assert_hook_ran "post-deploy", output, **hook_variables, runtime: "0"
     end
   end
 

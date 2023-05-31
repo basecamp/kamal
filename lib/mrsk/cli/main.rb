@@ -28,6 +28,8 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
           invoke "mrsk:cli:build:deliver", [], invoke_options
         end
 
+        run_hook "pre-deploy"
+
         say "Ensure Traefik is running...", :magenta
         invoke "mrsk:cli:traefik:boot", [], invoke_options
 
@@ -62,6 +64,8 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
           invoke "mrsk:cli:build:deliver", [], invoke_options
         end
 
+        run_hook "pre-deploy"
+
         say "Ensure app can pass healthcheck...", :magenta
         invoke "mrsk:cli:healthcheck:perform", [], invoke_options
 
@@ -86,6 +90,8 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
         old_version = nil
 
         if container_available?(version)
+          run_hook "pre-deploy"
+
           invoke "mrsk:cli:app:boot", [], invoke_options.merge(version: version)
           rolled_back = true
         else

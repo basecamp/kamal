@@ -133,15 +133,39 @@ module Mrsk::Cli
         end
       end
 
-      def run_hook(hook, **details)
+      def run_hook(hook, **extra_details)
         if !options[:skip_hooks] && MRSK.hook.hook_exists?(hook)
+          details = { hosts: MRSK.hosts.join(","), command: command, subcommand: subcommand }
+
           say "Running the #{hook} hook...", :magenta
           run_locally do
-            MRSK.with_verbosity(:debug) { execute *MRSK.hook.run(hook, **details, hosts: MRSK.hosts.join(",")) }
+            MRSK.with_verbosity(:debug) { execute *MRSK.hook.run(hook, **details, **extra_details) }
           rescue SSHKit::Command::Failed
             raise HookError.new("Hook `#{hook}` failed")
           end
         end
       end
-  end
+
+      def command
+        @mrsk_command ||= begin
+          invocation_class, invocation_commands = *first_invocation
+          if invocation_class == Mrsk::Cli::Main
+            invocation_commands[0]
+          else
+            Mrsk::Cli::Main.subcommand_classes.find { |command, clazz| clazz == invocation_class }[0]
+          end
+        end
+      end
+
+      def subcommand
+        @mrsk_subcommand ||= begin
+          invocation_class, invocation_commands = *first_invocation
+          invocation_commands[0] if invocation_class != Mrsk::Cli::Main
+        end
+      end
+
+      def first_invocation
+        instance_variable_get("@_invocations").first
+      end
+    end
 end
