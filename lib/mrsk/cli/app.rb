@@ -29,7 +29,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
               execute *auditor.record("Booted app version #{version}"), verbosity: :debug
 
               old_version = capture_with_info(*app.current_running_version, raise_on_non_zero_exit: false).strip
-              execute *app.start_or_run
+              execute *app.start_or_run(hostname: "#{host}-#{SecureRandom.hex(6)}")
 
               Mrsk::Utils::HealthcheckPoller.wait_for_healthy(pause_after_ready: true) { capture_with_info(*app.status(version: version)) }
 

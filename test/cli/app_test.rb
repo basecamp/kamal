@@ -5,7 +5,7 @@ class CliAppTest < CliTestCase
     stub_running
     run_command("boot").tap do |output|
       assert_match "docker tag dhh/app:latest dhh/app:latest", output
-      assert_match "docker run --detach --restart unless-stopped", output
+      assert_match /docker run --detach --restart unless-stopped --name app-web-latest --hostname 1.1.1.1-[0-9a-f]{12} /, output
       assert_match "docker container ls --all --filter name=^app-web-123$ --quiet | xargs docker stop", output
     end
   end
@@ -28,7 +28,7 @@ class CliAppTest < CliTestCase
     run_command("boot").tap do |output|
       assert_match /Renaming container .* to .* as already deployed on 1.1.1.1/, output # Rename
       assert_match /docker rename app-web-latest app-web-latest_replaced_[0-9a-f]{16}/, output
-      assert_match "docker run --detach --restart unless-stopped", output
+      assert_match /docker run --detach --restart unless-stopped --name app-web-latest --hostname 1.1.1.1-[0-9a-f]{12} /, output
       assert_match "docker container ls --all --filter name=^app-web-123$ --quiet | xargs docker stop", output
     end
   ensure
