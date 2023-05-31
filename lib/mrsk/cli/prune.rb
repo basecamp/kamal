@@ -12,7 +12,8 @@ class Mrsk::Cli::Prune < Mrsk::Cli::Base
     with_lock do
       on(MRSK.hosts) do
         execute *MRSK.auditor.record("Pruned images"), verbosity: :debug
-        execute *MRSK.prune.images
+        execute *MRSK.prune.dangling_images
+        execute *MRSK.prune.tagged_images
       end
     end
   end

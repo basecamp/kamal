@@ -8,10 +8,16 @@ class CommandsPruneTest < ActiveSupport::TestCase
     }
   end
 
-  test "images" do
+  test "dangling images" do
     assert_equal \
-      "docker image ls --filter label=service=app --format '{{.Repository}}:{{.Tag}}' | grep -v -w \"$(docker container ls -a --format '{{.Image}}\\|' --filter label=service=app | tr -d '\\n')dhh/app:latest\" | while read tag; do docker rmi $tag; done",
-      new_command.images.join(" ")
+      "docker image prune --force --filter label=service=app --filter dangling=true",
+      new_command.dangling_images.join(" ")
+  end
+
+  test "tagged images" do
+    assert_equal \
+      "docker image ls --filter label=service=app --format '{{.ID}} {{.Repository}}:{{.Tag}}' | grep -v -w \"$(docker container ls -a --format '{{.Image}}\\|' --filter label=service=app | tr -d '\\n')dhh/app:latest\\|dhh/app:<none>\" | while read image tag; do docker rmi $tag; done",
+      new_command.tagged_images.join(" ")
   end
 
   test "containers" do
