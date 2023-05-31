@@ -11,7 +11,7 @@ class CliServerTest < CliTestCase
     SSHKit::Backend::Abstract.any_instance.expects(:execute).with(:docker, "-v", raise_on_non_zero_exit: false).returns(false).at_least_once
     SSHKit::Backend::Abstract.any_instance.expects(:execute).with('[ "${EUID:-$(id -u)}" -eq 0 ]', raise_on_non_zero_exit: false).returns(false).at_least_once
 
-    assert_raise RuntimeError, "Docker is not installed on 1.1.1.1, 1.1.1.3, 1.1.1.4, 1.1.1.2 and can't be automatically intalled without having root access and the `curl` command available. Install Docker manually: https://docs.docker.com/engine/install/" do
+    assert_raise RuntimeError, "Docker is not installed on 1.1.1.1, 1.1.1.3, 1.1.1.4, 1.1.1.2 and can't be automatically installed without having root access and the `curl` command available. Install Docker manually: https://docs.docker.com/engine/install/" do
       run_command("bootstrap")
     end
   end

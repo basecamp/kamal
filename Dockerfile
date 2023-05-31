@@ -21,7 +21,7 @@ RUN apk add --no-cache --update build-base git docker openrc openssh-client-defa
 
 # Copy the rest of our application code into the container.
 # We do this after bundle install, to avoid having to run bundle
-# everytime we do small fixes in the source code.
+# every time we do small fixes in the source code.
 COPY . .
 
 # Install the gem locally from the project folder

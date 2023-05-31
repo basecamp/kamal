@@ -27,7 +27,7 @@ Please keep the following guidelines in mind when opening a pull request:
 - Add tests for your changes, if possible.
 - Ensure that your changes don't break existing functionality.
 
-#### Commit message guidline
+#### Commit message guidelines
 
 A good commit message should describe what changed and why.
 

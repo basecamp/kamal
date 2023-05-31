@@ -7,7 +7,7 @@ class Mrsk::Cli::Lock < Mrsk::Cli::Base
   end
 
   desc "acquire", "Acquire the deploy lock"
-  option :message, aliases: "-m", type: :string, desc: "A lock mesasge", required: true
+  option :message, aliases: "-m", type: :string, desc: "A lock message", required: true
   def acquire
     message = options[:message]
     raise_if_locked do

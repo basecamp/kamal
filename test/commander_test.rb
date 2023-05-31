@@ -65,7 +65,7 @@ class CommanderTest < ActiveSupport::TestCase
   end
 
   test "percentage-based group strategy" do
-    configure_with(:deploy_with_precentage_boot_strategy)
+    configure_with(:deploy_with_percentage_boot_strategy)
 
     assert_equal({ in: :groups, limit: 1, wait: 2 }, @mrsk.boot_strategy)
   end
