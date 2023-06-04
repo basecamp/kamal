@@ -13,7 +13,11 @@ module Mrsk::Commands
 
     def run_over_ssh(*command, host:)
       "ssh".tap do |cmd|
-        cmd << " -J #{config.ssh_proxy.jump_proxies}" if config.ssh_proxy
+        if config.ssh_proxy && config.ssh_proxy.is_a?(Net::SSH::Proxy::Jump)
+          cmd << " -J #{config.ssh_proxy.jump_proxies}"
+        elsif config.ssh_proxy && config.ssh_proxy.is_a?(Net::SSH::Proxy::Command)
+          cmd << " -o ProxyCommand='#{config.ssh_proxy.command_line_template}'"
+        end
         cmd << " -t #{config.ssh_user}@#{host} '#{command.join(" ")}'"
       end
     end

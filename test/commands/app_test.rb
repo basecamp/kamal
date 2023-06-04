@@ -211,6 +211,10 @@ class CommandsAppTest < ActiveSupport::TestCase
     assert_equal "ssh -J root@2.2.2.2 -t app@1.1.1.1 'ls'", new_command.run_over_ssh("ls", host: "1.1.1.1")
   end
 
+  test "run over ssh with proxy_command" do
+    @config[:ssh] = { "proxy_command" => "ssh -W %h:%p user@proxy-server" }
+    assert_equal "ssh -o ProxyCommand='ssh -W %h:%p user@proxy-server' -t root@1.1.1.1 'ls'", new_command.run_over_ssh("ls", host: "1.1.1.1")
+  end
 
   test "current_running_container_id" do
     assert_equal \
