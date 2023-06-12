@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env ruby
 
 # A sample pre-deploy hook
 #
@@ -15,8 +15,6 @@
 # MRSK_SUBCOMMAND
 # MRSK_ROLE (if set)
 # MRSK_DESTINATION (if set)
-
-#!/usr/bin/env ruby
 
 # Only check the build status for production deployments
 if ENV["MRSK_COMMAND"] == "rollback" || ENV["MRSK_DESTINATION"] != "production"
@@ -41,41 +39,70 @@ def exit_with_error(message)
   exit 1
 end
 
-def first_status_url(combined_status, state)
-  first_status = combined_status[:statuses].find { |status| status[:state] == state }
-  first_status && first_status[:target_url]
+class GithubStatusChecks
+  attr_reader :remote_url, :git_sha, :github_client, :combined_status
+
+  def initialize
+    @remote_url = `git config --get remote.origin.url`.strip.delete_prefix("https://github.com/")
+    @git_sha = `git rev-parse HEAD`.strip
+    @github_client = Octokit::Client.new(access_token: ENV["GITHUB_TOKEN"])
+    refresh!
+  end
+
+  def refresh!
+    @combined_status = github_client.combined_status(remote_url, git_sha)
+  end
+
+  def state
+    combined_status[:state]
+  end
+
+  def first_status_url
+    first_status = combined_status[:statuses].find { |status| status[:state] == state }
+    first_status && first_status[:target_url]
+  end
+
+  def complete_count
+    combined_status[:statuses].count { |status| status[:state] != "pending"}
+  end
+
+  def total_count
+    combined_status[:statuses].count
+  end
+
+  def current_status
+    if total_count > 0
+      "Completed #{complete_count}/#{total_count} checks, see #{first_status_url} ..."
+    else
+      "Build not started..."
+    end
+  end
 end
 
-remote_url = `git config --get remote.origin.url`.strip.delete_prefix("https://github.com/")
-git_sha = `git rev-parse HEAD`.strip
 
-repository = Octokit::Repository.from_url(remote_url)
-github_client = Octokit::Client.new(access_token: ENV["GITHUB_TOKEN"])
+$stdout.sync = true
+
+puts "Checking build status..."
 attempts = 0
+checks = GithubStatusChecks.new
 
 begin
   loop do
-    combined_status = github_client.combined_status(remote_url, git_sha)
-    state = combined_status[:state]
-    first_status_url = first_status_url(combined_status, state)
-
-    case state
+    case checks.state
     when "success"
-      puts "Build passed, see #{first_status_url}"
+      puts "Checks passed, see #{checks.first_status_url}"
       exit 0
     when "failure"
-      exit_with_error "Build failed, see #{first_status_url}"
+      exit_with_error "Checks failed, see #{checks.first_status_url}"
     when "pending"
       attempts += 1
     end
 
-    puts "Waiting #{ATTEMPTS_GAP} more seconds for build to complete#{", see #{first_status_url}" if first_status_url}..."
+    exit_with_error "Checks are still pending, gave up after #{MAX_ATTEMPTS * ATTEMPTS_GAP} seconds" if attempts == MAX_ATTEMPTS
 
-    if attempts == MAX_ATTEMPTS
-      exit_with_error "Build status is still pending, gave up after #{MAX_ATTEMPTS * ATTEMPTS_GAP} seconds"
-    end
-
+    puts checks.current_status
     sleep(ATTEMPTS_GAP)
+    checks.refresh!
   end
 rescue Octokit::NotFound
   exit_with_error "Build status could not be found"
