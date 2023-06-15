@@ -17,6 +17,7 @@ RUN apt-get update --fix-missing && apt-get install -y docker-ce docker-ce-cli c
 COPY *.sh .
 COPY app/ .
 
+RUN rm -rf /root/.ssh
 RUN ln -s /shared/ssh /root/.ssh
 RUN mkdir -p /etc/docker/certs.d/registry:4443 && ln -s /shared/certs/domain.crt /etc/docker/certs.d/registry:4443/ca.crt
 
