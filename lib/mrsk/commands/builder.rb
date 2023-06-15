@@ -7,11 +7,11 @@ class Mrsk::Commands::Builder < Mrsk::Commands::Base
 
   def target
     case
-    when config.builder && config.builder["multiarch"] == false
+    when !config.builder.multiarch?
       native
-    when config.builder && config.builder["local"] && config.builder["remote"]
+    when config.builder.local? && config.builder.remote?
       multiarch_remote
-    when config.builder && config.builder["remote"]
+    when config.builder.remote?
       native_remote
     else
       multiarch

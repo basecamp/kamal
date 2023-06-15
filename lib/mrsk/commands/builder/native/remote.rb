@@ -28,29 +28,21 @@ class Mrsk::Commands::Builder::Native::Remote < Mrsk::Commands::Builder::Native
 
 
   private
-    def arch
-      config.builder["remote"]["arch"]
-    end
-
-    def host
-      config.builder["remote"]["host"]
-    end
-
     def builder_name
       "mrsk-#{config.service}-native-remote"
     end
 
     def builder_name_with_arch
-      "#{builder_name}-#{arch}"
+      "#{builder_name}-#{config.builder.remote_arch}"
     end
 
     def platform
-      "linux/#{arch}"
+      "linux/#{config.builder.remote_arch}"
     end
 
     def create_context
       docker :context, :create,
-        builder_name_with_arch, "--description", "'#{builder_name} #{arch} native host'", "--docker", "'host=#{host}'"
+        builder_name_with_arch, "--description", "'#{builder_name} #{config.builder.remote_arch} native host'", "--docker", "'host=#{config.builder.remote_host}'"
     end
 
     def remove_context

@@ -6,7 +6,7 @@ require "erb"
 require "net/ssh/proxy/jump"
 
 class Mrsk::Configuration
-  delegate :service, :image, :servers, :env, :labels, :registry, :builder, :stop_wait_time, :hooks_path, to: :raw_config, allow_nil: true
+  delegate :service, :image, :servers, :env, :labels, :registry, :stop_wait_time, :hooks_path, to: :raw_config, allow_nil: true
   delegate :argumentize, :argumentize_env_with_secrets, :optionize, to: Mrsk::Utils
 
   attr_accessor :destination
@@ -182,7 +182,7 @@ class Mrsk::Configuration
       env_args: env_args,
       volume_args: volume_args,
       ssh_options: ssh_options,
-      builder: raw_config.builder,
+      builder: builder.to_h,
       accessories: raw_config.accessories,
       logging: logging_args,
       healthcheck: healthcheck
@@ -195,6 +195,10 @@ class Mrsk::Configuration
 
   def hooks_path
     raw_config.hooks_path || ".mrsk/hooks"
+  end
+
+  def builder
+    Mrsk::Configuration::Builder.new(config: self)
   end
 
   private
