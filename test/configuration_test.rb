@@ -268,4 +268,20 @@ class ConfigurationTest < ActiveSupport::TestCase
   test "to_h" do
     assert_equal({ :roles=>["web"], :hosts=>["1.1.1.1", "1.1.1.2"], :primary_host=>"1.1.1.1", :version=>"missing", :repository=>"dhh/app", :absolute_image=>"dhh/app:missing", :service_with_version=>"app-missing", :env_args=>["-e", "REDIS_URL=\"redis://x/y\""], :ssh_options=>{:user=>"root", :auth_methods=>["publickey"]}, :volume_args=>["--volume", "/local/path:/container/path"], :logging=>["--log-opt", "max-size=\"10m\""], :healthcheck=>{"path"=>"/up", "port"=>3000, "max_attempts" => 7 }}, @config.to_h)
   end
+
+  test "min version is lower" do
+    config = Mrsk::Configuration.new(@deploy.tap { |c| c.merge!(minimum_version: "0.0.1") })
+    assert_equal "0.0.1", config.minimum_version
+  end
+
+  test "min version is equal" do
+    config = Mrsk::Configuration.new(@deploy.tap { |c| c.merge!(minimum_version: Mrsk::VERSION) })
+    assert_equal Mrsk::VERSION, config.minimum_version
+  end
+
+  test "min version is higher" do
+    assert_raises(ArgumentError) do
+      Mrsk::Configuration.new(@deploy.tap { |c| c.merge!(minimum_version: "10000.0.0") })
+    end
+  end
 end
