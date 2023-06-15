@@ -3,6 +3,9 @@ class Mrsk::Commands::Traefik < Mrsk::Commands::Base
 
   DEFAULT_IMAGE = "traefik:v2.9"
   CONTAINER_PORT = 80
+  DEFAULT_ARGS = {
+    'log.level' => 'DEBUG'
+  }
 
   def run
     docker :run, "--name traefik",
@@ -16,7 +19,6 @@ class Mrsk::Commands::Traefik < Mrsk::Commands::Base
       *docker_options_args,
       image,
       "--providers.docker",
-      "--log.level=DEBUG",
       *cmd_option_args
   end
 
@@ -86,9 +88,9 @@ class Mrsk::Commands::Traefik < Mrsk::Commands::Base
 
     def cmd_option_args
       if args = config.traefik["args"]
-        optionize args, with: "="
+        optionize DEFAULT_ARGS.merge(args), with: "="
       else
-        []
+        optionize DEFAULT_ARGS, with: "="
       end
     end
 
