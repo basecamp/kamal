@@ -380,6 +380,16 @@ servers:
 
 That'll start the job containers with `docker run ... --cap-add --cpu-count 4 ...`.
 
+### Setting a minimum version
+
+You can set the minimum MRSK version with:
+
+```yaml
+minimum_version: 0.13.3
+```
+
+Note: versions <= 0.13.2 will ignore this setting.
+
 ### Configuring logging
 
 You can configure the logging driver and options passed to Docker using `logging`:

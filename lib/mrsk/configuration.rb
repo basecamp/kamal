@@ -165,8 +165,12 @@ class Mrsk::Configuration
     raw_config.readiness_delay || 7
   end
 
+  def minimum_version
+    raw_config.minimum_version
+  end
+
   def valid?
-    ensure_required_keys_present && ensure_env_available
+    ensure_required_keys_present && ensure_env_available && ensure_valid_mrsk_version
   end
 
 
@@ -228,6 +232,15 @@ class Mrsk::Configuration
 
       true
     end
+
+    def ensure_valid_mrsk_version
+      if minimum_version && Gem::Version.new(minimum_version) > Gem::Version.new(Mrsk::VERSION)
+        raise ArgumentError, "Current version is #{Mrsk::VERSION}, minimum required is #{minimum_version}"
+      end
+
+      true
+    end
+
 
     def role_names
       raw_config.servers.is_a?(Array) ? [ "web" ] : raw_config.servers.keys.sort
