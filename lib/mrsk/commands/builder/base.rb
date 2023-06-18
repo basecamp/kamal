@@ -3,6 +3,7 @@ class Mrsk::Commands::Builder::Base < Mrsk::Commands::Base
   class BuilderError < StandardError; end
 
   delegate :argumentize, to: Mrsk::Utils
+  delegate :args, :secrets, :dockerfile, :local_arch, :local_host, :remote_arch, :remote_host, :cache_from, :cache_to, to: :builder_config
 
   def clean
     docker :image, :rm, "--force", config.absolute_image
@@ -27,9 +28,9 @@ class Mrsk::Commands::Builder::Base < Mrsk::Commands::Base
     end
 
     def build_cache
-      if config.builder.cache?
-        ["--cache-to", config.builder.cache_to,
-          "--cache-from", config.builder.cache_from]
+      if cache_to && cache_from
+        ["--cache-to", cache_to,
+          "--cache-from", cache_from]
       end
     end
 
@@ -38,18 +39,22 @@ class Mrsk::Commands::Builder::Base < Mrsk::Commands::Base
     end
 
     def build_args
-      argumentize "--build-arg", config.builder.args, sensitive: true
+      argumentize "--build-arg", args, sensitive: true
     end
 
     def build_secrets
-      argumentize "--secret", config.builder.secrets.collect { |secret| [ "id", secret ] }
+      argumentize "--secret", secrets.collect { |secret| [ "id", secret ] }
     end
 
     def build_dockerfile
-      if Pathname.new(File.expand_path(config.builder.dockerfile)).exist?
-        argumentize "--file", config.builder.dockerfile
+      if Pathname.new(File.expand_path(dockerfile)).exist?
+        argumentize "--file", dockerfile
       else
-        raise BuilderError, "Missing #{config.builder.dockerfile}"
+        raise BuilderError, "Missing #{dockerfile}"
       end
+    end
+
+    def builder_config
+      config.builder
     end
 end

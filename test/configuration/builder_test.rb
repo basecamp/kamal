@@ -68,8 +68,8 @@ class ConfigurationBuilderTest < ActiveSupport::TestCase
     assert_equal "unix:///Users/<%= `whoami`.strip %>/.docker/run/docker.sock", @config_with_builder_option.builder.local_host
   end
 
-  test "cache?" do
-    assert_equal false, @config.builder.cache?
+  test "cached?" do
+    assert_equal false, @config.builder.cached?
   end
 
   test "invalid cache type specified" do

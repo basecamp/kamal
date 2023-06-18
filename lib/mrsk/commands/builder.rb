@@ -7,9 +7,9 @@ class Mrsk::Commands::Builder < Mrsk::Commands::Base
 
   def target
     case
-    when !config.builder.multiarch? && !config.builder.cache?
+    when !config.builder.multiarch? && !config.builder.cached?
       native
-    when !config.builder.multiarch? && config.builder.cache?
+    when !config.builder.multiarch? && config.builder.cached?
       native_cached
     when config.builder.local? && config.builder.remote?
       multiarch_remote

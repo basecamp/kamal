@@ -23,7 +23,7 @@ class Mrsk::Configuration::Builder
     !!@options["remote"]
   end
 
-  def cache?
+  def cached?
     !!@options["cache"]
   end
 
@@ -60,39 +60,28 @@ class Mrsk::Configuration::Builder
   end
 
   def cache_from
-    if cache?
+    if cached?
       case @options["cache"]["type"]
       when 'gha'
         "type=gha"
       when 'registry'
-        [
-          "type=registry",
-          "ref=#{@server}/#{cache_image}"
-        ].compact.join(",")
+        cache_from_config_for_registry
       end
     end
   end
 
   def cache_to
-    if cache?
+    if cached?
       case @options["cache"]["type"]
       when "gha"
-        [
-          "type=gha",
-          @options["cache"]&.fetch("options", nil),
-        ].compact.join(",")
+        cache_to_config_for_gha
       when "registry"
-        [
-          "type=registry",
-          @options["cache"]&.fetch("options", nil),
-          "ref=#{@server}/#{cache_image}"
-        ].compact.join(",")
+        cache_to_config_for_registry
       end
     end
   end
 
   private
-
     def valid?
       if @options["local"] && !@options["remote"]
         raise ArgumentError, "You must specify both local and remote builder config for remote multiarch builds"
@@ -107,7 +96,25 @@ class Mrsk::Configuration::Builder
       @options["cache"]&.fetch("image", nil) || "#{@image}-build-cache"
     end
 
-    def current_branch
-      `git rev-parse --abbrev-ref HEAD`.strip
+    def cache_from_config_for_registry
+      [
+        "type=registry",
+        "ref=#{@server}/#{cache_image}"
+      ].compact.join(",")
+    end
+
+    def cache_to_config_for_gha
+      [
+        "type=gha",
+        @options["cache"]&.fetch("options", nil),
+      ].compact.join(",")
+    end
+
+    def cache_to_config_for_registry
+      [
+        "type=registry",
+        @options["cache"]&.fetch("options", nil),
+        "ref=#{@server}/#{cache_image}"
+      ].compact.join(",")
     end
 end
