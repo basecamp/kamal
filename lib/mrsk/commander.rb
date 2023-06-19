@@ -27,6 +27,14 @@ class Mrsk::Commander
     self.specific_hosts = [ config.primary_web_host ]
   end
 
+  def skip_argumentize_env!
+    @skip_argumentize_env = true
+  end
+
+  def skip_argumentize_env?
+    !!@skip_argumentize_env
+  end
+
   def specific_roles=(role_names)
     @specific_roles = config.roles.select { |r| role_names.include?(r.name) } if role_names.present?
   end

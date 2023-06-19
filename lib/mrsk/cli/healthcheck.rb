@@ -2,7 +2,10 @@ class Mrsk::Cli::Healthcheck < Mrsk::Cli::Base
   default_command :perform
 
   desc "perform", "Health check current app version"
+
   def perform
+    MRSK.skip_argumentize_env!
+
     on(MRSK.primary_host) do
       begin
         execute *MRSK.healthcheck.run

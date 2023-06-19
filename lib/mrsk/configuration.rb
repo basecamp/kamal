@@ -227,6 +227,8 @@ class Mrsk::Configuration
 
     # Will raise KeyError if any secret ENVs are missing
     def ensure_env_available
+      return true if MRSK.skip_argumentize_env?
+
       env_args
       roles.each(&:env_args)
 
