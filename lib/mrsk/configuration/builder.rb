@@ -62,9 +62,9 @@ class Mrsk::Configuration::Builder
   def cache_from
     if cached?
       case @options["cache"]["type"]
-      when 'gha'
-        "type=gha"
-      when 'registry'
+      when "gha"
+        cache_from_config_for_gha
+      when "registry"
         cache_from_config_for_registry
       end
     end
@@ -96,25 +96,19 @@ class Mrsk::Configuration::Builder
       @options["cache"]&.fetch("image", nil) || "#{@image}-build-cache"
     end
 
+    def cache_from_config_for_gha
+      "type=gha"
+    end
+
     def cache_from_config_for_registry
-      [
-        "type=registry",
-        "ref=#{@server}/#{cache_image}"
-      ].compact.join(",")
+      [ "type=registry", "ref=#{@server}/#{cache_image}" ].compact.join(",")
     end
 
     def cache_to_config_for_gha
-      [
-        "type=gha",
-        @options["cache"]&.fetch("options", nil),
-      ].compact.join(",")
+      [ "type=gha", @options["cache"]&.fetch("options", nil)].compact.join(",")
     end
 
     def cache_to_config_for_registry
-      [
-        "type=registry",
-        @options["cache"]&.fetch("options", nil),
-        "ref=#{@server}/#{cache_image}"
-      ].compact.join(",")
+      [ "type=registry", @options["cache"]&.fetch("options", nil), "ref=#{@server}/#{cache_image}" ].compact.join(",")
     end
 end
