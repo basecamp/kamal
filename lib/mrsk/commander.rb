@@ -35,6 +35,14 @@ class Mrsk::Commander
     !!@skip_argumentize_env
   end
 
+  def skip_argumentize_env(&block)
+    @skip_argumentize_env = true
+
+    yield
+  ensure
+    @skip_argumentize_env = false
+  end
+
   def specific_roles=(role_names)
     @specific_roles = config.roles.select { |r| role_names.include?(r.name) } if role_names.present?
   end
