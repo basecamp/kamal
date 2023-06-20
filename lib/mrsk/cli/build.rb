@@ -3,7 +3,7 @@ class Mrsk::Cli::Build < Mrsk::Cli::Base
 
   desc "deliver", "Build app and push app image to registry then pull image on servers"
   def deliver
-    with_lock do
+    mutating do
       push
       pull
     end
@@ -11,7 +11,7 @@ class Mrsk::Cli::Build < Mrsk::Cli::Base
 
   desc "push", "Build and push app image to registry"
   def push
-    with_lock do
+    mutating do
       cli = self
 
       verify_local_dependencies
@@ -37,7 +37,7 @@ class Mrsk::Cli::Build < Mrsk::Cli::Base
 
   desc "pull", "Pull app image from registry onto servers"
   def pull
-    with_lock do
+    mutating do
       on(MRSK.hosts) do
         execute *MRSK.auditor.record("Pulled image with version #{MRSK.config.version}"), verbosity: :debug
         execute *MRSK.builder.clean, raise_on_non_zero_exit: false
@@ -48,7 +48,7 @@ class Mrsk::Cli::Build < Mrsk::Cli::Base
 
   desc "create", "Create a build setup"
   def create
-    with_lock do
+    mutating do
       run_locally do
         begin
           debug "Using builder: #{MRSK.builder.name}"
@@ -67,7 +67,7 @@ class Mrsk::Cli::Build < Mrsk::Cli::Base
 
   desc "remove", "Remove build setup"
   def remove
-    with_lock do
+    mutating do
       run_locally do
         debug "Using builder: #{MRSK.builder.name}"
         execute *MRSK.builder.remove

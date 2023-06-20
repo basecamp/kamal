@@ -2,7 +2,7 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
   desc "setup", "Setup all accessories and deploy app to servers"
   def setup
     print_runtime do
-      with_lock do
+      mutating do
         invoke "mrsk:cli:server:bootstrap"
         invoke "mrsk:cli:accessory:boot", [ "all" ]
         deploy
@@ -14,7 +14,7 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
   option :skip_push, aliases: "-P", type: :boolean, default: false, desc: "Skip image build and push"
   def deploy
     runtime = print_runtime do
-      with_lock do
+      mutating do
         invoke_options = deploy_options
 
         say "Log into image registry...", :magenta
@@ -53,7 +53,7 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
   option :skip_push, aliases: "-P", type: :boolean, default: false, desc: "Skip image build and push"
   def redeploy
     runtime = print_runtime do
-      with_lock do
+      mutating do
         invoke_options = deploy_options
 
         if options[:skip_push]
@@ -83,7 +83,7 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
   def rollback(version)
     rolled_back = false
     runtime = print_runtime do
-      with_lock do
+      mutating do
         invoke_options = deploy_options
 
         MRSK.config.version = version
@@ -180,7 +180,7 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
   desc "remove", "Remove Traefik, app, accessories, and registry session from servers"
   option :confirmed, aliases: "-y", type: :boolean, default: false, desc: "Proceed without confirmation question"
   def remove
-    with_lock do
+    mutating do
       if options[:confirmed] || ask("This will remove all containers and images. Are you sure?", limited_to: %w( y N ), default: "N") == "y"
         invoke "mrsk:cli:traefik:remove", [], options.without(:confirmed)
         invoke "mrsk:cli:app:remove", [], options.without(:confirmed)

@@ -116,6 +116,12 @@ class CliMainTest < CliTestCase
     end
   end
 
+  test "deploy with missing secrets" do
+    assert_raises(KeyError) do
+      run_command("deploy", config_file: "deploy_with_secrets")
+    end
+  end
+
   test "redeploy" do
     invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false }
 

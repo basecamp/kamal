@@ -1,7 +1,7 @@
 class Mrsk::Cli::Accessory < Mrsk::Cli::Base
   desc "boot [NAME]", "Boot new accessory service on host (use NAME=all to boot all accessories)"
   def boot(name)
-    with_lock do
+    mutating do
       if name == "all"
         MRSK.accessory_names.each { |accessory_name| boot(accessory_name) }
       else
@@ -21,7 +21,7 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
 
   desc "upload [NAME]", "Upload accessory files to host", hide: true
   def upload(name)
-    with_lock do
+    mutating do
       with_accessory(name) do |accessory|
         on(accessory.hosts) do
           accessory.files.each do |(local, remote)|
@@ -38,7 +38,7 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
 
   desc "directories [NAME]", "Create accessory directories on host", hide: true
   def directories(name)
-    with_lock do
+    mutating do
       with_accessory(name) do |accessory|
         on(accessory.hosts) do
           accessory.directories.keys.each do |host_path|
@@ -51,7 +51,7 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
 
   desc "reboot [NAME]", "Reboot existing accessory on host (stop container, remove container, start new container)"
   def reboot(name)
-    with_lock do
+    mutating do
       with_accessory(name) do |accessory|
         stop(name)
         remove_container(name)
@@ -62,7 +62,7 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
 
   desc "start [NAME]", "Start existing accessory container on host"
   def start(name)
-    with_lock do
+    mutating do
       with_accessory(name) do |accessory|
         on(accessory.hosts) do
           execute *MRSK.auditor.record("Started #{name} accessory"), verbosity: :debug
@@ -74,7 +74,7 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
 
   desc "stop [NAME]", "Stop existing accessory container on host"
   def stop(name)
-    with_lock do
+    mutating do
       with_accessory(name) do |accessory|
         on(accessory.hosts) do
           execute *MRSK.auditor.record("Stopped #{name} accessory"), verbosity: :debug
@@ -86,7 +86,7 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
 
   desc "restart [NAME]", "Restart existing accessory container on host"
   def restart(name)
-    with_lock do
+    mutating do
       with_accessory(name) do
         stop(name)
         start(name)
@@ -165,7 +165,7 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
   desc "remove [NAME]", "Remove accessory container, image and data directory from host (use NAME=all to remove all accessories)"
   option :confirmed, aliases: "-y", type: :boolean, default: false, desc: "Proceed without confirmation question"
   def remove(name)
-    with_lock do
+    mutating do
       if name == "all"
         MRSK.accessory_names.each { |accessory_name| remove(accessory_name) }
       else
@@ -183,7 +183,7 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
 
   desc "remove_container [NAME]", "Remove accessory container from host", hide: true
   def remove_container(name)
-    with_lock do
+    mutating do
       with_accessory(name) do |accessory|
         on(accessory.hosts) do
           execute *MRSK.auditor.record("Remove #{name} accessory container"), verbosity: :debug
@@ -195,7 +195,7 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
 
   desc "remove_image [NAME]", "Remove accessory image from host", hide: true
   def remove_image(name)
-    with_lock do
+    mutating do
       with_accessory(name) do |accessory|
         on(accessory.hosts) do
           execute *MRSK.auditor.record("Removed #{name} accessory image"), verbosity: :debug
@@ -207,7 +207,7 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
 
   desc "remove_service_directory [NAME]", "Remove accessory directory used for uploaded files and data directories from host", hide: true
   def remove_service_directory(name)
-    with_lock do
+    mutating do
       with_accessory(name) do |accessory|
         on(accessory.hosts) do
           execute *accessory.remove_service_directory
