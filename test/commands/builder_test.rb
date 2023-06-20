@@ -6,10 +6,10 @@ class CommandsBuilderTest < ActiveSupport::TestCase
   end
 
   test "target multiarch by default" do
-    builder = new_builder_command
+    builder = new_builder_command(builder: { "cache" => { "type" => "gha" }})
     assert_equal "multiarch", builder.name
     assert_equal \
-      "docker buildx build --push --platform linux/amd64,linux/arm64 --builder mrsk-app-multiarch -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile .",
+      "docker buildx build --push --platform linux/amd64,linux/arm64 --builder mrsk-app-multiarch -t dhh/app:123 -t dhh/app:latest --cache-to type=gha --cache-from type=gha --label service=\"app\" --file Dockerfile .",
       builder.push.join(" ")
   end
 
@@ -21,19 +21,27 @@ class CommandsBuilderTest < ActiveSupport::TestCase
       builder.push.join(" ")
   end
 
+  test "target native cached when multiarch is off and cache is set" do
+    builder = new_builder_command(builder: { "multiarch" => false, "cache" => { "type" => "gha" }})
+    assert_equal "native/cached", builder.name
+    assert_equal \
+      "docker buildx build --push -t dhh/app:123 -t dhh/app:latest --cache-to type=gha --cache-from type=gha --label service=\"app\" --file Dockerfile .",
+      builder.push.join(" ")
+  end
+
   test "target multiarch remote when local and remote is set" do
-    builder = new_builder_command(builder: { "local" => { }, "remote" => { } })
+    builder = new_builder_command(builder: { "local" => { }, "remote" => { }, "cache" => { "type" => "gha" } })
     assert_equal "multiarch/remote", builder.name
     assert_equal \
-      "docker buildx build --push --platform linux/amd64,linux/arm64 --builder mrsk-app-multiarch-remote -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile .",
+      "docker buildx build --push --platform linux/amd64,linux/arm64 --builder mrsk-app-multiarch-remote -t dhh/app:123 -t dhh/app:latest --cache-to type=gha --cache-from type=gha --label service=\"app\" --file Dockerfile .",
       builder.push.join(" ")
   end
 
   test "target native remote when only remote is set" do
-    builder = new_builder_command(builder: { "remote" => { "arch" => "amd64" } })
+    builder = new_builder_command(builder: { "remote" => { "arch" => "amd64" }, "cache" => { "type" => "gha" } })
     assert_equal "native/remote", builder.name
     assert_equal \
-      "docker buildx build --push --platform linux/amd64 --builder mrsk-app-native-remote -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile .",
+      "docker buildx build --push --platform linux/amd64 --builder mrsk-app-native-remote -t dhh/app:123 -t dhh/app:latest --cache-to type=gha --cache-from type=gha --label service=\"app\" --file Dockerfile .",
       builder.push.join(" ")
   end
 
