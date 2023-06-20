@@ -1,7 +1,7 @@
 class Mrsk::Cli::App < Mrsk::Cli::Base
   desc "boot", "Boot app on servers (or reboot app if already running)"
   def boot
-    with_lock do
+    mutating do
       hold_lock_on_error do
         say "Get most recent version available as an image...", :magenta unless options[:version]
         using_version(version_or_latest) do |version|
@@ -43,7 +43,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
 
   desc "start", "Start existing app container on servers"
   def start
-    with_lock do
+    mutating do
       on(MRSK.hosts) do |host|
         roles = MRSK.roles_on(host)
 
@@ -57,7 +57,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
 
   desc "stop", "Stop app container on servers"
   def stop
-    with_lock do
+    mutating do
       on(MRSK.hosts) do |host|
         roles = MRSK.roles_on(host)
 
@@ -135,7 +135,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
   desc "stale_containers", "Detect app stale containers"
   option :stop, aliases: "-s", type: :boolean, default: false, desc: "Stop the stale containers found"
   def stale_containers
-    with_lock do
+    mutating do
       stop = options[:stop]
 
       cli = self
@@ -202,7 +202,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
 
   desc "remove", "Remove app containers and images from servers"
   def remove
-    with_lock do
+    mutating do
       stop
       remove_containers
       remove_images
@@ -211,7 +211,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
 
   desc "remove_container [VERSION]", "Remove app container with given version from servers", hide: true
   def remove_container(version)
-    with_lock do
+    mutating do
       on(MRSK.hosts) do |host|
         roles = MRSK.roles_on(host)
 
@@ -225,7 +225,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
 
   desc "remove_containers", "Remove all app containers from servers", hide: true
   def remove_containers
-    with_lock do
+    mutating do
       on(MRSK.hosts) do |host|
         roles = MRSK.roles_on(host)
 
@@ -239,7 +239,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
 
   desc "remove_images", "Remove all app images from servers", hide: true
   def remove_images
-    with_lock do
+    mutating do
       on(MRSK.hosts) do
         execute *MRSK.auditor.record("Removed all app images"), verbosity: :debug
         execute *MRSK.app.remove_images

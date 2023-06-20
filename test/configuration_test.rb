@@ -166,7 +166,7 @@ class ConfigurationTest < ActiveSupport::TestCase
     assert_raises(KeyError) do
       config = Mrsk::Configuration.new(@deploy.tap { |c| c.merge!({
         env: { "secret" => [ "PASSWORD" ] }
-      }) })
+      }) }).ensure_env_available
     end
   end
 

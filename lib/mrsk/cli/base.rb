@@ -72,28 +72,28 @@ module Mrsk::Cli
         puts "  Finished all in #{sprintf("%.1f seconds", runtime)}"
       end
 
-      def with_lock
-        if MRSK.holding_lock?
+      def mutating
+        return yield if MRSK.holding_lock?
+
+        MRSK.config.ensure_env_available
+
+        run_hook "pre-connect"
+
+        acquire_lock
+
+        begin
           yield
-        else
-          run_hook "pre-connect"
-
-          acquire_lock
-
-          begin
-            yield
-          rescue
-            if MRSK.hold_lock_on_error?
-              error "  \e[31mDeploy lock was not released\e[0m"
-            else
-              release_lock
-            end
-
-            raise
+        rescue
+          if MRSK.hold_lock_on_error?
+            error "  \e[31mDeploy lock was not released\e[0m"
+          else
+            release_lock
           end
 
-          release_lock
+          raise
         end
+
+        release_lock
       end
 
       def acquire_lock

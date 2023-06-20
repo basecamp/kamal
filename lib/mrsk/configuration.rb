@@ -170,7 +170,7 @@ class Mrsk::Configuration
   end
 
   def valid?
-    ensure_required_keys_present && ensure_env_available && ensure_valid_mrsk_version
+    ensure_required_keys_present && ensure_valid_mrsk_version
   end
 
 
@@ -205,6 +205,14 @@ class Mrsk::Configuration
     Mrsk::Configuration::Builder.new(config: self)
   end
 
+  # Will raise KeyError if any secret ENVs are missing
+  def ensure_env_available
+    env_args
+    roles.each(&:env_args)
+
+    true
+  end
+
   private
     # Will raise ArgumentError if any required config keys are missing
     def ensure_required_keys_present
@@ -225,14 +233,6 @@ class Mrsk::Configuration
           raise ArgumentError, "No servers specified for the #{role.name} role"
         end
       end
-
-      true
-    end
-
-    # Will raise KeyError if any secret ENVs are missing
-    def ensure_env_available
-      env_args
-      roles.each(&:env_args)
 
       true
     end

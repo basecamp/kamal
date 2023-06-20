@@ -1,7 +1,7 @@
 class Mrsk::Cli::Prune < Mrsk::Cli::Base
   desc "all", "Prune unused images and stopped containers"
   def all
-    with_lock do
+    mutating do
       containers
       images
     end
@@ -9,7 +9,7 @@ class Mrsk::Cli::Prune < Mrsk::Cli::Base
 
   desc "images", "Prune dangling images"
   def images
-    with_lock do
+    mutating do
       on(MRSK.hosts) do
         execute *MRSK.auditor.record("Pruned images"), verbosity: :debug
         execute *MRSK.prune.dangling_images
@@ -20,7 +20,7 @@ class Mrsk::Cli::Prune < Mrsk::Cli::Base
 
   desc "containers", "Prune all stopped containers, except the last 5"
   def containers
-    with_lock do
+    mutating do
       on(MRSK.hosts) do
         execute *MRSK.auditor.record("Pruned containers"), verbosity: :debug
         execute *MRSK.prune.containers
