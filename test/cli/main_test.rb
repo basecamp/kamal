@@ -339,6 +339,20 @@ class CliMainTest < CliTestCase
     run_command("envify", "-d", "staging")
   end
 
+  test "envify with custom template file" do
+    File.expects(:read).with(".env.template.erb").returns("HELLO=<%= 'world' %>")
+    File.expects(:write).with(".env.staging", "HELLO=world", perm: 0600)
+
+    run_command("envify", "-t", ".env.template.erb", "-d", "staging")
+  end
+
+  test "envify with custom template file and destination" do
+    File.expects(:read).with(".env.template.erb").returns("HELLO=<%= ENV['MRSK_DESTINATION'] %>")
+    File.expects(:write).with(".env.staging", "HELLO=staging", perm: 0600)
+
+    run_command("envify", "-t", ".env.template.erb", "-d", "staging")
+  end
+
   test "remove with confirmation" do
     run_command("remove", "-y", config_file: "deploy_with_accessories").tap do |output|
       assert_match /docker container stop traefik/, output
