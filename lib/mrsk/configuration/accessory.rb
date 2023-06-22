@@ -23,14 +23,17 @@ class Mrsk::Configuration::Accessory
     hosts_from_host || hosts_from_hosts || hosts_from_roles
   end
 
-  def port
-    if port = specifics["port"]&.to_s
-      port.include?(":") ? port : "#{port}:#{port}"
+  def ports
+    if specifics["port"] && specifics["ports"]
+      raise ArgumentError, "Specify one of `port` or `ports` for accessory `#{name}`"
     end
+
+    return ports_from_port if specifics["port"]
+    return ports_from_ports
   end
 
   def publish_args
-    argumentize "--publish", port if port
+    argumentize "--publish", ports if ports
   end
 
   def labels
@@ -164,6 +167,25 @@ class Mrsk::Configuration::Accessory
     def hosts_from_roles
       if specifics.key?("roles")
         specifics["roles"].flat_map { |role| config.role(role).hosts }
+      end
+    end
+
+    def format_port(port)
+      port.to_s.include?(":") ? port : "#{port}:#{port}"
+    end
+
+    def ports_from_port
+      [format_port(specifics["port"])] if specifics["port"]
+    end
+
+    def ports_from_ports
+      if specifics.key?("ports")
+        ports = specifics["ports"]
+        if ports.is_a?(Array)
+          ports.map do |port| format_port(port) end
+        else
+          raise ArgumentError, "Ports should be an Array for accessory `#{name}`"
+        end
       end
     end
 end

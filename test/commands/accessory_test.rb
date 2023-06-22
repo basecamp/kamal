@@ -33,6 +33,11 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
             "/var/lib/redis:/data"
           ]
         },
+        "rabbitmq" => {
+          "image" => "rabbitmq:latest",
+          "host" => "1.1.1.7",
+          "ports" => ["5672", "15672"]
+        },
         "busybox" => {
           "image" => "busybox:latest",
           "host" => "1.1.1.7"
@@ -55,6 +60,10 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
     assert_equal \
       "docker run --name app-redis --detach --restart unless-stopped --log-opt max-size=\"10m\" --publish 6379:6379 -e SOMETHING=\"else\" --volume /var/lib/redis:/data --label service=\"app-redis\" --label cache=\"true\" redis:latest",
       new_command(:redis).run.join(" ")
+
+    assert_equal \
+      "docker run --name app-rabbitmq --detach --restart unless-stopped --log-opt max-size=\"10m\" --publish 5672:5672 --publish 15672:15672 --label service=\"app-rabbitmq\" rabbitmq:latest",
+      new_command(:rabbitmq).run.join(" ")
 
     assert_equal \
       "docker run --name app-busybox --detach --restart unless-stopped --log-opt max-size=\"10m\" --label service=\"app-busybox\" busybox:latest",

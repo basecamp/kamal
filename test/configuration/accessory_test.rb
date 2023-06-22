@@ -62,6 +62,16 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
             "cpus" => 4,
             "memory" => "2GB"
           }
+        },
+        "rabbitmq" => {
+          "image" => "rabbitmq:latest",
+          "host" => "1.1.1.8",
+          "ports" => ["5672", "15672"]
+        },
+        "webserver" => {
+          "image" => "webserver:latest",
+          "host": "1.1.1.9",
+          "ports" => ["8443:443"],
         }
       }
     }
@@ -75,8 +85,10 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
   end
 
   test "port" do
-    assert_equal "3306:3306", @config.accessory(:mysql).port
-    assert_equal "6379:6379", @config.accessory(:redis).port
+    assert_equal ["3306:3306"], @config.accessory(:mysql).ports
+    assert_equal ["6379:6379"], @config.accessory(:redis).ports
+    assert_equal ["5672:5672", "15672:15672"], @config.accessory(:rabbitmq).ports
+    assert_equal ["8443:443"], @config.accessory(:webserver).ports
   end
 
   test "host" do
@@ -103,6 +115,17 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
       @config.accessory(:mysql).hosts
     end
     assert_equal "Specify one of `host`, `hosts` or `roles` for accessory `mysql`", exception.message
+  end
+
+  test "setting port and ports" do
+    @deploy[:accessories]["rabbitmq"]["port"] = 5672
+    @deploy[:accessories]["rabbitmq"]["ports"] = [5672, 15672]
+    @config = Mrsk::Configuration.new(@deploy)
+
+    exception = assert_raises(ArgumentError) do
+      @config.accessory(:rabbitmq).ports
+    end
+    assert_equal "Specify one of `port` or `ports` for accessory `rabbitmq`", exception.message
   end
 
   test "label args" do
