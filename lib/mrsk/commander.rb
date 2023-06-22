@@ -143,7 +143,10 @@ class Mrsk::Commander
   private
     # Lazy setup of SSHKit
     def configure_sshkit_with(config)
-      SSHKit::Backend::Netssh.configure { |ssh| ssh.ssh_options = config.ssh_options }
+      SSHKit::Backend::Netssh.configure do |sshkit|
+        sshkit.max_concurrent_starts = config.sshkit_max_concurrent_starts if config.sshkit_max_concurrent_starts
+        sshkit.ssh_options = config.ssh_options
+      end
       SSHKit.config.command_map[:docker] = "docker" # No need to use /usr/bin/env, just clogs up the logs
       SSHKit.config.output_verbosity = verbosity
     end

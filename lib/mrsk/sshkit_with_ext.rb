@@ -54,3 +54,51 @@ class SSHKit::Backend::Abstract
   end
   prepend CommandEnvMerge
 end
+
+class SSHKit::Backend::Netssh::Configuration
+  DEFAULT_MAX_CONCURRENT_STARTS = 30
+
+  attr_writer :max_concurrent_starts
+
+  def max_concurrent_starts
+    @max_concurrent_starts ||= DEFAULT_MAX_CONCURRENT_STARTS
+  end
+end
+
+class SSHKit::Backend::Netssh
+  module LimitConcurrentStartsClass
+    attr_reader :start_semaphore
+
+    def configure(&block)
+      super &block
+      # Create this here to avoid lazy creation by multiple threads
+      @start_semaphore = Concurrent::Semaphore.new(config.max_concurrent_starts)
+    end
+  end
+
+  class << self
+    prepend LimitConcurrentStartsClass
+  end
+
+  module LimitConcurrentStartsInstance
+    private
+      def with_ssh(&block)
+        host.ssh_options = self.class.config.ssh_options.merge(host.ssh_options || {})
+        self.class.pool.with(
+          method(:start_with_concurrency_limit),
+          String(host.hostname),
+          host.username,
+          host.netssh_options,
+          &block
+        )
+      end
+
+      def start_with_concurrency_limit(*args)
+        self.class.start_semaphore.acquire do
+          Net::SSH.start(*args)
+        end
+      end
+  end
+
+  prepend LimitConcurrentStartsInstance
+end

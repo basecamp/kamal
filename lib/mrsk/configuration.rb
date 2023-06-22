@@ -157,6 +157,10 @@ class Mrsk::Configuration
   end
 
 
+  def sshkit_max_concurrent_starts
+    raw_config.sshkit["max_concurrent_starts"] if raw_config.sshkit.present?
+  end
+
   def healthcheck
     { "path" => "/up", "port" => 3000, "max_attempts" => 7 }.merge(raw_config.healthcheck || {})
   end

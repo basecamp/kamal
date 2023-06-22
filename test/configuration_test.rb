@@ -224,6 +224,11 @@ class ConfigurationTest < ActiveSupport::TestCase
     assert_equal "app@1.2.3.4", @config.ssh_options[:proxy].jump_proxies
   end
 
+  test "sshkit max concurrent starts" do
+    config = Mrsk::Configuration.new(@deploy.tap { |c| c.merge!(sshkit: { "max_concurrent_starts" => 50 }) })
+    assert_equal 50, @config.sshkit_max_concurrent_starts
+  end
+
   test "volume_args" do
     assert_equal ["--volume", "/local/path:/container/path"], @config.volume_args
   end
