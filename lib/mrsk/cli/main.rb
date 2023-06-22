@@ -165,15 +165,17 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
   end
 
   desc "envify", "Create .env by evaluating .env.erb (or .env.staging.erb -> .env.staging when using -d staging)"
+  option :template, aliases: "-t", type: :string, default: ".env.erb", desc: "Template to use"
   def envify
     if destination = options[:destination]
-      env_template_path = ".env.#{destination}.erb"
+      env_template_path = options[:template] || ".env.#{destination}.erb"
       env_path          = ".env.#{destination}"
     else
-      env_template_path = ".env.erb"
+      env_template_path = options[:template] || ".env.erb"
       env_path          = ".env"
     end
 
+    ENV["MRSK_DESTINATION"] = destination.to_s if destination
     File.write(env_path, ERB.new(File.read(env_template_path)).result, perm: 0600)
   end
 
