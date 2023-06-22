@@ -143,6 +143,7 @@ class Mrsk::Commander
   private
     # Lazy setup of SSHKit
     def configure_sshkit_with(config)
+      SSHKit::Backend::Netssh.pool.idle_timeout = config.sshkit_pool_idle_timeout
       SSHKit::Backend::Netssh.configure do |sshkit|
         sshkit.max_concurrent_starts = config.sshkit_max_concurrent_starts if config.sshkit_max_concurrent_starts
         sshkit.ssh_options = config.ssh_options

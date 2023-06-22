@@ -226,7 +226,13 @@ class ConfigurationTest < ActiveSupport::TestCase
 
   test "sshkit max concurrent starts" do
     config = Mrsk::Configuration.new(@deploy.tap { |c| c.merge!(sshkit: { "max_concurrent_starts" => 50 }) })
-    assert_equal 50, @config.sshkit_max_concurrent_starts
+    assert_equal 50, config.sshkit_max_concurrent_starts
+  end
+
+  test "sshkit pool idle timeout" do
+    assert_equal 900, @config.sshkit_pool_idle_timeout
+    config = Mrsk::Configuration.new(@deploy.tap { |c| c.merge!(sshkit: { "pool_idle_timeout" => 600 }) })
+    assert_equal 600, config.sshkit_pool_idle_timeout
   end
 
   test "volume_args" do
@@ -271,7 +277,22 @@ class ConfigurationTest < ActiveSupport::TestCase
   end
 
   test "to_h" do
-    assert_equal({ :roles=>["web"], :hosts=>["1.1.1.1", "1.1.1.2"], :primary_host=>"1.1.1.1", :version=>"missing", :repository=>"dhh/app", :absolute_image=>"dhh/app:missing", :service_with_version=>"app-missing", :env_args=>["-e", "REDIS_URL=\"redis://x/y\""], :ssh_options=>{:user=>"root", :auth_methods=>["publickey"]}, :volume_args=>["--volume", "/local/path:/container/path"], :builder=>{}, :logging=>["--log-opt", "max-size=\"10m\""], :healthcheck=>{"path"=>"/up", "port"=>3000, "max_attempts" => 7 }}, @config.to_h)
+    expected_config = \
+      { :roles=>["web"],
+        :hosts=>["1.1.1.1", "1.1.1.2"],
+        :primary_host=>"1.1.1.1",
+        :version=>"missing",
+        :repository=>"dhh/app",
+        :absolute_image=>"dhh/app:missing",
+        :service_with_version=>"app-missing",
+        :env_args=>["-e", "REDIS_URL=\"redis://x/y\""],
+        :ssh_options=>{ :user=>"root", :auth_methods=>["publickey"], keepalive: true, keepalive_interval: 30 },
+        :volume_args=>["--volume", "/local/path:/container/path"],
+        :builder=>{},
+        :logging=>["--log-opt", "max-size=\"10m\""],
+        :healthcheck=>{ "path"=>"/up", "port"=>3000, "max_attempts" => 7 }}
+
+    assert_equal expected_config, @config.to_h
   end
 
   test "min version is lower" do

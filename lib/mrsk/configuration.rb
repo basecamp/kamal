@@ -153,13 +153,22 @@ class Mrsk::Configuration
   end
 
   def ssh_options
-    { user: ssh_user, proxy: ssh_proxy, auth_methods: [ "publickey" ] }.compact
+    { user: ssh_user, proxy: ssh_proxy, auth_methods: [ "publickey" ], keepalive: true, keepalive_interval: 30 }.compact
   end
 
 
   def sshkit_max_concurrent_starts
     raw_config.sshkit["max_concurrent_starts"] if raw_config.sshkit.present?
   end
+
+  def sshkit_pool_idle_timeout
+    if raw_config.sshkit.present?
+      raw_config.sshkit["pool_idle_timeout"] || 900
+    else
+      900
+    end
+  end
+
 
   def healthcheck
     { "path" => "/up", "port" => 3000, "max_attempts" => 7 }.merge(raw_config.healthcheck || {})
