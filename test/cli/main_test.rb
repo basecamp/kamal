@@ -10,7 +10,7 @@ class CliMainTest < CliTestCase
   end
 
   test "deploy" do
-    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false }
+    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false, "env_path" => ".env" }
 
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:registry:login", [], invoke_options)
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:build:deliver", [], invoke_options)
@@ -37,7 +37,7 @@ class CliMainTest < CliTestCase
   end
 
   test "deploy with skip_push" do
-    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false }
+    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false, "env_path" => ".env" }
 
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:registry:login", [], invoke_options)
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:build:pull", [], invoke_options)
@@ -87,7 +87,7 @@ class CliMainTest < CliTestCase
   end
 
   test "deploy errors during outside section leave remove lock" do
-    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false }
+    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false, "env_path" => ".env" }
 
     Mrsk::Cli::Main.any_instance.expects(:invoke)
       .with("mrsk:cli:registry:login", [], invoke_options)
@@ -101,7 +101,7 @@ class CliMainTest < CliTestCase
   end
 
   test "deploy with skipped hooks" do
-    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => true }
+    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => true, "env_path" => ".env" }
 
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:registry:login", [], invoke_options)
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:build:deliver", [], invoke_options)
@@ -123,7 +123,7 @@ class CliMainTest < CliTestCase
   end
 
   test "redeploy" do
-    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false }
+    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false, "env_path" => ".env" }
 
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:build:deliver", [], invoke_options)
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:healthcheck:perform", [], invoke_options)
@@ -145,7 +145,7 @@ class CliMainTest < CliTestCase
   end
 
   test "redeploy with skip_push" do
-    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false }
+    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false, "env_path" => ".env" }
 
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:build:pull", [], invoke_options)
     Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:healthcheck:perform", [], invoke_options)
@@ -287,6 +287,19 @@ class CliMainTest < CliTestCase
     end
   end
 
+  test "init with custom env path" do
+    Pathname.any_instance.expects(:exist?).returns(false).times(3)
+    Pathname.any_instance.stubs(:mkpath)
+    FileUtils.stubs(:mkdir_p)
+    FileUtils.stubs(:cp_r)
+    FileUtils.stubs(:cp)
+
+    run_command("init", "-e", ".env.out").tap do |output|
+      assert_match /Created configuration file in config\/deploy.yml/, output
+      assert_match /Created \.env.out file/, output
+    end
+  end
+
   test "init with existing config" do
     Pathname.any_instance.expects(:exist?).returns(true).times(3)
 
@@ -332,11 +345,25 @@ class CliMainTest < CliTestCase
     run_command("envify")
   end
 
+  test "envify with env output" do
+    File.expects(:read).with(".env.erb").returns("HELLO=<%= 'world' %>")
+    File.expects(:write).with("dist/.env", "HELLO=world", perm: 0600)
+
+    run_command("envify", '-e', 'dist/.env')
+  end
+
   test "envify with destination" do
     File.expects(:read).with(".env.staging.erb").returns("HELLO=<%= 'world' %>")
     File.expects(:write).with(".env.staging", "HELLO=world", perm: 0600)
 
     run_command("envify", "-d", "staging")
+  end
+
+  test "envify with destination and env output" do
+    File.expects(:read).with(".env.staging.erb").returns("HELLO=<%= 'world' %>")
+    File.expects(:write).with("dist/.env.staging", "HELLO=world", perm: 0600)
+
+    run_command("envify", "-d", "staging", '-e', 'dist/.env')
   end
 
   test "remove with confirmation" do

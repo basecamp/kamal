@@ -19,6 +19,7 @@ module Mrsk::Cli
 
     class_option :config_file, aliases: "-c", default: "config/deploy.yml", desc: "Path to config file"
     class_option :destination, aliases: "-d", desc: "Specify destination to be used for config file (staging -> deploy.staging.yml)"
+    class_option :env_path, aliases: "-e", default: ".env", desc: "Path to env file"
 
     class_option :skip_hooks, aliases: "-H", type: :boolean, default: false, desc: "Don't run hooks"
 
@@ -31,9 +32,9 @@ module Mrsk::Cli
     private
       def load_envs
         if destination = options[:destination]
-          Dotenv.load(".env.#{destination}", ".env")
+          Dotenv.load("#{options[:env_path]}.#{destination}", options[:env_path])
         else
-          Dotenv.load(".env")
+          Dotenv.load(options[:env_path])
         end
       end
 
