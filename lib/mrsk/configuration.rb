@@ -3,6 +3,7 @@ require "active_support/core_ext/string/inquiry"
 require "active_support/core_ext/module/delegation"
 require "pathname"
 require "erb"
+require "yaml"
 require "net/ssh/proxy/jump"
 
 class Mrsk::Configuration

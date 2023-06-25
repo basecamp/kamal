@@ -12,7 +12,7 @@ Gem::Specification.new do |spec|
   spec.files = Dir["lib/**/*", "MIT-LICENSE", "README.md"]
   spec.executables = %w[ mrsk ]
 
-  spec.add_dependency "activesupport", ">= 7.0"
+  spec.add_dependency "activesupport", ">= 6.1"
   spec.add_dependency "sshkit", "~> 1.21"
   spec.add_dependency "net-ssh", "~> 7.0"
   spec.add_dependency "thor", "~> 1.2"
