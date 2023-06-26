@@ -179,13 +179,13 @@ class Mrsk::Configuration::Accessory
     end
 
     def ports_from_ports
-      if specifics.key?("ports")
-        ports = specifics["ports"]
-        if ports.is_a?(Array)
-          ports.map do |port| format_port(port) end
-        else
-          raise ArgumentError, "Ports should be an Array for accessory `#{name}`"
-        end
+      return nil unless specifics.key?("ports")
+      ports = specifics["ports"]
+
+      unless ports.is_a?(Array)
+        raise ArgumentError, "Ports should be an Array for accessory `#{name}`"
       end
+
+      ports.map { |port| format_port(port) }
     end
 end
