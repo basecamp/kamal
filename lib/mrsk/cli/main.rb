@@ -1,5 +1,3 @@
-require 'fileutils'
-
 class Mrsk::Cli::Main < Mrsk::Cli::Base
   desc "setup", "Setup all accessories and deploy app to servers"
   def setup
