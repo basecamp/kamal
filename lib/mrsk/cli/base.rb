@@ -31,7 +31,7 @@ module Mrsk::Cli
 
     private
       def load_envs
-        if destination = options[:destination]
+        if (destination = options[:destination])
           Dotenv.load("#{options[:env_path]}.#{destination}", options[:env_path])
         else
           Dotenv.load(options[:env_path])
