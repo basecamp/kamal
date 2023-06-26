@@ -341,9 +341,9 @@ class CliMainTest < CliTestCase
 
   test "envify with custom template file" do
     File.expects(:read).with(".env.template.erb").returns("HELLO=<%= 'world' %>")
-    File.expects(:write).with(".env.staging", "HELLO=world", perm: 0600)
+    File.expects(:write).with(".env", "HELLO=world", perm: 0600)
 
-    run_command("envify", "-t", ".env.template.erb", "-d", "staging")
+    run_command("envify", "-t", ".env.template.erb")
   end
 
   test "envify with custom template file and destination" do
