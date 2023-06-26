@@ -63,6 +63,24 @@ This will:
 
 Voila! All the servers are now serving the app on port 80. If you're just running a single server, you're ready to go. If you're running multiple servers, you need to put a load balancer in front of them. For subsequent deploys, or if your servers already have Docker and curl installed, you can just run `mrsk deploy`.
 
+### Rails <7 usage
+
+MRSK is not needed to be in your application Gemfile to be used. However, if you want to guarantee specific MRSK version in your CI/CD workflows, you can create a separate Gemfile for MRSK, for example, `gemfile/mrsk.gemfile`:
+
+```ruby
+source 'https://rubygems.org'
+
+gem 'mrsk', '~> 0.14'
+```
+
+Bundle with `BUNDLE_GEMFILE=gemfiles/mrsk.gemfile bundle`.
+
+After this MRSK can be used for deployment:
+
+```sh
+BUNDLE_GEMFILE=gemfiles/mrsk.gemfile bundle exec mrsk deploy
+```
+
 ## Vision
 
 In the past decade+, there's been an explosion in commercial offerings that make deploying web apps easier. Heroku kicked it off with an incredible offering that stayed ahead of the competition seemingly forever. These days we have excellent alternatives like Fly.io and Render. And hosted Kubernetes is making things easier too on AWS, GCP, Digital Ocean, and elsewhere. But these are all offerings that have you renting computers in the cloud at a premium. If you want to run on your own hardware, or even just have a clear migration path to do so in the future, you need to carefully consider how locked in you get to these commercial platforms. Preferably before the bills swallow your business whole!
