@@ -1,3 +1,5 @@
+require 'fileutils'
+
 class Mrsk::Cli::Main < Mrsk::Cli::Base
   desc "setup", "Setup all accessories and deploy app to servers"
   def setup
@@ -172,6 +174,10 @@ class Mrsk::Cli::Main < Mrsk::Cli::Base
     else
       env_template_path = ".env.erb"
       env_path          = options[:env_path]
+    end
+
+    unless File.exist?(env_path) && env_path.include?('/')
+      FileUtils.mkdir_p(File.dirname(env_path))
     end
 
     File.write(env_path, ERB.new(File.read(env_template_path)).result, perm: 0600)
