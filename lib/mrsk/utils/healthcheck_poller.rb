@@ -7,6 +7,12 @@ class Mrsk::Utils::HealthcheckPoller
     def wait_for_healthy(pause_after_ready: false, &block)
       attempt = 1
       max_attempts = MRSK.config.healthcheck["max_attempts"]
+      initial_delay = MRSK.config.healthcheck["initial_delay"]
+
+      if initial_delay > 0
+        info "Waiting #{initial_delay}s before checking container health..."
+        sleep initial_delay
+      end
 
       begin
         case status = block.call
