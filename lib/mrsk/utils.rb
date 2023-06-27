@@ -20,10 +20,20 @@ module Mrsk::Utils
   # but redacts and expands secrets.
   def argumentize_env_with_secrets(env)
     if (secrets = env["secret"]).present?
-      argumentize("-e", secrets.to_h { |key| [ key, ENV.fetch(key) ] }, sensitive: true) + argumentize("-e", env["clear"])
+      argumentize("-e", handle_optional_secrets(secrets), sensitive: true) + argumentize("-e", env["clear"])
     else
-      argumentize "-e", env.fetch("clear", env)
+      argumentize("-e", env.fetch("clear", env))
     end
+  end
+
+  def handle_optional_secrets(secrets)
+    secrets.to_h do |key|
+      if key.end_with? '?'
+        [ key.chop, ENV[key.chop] ]
+      else
+        [ key, ENV.fetch(key) ]
+      end
+    end.compact
   end
 
   # Returns a list of shell-dashed option arguments. If the value is true, it's treated like a value-less option.
