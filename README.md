@@ -123,6 +123,8 @@ This template can safely be checked into git. Then everyone deploying the app ca
 
 If you need separate env variables for different destinations, you can set them with `.env.destination.erb` for the template, which will generate `.env.staging` when run with `mrsk envify -d staging`.
 
+Note: If you utilize biometrics with 1Password you can remove the `session_token` related parts in the example and just call `op read op://Vault/Docker Hub/password -n`.
+
 #### Bitwarden as a secret store
 
 If you are using open source secret store like bitwarden, you can create `.env.erb` as a template which looks up the secrets.
