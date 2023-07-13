@@ -33,7 +33,12 @@ class Mrsk::Configuration
       end
 
       def destination_config_file(base_config_file, destination)
-        base_config_file.sub_ext(".#{destination}.yml") if destination
+        return unless destination
+
+        return base_config_file.sub_ext(".#{destination}.yml") if base_config_file.extname == ".yml"
+        return base_config_file.sub(/\.yml.erb$/, ".#{destination}.yml.erb") if base_config_file.extname == ".erb"
+
+        raise 'Unsupported config file extension. Please use .yml or .yml.erb'
       end
   end
 
