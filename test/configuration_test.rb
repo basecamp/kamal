@@ -243,8 +243,16 @@ class ConfigurationTest < ActiveSupport::TestCase
   end
 
   test "erb evaluation of yml config" do
-    config = Mrsk::Configuration.create_from config_file: Pathname.new(File.expand_path("fixtures/deploy.erb.yml", __dir__))
+    config = Mrsk::Configuration.create_from config_file: Pathname.new(File.expand_path("fixtures/deploy.yml.erb", __dir__))
     assert_equal "my-user", config.registry["username"]
+  end
+
+  test "erb evaluation of yml config with destinations" do
+    config_file = Pathname.new(File.expand_path("fixtures/deploy.yml.erb", __dir__))
+
+    config = Mrsk::Configuration.create_from config_file: config_file, destination: 'staging'
+    assert_equal "my-user", config.registry["username"]
+    assert_equal "my-password-override", config.registry["password"]
   end
 
   test "destination yml config merge" do
