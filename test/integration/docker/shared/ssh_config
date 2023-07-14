@@ -1,0 +1,6 @@
+Host vm1
+    User root
+    IdentityFile ~/.ssh/id_rsa-work
+Host vm2
+    User root
+    IdentityFile ~/.ssh/id_rsa-work

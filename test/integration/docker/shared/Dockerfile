@@ -5,7 +5,9 @@ WORKDIR /work
 RUN apt-get update --fix-missing && apt-get -y install openssh-client openssl
 
 RUN mkdir ssh && \
-  ssh-keygen -t rsa -f ssh/id_rsa -N ""
+  ssh-keygen -t rsa -f ssh/id_rsa-work -N ""
+
+COPY ssh_config ssh/config
 
 COPY registry-dns.conf .
 COPY boot.sh .
