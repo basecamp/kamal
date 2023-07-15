@@ -76,11 +76,14 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
   end
 
   def execute_in_new_container(*command, interactive: false)
+    role = config.role(self.role)
+
     docker :run,
       ("-it" if interactive),
       "--rm",
       *config.env_args,
       *config.volume_args,
+      *role&.option_args,
       config.absolute_image,
       *command
   end

@@ -171,6 +171,13 @@ class CommandsAppTest < ActiveSupport::TestCase
       new_command.execute_in_new_container("bin/rails", "db:setup").join(" ")
   end
 
+  test "execute in new container with custom options" do
+    @config[:servers] = { "web" => { "hosts" => [ "1.1.1.1" ], "options" => { "mount" => "somewhere", "cap-add" => true } } }
+    assert_equal \
+      "docker run --rm -e RAILS_MASTER_KEY=\"456\" --mount \"somewhere\" --cap-add dhh/app:999 bin/rails db:setup",
+      new_command.execute_in_new_container("bin/rails", "db:setup").join(" ")
+  end
+
   test "execute in existing container" do
     assert_equal \
       "docker exec app-web-999 bin/rails db:setup",
@@ -179,6 +186,12 @@ class CommandsAppTest < ActiveSupport::TestCase
 
   test "execute in new container over ssh" do
     assert_match %r|docker run -it --rm -e RAILS_MASTER_KEY=\"456\" dhh/app:999 bin/rails c|,
+      new_command.execute_in_new_container_over_ssh("bin/rails", "c", host: "app-1")
+  end
+
+  test "execute in new container with custom options over ssh" do
+    @config[:servers] = { "web" => { "hosts" => [ "1.1.1.1" ], "options" => { "mount" => "somewhere", "cap-add" => true } } }
+    assert_match %r|docker run -it --rm -e RAILS_MASTER_KEY=\"456\" --mount \"somewhere\" --cap-add dhh/app:999 bin/rails c|,
       new_command.execute_in_new_container_over_ssh("bin/rails", "c", host: "app-1")
   end
 
