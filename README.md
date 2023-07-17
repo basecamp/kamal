@@ -868,7 +868,7 @@ If you wish to remove the entire application, including Traefik, containers, ima
 
 ## Locking
 
-Commands that are unsafe to run concurrently will take a deploy lock while they run. The lock is the `mrsk_lock` directory on the primary server.
+Commands that are unsafe to run concurrently will take a deploy lock while they run. The lock is the `mrsk_lock-<service>` directory on the primary server.
 
 You can check the lock status with:
 

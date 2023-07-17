@@ -29,9 +29,9 @@ class CliTestCase < ActiveSupport::TestCase
 
     def stub_locking
       SSHKit::Backend::Abstract.any_instance.stubs(:execute)
-        .with { |arg1, arg2| arg1 == :mkdir && arg2 == :mrsk_lock }
+        .with { |arg1, arg2| arg1 == :mkdir && arg2 == "mrsk_lock-app" }
       SSHKit::Backend::Abstract.any_instance.stubs(:execute)
-        .with { |arg1, arg2| arg1 == :rm && arg2 == "mrsk_lock/details" }
+        .with { |arg1, arg2| arg1 == :rm && arg2 == "mrsk_lock-app/details" }
     end
 
     def assert_hook_ran(hook, output, version:, service_version:, hosts:, command:, subcommand: nil, runtime: nil)

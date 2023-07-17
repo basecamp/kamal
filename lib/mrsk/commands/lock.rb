@@ -40,7 +40,7 @@ class Mrsk::Commands::Lock < Mrsk::Commands::Base
     end
 
     def lock_dir
-      :mrsk_lock
+      "mrsk_lock-#{config.service}"
     end
 
     def lock_details_file
