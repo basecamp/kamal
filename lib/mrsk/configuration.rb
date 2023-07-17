@@ -153,7 +153,15 @@ class Mrsk::Configuration
   end
 
   def ssh_options
-    { user: ssh_user, proxy: ssh_proxy, auth_methods: [ "publickey" ] }.compact
+    { user: ssh_user, proxy: ssh_proxy, auth_methods: [ "publickey" ], logger: ssh_logger }.compact
+  end
+
+  def ssh_logger
+    @ssh_logger ||= ::Logger.new(STDERR).tap { |logger| logger.level = ssh_log_level }
+  end
+
+  def ssh_log_level
+    (raw_config.ssh && raw_config.ssh["log_level"]) || ::Logger::FATAL
   end
 
 
@@ -185,7 +193,8 @@ class Mrsk::Configuration
       service_with_version: service_with_version,
       env_args: env_args,
       volume_args: volume_args,
-      ssh_options: ssh_options,
+      ssh_options: ssh_options.except(:logger),
+      ssh_log_level: ssh_log_level,
       builder: builder.to_h,
       accessories: raw_config.accessories,
       logging: logging_args,
