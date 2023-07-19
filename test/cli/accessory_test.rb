@@ -40,9 +40,10 @@ class CliAccessoryTest < CliTestCase
   end
 
   test "reboot" do
+    Mrsk::Commands::Registry.any_instance.expects(:login)
     Mrsk::Cli::Accessory.any_instance.expects(:stop).with("mysql")
     Mrsk::Cli::Accessory.any_instance.expects(:remove_container).with("mysql")
-    Mrsk::Cli::Accessory.any_instance.expects(:boot).with("mysql")
+    Mrsk::Cli::Accessory.any_instance.expects(:boot).with("mysql", login: false)
 
     run_command("reboot", "mysql")
   end

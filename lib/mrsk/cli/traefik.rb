@@ -15,9 +15,9 @@ class Mrsk::Cli::Traefik < Mrsk::Cli::Base
     mutating do
       on(MRSK.traefik_hosts, in: options[:rolling] ? :sequence : :parallel) do
         execute *MRSK.auditor.record("Rebooted traefik"), verbosity: :debug
+        execute *MRSK.registry.login
         execute *MRSK.traefik.stop, raise_on_non_zero_exit: false
         execute *MRSK.traefik.remove_container
-        execute *MRSK.registry.login
         execute *MRSK.traefik.run, raise_on_non_zero_exit: false
       end
     end

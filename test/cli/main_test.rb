@@ -63,11 +63,11 @@ class CliMainTest < CliTestCase
     Thread.report_on_exception = false
 
     SSHKit::Backend::Abstract.any_instance.stubs(:execute)
-      .with { |*arg| arg[0..1] == [:mkdir, :mrsk_lock] }
-      .raises(RuntimeError, "mkdir: cannot create directory ‘mrsk_lock’: File exists")
+      .with { |*arg| arg[0..1] == [:mkdir, 'mrsk_lock-app'] }
+      .raises(RuntimeError, "mkdir: cannot create directory ‘mrsk_lock-app’: File exists")
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_debug)
-      .with(:stat, :mrsk_lock, ">", "/dev/null", "&&", :cat, "mrsk_lock/details", "|", :base64, "-d")
+      .with(:stat, 'mrsk_lock-app', ">", "/dev/null", "&&", :cat, "mrsk_lock-app/details", "|", :base64, "-d")
 
     assert_raises(Mrsk::Cli::LockError) do
       run_command("deploy")
@@ -78,7 +78,7 @@ class CliMainTest < CliTestCase
     Thread.report_on_exception = false
 
     SSHKit::Backend::Abstract.any_instance.stubs(:execute)
-      .with { |*arg| arg[0..1] == [:mkdir, :mrsk_lock] }
+      .with { |*arg| arg[0..1] == [:mkdir, 'mrsk_lock-app'] }
       .raises(SocketError, "getaddrinfo: nodename nor servname provided, or not known")
 
     assert_raises(SSHKit::Runner::ExecuteError) do

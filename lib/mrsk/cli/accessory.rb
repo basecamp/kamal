@@ -1,6 +1,6 @@
 class Mrsk::Cli::Accessory < Mrsk::Cli::Base
   desc "boot [NAME]", "Boot new accessory service on host (use NAME=all to boot all accessories)"
-  def boot(name)
+  def boot(name, login: true)
     mutating do
       if name == "all"
         MRSK.accessory_names.each { |accessory_name| boot(accessory_name) }
@@ -10,7 +10,7 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
           upload(name)
 
           on(accessory.hosts) do
-            execute *MRSK.registry.login
+            execute *MRSK.registry.login if login
             execute *MRSK.auditor.record("Booted #{name} accessory"), verbosity: :debug
             execute *accessory.run
           end
@@ -53,9 +53,13 @@ class Mrsk::Cli::Accessory < Mrsk::Cli::Base
   def reboot(name)
     mutating do
       with_accessory(name) do |accessory|
+        on(accessory.hosts) do
+          execute *MRSK.registry.login
+        end
+
         stop(name)
         remove_container(name)
-        boot(name)
+        boot(name, login: false)
       end
     end
   end

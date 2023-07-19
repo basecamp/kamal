@@ -123,6 +123,8 @@ This template can safely be checked into git. Then everyone deploying the app ca
 
 If you need separate env variables for different destinations, you can set them with `.env.destination.erb` for the template, which will generate `.env.staging` when run with `mrsk envify -d staging`.
 
+Note: If you utilize biometrics with 1Password you can remove the `session_token` related parts in the example and just call `op read op://Vault/Docker Hub/password -n`.
+
 #### Bitwarden as a secret store
 
 If you are using open source secret store like bitwarden, you can create `.env.erb` as a template which looks up the secrets.
@@ -206,13 +208,13 @@ ssh:
   user: app
 ```
 
-If you are using non-root user, you need to bootstrap your servers manually, before using them with MRSK. On Ubuntu, you'd do:
+If you are using non-root user (`app` as above example), you need to bootstrap your servers manually, before using them with MRSK. On Ubuntu, you'd do:
 
 ```bash
 sudo apt update
 sudo apt upgrade -y
 sudo apt install -y docker.io curl git
-sudo usermod -a -G docker ubuntu
+sudo usermod -a -G docker app
 ```
 
 ### Using a proxy SSH host
@@ -237,6 +239,15 @@ Also if you need specific proxy command to connect to the server:
 ssh:
   proxy_command: aws ssm start-session --target %h --document-name AWS-StartSSHSession --parameters 'portNumber=%p' --region=us-east-1 ## ssh via aws ssm
 ```
+
+### Configuring the SSH log level
+
+```yaml
+ssh:
+  log_level: debug
+```
+
+Valid levels are `debug`, `info`, `warn`, `error` and `fatal` (default).
 
 ### Using env variables
 
@@ -866,7 +877,7 @@ If you wish to remove the entire application, including Traefik, containers, ima
 
 ## Locking
 
-Commands that are unsafe to run concurrently will take a deploy lock while they run. The lock is the `mrsk_lock` directory on the primary server.
+Commands that are unsafe to run concurrently will take a deploy lock while they run. The lock is the `mrsk_lock-<service>` directory on the primary server.
 
 You can check the lock status with:
 
@@ -922,8 +933,8 @@ firing a JSON webhook. These variables include:
 - `MRSK_RECORDED_AT` - UTC timestamp in ISO 8601 format, e.g. `2023-04-14T17:07:31Z`
 - `MRSK_PERFORMER` - the local user performing the command (from `whoami`)
 - `MRSK_SERVICE_VERSION` - an abbreviated service and version for use in messages, e.g. app@150b24f
-- `MRSK_VERSION` - an full version being deployed
-- `MRSK_HOSTS` - a comma separated list of the hosts targeted by the command
+- `MRSK_VERSION` - the full version being deployed
+- `MRSK_HOSTS` - a comma-separated list of the hosts targeted by the command
 - `MRSK_COMMAND` - The command we are running
 - `MRSK_SUBCOMMAND` - optional: The subcommand we are running
 - `MRSK_DESTINATION` - optional: destination, e.g. "staging"
@@ -940,9 +951,8 @@ Used for pre-build checks - e.g. there are no uncommitted changes or that CI has
 3. pre-deploy
 For final checks before deploying, e.g. checking CI completed
 
-3. post-deploy - run after a deploy, redeploy or rollback
-
-This hook is also passed a `MRSK_RUNTIME` env variable.
+3. post-deploy - run after a deploy, redeploy or rollback.
+This hook is also passed a `MRSK_RUNTIME` env variable set to the total seconds the deploy took.
 
 This could be used to broadcast a deployment message, or register the new version with an APM.
 
@@ -953,7 +963,7 @@ The command could look something like:
 curl -q -d content="[My App] ${MRSK_PERFORMER} Rolled back to version ${MRSK_VERSION}" https://3.basecamp.com/XXXXX/integrations/XXXXX/buckets/XXXXX/chats/XXXXX/lines
 ```
 
-That'll post a line like follows to a preconfigured chatbot in Basecamp:
+That'll post a line like the following to a preconfigured chatbot in Basecamp:
 
 ```
 [My App] [dhh] Rolled back to version d264c4e92470ad1bd18590f04466787262f605de
