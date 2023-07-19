@@ -1,24 +1,25 @@
 class Mrsk::Cli::Traefik < Mrsk::Cli::Base
   desc "boot", "Boot Traefik on servers"
-  def boot(login: true)
+  def boot
     mutating do
       on(MRSK.traefik_hosts) do
-        execute *MRSK.registry.login if login
+        execute *MRSK.registry.login
         execute *MRSK.traefik.run, raise_on_non_zero_exit: false
       end
     end
   end
 
   desc "reboot", "Reboot Traefik on servers (stop container, remove container, start new container)"
+  option :rolling, type: :boolean, default: false, desc: "Reboot traefik on hosts in sequence, rather than in parallel"
   def reboot
     mutating do
-      on(MRSK.traefik_hosts) do
+      on(MRSK.traefik_hosts, in: options[:rolling] ? :sequence : :parallel) do
+        execute *MRSK.auditor.record("Rebooted traefik"), verbosity: :debug
         execute *MRSK.registry.login
+        execute *MRSK.traefik.stop, raise_on_non_zero_exit: false
+        execute *MRSK.traefik.remove_container
+        execute *MRSK.traefik.run, raise_on_non_zero_exit: false
       end
-
-      stop
-      remove_container
-      boot(login: false)
     end
   end
 
