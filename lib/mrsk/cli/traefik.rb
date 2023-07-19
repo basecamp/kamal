@@ -9,12 +9,17 @@ class Mrsk::Cli::Traefik < Mrsk::Cli::Base
     end
   end
 
+  method_option :rolling, type: :boolean, default: false
   desc "reboot", "Reboot Traefik on servers (stop container, remove container, start new container)"
   def reboot
     mutating do
-      stop
-      remove_container
-      boot
+      on(MRSK.traefik_hosts, in: options[:rolling] ? :sequence : :parallel) do
+        execute *MRSK.auditor.record("Rebooted traefik"), verbosity: :debug
+        execute *MRSK.traefik.stop, raise_on_non_zero_exit: false
+        execute *MRSK.traefik.remove_container
+        execute *MRSK.registry.login
+        execute *MRSK.traefik.run, raise_on_non_zero_exit: false
+      end
     end
   end
 

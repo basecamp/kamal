@@ -9,11 +9,18 @@ class CliTraefikTest < CliTestCase
   end
 
   test "reboot" do
-    Mrsk::Cli::Traefik.any_instance.expects(:stop)
-    Mrsk::Cli::Traefik.any_instance.expects(:remove_container)
-    Mrsk::Cli::Traefik.any_instance.expects(:boot)
+    run_command("reboot").tap do |output|
+      assert_match "docker container stop traefik", output
+      assert_match "docker container prune --force --filter label=org.opencontainers.image.title=Traefik", output
+      assert_match "docker login", output
+      assert_match "docker run --name traefik --detach --restart unless-stopped --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock --log-opt max-size=\"10m\" #{Mrsk::Commands::Traefik::DEFAULT_IMAGE} --providers.docker --log.level=\"DEBUG\"", output
+    end
+  end
 
-    run_command("reboot")
+  test "reboot --rolling" do
+    run_command("reboot", "--rolling").tap do |output|
+      assert_match "Running docker container prune --force --filter label=org.opencontainers.image.title=Traefik on 1.1.1.1", output.lines[2]
+    end
   end
 
   test "start" do
