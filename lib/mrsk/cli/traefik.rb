@@ -9,7 +9,7 @@ class Mrsk::Cli::Traefik < Mrsk::Cli::Base
     end
   end
 
-  method_option :rolling, type: :boolean, default: false
+  method_option :rolling, type: :boolean, default: false, desc: "Reboot traefik on hosts in sequence, rather than in parallel"
   desc "reboot", "Reboot Traefik on servers (stop container, remove container, start new container)"
   def reboot
     mutating do
