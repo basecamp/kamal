@@ -19,10 +19,6 @@ class Mrsk::Cli::Traefik < Mrsk::Cli::Base
       stop
       remove_container
       boot(login: false)
-
-      on(MRSK.traefik_hosts) do
-        execute *MRSK.traefik.run, raise_on_non_zero_exit: false
-      end
     end
   end
 
