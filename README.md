@@ -633,6 +633,16 @@ traefik:
     entrypoints.otherentrypoint.address: ':9000'
 ```
 
+### Rebooting Traefik
+
+If you make changes to Traefik args or labels, you'll need to reboot with:
+
+`mrsk traefik reboot`
+
+In production, reboot the Traefik containers one by one with a slower but safer approach, using a rolling reboot:
+
+`mrsk traefik reboot --rolling`
+
 ### Configuring build args for new images
 
 Build arguments that aren't secret can also be configured:
