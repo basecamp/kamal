@@ -9,9 +9,10 @@ class CliTraefikTest < CliTestCase
   end
 
   test "reboot" do
+    Mrsk::Commands::Registry.any_instance.expects(:login).twice
     Mrsk::Cli::Traefik.any_instance.expects(:stop)
     Mrsk::Cli::Traefik.any_instance.expects(:remove_container)
-    Mrsk::Cli::Traefik.any_instance.expects(:boot)
+    Mrsk::Cli::Traefik.any_instance.expects(:boot).with(login: false)
 
     run_command("reboot")
   end

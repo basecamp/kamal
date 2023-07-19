@@ -1,9 +1,9 @@
 class Mrsk::Cli::Traefik < Mrsk::Cli::Base
   desc "boot", "Boot Traefik on servers"
-  def boot
+  def boot(login: true)
     mutating do
       on(MRSK.traefik_hosts) do
-        execute *MRSK.registry.login
+        execute *MRSK.registry.login if login
         execute *MRSK.traefik.run, raise_on_non_zero_exit: false
       end
     end
@@ -12,9 +12,13 @@ class Mrsk::Cli::Traefik < Mrsk::Cli::Base
   desc "reboot", "Reboot Traefik on servers (stop container, remove container, start new container)"
   def reboot
     mutating do
+      on(MRSK.traefik_hosts) do
+        execute *MRSK.registry.login
+      end
+
       stop
       remove_container
-      boot
+      boot(login: false)
     end
   end
 
