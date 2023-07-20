@@ -27,6 +27,10 @@ class Mrsk::Configuration::Builder
     !!@options["cache"]
   end
 
+  def depot?
+    !!@options["depot"]
+  end
+
   def args
     @options["args"] || {}
   end
@@ -57,6 +61,10 @@ class Mrsk::Configuration::Builder
 
   def remote_host
     @options["remote"]["host"] if remote?
+  end
+
+  def depot_options
+    @options["depot"]
   end
 
   def cache_from

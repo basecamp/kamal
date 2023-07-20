@@ -7,6 +7,8 @@ class Mrsk::Commands::Builder < Mrsk::Commands::Base
 
   def target
     case
+    when config.builder.depot?
+      depot
     when !config.builder.multiarch? && !config.builder.cached?
       native
     when !config.builder.multiarch? && config.builder.cached?
@@ -18,6 +20,10 @@ class Mrsk::Commands::Builder < Mrsk::Commands::Base
     else
       multiarch
     end
+  end
+
+  def depot
+    @depot ||= Mrsk::Commands::Builder::Depot.new(config)
   end
 
   def native
