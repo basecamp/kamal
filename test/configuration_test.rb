@@ -92,7 +92,6 @@ class ConfigurationTest < ActiveSupport::TestCase
     ENV.delete("VERSION")
 
     @config.expects(:`).with("git rev-parse HEAD").returns("git-version")
-    # @config.expects(:`).with("git status --porcelain").returns("M   file\n")
     Mrsk::Utils.expects(:uncommitted_changes).returns("M   file\n")
     assert_match /^git-version_uncommitted_[0-9a-f]{16}$/, @config.version
   end
