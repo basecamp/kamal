@@ -19,7 +19,13 @@ class Mrsk::Cli::Build < Mrsk::Cli::Base
 
       run_locally do
         begin
-          MRSK.with_verbosity(:debug) { execute *MRSK.builder.push }
+          MRSK.with_verbosity(:debug) do
+            if (uncommitted_changes = Mrsk::Utils.uncommitted_changes).present?
+              say "The following paths have uncommitted changes (check your .gitignore file):\n #{uncommitted_changes}", :yellow
+            end
+
+            execute *MRSK.builder.push
+          end
         rescue SSHKit::Command::Failed => e
           if e.message =~ /(no builder)|(no such file or directory)/
             error "Missing compatible builder, so creating a new one first"

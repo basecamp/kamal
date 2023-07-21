@@ -93,4 +93,8 @@ module Mrsk::Utils
       end
     end
   end
+
+  def uncommitted_changes
+    `git status --porcelain`.strip
+  end
 end

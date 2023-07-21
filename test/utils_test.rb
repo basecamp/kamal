@@ -61,4 +61,14 @@ class UtilsTest < ActiveSupport::TestCase
     assert_equal "\"https://example.com/\\$2\"",
       Mrsk::Utils.escape_shell_value("https://example.com/$2")
   end
+
+  test "uncommitted changes exist" do
+    Mrsk::Utils.expects(:`).with("git status --porcelain").returns("M   file\n")
+    assert_equal "M   file", Mrsk::Utils.uncommitted_changes
+  end
+
+  test "uncommitted changes do not exist" do
+    Mrsk::Utils.expects(:`).with("git status --porcelain").returns("")
+    assert_equal "", Mrsk::Utils.uncommitted_changes
+  end
 end
