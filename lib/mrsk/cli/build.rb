@@ -18,7 +18,7 @@ class Mrsk::Cli::Build < Mrsk::Cli::Base
       run_hook "pre-build"
 
       if (uncommitted_changes = Mrsk::Utils.uncommitted_changes).present?
-        say "The following paths have uncommitted changes (check your .gitignore file):\n #{uncommitted_changes}", :yellow
+        say "The following paths have uncommitted changes:\n #{uncommitted_changes}", :yellow
       end
 
       run_locally do
