@@ -258,15 +258,6 @@ ssh:
   proxy_command: aws ssm start-session --target %h --document-name AWS-StartSSHSession --parameters 'portNumber=%p' --region=us-east-1 ## ssh via aws ssm
 ```
 
-### Configuring the SSH log level
-
-```yaml
-ssh:
-  log_level: debug
-```
-
-Valid levels are `debug`, `info`, `warn`, `error` and `fatal` (default).
-
 ### Using env variables
 
 You can inject env variables into the app containers using `env`:
