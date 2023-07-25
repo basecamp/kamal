@@ -253,7 +253,7 @@ class Mrsk::Configuration
     def git_version
       @git_version ||=
         if system("git rev-parse")
-          uncommitted_suffix = `git status --porcelain`.strip.present? ? "_uncommitted_#{SecureRandom.hex(8)}" : ""
+          uncommitted_suffix = Mrsk::Utils.uncommitted_changes.present? ? "_uncommitted_#{SecureRandom.hex(8)}" : ""
 
           "#{`git rev-parse HEAD`.strip}#{uncommitted_suffix}"
         else

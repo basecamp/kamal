@@ -17,9 +17,15 @@ class Mrsk::Cli::Build < Mrsk::Cli::Base
       verify_local_dependencies
       run_hook "pre-build"
 
+      if (uncommitted_changes = Mrsk::Utils.uncommitted_changes).present?
+        say "The following paths have uncommitted changes:\n #{uncommitted_changes}", :yellow
+      end
+
       run_locally do
         begin
-          MRSK.with_verbosity(:debug) { execute *MRSK.builder.push }
+          MRSK.with_verbosity(:debug) do
+            execute *MRSK.builder.push
+          end
         rescue SSHKit::Command::Failed => e
           if e.message =~ /(no builder)|(no such file or directory)/
             error "Missing compatible builder, so creating a new one first"
