@@ -75,7 +75,15 @@ class Mrsk::Commands::Traefik < Mrsk::Commands::Base
     end
 
     def labels
-      config.traefik["labels"] || []
+      default_labels.merge(config.traefik["labels"] || {})
+    end
+
+    def default_labels
+      if config.destination
+        { "service" => config.service, "destination" => config.destination }
+      else
+        { "service" => config.service }
+      end
     end
 
     def image
