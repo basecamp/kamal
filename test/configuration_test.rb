@@ -207,34 +207,6 @@ class ConfigurationTest < ActiveSupport::TestCase
     end
   end
 
-  test "ssh options" do
-    assert_equal "root", @config.ssh_options[:user]
-
-    config = Mrsk::Configuration.new(@deploy.tap { |c| c.merge!(ssh: { "user" => "app" }) })
-    assert_equal "app", @config.ssh_options[:user]
-  end
-
-  test "ssh options with proxy host" do
-    config = Mrsk::Configuration.new(@deploy.tap { |c| c.merge!(ssh: { "proxy" => "1.2.3.4" }) })
-    assert_equal "root@1.2.3.4", @config.ssh_options[:proxy].jump_proxies
-  end
-
-  test "ssh options with proxy host and user" do
-    config = Mrsk::Configuration.new(@deploy.tap { |c| c.merge!(ssh: { "proxy" => "app@1.2.3.4" }) })
-    assert_equal "app@1.2.3.4", @config.ssh_options[:proxy].jump_proxies
-  end
-
-  test "sshkit max concurrent starts" do
-    config = Mrsk::Configuration.new(@deploy.tap { |c| c.merge!(sshkit: { "max_concurrent_starts" => 50 }) })
-    assert_equal 50, config.sshkit_max_concurrent_starts
-  end
-
-  test "sshkit pool idle timeout" do
-    assert_equal 900, @config.sshkit_pool_idle_timeout
-    config = Mrsk::Configuration.new(@deploy.tap { |c| c.merge!(sshkit: { "pool_idle_timeout" => 600 }) })
-    assert_equal 600, config.sshkit_pool_idle_timeout
-  end
-
   test "volume_args" do
     assert_equal ["--volume", "/local/path:/container/path"], @config.volume_args
   end
@@ -287,6 +259,7 @@ class ConfigurationTest < ActiveSupport::TestCase
         :service_with_version=>"app-missing",
         :env_args=>["-e", "REDIS_URL=\"redis://x/y\""],
         :ssh_options=>{ :user=>"root", :auth_methods=>["publickey"], keepalive: true, keepalive_interval: 30 },
+        :sshkit=>{},
         :volume_args=>["--volume", "/local/path:/container/path"],
         :builder=>{},
         :logging=>["--log-opt", "max-size=\"10m\""],

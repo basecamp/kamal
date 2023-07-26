@@ -56,13 +56,7 @@ class SSHKit::Backend::Abstract
 end
 
 class SSHKit::Backend::Netssh::Configuration
-  DEFAULT_MAX_CONCURRENT_STARTS = 30
-
-  attr_writer :max_concurrent_starts
-
-  def max_concurrent_starts
-    @max_concurrent_starts ||= DEFAULT_MAX_CONCURRENT_STARTS
-  end
+  attr_accessor :max_concurrent_starts
 end
 
 class SSHKit::Backend::Netssh
@@ -72,7 +66,9 @@ class SSHKit::Backend::Netssh
     def configure(&block)
       super &block
       # Create this here to avoid lazy creation by multiple threads
-      @start_semaphore = Concurrent::Semaphore.new(config.max_concurrent_starts)
+      if config.max_concurrent_starts
+        @start_semaphore = Concurrent::Semaphore.new(config.max_concurrent_starts)
+      end
     end
   end
 
@@ -94,7 +90,11 @@ class SSHKit::Backend::Netssh
       end
 
       def start_with_concurrency_limit(*args)
-        self.class.start_semaphore.acquire do
+        if self.class.start_semaphore
+          self.class.start_semaphore.acquire do
+            Net::SSH.start(*args)
+          end
+        else
           Net::SSH.start(*args)
         end
       end
