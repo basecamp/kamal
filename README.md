@@ -990,6 +990,20 @@ That'll post a line like the following to a preconfigured chatbot in Basecamp:
 
 Set `--skip_hooks` to avoid running the hooks.
 
+## SSH connection management
+
+Creating SSH connections concurrently can be an issue when deploying to many servers. By default MRSK will limit concurrent connection starts to 30 at a time.
+
+It also sets a long idle timeout of 900 seconds on connections to prevent re-connection storms after a long idle period, like building an image or waiting for CI.
+
+You can configure both of these settings:
+
+```yaml
+sshkit:
+  max_concurrent_starts: 10
+  pool_idle_timeout: 300
+```
+
 ## Stage of development
 
 This is beta software. Commands may still move around. But we're live in production at [37signals](https://37signals.com).

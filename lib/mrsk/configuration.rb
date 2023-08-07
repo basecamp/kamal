@@ -135,25 +135,12 @@ class Mrsk::Configuration
   end
 
 
-  def ssh_user
-    if raw_config.ssh.present?
-      raw_config.ssh["user"] || "root"
-    else
-      "root"
-    end
+  def ssh
+    Mrsk::Configuration::Ssh.new(config: self)
   end
 
-  def ssh_proxy
-    if raw_config.ssh.present? && raw_config.ssh["proxy"]
-      Net::SSH::Proxy::Jump.new \
-        raw_config.ssh["proxy"].include?("@") ? raw_config.ssh["proxy"] : "root@#{raw_config.ssh["proxy"]}"
-    elsif raw_config.ssh.present? && raw_config.ssh["proxy_command"]
-      Net::SSH::Proxy::Command.new(raw_config.ssh["proxy_command"])
-    end
-  end
-
-  def ssh_options
-    { user: ssh_user, proxy: ssh_proxy, auth_methods: [ "publickey" ] }.compact
+  def sshkit
+    Mrsk::Configuration::Sshkit.new(config: self)
   end
 
 
@@ -185,7 +172,8 @@ class Mrsk::Configuration
       service_with_version: service_with_version,
       env_args: env_args,
       volume_args: volume_args,
-      ssh_options: ssh_options,
+      ssh_options: ssh.options,
+      sshkit: sshkit.to_h,
       builder: builder.to_h,
       accessories: raw_config.accessories,
       logging: logging_args,

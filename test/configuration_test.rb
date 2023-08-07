@@ -207,23 +207,6 @@ class ConfigurationTest < ActiveSupport::TestCase
     end
   end
 
-  test "ssh options" do
-    assert_equal "root", @config.ssh_options[:user]
-
-    config = Mrsk::Configuration.new(@deploy.tap { |c| c.merge!(ssh: { "user" => "app" }) })
-    assert_equal "app", @config.ssh_options[:user]
-  end
-
-  test "ssh options with proxy host" do
-    config = Mrsk::Configuration.new(@deploy.tap { |c| c.merge!(ssh: { "proxy" => "1.2.3.4" }) })
-    assert_equal "root@1.2.3.4", @config.ssh_options[:proxy].jump_proxies
-  end
-
-  test "ssh options with proxy host and user" do
-    config = Mrsk::Configuration.new(@deploy.tap { |c| c.merge!(ssh: { "proxy" => "app@1.2.3.4" }) })
-    assert_equal "app@1.2.3.4", @config.ssh_options[:proxy].jump_proxies
-  end
-
   test "volume_args" do
     assert_equal ["--volume", "/local/path:/container/path"], @config.volume_args
   end
@@ -266,7 +249,23 @@ class ConfigurationTest < ActiveSupport::TestCase
   end
 
   test "to_h" do
-    assert_equal({ :roles=>["web"], :hosts=>["1.1.1.1", "1.1.1.2"], :primary_host=>"1.1.1.1", :version=>"missing", :repository=>"dhh/app", :absolute_image=>"dhh/app:missing", :service_with_version=>"app-missing", :env_args=>["-e", "REDIS_URL=\"redis://x/y\""], :ssh_options=>{:user=>"root", :auth_methods=>["publickey"]}, :volume_args=>["--volume", "/local/path:/container/path"], :builder=>{}, :logging=>["--log-opt", "max-size=\"10m\""], :healthcheck=>{"path"=>"/up", "port"=>3000, "max_attempts" => 7 }}, @config.to_h)
+    expected_config = \
+      { :roles=>["web"],
+        :hosts=>["1.1.1.1", "1.1.1.2"],
+        :primary_host=>"1.1.1.1",
+        :version=>"missing",
+        :repository=>"dhh/app",
+        :absolute_image=>"dhh/app:missing",
+        :service_with_version=>"app-missing",
+        :env_args=>["-e", "REDIS_URL=\"redis://x/y\""],
+        :ssh_options=>{ :user=>"root", :auth_methods=>["publickey"], keepalive: true, keepalive_interval: 30 },
+        :sshkit=>{},
+        :volume_args=>["--volume", "/local/path:/container/path"],
+        :builder=>{},
+        :logging=>["--log-opt", "max-size=\"10m\""],
+        :healthcheck=>{ "path"=>"/up", "port"=>3000, "max_attempts" => 7 }}
+
+    assert_equal expected_config, @config.to_h
   end
 
   test "min version is lower" do

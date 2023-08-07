@@ -4,6 +4,7 @@ PATH
     mrsk (0.15.1)
       activesupport (>= 7.0)
       bcrypt_pbkdf (~> 1.0)
+      concurrent-ruby (~> 1.2)
       dotenv (~> 2.8)
       ed25519 (~> 1.2)
       net-ssh (~> 7.0)
