@@ -1,7 +1,21 @@
 require_relative "integration_test"
 
 class TraefikTest < IntegrationTest
-  test "boot, stop, start, restart, logs, remove" do
+  test "boot, reboot, stop, start, restart, logs, remove" do
+    mrsk :traefik, :boot
+    assert_traefik_running
+
+    mrsk :traefik, :reboot
+    assert_traefik_running
+
+    mrsk :traefik, :boot
+    assert_traefik_running
+
+    # Check booting when booted doesn't raise an error
+    mrsk :traefik, :stop
+    assert_traefik_not_running
+
+    # Check booting when stopped works
     mrsk :traefik, :boot
     assert_traefik_running
 
