@@ -250,12 +250,14 @@ class Mrsk::Configuration
       raw_config.servers.is_a?(Array) ? [ "web" ] : raw_config.servers.keys.sort
     end
 
+    # git version will be part of container hostname, DNS has a limit of 63 characters
+    # so, make this a bit shorter, see: https://en.wikipedia.org/wiki/Subdomain#Overview
     def git_version
       @git_version ||=
         if system("git rev-parse")
-          uncommitted_suffix = Mrsk::Utils.uncommitted_changes.present? ? "_uncommitted_#{SecureRandom.hex(8)}" : ""
+          uncommitted_suffix = Mrsk::Utils.uncommitted_changes.present? ? "_#{SecureRandom.hex(2)}" : ""
 
-          "#{`git rev-parse HEAD`.strip}#{uncommitted_suffix}"
+          "#{`git rev-parse --short HEAD`.strip}#{uncommitted_suffix}"
         else
           raise "Can't use commit hash as version, no git repository found in #{Dir.pwd}"
         end
