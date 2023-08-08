@@ -83,10 +83,6 @@ class Mrsk::Configuration::Builder
 
   private
     def valid?
-      if @options["local"] && !@options["remote"]
-        raise ArgumentError, "You must specify both local and remote builder config for remote multiarch builds"
-      end
-
       if @options["cache"] && @options["cache"]["type"]
         raise ArgumentError, "Invalid cache type: #{@options["cache"]["type"]}" unless ["gha", "registry"].include?(@options["cache"]["type"])
       end
