@@ -83,7 +83,7 @@ class ConfigurationTest < ActiveSupport::TestCase
   test "version from git committed" do
     ENV.delete("VERSION")
 
-    @config.expects(:`).with("git rev-parse HEAD").returns("git-version")
+    @config.expects(:`).with("git rev-parse --short HEAD").returns("git-version")
     Mrsk::Utils.expects(:uncommitted_changes).returns("")
     assert_equal "git-version", @config.version
   end
@@ -91,9 +91,9 @@ class ConfigurationTest < ActiveSupport::TestCase
   test "version from git uncommitted" do
     ENV.delete("VERSION")
 
-    @config.expects(:`).with("git rev-parse HEAD").returns("git-version")
+    @config.expects(:`).with("git rev-parse --short HEAD").returns("git-version")
     Mrsk::Utils.expects(:uncommitted_changes).returns("M   file\n")
-    assert_match /^git-version_uncommitted_[0-9a-f]{16}$/, @config.version
+    assert_match /^git-version_[0-9a-f]{4}$/, @config.version
   end
 
   test "version from env" do
