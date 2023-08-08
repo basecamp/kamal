@@ -112,8 +112,7 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
   def list_versions(*docker_args, statuses: nil)
     pipe \
       docker(:ps, *filter_args(statuses: statuses), *docker_args, "--format", '"{{.Names}}"'),
-      %(grep -oE "\\-[^-]+$"), # Extract SHA from "service-role-dest-SHA"
-      %(cut -c 2-)
+      %(while read line; do echo ${line##{service_role_dest}-}; done) # Extract SHA from "service-role-dest-SHA"
   end
 
   def list_containers
@@ -158,6 +157,10 @@ class Mrsk::Commands::App < Mrsk::Commands::Base
 
     def filter_args(statuses: nil)
       argumentize "--filter", filters(statuses: statuses)
+    end
+
+    def service_role_dest
+      [config.service, role, config.destination].compact.join("-")
     end
 
     def filters(statuses: nil)

@@ -250,17 +250,17 @@ class CommandsAppTest < ActiveSupport::TestCase
 
   test "current_running_version" do
     assert_equal \
-      "docker ps --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --latest --format \"{{.Names}}\" | grep -oE \"\\-[^-]+$\" | cut -c 2-",
+      "docker ps --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --latest --format \"{{.Names}}\" | while read line; do echo ${line#app-web-}; done",
       new_command.current_running_version.join(" ")
   end
 
   test "list_versions" do
     assert_equal \
-      "docker ps --filter label=service=app --filter label=role=web --format \"{{.Names}}\" | grep -oE \"\\-[^-]+$\" | cut -c 2-",
+      "docker ps --filter label=service=app --filter label=role=web --format \"{{.Names}}\" | while read line; do echo ${line#app-web-}; done",
       new_command.list_versions.join(" ")
 
     assert_equal \
-      "docker ps --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --latest --format \"{{.Names}}\" | grep -oE \"\\-[^-]+$\" | cut -c 2-",
+      "docker ps --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --latest --format \"{{.Names}}\" | while read line; do echo ${line#app-web-}; done",
       new_command.list_versions("--latest", statuses: [ :running, :restarting ]).join(" ")
   end
 
