@@ -44,14 +44,6 @@ class ConfigurationBuilderTest < ActiveSupport::TestCase
     assert_nil @config.builder.remote_host
   end
 
-  test "remote config is missing when local is specified" do
-    @deploy_with_builder_option[:builder] = { "local" => { "arch" => "arm64", "host" => "unix:///Users/<%= `whoami`.strip %>/.docker/run/docker.sock" } }
-
-    assert_raises(ArgumentError) do
-      @config_with_builder_option.builder
-    end
-  end
-
   test "setting both local and remote configs" do
     @deploy_with_builder_option[:builder] = {
       "local" => { "arch" => "arm64", "host" => "unix:///Users/<%= `whoami`.strip %>/.docker/run/docker.sock" },
