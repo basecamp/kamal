@@ -98,15 +98,23 @@ class ConfigurationBuilderTest < ActiveSupport::TestCase
   test "setting registry cache" do
     @deploy_with_builder_option[:builder] = { "cache" => { "type" => "registry", "options" => "mode=max,image-manifest=true,oci-mediatypes=true" } }
 
-    assert_equal "type=registry,ref=/dhh/app-build-cache", @config_with_builder_option.builder.cache_from
-    assert_equal "type=registry,mode=max,image-manifest=true,oci-mediatypes=true,ref=/dhh/app-build-cache", @config_with_builder_option.builder.cache_to
+    assert_equal "type=registry,ref=dhh/app-build-cache", @config_with_builder_option.builder.cache_from
+    assert_equal "type=registry,mode=max,image-manifest=true,oci-mediatypes=true,ref=dhh/app-build-cache", @config_with_builder_option.builder.cache_to
+  end
+
+  test "setting registry cache when using a custom registry" do
+    @config_with_builder_option.registry["server"] = "registry.example.com"
+    @deploy_with_builder_option[:builder] = { "cache" => { "type" => "registry", "options" => "mode=max,image-manifest=true,oci-mediatypes=true" } }
+
+    assert_equal "type=registry,ref=registry.example.com/dhh/app-build-cache", @config_with_builder_option.builder.cache_from
+    assert_equal "type=registry,mode=max,image-manifest=true,oci-mediatypes=true,ref=registry.example.com/dhh/app-build-cache", @config_with_builder_option.builder.cache_to
   end
 
   test "setting registry cache with image" do
     @deploy_with_builder_option[:builder] = { "cache" => { "type" => "registry", "image" => "mrsk", "options" => "mode=max" } }
 
-    assert_equal "type=registry,ref=/mrsk", @config_with_builder_option.builder.cache_from
-    assert_equal "type=registry,mode=max,ref=/mrsk", @config_with_builder_option.builder.cache_to
+    assert_equal "type=registry,ref=mrsk", @config_with_builder_option.builder.cache_from
+    assert_equal "type=registry,mode=max,ref=mrsk", @config_with_builder_option.builder.cache_to
   end
 
   test "args" do
