@@ -97,7 +97,7 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
       say "Get most recent version available as an image...", :magenta unless options[:version]
       using_version(version_or_latest) do |version|
         say "Launching interactive command with version #{version} via SSH from new container on #{MRSK.primary_host}...", :magenta
-        run_locally { exec MRSK.app.execute_in_new_container_over_ssh(cmd, host: MRSK.primary_host) }
+        run_locally { exec MRSK.app(role: MRSK.primary_host.roles.first).execute_in_new_container_over_ssh(cmd, host: MRSK.primary_host) }
       end
 
     when options[:reuse]
@@ -249,7 +249,10 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
 
   desc "version", "Show app version currently running on servers"
   def version
-    on(MRSK.hosts) { |host| puts_by_host host, capture_with_info(*MRSK.app.current_running_version).strip }
+    on(MRSK.hosts) do |host|
+      role = MRSK.roles_on(host).first
+      puts_by_host host, capture_with_info(*MRSK.app(role: role).current_running_version).strip
+    end
   end
 
   private
@@ -269,7 +272,10 @@ class Mrsk::Cli::App < Mrsk::Cli::Base
 
     def current_running_version(host: MRSK.primary_host)
       version = nil
-      on(host) { version = capture_with_info(*MRSK.app.current_running_version).strip }
+      on(host) do
+        role = MRSK.roles_on(host).first
+        version = capture_with_info(*MRSK.app(role: role).current_running_version).strip
+      end
       version.presence
     end
 
