@@ -30,6 +30,10 @@ class Mrsk::Commands::Traefik < Mrsk::Commands::Base
     docker :container, :stop, "traefik"
   end
 
+  def start_or_run
+    combine start, run, by: "||"
+  end
+
   def info
     docker :ps, "--filter", "name=^traefik$"
   end

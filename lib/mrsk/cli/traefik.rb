@@ -4,7 +4,7 @@ class Mrsk::Cli::Traefik < Mrsk::Cli::Base
     mutating do
       on(MRSK.traefik_hosts) do
         execute *MRSK.registry.login
-        execute *MRSK.traefik.run, raise_on_non_zero_exit: false
+        execute *MRSK.traefik.start_or_run
       end
     end
   end
@@ -16,9 +16,9 @@ class Mrsk::Cli::Traefik < Mrsk::Cli::Base
       on(MRSK.traefik_hosts, in: options[:rolling] ? :sequence : :parallel) do
         execute *MRSK.auditor.record("Rebooted traefik"), verbosity: :debug
         execute *MRSK.registry.login
-        execute *MRSK.traefik.stop, raise_on_non_zero_exit: false
+        execute *MRSK.traefik.stop
         execute *MRSK.traefik.remove_container
-        execute *MRSK.traefik.run, raise_on_non_zero_exit: false
+        execute *MRSK.traefik.run
       end
     end
   end
@@ -28,7 +28,7 @@ class Mrsk::Cli::Traefik < Mrsk::Cli::Base
     mutating do
       on(MRSK.traefik_hosts) do
         execute *MRSK.auditor.record("Started traefik"), verbosity: :debug
-        execute *MRSK.traefik.start, raise_on_non_zero_exit: false
+        execute *MRSK.traefik.start
       end
     end
   end
@@ -38,7 +38,7 @@ class Mrsk::Cli::Traefik < Mrsk::Cli::Base
     mutating do
       on(MRSK.traefik_hosts) do
         execute *MRSK.auditor.record("Stopped traefik"), verbosity: :debug
-        execute *MRSK.traefik.stop, raise_on_non_zero_exit: false
+        execute *MRSK.traefik.stop
       end
     end
   end
