@@ -172,7 +172,7 @@ class Mrsk::Configuration
       service_with_version: service_with_version,
       env_args: env_args,
       volume_args: volume_args,
-      ssh_options: ssh.options,
+      ssh_options: ssh.to_h,
       sshkit: sshkit.to_h,
       builder: builder.to_h,
       accessories: raw_config.accessories,
