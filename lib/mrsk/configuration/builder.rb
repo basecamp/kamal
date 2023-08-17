@@ -97,11 +97,7 @@ class Mrsk::Configuration::Builder
     end
 
     def cache_image_ref
-      if @server.present?
-        "#{@server}/#{cache_image}"
-      else
-        cache_image
-      end
+      [ @server, cache_image ].compact.join("/")
     end
 
     def cache_from_config_for_gha
