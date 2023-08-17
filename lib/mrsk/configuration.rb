@@ -14,18 +14,19 @@ class Mrsk::Configuration
 
   class << self
     def create_from(config_file:, destination: nil, version: nil)
-      raw_config = load_config_files(config_file, *destination_config_file(config_file, destination))
+      raw_config = load_config_files(config_file, *destination_config_file(config_file, destination), destination: destination)
 
       new raw_config, destination: destination, version: version
     end
 
     private
-      def load_config_files(*files)
-        files.inject({}) { |config, file| config.deep_merge! load_config_file(file) }
+      def load_config_files(*files, destination: nil)
+        files.inject({}) { |config, file| config.deep_merge! load_config_file(file, destination) }
       end
 
-      def load_config_file(file)
+      def load_config_file(file, destination)
         if file.exist?
+          ENV["MRSK_DESTINATION"] = destination.to_s if destination
           YAML.load(ERB.new(IO.read(file)).result).symbolize_keys
         else
           raise "Configuration file not found in #{file}"
