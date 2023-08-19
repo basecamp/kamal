@@ -1,3 +1,5 @@
+require "active_support/core_ext/string/filters"
+
 class Kamal::Commands::Builder < Kamal::Commands::Base
   delegate :create, :remove, :push, :clean, :pull, :info, to: :target
 
