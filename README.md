@@ -708,6 +708,11 @@ accessories:
     image: registry.digitalocean.com/user/otherservice:latest
     host: 1.1.1.5
     port: 44444
+  rabbitmq:
+    image: rabbitmq:latest
+    ports:
+      - 5672
+      - 15672
 ```
 
 The hosts that the accessories will run on can be specified by hosts or roles:
