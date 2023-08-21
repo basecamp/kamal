@@ -20,6 +20,22 @@ class UtilsTest < ActiveSupport::TestCase
     assert_equal [ "-e", "FOO=\"secret\"", "-e", "BAZ=\"qux\"" ], Mrsk::Utils.unredacted(args)
   end
 
+  test "argumentize_env_with_secrets with optional" do
+    ENV.expects(:[]).with("FOO").returns('secret')
+
+    args = Mrsk::Utils.argumentize_env_with_secrets({ "secret" => [ "FOO?" ], "clear" => { BAZ: "qux" } })
+
+    assert_equal [ "-e", "FOO=[REDACTED]", "-e", "BAZ=\"qux\"" ], Mrsk::Utils.redacted(args)
+    assert_equal [ "-e", "FOO=\"secret\"", "-e", "BAZ=\"qux\"" ], Mrsk::Utils.unredacted(args)
+  end
+
+  test "argumentize_env_with_secrets with missing optional" do
+    args = Mrsk::Utils.argumentize_env_with_secrets({ "secret" => [ "FOO?" ], "clear" => { BAZ: "qux" } })
+
+    assert_equal [ "-e", "BAZ=\"qux\"" ], Mrsk::Utils.redacted(args)
+    assert_equal [ "-e", "BAZ=\"qux\"" ], Mrsk::Utils.unredacted(args)
+  end
+
   test "optionize" do
     assert_equal [ "--foo", "\"bar\"", "--baz", "\"qux\"", "--quux" ], \
       Mrsk::Utils.optionize({ foo: "bar", baz: "qux", quux: true })
