@@ -1,3 +1,0 @@
-#!/bin/sh
-echo "Deployed!"
-mkdir -p /tmp/${TEST_ID} && touch /tmp/${TEST_ID}/post-deploy

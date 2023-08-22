@@ -1,3 +1,0 @@
-#!/bin/sh
-echo "About to build and push..."
-mkdir -p /tmp/${TEST_ID} && touch /tmp/${TEST_ID}/pre-build
