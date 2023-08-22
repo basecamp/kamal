@@ -5,8 +5,8 @@ class CliTestCase < ActiveSupport::TestCase
     ENV["VERSION"]             = "999"
     ENV["RAILS_MASTER_KEY"]    = "123"
     ENV["MYSQL_ROOT_PASSWORD"] = "secret123"
-    Object.send(:remove_const, :Kamal)
-    Object.const_set(:Kamal, Kamal::Commander.new)
+    Object.send(:remove_const, :KAMAL)
+    Object.const_set(:KAMAL, Kamal::Commander.new)
   end
 
   teardown do

@@ -4,4 +4,4 @@ module Kamal::Cli
 end
 
 # SSHKit uses instance eval, so we need a global const for ergonomics
-Kamal = Kamal::Commander.new
+KAMAL = Kamal::Commander.new
