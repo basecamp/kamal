@@ -2,8 +2,8 @@ require_relative "cli_test_case"
 
 class CliPruneTest < CliTestCase
   test "all" do
-    Mrsk::Cli::Prune.any_instance.expects(:containers)
-    Mrsk::Cli::Prune.any_instance.expects(:images)
+    Kamal::Cli::Prune.any_instance.expects(:containers)
+    Kamal::Cli::Prune.any_instance.expects(:images)
 
     run_command("all")
   end
@@ -23,6 +23,6 @@ class CliPruneTest < CliTestCase
 
   private
     def run_command(*command)
-      stdouted { Mrsk::Cli::Prune.start([*command, "-c", "test/fixtures/deploy_with_accessories.yml"]) }
+      stdouted { Kamal::Cli::Prune.start([*command, "-c", "test/fixtures/deploy_with_accessories.yml"]) }
     end
 end

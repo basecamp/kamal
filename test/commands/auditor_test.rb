@@ -21,7 +21,7 @@ class CommandsAuditorTest < ActiveSupport::TestCase
       :echo,
       "[#{@recorded_at}] [#{@performer}]",
       "app removed container",
-      ">>", "mrsk-app-audit.log"
+      ">>", "kamal-app-audit.log"
     ], @auditor.record("app removed container")
   end
 
@@ -31,7 +31,7 @@ class CommandsAuditorTest < ActiveSupport::TestCase
         :echo,
         "[#{@recorded_at}] [#{@performer}] [staging]",
         "app removed container",
-        ">>", "mrsk-app-staging-audit.log"
+        ">>", "kamal-app-staging-audit.log"
       ], auditor.record("app removed container")
     end
   end
@@ -42,7 +42,7 @@ class CommandsAuditorTest < ActiveSupport::TestCase
         :echo,
         "[#{@recorded_at}] [#{@performer}] [web]",
         "app removed container",
-        ">>", "mrsk-app-audit.log"
+        ">>", "kamal-app-audit.log"
       ], auditor.record("app removed container")
     end
   end
@@ -52,13 +52,13 @@ class CommandsAuditorTest < ActiveSupport::TestCase
       :echo,
       "[#{@recorded_at}] [#{@performer}] [value]",
       "app removed container",
-      ">>", "mrsk-app-audit.log"
+      ">>", "kamal-app-audit.log"
     ], @auditor.record("app removed container", detail: "value")
   end
 
 
   private
     def new_command(destination: nil, **details)
-      Mrsk::Commands::Auditor.new(Mrsk::Configuration.new(@config, destination: destination, version: "123"), **details)
+      Kamal::Commands::Auditor.new(Kamal::Configuration.new(@config, destination: destination, version: "123"), **details)
     end
 end

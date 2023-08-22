@@ -6,21 +6,21 @@ class MainTest < IntegrationTest
 
     assert_app_is_down
 
-    mrsk :deploy
+    kamal :deploy
     assert_app_is_up version: first_version
     assert_hooks_ran "pre-connect", "pre-build", "pre-deploy", "post-deploy"
 
     second_version = update_app_rev
 
-    mrsk :redeploy
+    kamal :redeploy
     assert_app_is_up version: second_version
     assert_hooks_ran "pre-connect", "pre-build", "pre-deploy", "post-deploy"
 
-    mrsk :rollback, first_version
+    kamal :rollback, first_version
     assert_hooks_ran "pre-connect", "pre-deploy", "post-deploy"
     assert_app_is_up version: first_version
 
-    details = mrsk :details, capture: true
+    details = kamal :details, capture: true
     assert_match /Traefik Host: vm1/, details
     assert_match /Traefik Host: vm2/, details
     assert_match /App Host: vm1/, details
@@ -28,18 +28,18 @@ class MainTest < IntegrationTest
     assert_match /traefik:v2.9/, details
     assert_match /registry:4443\/app:#{first_version}/, details
 
-    audit = mrsk :audit, capture: true
+    audit = kamal :audit, capture: true
     assert_match /Booted app version #{first_version}.*Booted app version #{second_version}.*Booted app version #{first_version}.*/m, audit
   end
 
   test "envify" do
-    mrsk :envify
+    kamal :envify
 
     assert_equal "SECRET_TOKEN=1234", deployer_exec("cat .env", capture: true)
   end
 
   test "config" do
-    config = YAML.load(mrsk(:config, capture: true))
+    config = YAML.load(kamal(:config, capture: true))
     version = latest_app_version
 
     assert_equal [ "web" ], config[:roles]

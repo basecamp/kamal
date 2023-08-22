@@ -2,8 +2,8 @@ require_relative "cli_test_case"
 
 class CliAccessoryTest < CliTestCase
   test "boot" do
-    Mrsk::Cli::Accessory.any_instance.expects(:directories).with("mysql")
-    Mrsk::Cli::Accessory.any_instance.expects(:upload).with("mysql")
+    Kamal::Cli::Accessory.any_instance.expects(:directories).with("mysql")
+    Kamal::Cli::Accessory.any_instance.expects(:upload).with("mysql")
 
     run_command("boot", "mysql").tap do |output|
       assert_match /docker login.*on 1.1.1.3/, output
@@ -12,10 +12,10 @@ class CliAccessoryTest < CliTestCase
   end
 
   test "boot all" do
-    Mrsk::Cli::Accessory.any_instance.expects(:directories).with("mysql")
-    Mrsk::Cli::Accessory.any_instance.expects(:upload).with("mysql")
-    Mrsk::Cli::Accessory.any_instance.expects(:directories).with("redis")
-    Mrsk::Cli::Accessory.any_instance.expects(:upload).with("redis")
+    Kamal::Cli::Accessory.any_instance.expects(:directories).with("mysql")
+    Kamal::Cli::Accessory.any_instance.expects(:upload).with("mysql")
+    Kamal::Cli::Accessory.any_instance.expects(:directories).with("redis")
+    Kamal::Cli::Accessory.any_instance.expects(:upload).with("redis")
 
     run_command("boot", "all").tap do |output|
       assert_match /docker login.*on 1.1.1.3/, output
@@ -40,10 +40,10 @@ class CliAccessoryTest < CliTestCase
   end
 
   test "reboot" do
-    Mrsk::Commands::Registry.any_instance.expects(:login)
-    Mrsk::Cli::Accessory.any_instance.expects(:stop).with("mysql")
-    Mrsk::Cli::Accessory.any_instance.expects(:remove_container).with("mysql")
-    Mrsk::Cli::Accessory.any_instance.expects(:boot).with("mysql", login: false)
+    Kamal::Commands::Registry.any_instance.expects(:login)
+    Kamal::Cli::Accessory.any_instance.expects(:stop).with("mysql")
+    Kamal::Cli::Accessory.any_instance.expects(:remove_container).with("mysql")
+    Kamal::Cli::Accessory.any_instance.expects(:boot).with("mysql", login: false)
 
     run_command("reboot", "mysql")
   end
@@ -57,8 +57,8 @@ class CliAccessoryTest < CliTestCase
   end
 
   test "restart" do
-    Mrsk::Cli::Accessory.any_instance.expects(:stop).with("mysql")
-    Mrsk::Cli::Accessory.any_instance.expects(:start).with("mysql")
+    Kamal::Cli::Accessory.any_instance.expects(:stop).with("mysql")
+    Kamal::Cli::Accessory.any_instance.expects(:start).with("mysql")
 
     run_command("restart", "mysql")
   end
@@ -103,23 +103,23 @@ class CliAccessoryTest < CliTestCase
   end
 
   test "remove with confirmation" do
-    Mrsk::Cli::Accessory.any_instance.expects(:stop).with("mysql")
-    Mrsk::Cli::Accessory.any_instance.expects(:remove_container).with("mysql")
-    Mrsk::Cli::Accessory.any_instance.expects(:remove_image).with("mysql")
-    Mrsk::Cli::Accessory.any_instance.expects(:remove_service_directory).with("mysql")
+    Kamal::Cli::Accessory.any_instance.expects(:stop).with("mysql")
+    Kamal::Cli::Accessory.any_instance.expects(:remove_container).with("mysql")
+    Kamal::Cli::Accessory.any_instance.expects(:remove_image).with("mysql")
+    Kamal::Cli::Accessory.any_instance.expects(:remove_service_directory).with("mysql")
 
     run_command("remove", "mysql", "-y")
   end
 
   test "remove all with confirmation" do
-    Mrsk::Cli::Accessory.any_instance.expects(:stop).with("mysql")
-    Mrsk::Cli::Accessory.any_instance.expects(:remove_container).with("mysql")
-    Mrsk::Cli::Accessory.any_instance.expects(:remove_image).with("mysql")
-    Mrsk::Cli::Accessory.any_instance.expects(:remove_service_directory).with("mysql")
-    Mrsk::Cli::Accessory.any_instance.expects(:stop).with("redis")
-    Mrsk::Cli::Accessory.any_instance.expects(:remove_container).with("redis")
-    Mrsk::Cli::Accessory.any_instance.expects(:remove_image).with("redis")
-    Mrsk::Cli::Accessory.any_instance.expects(:remove_service_directory).with("redis")
+    Kamal::Cli::Accessory.any_instance.expects(:stop).with("mysql")
+    Kamal::Cli::Accessory.any_instance.expects(:remove_container).with("mysql")
+    Kamal::Cli::Accessory.any_instance.expects(:remove_image).with("mysql")
+    Kamal::Cli::Accessory.any_instance.expects(:remove_service_directory).with("mysql")
+    Kamal::Cli::Accessory.any_instance.expects(:stop).with("redis")
+    Kamal::Cli::Accessory.any_instance.expects(:remove_container).with("redis")
+    Kamal::Cli::Accessory.any_instance.expects(:remove_image).with("redis")
+    Kamal::Cli::Accessory.any_instance.expects(:remove_service_directory).with("redis")
 
     run_command("remove", "all", "-y")
   end
@@ -138,6 +138,6 @@ class CliAccessoryTest < CliTestCase
 
   private
     def run_command(*command)
-      stdouted { Mrsk::Cli::Accessory.start([*command, "-c", "test/fixtures/deploy_with_accessories.yml"]) }
+      stdouted { Kamal::Cli::Accessory.start([*command, "-c", "test/fixtures/deploy_with_accessories.yml"]) }
     end
 end

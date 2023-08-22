@@ -6,74 +6,74 @@ class CommanderTest < ActiveSupport::TestCase
   end
 
   test "lazy configuration" do
-    assert_equal Mrsk::Configuration, @mrsk.config.class
+    assert_equal Kamal::Configuration, @kamal.config.class
   end
 
   test "overwriting hosts" do
-    assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3", "1.1.1.4" ], @mrsk.hosts
+    assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3", "1.1.1.4" ], @kamal.hosts
 
-    @mrsk.specific_hosts = [ "1.1.1.1", "1.1.1.2" ]
-    assert_equal [ "1.1.1.1", "1.1.1.2" ], @mrsk.hosts
+    @kamal.specific_hosts = [ "1.1.1.1", "1.1.1.2" ]
+    assert_equal [ "1.1.1.1", "1.1.1.2" ], @kamal.hosts
   end
 
   test "filtering hosts by filtering roles" do
-    assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3", "1.1.1.4" ], @mrsk.hosts
+    assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3", "1.1.1.4" ], @kamal.hosts
 
-    @mrsk.specific_roles = [ "web" ]
-    assert_equal [ "1.1.1.1", "1.1.1.2" ], @mrsk.hosts
+    @kamal.specific_roles = [ "web" ]
+    assert_equal [ "1.1.1.1", "1.1.1.2" ], @kamal.hosts
   end
 
   test "filtering roles" do
-    assert_equal [ "web", "workers" ], @mrsk.roles.map(&:name)
+    assert_equal [ "web", "workers" ], @kamal.roles.map(&:name)
 
-    @mrsk.specific_roles = [ "workers" ]
-    assert_equal [ "workers" ], @mrsk.roles.map(&:name)
+    @kamal.specific_roles = [ "workers" ]
+    assert_equal [ "workers" ], @kamal.roles.map(&:name)
   end
 
   test "filtering roles by filtering hosts" do
-    assert_equal [ "web", "workers" ], @mrsk.roles.map(&:name)
+    assert_equal [ "web", "workers" ], @kamal.roles.map(&:name)
 
-    @mrsk.specific_hosts = [ "1.1.1.3" ]
-    assert_equal [ "workers" ], @mrsk.roles.map(&:name)
+    @kamal.specific_hosts = [ "1.1.1.3" ]
+    assert_equal [ "workers" ], @kamal.roles.map(&:name)
   end
 
   test "overwriting hosts with primary" do
-    assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3", "1.1.1.4" ], @mrsk.hosts
+    assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3", "1.1.1.4" ], @kamal.hosts
 
-    @mrsk.specific_primary!
-    assert_equal [ "1.1.1.1" ], @mrsk.hosts
+    @kamal.specific_primary!
+    assert_equal [ "1.1.1.1" ], @kamal.hosts
   end
 
   test "primary_host with specific hosts via role" do
-    @mrsk.specific_roles = "workers"
-    assert_equal "1.1.1.3", @mrsk.primary_host
+    @kamal.specific_roles = "workers"
+    assert_equal "1.1.1.3", @kamal.primary_host
   end
 
   test "roles_on" do
-    assert_equal [ "web" ], @mrsk.roles_on("1.1.1.1")
-    assert_equal [ "workers" ], @mrsk.roles_on("1.1.1.3")
+    assert_equal [ "web" ], @kamal.roles_on("1.1.1.1")
+    assert_equal [ "workers" ], @kamal.roles_on("1.1.1.3")
   end
 
   test "default group strategy" do
-    assert_empty @mrsk.boot_strategy
+    assert_empty @kamal.boot_strategy
   end
 
   test "specific limit group strategy" do
     configure_with(:deploy_with_boot_strategy)
 
-    assert_equal({ in: :groups, limit: 3, wait: 2 }, @mrsk.boot_strategy)
+    assert_equal({ in: :groups, limit: 3, wait: 2 }, @kamal.boot_strategy)
   end
 
   test "percentage-based group strategy" do
     configure_with(:deploy_with_percentage_boot_strategy)
 
-    assert_equal({ in: :groups, limit: 1, wait: 2 }, @mrsk.boot_strategy)
+    assert_equal({ in: :groups, limit: 1, wait: 2 }, @kamal.boot_strategy)
   end
 
   private
     def configure_with(variant)
-      @mrsk = Mrsk::Commander.new.tap do |mrsk|
-        mrsk.configure config_file: Pathname.new(File.expand_path("fixtures/#{variant}.yml", __dir__))
+      @kamal = Kamal::Commander.new.tap do |kamal|
+        kamal.configure config_file: Pathname.new(File.expand_path("fixtures/#{variant}.yml", __dir__))
       end
     end
 end

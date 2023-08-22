@@ -1,5 +1,5 @@
 version: "3.7"
-name: "mrsk-test"
+name: "kamal-test"
 
 volumes:
   shared:
@@ -20,7 +20,7 @@ services:
     environment:
       - TEST_ID=${TEST_ID}
     volumes:
-      - ../..:/mrsk
+      - ../..:/kamal
       - shared:/shared
       - registry:/registry
       - deployer_bundle:/usr/local/bundle/

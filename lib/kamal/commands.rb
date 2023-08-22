@@ -1,0 +1,2 @@
+module Kamal::Commands
+end

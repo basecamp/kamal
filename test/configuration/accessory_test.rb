@@ -66,7 +66,7 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
       }
     }
 
-    @config = Mrsk::Configuration.new(@deploy)
+    @config = Kamal::Configuration.new(@deploy)
   end
 
   test "service name" do
@@ -87,7 +87,7 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
 
   test "missing host" do
     @deploy[:accessories]["mysql"]["host"] = nil
-    @config = Mrsk::Configuration.new(@deploy)
+    @config = Kamal::Configuration.new(@deploy)
 
     assert_raises(ArgumentError) do
       @config.accessory(:mysql).hosts
@@ -97,7 +97,7 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
   test "setting host, hosts and roles" do
     @deploy[:accessories]["mysql"]["hosts"] = true
     @deploy[:accessories]["mysql"]["roles"] = true
-    @config = Mrsk::Configuration.new(@deploy)
+    @config = Kamal::Configuration.new(@deploy)
 
     exception = assert_raises(ArgumentError) do
       @config.accessory(:mysql).hosts
@@ -114,8 +114,8 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
     ENV["MYSQL_ROOT_PASSWORD"] = "secret123"
 
     @config.accessory(:mysql).env_args.tap do |env_args|
-      assert_equal ["-e", "MYSQL_ROOT_PASSWORD=\"secret123\"", "-e", "MYSQL_ROOT_HOST=\"%\""], Mrsk::Utils.unredacted(env_args)
-      assert_equal ["-e", "MYSQL_ROOT_PASSWORD=[REDACTED]", "-e", "MYSQL_ROOT_HOST=\"%\""], Mrsk::Utils.redacted(env_args)
+      assert_equal ["-e", "MYSQL_ROOT_PASSWORD=\"secret123\"", "-e", "MYSQL_ROOT_HOST=\"%\""], Kamal::Utils.unredacted(env_args)
+      assert_equal ["-e", "MYSQL_ROOT_PASSWORD=[REDACTED]", "-e", "MYSQL_ROOT_HOST=\"%\""], Kamal::Utils.redacted(env_args)
     end
   ensure
     ENV["MYSQL_ROOT_PASSWORD"] = nil
@@ -132,7 +132,7 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
 
   test "dynamic file expansion" do
     @deploy[:accessories]["mysql"]["files"] << "test/fixtures/files/structure.sql.erb:/docker-entrypoint-initdb.d/structure.sql"
-    @config = Mrsk::Configuration.new(@deploy)
+    @config = Kamal::Configuration.new(@deploy)
 
     assert_match "This was dynamically expanded", @config.accessory(:mysql).files.keys[2].read
     assert_match "%", @config.accessory(:mysql).files.keys[2].read

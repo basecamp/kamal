@@ -86,7 +86,7 @@ class CommandsTraefikTest < ActiveSupport::TestCase
     @config.delete(:traefik)
 
     assert_equal \
-      "docker run --name traefik --detach --restart unless-stopped --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock --log-opt max-size=\"10m\" #{Mrsk::Commands::Traefik::DEFAULT_IMAGE} --providers.docker --log.level=\"DEBUG\"",
+      "docker run --name traefik --detach --restart unless-stopped --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock --log-opt max-size=\"10m\" #{Kamal::Commands::Traefik::DEFAULT_IMAGE} --providers.docker --log.level=\"DEBUG\"",
       new_command.run.join(" ")
   end
 
@@ -174,6 +174,6 @@ class CommandsTraefikTest < ActiveSupport::TestCase
 
   private
     def new_command
-      Mrsk::Commands::Traefik.new(Mrsk::Configuration.new(@config, version: "123"))
+      Kamal::Commands::Traefik.new(Kamal::Configuration.new(@config, version: "123"))
     end
 end

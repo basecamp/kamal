@@ -5,8 +5,8 @@ class CliTestCase < ActiveSupport::TestCase
     ENV["VERSION"]             = "999"
     ENV["RAILS_MASTER_KEY"]    = "123"
     ENV["MYSQL_ROOT_PASSWORD"] = "secret123"
-    Object.send(:remove_const, :MRSK)
-    Object.const_set(:MRSK, Mrsk::Commander.new)
+    Object.send(:remove_const, :Kamal)
+    Object.const_set(:Kamal, Kamal::Commander.new)
   end
 
   teardown do
@@ -18,20 +18,20 @@ class CliTestCase < ActiveSupport::TestCase
   private
     def fail_hook(hook)
       @executions = []
-      Mrsk::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
+      Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
 
       SSHKit::Backend::Abstract.any_instance.stubs(:execute)
-        .with { |*args| @executions << args; args != [".mrsk/hooks/#{hook}"] }
+        .with { |*args| @executions << args; args != [".kamal/hooks/#{hook}"] }
       SSHKit::Backend::Abstract.any_instance.stubs(:execute)
-        .with { |*args| args.first == ".mrsk/hooks/#{hook}" }
+        .with { |*args| args.first == ".kamal/hooks/#{hook}" }
         .raises(SSHKit::Command::Failed.new("failed"))
     end
 
     def stub_locking
       SSHKit::Backend::Abstract.any_instance.stubs(:execute)
-        .with { |arg1, arg2| arg1 == :mkdir && arg2 == "mrsk_lock-app" }
+        .with { |arg1, arg2| arg1 == :mkdir && arg2 == "kamal_lock-app" }
       SSHKit::Backend::Abstract.any_instance.stubs(:execute)
-        .with { |arg1, arg2| arg1 == :rm && arg2 == "mrsk_lock-app/details" }
+        .with { |arg1, arg2| arg1 == :rm && arg2 == "kamal_lock-app/details" }
     end
 
     def assert_hook_ran(hook, output, version:, service_version:, hosts:, command:, subcommand: nil, runtime: nil)
@@ -39,17 +39,17 @@ class CliTestCase < ActiveSupport::TestCase
 
       assert_match "Running the #{hook} hook...\n", output
 
-      expected = %r{Running\s/usr/bin/env\s\.mrsk/hooks/#{hook}\sas\s#{performer}@localhost\n\s
+      expected = %r{Running\s/usr/bin/env\s\.kamal/hooks/#{hook}\sas\s#{performer}@localhost\n\s
         DEBUG\s\[[0-9a-f]*\]\sCommand:\s\(\sexport\s
-        MRSK_RECORDED_AT=\"\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ\"\s
-        MRSK_PERFORMER=\"#{performer}\"\s
-        MRSK_VERSION=\"#{version}\"\s
-        MRSK_SERVICE_VERSION=\"#{service_version}\"\s
-        MRSK_HOSTS=\"#{hosts}\"\s
-        MRSK_COMMAND=\"#{command}\"\s
-        #{"MRSK_SUBCOMMAND=\\\"#{subcommand}\\\"\\s" if subcommand}
-        #{"MRSK_RUNTIME=\\\"#{runtime}\\\"\\s" if runtime}
-        ;\s/usr/bin/env\s\.mrsk/hooks/#{hook} }x
+        KAMAL_RECORDED_AT=\"\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ\"\s
+        KAMAL_PERFORMER=\"#{performer}\"\s
+        KAMAL_VERSION=\"#{version}\"\s
+        KAMAL_SERVICE_VERSION=\"#{service_version}\"\s
+        KAMAL_HOSTS=\"#{hosts}\"\s
+        KAMAL_COMMAND=\"#{command}\"\s
+        #{"KAMAL_SUBCOMMAND=\\\"#{subcommand}\\\"\\s" if subcommand}
+        #{"KAMAL_RUNTIME=\\\"#{runtime}\\\"\\s" if runtime}
+        ;\s/usr/bin/env\s\.kamal/hooks/#{hook} }x
 
       assert_match expected, output
     end

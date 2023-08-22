@@ -1,7 +1,7 @@
 #!/bin/bash
 
-install_mrsk() {
-  cd /mrsk && gem build mrsk.gemspec -o /tmp/mrsk.gem && gem install /tmp/mrsk.gem
+install_kamal() {
+  cd /kamal && gem build kamal.gemspec -o /tmp/kamal.gem && gem install /tmp/kamal.gem
 }
 
 # Push the images to a persistent volume on the registry container
@@ -17,7 +17,7 @@ push_image_to_registry_4443() {
   fi
 }
 
-install_mrsk
+install_kamal
 push_image_to_registry_4443 nginx 1-alpine-slim
 push_image_to_registry_4443 traefik v2.9
 push_image_to_registry_4443 busybox 1.36.0
