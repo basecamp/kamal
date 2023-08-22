@@ -1,6 +1,8 @@
 name: Docker
 
 on:
+  workflow_dispatch:
+    
   release:
     types: [created]
     tags:
