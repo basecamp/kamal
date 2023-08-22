@@ -146,6 +146,6 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
 
   private
     def new_command(accessory)
-      Mrsk::Commands::Accessory.new(Mrsk::Configuration.new(@config), name: accessory)
+      Kamal::Commands::Accessory.new(Kamal::Configuration.new(@config), name: accessory)
     end
 end

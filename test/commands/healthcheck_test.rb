@@ -10,7 +10,7 @@ class CommandsHealthcheckTest < ActiveSupport::TestCase
 
   test "run" do
     assert_equal \
-      "docker run --detach --name healthcheck-app-123 --publish 3999:3000 --label service=healthcheck-app -e MRSK_CONTAINER_NAME=\"healthcheck-app\" --health-cmd \"curl -f http://localhost:3000/up || exit 1\" --health-interval \"1s\" dhh/app:123",
+      "docker run --detach --name healthcheck-app-123 --publish 3999:3000 --label service=healthcheck-app -e KAMAL_CONTAINER_NAME=\"healthcheck-app\" --health-cmd \"curl -f http://localhost:3000/up || exit 1\" --health-interval \"1s\" dhh/app:123",
       new_command.run.join(" ")
   end
 
@@ -18,7 +18,7 @@ class CommandsHealthcheckTest < ActiveSupport::TestCase
     @config[:healthcheck] = { "port" => 3001 }
 
     assert_equal \
-      "docker run --detach --name healthcheck-app-123 --publish 3999:3001 --label service=healthcheck-app -e MRSK_CONTAINER_NAME=\"healthcheck-app\" --health-cmd \"curl -f http://localhost:3001/up || exit 1\" --health-interval \"1s\" dhh/app:123",
+      "docker run --detach --name healthcheck-app-123 --publish 3999:3001 --label service=healthcheck-app -e KAMAL_CONTAINER_NAME=\"healthcheck-app\" --health-cmd \"curl -f http://localhost:3001/up || exit 1\" --health-interval \"1s\" dhh/app:123",
       new_command.run.join(" ")
   end
 
@@ -26,7 +26,7 @@ class CommandsHealthcheckTest < ActiveSupport::TestCase
     @destination = "staging"
 
     assert_equal \
-      "docker run --detach --name healthcheck-app-staging-123 --publish 3999:3000 --label service=healthcheck-app-staging -e MRSK_CONTAINER_NAME=\"healthcheck-app-staging\" --health-cmd \"curl -f http://localhost:3000/up || exit 1\" --health-interval \"1s\" dhh/app:123",
+      "docker run --detach --name healthcheck-app-staging-123 --publish 3999:3000 --label service=healthcheck-app-staging -e KAMAL_CONTAINER_NAME=\"healthcheck-app-staging\" --health-cmd \"curl -f http://localhost:3000/up || exit 1\" --health-interval \"1s\" dhh/app:123",
       new_command.run.join(" ")
   end
 
@@ -34,14 +34,14 @@ class CommandsHealthcheckTest < ActiveSupport::TestCase
     @config[:healthcheck] = { "cmd" => "/bin/up" }
 
     assert_equal \
-      "docker run --detach --name healthcheck-app-123 --publish 3999:3000 --label service=healthcheck-app -e MRSK_CONTAINER_NAME=\"healthcheck-app\" --health-cmd \"/bin/up\" --health-interval \"1s\" dhh/app:123",
+      "docker run --detach --name healthcheck-app-123 --publish 3999:3000 --label service=healthcheck-app -e KAMAL_CONTAINER_NAME=\"healthcheck-app\" --health-cmd \"/bin/up\" --health-interval \"1s\" dhh/app:123",
       new_command.run.join(" ")
   end
 
   test "run with custom options" do
     @config[:servers] = { "web" => { "hosts" => [ "1.1.1.1" ], "options" => { "mount" => "somewhere" } } }
     assert_equal \
-      "docker run --detach --name healthcheck-app-123 --publish 3999:3000 --label service=healthcheck-app -e MRSK_CONTAINER_NAME=\"healthcheck-app\" --health-cmd \"curl -f http://localhost:3000/up || exit 1\" --health-interval \"1s\" --mount \"somewhere\" dhh/app:123",
+      "docker run --detach --name healthcheck-app-123 --publish 3999:3000 --label service=healthcheck-app -e KAMAL_CONTAINER_NAME=\"healthcheck-app\" --health-cmd \"curl -f http://localhost:3000/up || exit 1\" --health-interval \"1s\" --mount \"somewhere\" dhh/app:123",
       new_command.run.join(" ")
   end
 
@@ -101,6 +101,6 @@ class CommandsHealthcheckTest < ActiveSupport::TestCase
 
   private
     def new_command
-      Mrsk::Commands::Healthcheck.new(Mrsk::Configuration.new(@config, destination: @destination, version: "123"))
+      Kamal::Commands::Healthcheck.new(Kamal::Configuration.new(@config, destination: @destination, version: "123"))
     end
 end

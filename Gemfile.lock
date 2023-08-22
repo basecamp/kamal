@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    mrsk (0.15.1)
+    kamal (0.15.1)
       activesupport (>= 7.0)
       bcrypt_pbkdf (~> 1.0)
       concurrent-ruby (~> 1.2)
@@ -100,7 +100,7 @@ PLATFORMS
 DEPENDENCIES
   debug
   mocha
-  mrsk!
+  kamal!
   railties
 
 BUNDLED WITH

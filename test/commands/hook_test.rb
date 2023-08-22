@@ -17,12 +17,12 @@ class CommandsHookTest < ActiveSupport::TestCase
 
   test "run" do
     assert_equal [
-      ".mrsk/hooks/foo",
+      ".kamal/hooks/foo",
       { env: {
-        "MRSK_RECORDED_AT" => @recorded_at,
-        "MRSK_PERFORMER" => @performer,
-        "MRSK_VERSION" => "123",
-        "MRSK_SERVICE_VERSION" => "app@123" } }
+        "KAMAL_RECORDED_AT" => @recorded_at,
+        "KAMAL_PERFORMER" => @performer,
+        "KAMAL_VERSION" => "123",
+        "KAMAL_SERVICE_VERSION" => "app@123" } }
     ], new_command.run("foo")
   end
 
@@ -30,15 +30,15 @@ class CommandsHookTest < ActiveSupport::TestCase
     assert_equal [
       "custom/hooks/path/foo",
       { env: {
-        "MRSK_RECORDED_AT" => @recorded_at,
-        "MRSK_PERFORMER" => @performer,
-        "MRSK_VERSION" => "123",
-        "MRSK_SERVICE_VERSION" => "app@123" } }
+        "KAMAL_RECORDED_AT" => @recorded_at,
+        "KAMAL_PERFORMER" => @performer,
+        "KAMAL_VERSION" => "123",
+        "KAMAL_SERVICE_VERSION" => "app@123" } }
     ], new_command(hooks_path: "custom/hooks/path").run("foo")
   end
 
   private
     def new_command(**extra_config)
-      Mrsk::Commands::Hook.new(Mrsk::Configuration.new(@config.merge(**extra_config), version: "123"))
+      Kamal::Commands::Hook.new(Kamal::Configuration.new(@config.merge(**extra_config), version: "123"))
     end
 end

@@ -2,20 +2,20 @@ require_relative "cli_test_case"
 
 class CliBuildTest < CliTestCase
   test "deliver" do
-    Mrsk::Cli::Build.any_instance.expects(:push)
-    Mrsk::Cli::Build.any_instance.expects(:pull)
+    Kamal::Cli::Build.any_instance.expects(:push)
+    Kamal::Cli::Build.any_instance.expects(:pull)
 
     run_command("deliver")
   end
 
   test "push" do
-    Mrsk::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
+    Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
     hook_variables = { version: 999, service_version: "app@999", hosts: "1.1.1.1,1.1.1.2,1.1.1.3,1.1.1.4", command: "build", subcommand: "push" }
 
     run_command("push").tap do |output|
       assert_hook_ran "pre-build", output, **hook_variables
       assert_match /docker --version && docker buildx version/, output
-      assert_match /docker buildx build --push --platform linux\/amd64,linux\/arm64 --builder mrsk-app-multiarch -t dhh\/app:999 -t dhh\/app:latest --label service="app" --file Dockerfile \. as .*@localhost/, output
+      assert_match /docker buildx build --push --platform linux\/amd64,linux\/arm64 --builder kamal-app-multiarch -t dhh\/app:999 -t dhh\/app:latest --label service="app" --file Dockerfile \. as .*@localhost/, output
     end
   end
 
@@ -41,14 +41,14 @@ class CliBuildTest < CliTestCase
       .with(:docker, "--version", "&&", :docker, :buildx, "version")
       .raises(SSHKit::Command::Failed.new("no buildx"))
 
-    Mrsk::Commands::Builder.any_instance.stubs(:native_and_local?).returns(false)
-    assert_raises(Mrsk::Cli::Build::BuildError) { run_command("push") }
+    Kamal::Commands::Builder.any_instance.stubs(:native_and_local?).returns(false)
+    assert_raises(Kamal::Cli::Build::BuildError) { run_command("push") }
   end
 
   test "push pre-build hook failure" do
     fail_hook("pre-build")
 
-    assert_raises(Mrsk::Cli::HookError) { run_command("push") }
+    assert_raises(Kamal::Cli::HookError) { run_command("push") }
 
     assert @executions.none? { |args| args[0..2] == [:docker, :buildx, :build] }
   end
@@ -62,7 +62,7 @@ class CliBuildTest < CliTestCase
 
   test "create" do
     run_command("create").tap do |output|
-      assert_match /docker buildx create --use --name mrsk-app-multiarch/, output
+      assert_match /docker buildx create --use --name kamal-app-multiarch/, output
     end
   end
 
@@ -79,7 +79,7 @@ class CliBuildTest < CliTestCase
 
   test "remove" do
     run_command("remove").tap do |output|
-      assert_match /docker buildx rm mrsk-app-multiarch/, output
+      assert_match /docker buildx rm kamal-app-multiarch/, output
     end
   end
 
@@ -96,7 +96,7 @@ class CliBuildTest < CliTestCase
 
   private
     def run_command(*command)
-      stdouted { Mrsk::Cli::Build.start([*command, "-c", "test/fixtures/deploy_with_accessories.yml"]) }
+      stdouted { Kamal::Cli::Build.start([*command, "-c", "test/fixtures/deploy_with_accessories.yml"]) }
     end
 
     def stub_dependency_checks

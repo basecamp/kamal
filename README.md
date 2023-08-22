@@ -1,28 +1,28 @@
-# MRSK
+# Kamal
 
-MRSK deploys web apps anywhere from bare metal to cloud VMs using Docker with zero downtime. It uses the dynamic reverse-proxy Traefik to hold requests while the new application container is started and the old one is stopped. It works seamlessly across multiple hosts, using SSHKit to execute commands. It was built for Rails applications, but works with any type of web app that can be containerized with Docker.
+Kamal deploys web apps anywhere from bare metal to cloud VMs using Docker with zero downtime. It uses the dynamic reverse-proxy Traefik to hold requests while the new application container is started and the old one is stopped. It works seamlessly across multiple hosts, using SSHKit to execute commands. It was built for Rails applications, but works with any type of web app that can be containerized with Docker.
 
 Watch the screencast: https://www.youtube.com/watch?v=LL1cV2FXZ5I
 
 Join us on Discord: https://discord.gg/YgHVT7GCXS
 
-Ask questions: https://github.com/mrsked/mrsk/discussions
+Ask questions: https://github.com/basecamp/kamal/discussions
 
 ## Installation
 
-If you have a Ruby environment available, you can install MRSK globally with:
+If you have a Ruby environment available, you can install Kamal globally with:
 
 ```sh
-gem install mrsk
+gem install kamal
 ```
 
 ...otherwise, you can run a dockerized version via an alias (add this to your .bashrc or similar to simplify re-use):
 
 ```sh
-alias mrsk='docker run --rm -it -v $HOME/.ssh:/root/.ssh -v /var/run/docker.sock:/var/run/docker.sock -v ${PWD}/:/workdir  ghcr.io/mrsked/mrsk'
+alias kamal='docker run --rm -it -v $HOME/.ssh:/root/.ssh -v /var/run/docker.sock:/var/run/docker.sock -v ${PWD}/:/workdir  ghcr.io/basecamp/kamal'
 ```
 
-Then, inside your app directory, run `mrsk init` (or `mrsk init --bundle` within Rails 7+ apps where you want a bin/mrsk binstub). Now edit the new file `config/deploy.yml`. It could look as simple as this:
+Then, inside your app directory, run `kamal init` (or `kamal init --bundle` within Rails 7+ apps where you want a bin/kamal binstub). Now edit the new file `config/deploy.yml`. It could look as simple as this:
 
 ```yaml
 service: hey
@@ -33,18 +33,18 @@ servers:
 registry:
   username: registry-user-name
   password:
-    - MRSK_REGISTRY_PASSWORD
+    - KAMAL_REGISTRY_PASSWORD
 env:
   secret:
     - RAILS_MASTER_KEY
 ```
 
-Then edit your `.env` file to add your registry password as `MRSK_REGISTRY_PASSWORD` (and your `RAILS_MASTER_KEY` for production with a Rails app).
+Then edit your `.env` file to add your registry password as `KAMAL_REGISTRY_PASSWORD` (and your `RAILS_MASTER_KEY` for production with a Rails app).
 
 Now you're ready to deploy to the servers:
 
 ```
-mrsk setup
+kamal setup
 ```
 
 This will:
@@ -61,64 +61,64 @@ This will:
 10. Stop the old container running the previous version of the app.
 11. Prune unused images and stopped containers to ensure servers don't fill up.
 
-Voila! All the servers are now serving the app on port 80. If you're just running a single server, you're ready to go. If you're running multiple servers, you need to put a load balancer in front of them. For subsequent deploys, or if your servers already have Docker and curl installed, you can just run `mrsk deploy`.
+Voila! All the servers are now serving the app on port 80. If you're just running a single server, you're ready to go. If you're running multiple servers, you need to put a load balancer in front of them. For subsequent deploys, or if your servers already have Docker and curl installed, you can just run `kamal deploy`.
 
 ### Rails <7 usage
 
-MRSK is not needed to be in your application Gemfile to be used. However, if you want to guarantee specific MRSK version in your CI/CD workflows, you can create a separate Gemfile for MRSK, for example, `gemfile/mrsk.gemfile`:
+Kamal is not needed to be in your application Gemfile to be used. However, if you want to guarantee specific Kamal version in your CI/CD workflows, you can create a separate Gemfile for Kamal, for example, `gemfile/kamal.gemfile`:
 
 ```ruby
 source 'https://rubygems.org'
 
-gem 'mrsk', '~> 0.14'
+gem 'kamal', '~> 0.14'
 ```
 
-Bundle with `BUNDLE_GEMFILE=gemfiles/mrsk.gemfile bundle`.
+Bundle with `BUNDLE_GEMFILE=gemfiles/kamal.gemfile bundle`.
 
-After this MRSK can be used for deployment:
+After this Kamal can be used for deployment:
 
 ```sh
-BUNDLE_GEMFILE=gemfiles/mrsk.gemfile bundle exec mrsk deploy
+BUNDLE_GEMFILE=gemfiles/kamal.gemfile bundle exec kamal deploy
 ```
 
 ## Vision
 
 In the past decade+, there's been an explosion in commercial offerings that make deploying web apps easier. Heroku kicked it off with an incredible offering that stayed ahead of the competition seemingly forever. These days we have excellent alternatives like Fly.io and Render. And hosted Kubernetes is making things easier too on AWS, GCP, Digital Ocean, and elsewhere. But these are all offerings that have you renting computers in the cloud at a premium. If you want to run on your own hardware, or even just have a clear migration path to do so in the future, you need to carefully consider how locked in you get to these commercial platforms. Preferably before the bills swallow your business whole!
 
-MRSK seeks to bring the advance in ergonomics pioneered by these commercial offerings to deploying web apps anywhere. Whether that's low-cost cloud options without the managed-service markup from the likes of Digital Ocean, Hetzner, OVH, etc., or it's your own colocated bare metal. To MRSK, it's all the same. Feed the config file a list of IP addresses with vanilla Ubuntu servers that have seen no prep beyond an added SSH key, and you'll be running in literally minutes.
+Kamal seeks to bring the advance in ergonomics pioneered by these commercial offerings to deploying web apps anywhere. Whether that's low-cost cloud options without the managed-service markup from the likes of Digital Ocean, Hetzner, OVH, etc., or it's your own colocated bare metal. To Kamal, it's all the same. Feed the config file a list of IP addresses with vanilla Ubuntu servers that have seen no prep beyond an added SSH key, and you'll be running in literally minutes.
 
 This approach gives you enormous portability. You can have your web app deployed on several clouds at ease like this. Or you can buy the baseline with your own hardware, then deploy to a cloud before a big seasonal spike to get more capacity. When you're not locked into a single provider from a tooling perspective, there are a lot of compelling options available.
 
-Ultimately, MRSK is meant to compress the complexity of going to production using open source tooling that isn't tied to any commercial offering. Not to zero, mind you. You're probably still better off with a fully managed service if basic Linux or Docker is still difficult, but as soon as those concepts are familiar, you'll be ready to go with MRSK.
+Ultimately, Kamal is meant to compress the complexity of going to production using open source tooling that isn't tied to any commercial offering. Not to zero, mind you. You're probably still better off with a fully managed service if basic Linux or Docker is still difficult, but as soon as those concepts are familiar, you'll be ready to go with Kamal.
 
 ## Why not just run Capistrano, Kubernetes or Docker Swarm?
 
-MRSK basically is Capistrano for Containers, without the need to carefully prepare servers in advance. No need to ensure that the servers have just the right version of Ruby or other dependencies you need. That all lives in the Docker image now. You can boot a brand new Ubuntu (or whatever) server, add it to the list of servers in MRSK, and it'll be auto-provisioned with Docker, and run right away. Docker's layer caching also speeds up deployments with less mucking about on the server. And the images built for MRSK can be used for CI or later introspection.
+Kamal basically is Capistrano for Containers, without the need to carefully prepare servers in advance. No need to ensure that the servers have just the right version of Ruby or other dependencies you need. That all lives in the Docker image now. You can boot a brand new Ubuntu (or whatever) server, add it to the list of servers in Kamal, and it'll be auto-provisioned with Docker, and run right away. Docker's layer caching also speeds up deployments with less mucking about on the server. And the images built for Kamal can be used for CI or later introspection.
 
-Kubernetes is a beast. Running it yourself on your own hardware is not for the faint of heart. It's a fine option if you want to run on someone else's platform, either transparently [like Render](https://thenewstack.io/render-cloud-deployment-with-less-engineering/) or explicitly on AWS/GCP, but if you'd like the freedom to move between cloud and your own hardware, or even mix the two, MRSK is much simpler. You can see everything that's going on, it's just basic Docker commands being called.
+Kubernetes is a beast. Running it yourself on your own hardware is not for the faint of heart. It's a fine option if you want to run on someone else's platform, either transparently [like Render](https://thenewstack.io/render-cloud-deployment-with-less-engineering/) or explicitly on AWS/GCP, but if you'd like the freedom to move between cloud and your own hardware, or even mix the two, Kamal is much simpler. You can see everything that's going on, it's just basic Docker commands being called.
 
-Docker Swarm is much simpler than Kubernetes, but it's still built on the same declarative model that uses state reconciliation. MRSK is intentionally designed around imperative commands, like Capistrano.
+Docker Swarm is much simpler than Kubernetes, but it's still built on the same declarative model that uses state reconciliation. Kamal is intentionally designed around imperative commands, like Capistrano.
 
 Ultimately, there are a myriad of ways to deploy web apps, but this is the toolkit we're using at [37signals](https://37signals.com) to bring [HEY](https://www.hey.com) [home from the cloud](https://world.hey.com/dhh/why-we-re-leaving-the-cloud-654b47e0) without losing the advantages of modern containerization tooling.
 
-## Running MRSK from Docker
+## Running Kamal from Docker
 
-MRSK is packaged up in a Docker container similarly to [rails/docked](https://github.com/rails/docked). This will allow you to run MRSK (from your application directory) without having to install any dependencies other than Docker. Add the following alias to your profile configuration to make working with the container more convenient:
+Kamal is packaged up in a Docker container similarly to [rails/docked](https://github.com/rails/docked). This will allow you to run Kamal (from your application directory) without having to install any dependencies other than Docker. Add the following alias to your profile configuration to make working with the container more convenient:
 
 ```bash
-alias mrsk="docker run -it --rm -v '${PWD}:/workdir' -v '${SSH_AUTH_SOCK}:/ssh-agent' -v /var/run/docker.sock:/var/run/docker.sock -e 'SSH_AUTH_SOCK=/ssh-agent' ghcr.io/mrsked/mrsk:latest"
+alias kamal="docker run -it --rm -v '${PWD}:/workdir' -v '${SSH_AUTH_SOCK}:/ssh-agent' -v /var/run/docker.sock:/var/run/docker.sock -e 'SSH_AUTH_SOCK=/ssh-agent' ghcr.io/basecamp/kamal:latest"
 ```
 
-Since MRSK uses SSH to establish a remote connection, it will need access to your SSH agent. The above command uses a volume mount to make it available inside the container and configures the SSH agent inside the container to make use of it.
+Since Kamal uses SSH to establish a remote connection, it will need access to your SSH agent. The above command uses a volume mount to make it available inside the container and configures the SSH agent inside the container to make use of it.
 
 ## Configuration
 
 ### Using .env file to load required environment variables
 
-MRSK uses [dotenv](https://github.com/bkeepers/dotenv) to automatically load environment variables set in the `.env` file present in the application root. This file can be used to set variables like `MRSK_REGISTRY_PASSWORD` or database passwords. But for this reason you must ensure that .env files are not checked into Git or included in your Dockerfile! The format is just key-value like:
+Kamal uses [dotenv](https://github.com/bkeepers/dotenv) to automatically load environment variables set in the `.env` file present in the application root. This file can be used to set variables like `KAMAL_REGISTRY_PASSWORD` or database passwords. But for this reason you must ensure that .env files are not checked into Git or included in your Dockerfile! The format is just key-value like:
 
 ```bash
-MRSK_REGISTRY_PASSWORD=pw
+KAMAL_REGISTRY_PASSWORD=pw
 DB_PASSWORD=secret123
 ```
 
@@ -129,17 +129,17 @@ DB_PASSWORD=secret123
 If you're using a centralized secret store, like 1Password, you can create `.env.erb` as a template which looks up the secrets. Example of a .env.erb file:
 
 ```erb
-<% if (session_token = `op signin --account my-one-password-account --raw`.strip) != "" %># Generated by mrsk envify
+<% if (session_token = `op signin --account my-one-password-account --raw`.strip) != "" %># Generated by kamal envify
 GITHUB_TOKEN=<%= `gh config get -h github.com oauth_token`.strip %>
-MRSK_REGISTRY_PASSWORD=<%= `op read "op://Vault/Docker Hub/password" -n --session  #{session_token}` %>
+KAMAL_REGISTRY_PASSWORD=<%= `op read "op://Vault/Docker Hub/password" -n --session  #{session_token}` %>
 RAILS_MASTER_KEY=<%= `op read "op://Vault/My App/RAILS_MASTER_SECRET" -n --session #{session_token}` %>
 MYSQL_ROOT_PASSWORD=<%= `op read "op://Vault/My App/MYSQL_ROOT_PASSWORD" -n --session #{session_token}` %>
 <% else raise ArgumentError, "Session token missing" end %>
 ```
 
-This template can safely be checked into git. Then everyone deploying the app can run `mrsk envify` when they setup the app for the first time or passwords change to get the correct `.env` file.
+This template can safely be checked into git. Then everyone deploying the app can run `kamal envify` when they setup the app for the first time or passwords change to get the correct `.env` file.
 
-If you need separate env variables for different destinations, you can set them with `.env.destination.erb` for the template, which will generate `.env.staging` when run with `mrsk envify -d staging`.
+If you need separate env variables for different destinations, you can set them with `.env.destination.erb` for the template, which will generate `.env.staging` when run with `kamal envify -d staging`.
 
 Note: If you utilize biometrics with 1Password you can remove the `session_token` related parts in the example and just call `op read op://Vault/Docker Hub/password -n`.
 
@@ -181,12 +181,12 @@ and extract the `id` of `SOME_SECRET` from the `json` above and use in the `erb`
 Example `.env.erb` file:
 
 ```erb
-<% if (session_token=`bw unlock --raw`.strip) != "" %># Generated by mrsk envify
+<% if (session_token=`bw unlock --raw`.strip) != "" %># Generated by kamal envify
 SOME_SECRET=<%= `bw get notes 123123123-1232-4224-222f-234234234234 --session #{session_token}` %>
 <% else raise ArgumentError, "session_token token missing" end %>
 ```
 
-Then everyone deploying the app can run `mrsk envify` and mrsk will generate `.env`
+Then everyone deploying the app can run `kamal envify` and kamal will generate `.env`
 
 
 ### Using another registry than Docker Hub
@@ -202,7 +202,7 @@ registry:
     - DOCKER_REGISTRY_TOKEN
 ```
 
-A reference to secret `DOCKER_REGISTRY_TOKEN` will look for `ENV["DOCKER_REGISTRY_TOKEN"]` on the machine running MRSK.
+A reference to secret `DOCKER_REGISTRY_TOKEN` will look for `ENV["DOCKER_REGISTRY_TOKEN"]` on the machine running Kamal.
 
 #### Using AWS ECR as the container registry
 
@@ -226,7 +226,7 @@ ssh:
   user: app
 ```
 
-If you are using non-root user (`app` as above example), you need to bootstrap your servers manually, before using them with MRSK. On Ubuntu, you'd do:
+If you are using non-root user (`app` as above example), you need to bootstrap your servers manually, before using them with Kamal. On Ubuntu, you'd do:
 
 ```bash
 sudo apt update
@@ -290,11 +290,11 @@ env:
     - REDIS_PASSWORD
 ```
 
-The list of secret env variables will be expanded at run time from your local machine. So a reference to a secret `DATABASE_PASSWORD` will look for `ENV["DATABASE_PASSWORD"]` on the machine running MRSK. Just like with build secrets.
+The list of secret env variables will be expanded at run time from your local machine. So a reference to a secret `DATABASE_PASSWORD` will look for `ENV["DATABASE_PASSWORD"]` on the machine running Kamal. Just like with build secrets.
 
 If the referenced secret ENVs are missing, the configuration will be halted with a `KeyError` exception.
 
-Note: Marking an ENV as secret currently only redacts its value in the output for MRSK. The ENV is still injected in the clear into the container at runtime.
+Note: Marking an ENV as secret currently only redacts its value in the output for Kamal. The ENV is still injected in the clear into the container at runtime.
 
 ### Using volumes
 
@@ -305,11 +305,11 @@ volumes:
   - "/local/path:/container/path"
 ```
 
-### MRSK env variables
+### Kamal env variables
 
 The following env variables are set when your container runs:
 
-`MRSK_CONTAINER_NAME` : this contains the current container name and version
+`KAMAL_CONTAINER_NAME` : this contains the current container name and version
 
 ### Using different roles for servers
 
@@ -410,7 +410,7 @@ That'll start the job containers with `docker run ... --cap-add --cpu-count 4 ..
 
 ### Setting a minimum version
 
-You can set the minimum MRSK version with:
+You can set the minimum Kamal version with:
 
 ```yaml
 minimum_version: 0.13.3
@@ -443,7 +443,7 @@ stop_wait_time: 30
 
 ### Using remote builder for native multi-arch
 
-If you're developing on ARM64 (like Apple Silicon), but you want to deploy on AMD64 (x86 64-bit), you can use multi-architecture images. By default, MRSK will setup a local buildx configuration that does this through QEMU emulation. But this can be quite slow, especially on the first build.
+If you're developing on ARM64 (like Apple Silicon), but you want to deploy on AMD64 (x86 64-bit), you can use multi-architecture images. By default, Kamal will setup a local buildx configuration that does this through QEMU emulation. But this can be quite slow, especially on the first build.
 
 If you want to speed up this process by using a remote AMD64 host to natively build the AMD64 part of the image, while natively building the ARM64 part locally, you can do so using builder options:
 
@@ -479,7 +479,7 @@ builder:
   multiarch: false
 ```
 
-This is also a good option if you're running MRSK from a CI server that shares architecture with the deployment servers.
+This is also a good option if you're running Kamal from a CI server that shares architecture with the deployment servers.
 
 ### Using a different Dockerfile or context when building
 
@@ -503,7 +503,7 @@ builder:
 
 ### Using multistage builder cache
 
-Docker multistage build cache can singlehandedly speed up your builds by a lot. Currently MRSK only supports using the GHA cache or the Registry cache:
+Docker multistage build cache can singlehandedly speed up your builds by a lot. Currently Kamal only supports using the GHA cache or the Registry cache:
 
 ```yaml
 # Using GHA cache
@@ -579,7 +579,7 @@ traefik:
 
 ### Traefik version, upgrades, and custom images
 
-MRSK runs the traefik:v2.9 image to track Traefik 2.9.x releases.
+Kamal runs the traefik:v2.9 image to track Traefik 2.9.x releases.
 
 To pin Traefik to a specific version or an image published to your registry,
 specify `image`:
@@ -593,7 +593,7 @@ This is useful for downgrading Traefik if there's an unexpected breaking
 change in a minor version release, upgrading Traefik to test forthcoming
 releases, or running your own Traefik-derived image.
 
-MRSK has not been tested for compatibility with Traefik 3 betas. Please do!
+Kamal has not been tested for compatibility with Traefik 3 betas. Please do!
 
 ### Traefik container configuration
 
@@ -654,11 +654,11 @@ traefik:
 
 If you make changes to Traefik args or labels, you'll need to reboot with:
 
-`mrsk traefik reboot`
+`kamal traefik reboot`
 
 In production, reboot the Traefik containers one by one with a slower but safer approach, using a rolling reboot:
 
-`mrsk traefik reboot --rolling`
+`kamal traefik reboot --rolling`
 
 ### Configuring build args for new images
 
@@ -679,7 +679,7 @@ FROM ruby:$RUBY_VERSION-slim as base
 
 ### Using accessories for database, cache, search services
 
-You can manage your accessory services via MRSK as well. Accessories are long-lived services that your app depends on. They are not updated when you deploy.
+You can manage your accessory services via Kamal as well. Accessories are long-lived services that your app depends on. They are not updated when you deploy.
 
 ```yaml
 accessories:
@@ -728,7 +728,7 @@ The hosts that the accessories will run on can be specified by hosts or roles:
       - jobs
 ```
 
-Now run `mrsk accessory start mysql` to start the MySQL server on 1.1.1.3. See `mrsk accessory` for all the commands possible.
+Now run `kamal accessory start mysql` to start the MySQL server on 1.1.1.3. See `kamal accessory` for all the commands possible.
 
 Accessory images must be public or tagged in your private registry.
 
@@ -749,7 +749,7 @@ This assumes the Cron settings are stored in `config/crontab`.
 
 ### Healthcheck
 
-MRSK uses Docker healthchecks to check the health of your application during deployment. Traefik uses this same healthcheck status to determine when a container is ready to receive traffic.
+Kamal uses Docker healthchecks to check the health of your application during deployment. Traefik uses this same healthcheck status to determine when a container is ready to receive traffic.
 
 The healthcheck defaults to testing the HTTP response to the path `/up` on port 3000, up to 7 times. You can tailor this behaviour with the `healthcheck` setting:
 
@@ -761,7 +761,7 @@ healthcheck:
   interval: 20s
 ```
 
-This will ensure your application is configured with a traefik label for the healthcheck against `/healthz` and that the pre-deploy healthcheck that MRSK performs is done against the same path on port 4000.
+This will ensure your application is configured with a traefik label for the healthcheck against `/healthz` and that the pre-deploy healthcheck that Kamal performs is done against the same path on port 4000.
 
 You can also specify a custom healthcheck command, which is useful for non-HTTP services:
 
@@ -795,7 +795,7 @@ You can execute one-off commands on the servers:
 
 ```bash
 # Runs command on all servers
-mrsk app exec 'ruby -v'
+kamal app exec 'ruby -v'
 App Host: 192.168.0.1
 ruby 3.1.3p185 (2022-11-24 revision 1a6b16756e) [x86_64-linux]
 
@@ -803,12 +803,12 @@ App Host: 192.168.0.2
 ruby 3.1.3p185 (2022-11-24 revision 1a6b16756e) [x86_64-linux]
 
 # Runs command on primary server
-mrsk app exec --primary 'cat .ruby-version'
+kamal app exec --primary 'cat .ruby-version'
 App Host: 192.168.0.1
 3.1.3
 
 # Runs Rails command on all servers
-mrsk app exec 'bin/rails about'
+kamal app exec 'bin/rails about'
 App Host: 192.168.0.1
 About your application's environment
 Rails version             7.1.0.alpha
@@ -834,7 +834,7 @@ Database adapter          sqlite3
 Database schema version   20221231233303
 
 # Run Rails runner on primary server
-mrsk app exec -p 'bin/rails runner "puts Rails.application.config.time_zone"'
+kamal app exec -p 'bin/rails runner "puts Rails.application.config.time_zone"'
 UTC
 ```
 
@@ -844,19 +844,19 @@ You can run interactive commands, like a Rails console or a bash session, on a s
 
 ```bash
 # Starts a bash session in a new container made from the most recent app image
-mrsk app exec -i bash
+kamal app exec -i bash
 
 # Starts a bash session in the currently running container for the app
-mrsk app exec -i --reuse bash
+kamal app exec -i --reuse bash
 
 # Starts a Rails console in a new container made from the most recent app image
-mrsk app exec -i 'bin/rails console'
+kamal app exec -i 'bin/rails console'
 ```
 
 
 ### Running details to show state of containers
 
-You can see the state of your servers by running `mrsk details`:
+You can see the state of your servers by running `kamal details`:
 
 ```
 Traefik Host: 192.168.0.1
@@ -876,11 +876,11 @@ CONTAINER ID   IMAGE                                                            
 1d3c91ed1f55   registry.digitalocean.com/user/app:6ef8a6a84c525b123c5245345a8483f86d05a123   "/rails/bin/docker-e…"   13 minutes ago   Up 13 minutes   3000/tcp   chat-6ef8a6a84c525b123c5245345a8483f86d05a123
 ```
 
-You can also see just info for app containers with `mrsk app details` or just for Traefik with `mrsk traefik details`.
+You can also see just info for app containers with `kamal app details` or just for Traefik with `kamal traefik details`.
 
 ### Running rollback to fix a bad deploy
 
-If you've discovered a bad deploy, you can quickly rollback by reactivating the old, paused container image. You can see what old containers are available for rollback by running `mrsk app containers`. It'll give you a presentation similar to `mrsk app details`, but include all the old containers as well. Showing something like this:
+If you've discovered a bad deploy, you can quickly rollback by reactivating the old, paused container image. You can see what old containers are available for rollback by running `kamal app containers`. It'll give you a presentation similar to `kamal app details`, but include all the old containers as well. Showing something like this:
 
 ```
 App Host: 192.168.0.1
@@ -894,22 +894,22 @@ badb1aa51db4   registry.digitalocean.com/user/app:6ef8a6a84c525b123c5245345a8483
 6f170d1172ae   registry.digitalocean.com/user/app:e5d9d7c2b898289dfbc5f7f1334140d984eedae4   "/rails/bin/docker-e…"   31 minutes ago   Exited (1) 27 minutes ago              chat-e5d9d7c2b898289dfbc5f7f1334140d984eedae4
 ```
 
-From the example above, we can see that `e5d9d7c2b898289dfbc5f7f1334140d984eedae4` was the last version, so it's available as a rollback target. We can perform this rollback by running `mrsk rollback e5d9d7c2b898289dfbc5f7f1334140d984eedae4`. That'll stop `6ef8a6a84c525b123c5245345a8483f86d05a123` and then start `e5d9d7c2b898289dfbc5f7f1334140d984eedae4`. Because the old container is still available, this is very quick. Nothing to download from the registry.
+From the example above, we can see that `e5d9d7c2b898289dfbc5f7f1334140d984eedae4` was the last version, so it's available as a rollback target. We can perform this rollback by running `kamal rollback e5d9d7c2b898289dfbc5f7f1334140d984eedae4`. That'll stop `6ef8a6a84c525b123c5245345a8483f86d05a123` and then start `e5d9d7c2b898289dfbc5f7f1334140d984eedae4`. Because the old container is still available, this is very quick. Nothing to download from the registry.
 
-Note that by default old containers are pruned after 3 days when you run `mrsk deploy`.
+Note that by default old containers are pruned after 3 days when you run `kamal deploy`.
 
 ### Running removal to clean up servers
 
-If you wish to remove the entire application, including Traefik, containers, images, and registry session, you can run `mrsk remove`. This will leave the servers clean.
+If you wish to remove the entire application, including Traefik, containers, images, and registry session, you can run `kamal remove`. This will leave the servers clean.
 
 ## Locking
 
-Commands that are unsafe to run concurrently will take a deploy lock while they run. The lock is the `mrsk_lock-<service>` directory on the primary server.
+Commands that are unsafe to run concurrently will take a deploy lock while they run. The lock is the `kamal_lock-<service>` directory on the primary server.
 
 You can check the lock status with:
 
 ```
-mrsk lock status
+kamal lock status
 
 Locked by: AN Other at 2023-03-24 09:49:03 UTC
 Version: 77f45c0686811c68989d6576748475a60bf53fc2
@@ -919,18 +919,18 @@ Message: Automatic deploy lock
 You can also manually acquire and release the lock
 
 ```
-mrsk lock acquire -m "Doing maintenance"
+kamal lock acquire -m "Doing maintenance"
 ```
 
 ```
-mrsk lock release
+kamal lock release
 ```
 
 ## Rolling deployments
 
 When deploying to large numbers of hosts, you might prefer not to restart your services on every host at the same time.
 
-MRSK's default is to boot new containers on all hosts in parallel. But you can control this by configuring `boot/limit` and `boot/wait` as options:
+Kamal's default is to boot new containers on all hosts in parallel. But you can control this by configuring `boot/limit` and `boot/wait` as options:
 
 ```yaml
 service: myservice
@@ -940,32 +940,32 @@ boot:
   wait: 2
 ```
 
-When `limit` is specified, containers will be booted on, at most, `limit` hosts at once. MRSK will pause for `wait` seconds between batches.
+When `limit` is specified, containers will be booted on, at most, `limit` hosts at once. Kamal will pause for `wait` seconds between batches.
 
-These settings only apply when booting containers (using `mrsk deploy`, or `mrsk app boot`). For other commands, MRSK continues to run commands in parallel across all hosts.
+These settings only apply when booting containers (using `kamal deploy`, or `kamal app boot`). For other commands, Kamal continues to run commands in parallel across all hosts.
 
 ## Hooks
 
 You can run custom scripts at specific points with hooks.
 
-Hooks should be stored in the .mrsk/hooks folder. Running mrsk init will build that folder and add some sample scripts.
+Hooks should be stored in the .kamal/hooks folder. Running kamal init will build that folder and add some sample scripts.
 
 You can change their location by setting `hooks_path` in the configuration file.
 
 If the script returns a non-zero exit code the command will be aborted.
 
-`MRSK_*` environment variables are available to the hooks command for
+`KAMAL_*` environment variables are available to the hooks command for
 fine-grained audit reporting, e.g. for triggering deployment reports or
 firing a JSON webhook. These variables include:
-- `MRSK_RECORDED_AT` - UTC timestamp in ISO 8601 format, e.g. `2023-04-14T17:07:31Z`
-- `MRSK_PERFORMER` - the local user performing the command (from `whoami`)
-- `MRSK_SERVICE_VERSION` - an abbreviated service and version for use in messages, e.g. app@150b24f
-- `MRSK_VERSION` - the full version being deployed
-- `MRSK_HOSTS` - a comma-separated list of the hosts targeted by the command
-- `MRSK_COMMAND` - The command we are running
-- `MRSK_SUBCOMMAND` - optional: The subcommand we are running
-- `MRSK_DESTINATION` - optional: destination, e.g. "staging"
-- `MRSK_ROLE` - optional: role targeted, e.g. "web"
+- `KAMAL_RECORDED_AT` - UTC timestamp in ISO 8601 format, e.g. `2023-04-14T17:07:31Z`
+- `KAMAL_PERFORMER` - the local user performing the command (from `whoami`)
+- `KAMAL_SERVICE_VERSION` - an abbreviated service and version for use in messages, e.g. app@150b24f
+- `KAMAL_VERSION` - the full version being deployed
+- `KAMAL_HOSTS` - a comma-separated list of the hosts targeted by the command
+- `KAMAL_COMMAND` - The command we are running
+- `KAMAL_SUBCOMMAND` - optional: The subcommand we are running
+- `KAMAL_DESTINATION` - optional: destination, e.g. "staging"
+- `KAMAL_ROLE` - optional: role targeted, e.g. "web"
 
 There are four hooks:
 
@@ -979,7 +979,7 @@ Used for pre-build checks - e.g. there are no uncommitted changes or that CI has
 For final checks before deploying, e.g. checking CI completed
 
 3. post-deploy - run after a deploy, redeploy or rollback.
-This hook is also passed a `MRSK_RUNTIME` env variable set to the total seconds the deploy took.
+This hook is also passed a `KAMAL_RUNTIME` env variable set to the total seconds the deploy took.
 
 This could be used to broadcast a deployment message, or register the new version with an APM.
 
@@ -987,7 +987,7 @@ The command could look something like:
 
 ```bash
 #!/usr/bin/env bash
-curl -q -d content="[My App] ${MRSK_PERFORMER} Rolled back to version ${MRSK_VERSION}" https://3.basecamp.com/XXXXX/integrations/XXXXX/buckets/XXXXX/chats/XXXXX/lines
+curl -q -d content="[My App] ${KAMAL_PERFORMER} Rolled back to version ${KAMAL_VERSION}" https://3.basecamp.com/XXXXX/integrations/XXXXX/buckets/XXXXX/chats/XXXXX/lines
 ```
 
 That'll post a line like the following to a preconfigured chatbot in Basecamp:
@@ -1000,7 +1000,7 @@ Set `--skip_hooks` to avoid running the hooks.
 
 ## SSH connection management
 
-Creating SSH connections concurrently can be an issue when deploying to many servers. By default MRSK will limit concurrent connection starts to 30 at a time.
+Creating SSH connections concurrently can be an issue when deploying to many servers. By default Kamal will limit concurrent connection starts to 30 at a time.
 
 It also sets a long idle timeout of 900 seconds on connections to prevent re-connection storms after a long idle period, like building an image or waiting for CI.
 
@@ -1018,4 +1018,4 @@ This is beta software. Commands may still move around. But we're live in product
 
 ## License
 
-MRSK is released under the [MIT License](https://opensource.org/licenses/MIT).
+Kamal is released under the [MIT License](https://opensource.org/licenses/MIT).

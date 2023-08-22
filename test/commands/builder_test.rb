@@ -9,7 +9,7 @@ class CommandsBuilderTest < ActiveSupport::TestCase
     builder = new_builder_command(builder: { "cache" => { "type" => "gha" }})
     assert_equal "multiarch", builder.name
     assert_equal \
-      "docker buildx build --push --platform linux/amd64,linux/arm64 --builder mrsk-app-multiarch -t dhh/app:123 -t dhh/app:latest --cache-to type=gha --cache-from type=gha --label service=\"app\" --file Dockerfile .",
+      "docker buildx build --push --platform linux/amd64,linux/arm64 --builder kamal-app-multiarch -t dhh/app:123 -t dhh/app:latest --cache-to type=gha --cache-from type=gha --label service=\"app\" --file Dockerfile .",
       builder.push.join(" ")
   end
 
@@ -33,7 +33,7 @@ class CommandsBuilderTest < ActiveSupport::TestCase
     builder = new_builder_command(builder: { "local" => { }, "remote" => { }, "cache" => { "type" => "gha" } })
     assert_equal "multiarch/remote", builder.name
     assert_equal \
-      "docker buildx build --push --platform linux/amd64,linux/arm64 --builder mrsk-app-multiarch-remote -t dhh/app:123 -t dhh/app:latest --cache-to type=gha --cache-from type=gha --label service=\"app\" --file Dockerfile .",
+      "docker buildx build --push --platform linux/amd64,linux/arm64 --builder kamal-app-multiarch-remote -t dhh/app:123 -t dhh/app:latest --cache-to type=gha --cache-from type=gha --label service=\"app\" --file Dockerfile .",
       builder.push.join(" ")
   end
 
@@ -41,7 +41,7 @@ class CommandsBuilderTest < ActiveSupport::TestCase
     builder = new_builder_command(builder: { "remote" => { "arch" => "amd64" }, "cache" => { "type" => "gha" } })
     assert_equal "native/remote", builder.name
     assert_equal \
-      "docker buildx build --push --platform linux/amd64 --builder mrsk-app-native-remote -t dhh/app:123 -t dhh/app:latest --cache-to type=gha --cache-from type=gha --label service=\"app\" --file Dockerfile .",
+      "docker buildx build --push --platform linux/amd64 --builder kamal-app-native-remote -t dhh/app:123 -t dhh/app:latest --cache-to type=gha --cache-from type=gha --label service=\"app\" --file Dockerfile .",
       builder.push.join(" ")
   end
 
@@ -70,7 +70,7 @@ class CommandsBuilderTest < ActiveSupport::TestCase
   test "missing dockerfile" do
     Pathname.any_instance.expects(:exist?).returns(false).once
     builder = new_builder_command(builder: { "dockerfile" => "Dockerfile.xyz" })
-    assert_raises(Mrsk::Commands::Builder::Base::BuilderError) do
+    assert_raises(Kamal::Commands::Builder::Base::BuilderError) do
       builder.target.build_options.join(" ")
     end
   end
@@ -78,7 +78,7 @@ class CommandsBuilderTest < ActiveSupport::TestCase
   test "build context" do
     builder = new_builder_command(builder: { "context" => ".." })
     assert_equal \
-      "docker buildx build --push --platform linux/amd64,linux/arm64 --builder mrsk-app-multiarch -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile ..",
+      "docker buildx build --push --platform linux/amd64,linux/arm64 --builder kamal-app-multiarch -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile ..",
       builder.push.join(" ")
   end
 
@@ -92,7 +92,7 @@ class CommandsBuilderTest < ActiveSupport::TestCase
   test "multiarch push with build args" do
     builder = new_builder_command(builder: { "args" => { "a" => 1, "b" => 2 } })
     assert_equal \
-      "docker buildx build --push --platform linux/amd64,linux/arm64 --builder mrsk-app-multiarch -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --build-arg a=\"1\" --build-arg b=\"2\" --file Dockerfile .",
+      "docker buildx build --push --platform linux/amd64,linux/arm64 --builder kamal-app-multiarch -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --build-arg a=\"1\" --build-arg b=\"2\" --file Dockerfile .",
       builder.push.join(" ")
   end
 
@@ -105,6 +105,6 @@ class CommandsBuilderTest < ActiveSupport::TestCase
 
   private
     def new_builder_command(additional_config = {})
-      Mrsk::Commands::Builder.new(Mrsk::Configuration.new(@config.merge(additional_config), version: "123"))
+      Kamal::Commands::Builder.new(Kamal::Configuration.new(@config.merge(additional_config), version: "123"))
     end
 end

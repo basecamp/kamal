@@ -4,17 +4,17 @@ class CliTraefikTest < CliTestCase
   test "boot" do
     run_command("boot").tap do |output|
       assert_match "docker login", output
-      assert_match "docker run --name traefik --detach --restart unless-stopped --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock --log-opt max-size=\"10m\" #{Mrsk::Commands::Traefik::DEFAULT_IMAGE} --providers.docker --log.level=\"DEBUG\"", output
+      assert_match "docker run --name traefik --detach --restart unless-stopped --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock --log-opt max-size=\"10m\" #{Kamal::Commands::Traefik::DEFAULT_IMAGE} --providers.docker --log.level=\"DEBUG\"", output
     end
   end
 
   test "reboot" do
-    Mrsk::Commands::Registry.any_instance.expects(:login).twice
+    Kamal::Commands::Registry.any_instance.expects(:login).twice
 
     run_command("reboot").tap do |output|
       assert_match "docker container stop traefik", output
       assert_match "docker container prune --force --filter label=org.opencontainers.image.title=Traefik", output
-      assert_match "docker run --name traefik --detach --restart unless-stopped --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock --log-opt max-size=\"10m\" #{Mrsk::Commands::Traefik::DEFAULT_IMAGE} --providers.docker --log.level=\"DEBUG\"", output
+      assert_match "docker run --name traefik --detach --restart unless-stopped --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock --log-opt max-size=\"10m\" #{Kamal::Commands::Traefik::DEFAULT_IMAGE} --providers.docker --log.level=\"DEBUG\"", output
     end
   end
 
@@ -37,8 +37,8 @@ class CliTraefikTest < CliTestCase
   end
 
   test "restart" do
-    Mrsk::Cli::Traefik.any_instance.expects(:stop)
-    Mrsk::Cli::Traefik.any_instance.expects(:start)
+    Kamal::Cli::Traefik.any_instance.expects(:stop)
+    Kamal::Cli::Traefik.any_instance.expects(:start)
 
     run_command("restart")
   end
@@ -68,9 +68,9 @@ class CliTraefikTest < CliTestCase
   end
 
   test "remove" do
-    Mrsk::Cli::Traefik.any_instance.expects(:stop)
-    Mrsk::Cli::Traefik.any_instance.expects(:remove_container)
-    Mrsk::Cli::Traefik.any_instance.expects(:remove_image)
+    Kamal::Cli::Traefik.any_instance.expects(:stop)
+    Kamal::Cli::Traefik.any_instance.expects(:remove_container)
+    Kamal::Cli::Traefik.any_instance.expects(:remove_image)
 
     run_command("remove")
   end
@@ -89,6 +89,6 @@ class CliTraefikTest < CliTestCase
 
   private
     def run_command(*command)
-      stdouted { Mrsk::Cli::Traefik.start([*command, "-c", "test/fixtures/deploy_with_accessories.yml"]) }
+      stdouted { Kamal::Cli::Traefik.start([*command, "-c", "test/fixtures/deploy_with_accessories.yml"]) }
     end
 end
