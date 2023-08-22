@@ -37,5 +37,5 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            ghcr.io/mrsked/mrsk:latest
-            ghcr.io/mrsked/mrsk:${{ github.ref_name }}
+            ghcr.io/basecamp/kamal:latest
+            ghcr.io/basecamp/kamal:${{ github.ref_name }}
