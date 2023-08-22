@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    kamal (0.15.1)
+    kamal (0.16.0)
       activesupport (>= 7.0)
       bcrypt_pbkdf (~> 1.0)
       concurrent-ruby (~> 1.2)
@@ -99,8 +99,8 @@ PLATFORMS
 
 DEPENDENCIES
   debug
-  mocha
   kamal!
+  mocha
   railties
 
 BUNDLED WITH
