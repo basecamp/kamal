@@ -5,10 +5,9 @@ Gem::Specification.new do |spec|
   spec.version     = Kamal::VERSION
   spec.authors     = [ "David Heinemeier Hansson" ]
   spec.email       = "dhh@hey.com"
-  spec.homepage    = "https://github.com/rails/kamal"
+  spec.homepage    = "https://github.com/basecamp/kamal"
   spec.summary     = "Deploy web apps in containers to servers running Docker with zero downtime."
   spec.license     = "MIT"
-
   spec.files = Dir["lib/**/*", "MIT-LICENSE", "README.md"]
   spec.executables = %w[ kamal ]
 
