@@ -18,7 +18,8 @@ class CliPruneTest < CliTestCase
   test "containers" do
     run_command("containers").tap do |output|
       assert_match /docker ps -q -a --filter label=service=app --filter status=created --filter status=exited --filter status=dead | tail -n +6 | while read container_id; do docker rm $container_id; done on 1.1.1.\d/, output
-    end
+      assert_match /docker container prune --force --filter label=service=healthcheck-app on 1.1.1.\d/, output
+     end
   end
 
   private
