@@ -97,7 +97,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
       say "Get most recent version available as an image...", :magenta unless options[:version]
       using_version(version_or_latest) do |version|
         say "Launching interactive command with version #{version} via SSH from new container on #{KAMAL.primary_host}...", :magenta
-        run_locally { exec KAMAL.app(role: KAMAL.primary_host.roles.first).execute_in_new_container_over_ssh(cmd, host: KAMAL.primary_host) }
+        run_locally { exec KAMAL.app(role: KAMAL.roles_on(KAMAL.primary_host).first).execute_in_new_container_over_ssh(cmd, host: KAMAL.primary_host) }
       end
 
     when options[:reuse]
