@@ -11,7 +11,7 @@ class Kamal::Commands::Traefik < Kamal::Commands::Base
     docker :run, "--name traefik",
       "--detach",
       "--restart", "unless-stopped",
-      "--publish", port,
+      *publish_args,
       "--volume", "/var/run/docker.sock:/var/run/docker.sock",
       *env_args,
       *config.logging_args,
@@ -64,6 +64,10 @@ class Kamal::Commands::Traefik < Kamal::Commands::Base
   end
 
   private
+    def publish_args
+      argumentize "--publish", port unless config.traefik["publish"] == false
+    end
+
     def label_args
       argumentize "--label", labels
     end
