@@ -48,7 +48,7 @@ class CommandsTraefikTest < ActiveSupport::TestCase
       "docker run --name traefik --detach --restart unless-stopped --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock --log-opt max-size=\"10m\" #{@image} --providers.docker --log.level=\"DEBUG\" --accesslog.format=\"json\" --api.insecure --metrics.prometheus.buckets=\"0.1,0.3,1.2,5.0\"",
       new_command.run.join(" ")
 
-    @config[:traefik]["options"] = {"volume" => %w[./letsencrypt/acme.json:/letsencrypt/acme.json] }
+    @config[:traefik]["options"] = {"volumes" => %w[./letsencrypt/acme.json:/letsencrypt/acme.json] }
     assert_equal \
       "docker run --name traefik --detach --restart unless-stopped --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock --log-opt max-size=\"10m\" --volume \"./letsencrypt/acme.json:/letsencrypt/acme.json\" #{@image} --providers.docker --log.level=\"DEBUG\" --accesslog.format=\"json\" --api.insecure --metrics.prometheus.buckets=\"0.1,0.3,1.2,5.0\"",
       new_command.run.join(" ")
@@ -59,7 +59,7 @@ class CommandsTraefikTest < ActiveSupport::TestCase
       "docker run --name traefik --detach --restart unless-stopped --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock --log-opt max-size=\"10m\" #{@image} --providers.docker --log.level=\"DEBUG\" --accesslog.format=\"json\" --api.insecure --metrics.prometheus.buckets=\"0.1,0.3,1.2,5.0\"",
       new_command.run.join(" ")
 
-    @config[:traefik]["options"] = {"volume" => %w[./letsencrypt/acme.json:/letsencrypt/acme.json], "publish" => %w[8080:8080], "memory" => "512m"}
+    @config[:traefik]["options"] = {"volumes" => %w[./letsencrypt/acme.json:/letsencrypt/acme.json], "publish" => %w[8080:8080], "memory" => "512m"}
     assert_equal \
       "docker run --name traefik --detach --restart unless-stopped --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock --log-opt max-size=\"10m\" --volume \"./letsencrypt/acme.json:/letsencrypt/acme.json\" --publish \"8080:8080\" --memory \"512m\" #{@image} --providers.docker --log.level=\"DEBUG\" --accesslog.format=\"json\" --api.insecure --metrics.prometheus.buckets=\"0.1,0.3,1.2,5.0\"",
       new_command.run.join(" ")

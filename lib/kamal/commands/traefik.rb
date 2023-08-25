@@ -16,6 +16,7 @@ class Kamal::Commands::Traefik < Kamal::Commands::Base
       *env_args,
       *config.logging_args,
       *label_args,
+      *volume_args,
       *docker_options_args,
       image,
       "--providers.docker",
@@ -72,6 +73,10 @@ class Kamal::Commands::Traefik < Kamal::Commands::Base
       argumentize "--label", labels
     end
 
+    def volume_args
+      argumentize "--volume", volumes
+    end
+
     def env_args
       env_config = config.traefik["env"] || {}
 
@@ -84,6 +89,10 @@ class Kamal::Commands::Traefik < Kamal::Commands::Base
 
     def labels
       config.traefik["labels"] || []
+    end
+
+    def volumes
+      config.traefik["volumes"] || []
     end
 
     def image
