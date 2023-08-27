@@ -12,7 +12,7 @@ module BinLoader
         exec bin, *ARGV
       end
 
-      # If we exhaust the search there is no executable, run bundled mrsk from original cwd
+      # If we exhaust the search there is no executable, run bundled kamal from original cwd
       Dir.chdir(original_cwd) && return if Pathname.new(Dir.pwd).root?
 
       # Otherwise keep moving upwards in search of an executable.
