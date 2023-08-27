@@ -3,6 +3,9 @@
 # Prevent failures from being reported twice.
 Thread.report_on_exception = false
 
+require 'bin_loader'
+BinLoader::load_local_bin # local bin is found this command exists so the rest of the code doesn't run
+
 require "kamal"
 
 begin
