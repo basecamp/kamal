@@ -30,6 +30,6 @@ class CliServerTest < CliTestCase
 
   private
     def run_command(*command)
-      stdouted { Mrsk::Cli::Server.start([*command, "-c", "test/fixtures/deploy_with_accessories.yml"]) }
+      stdouted { Kamal::Cli::Server.start([*command, "-c", "test/fixtures/deploy_with_accessories.yml"]) }
     end
 end

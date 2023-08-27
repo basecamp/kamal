@@ -10,7 +10,7 @@ class CommandsRegistryTest < ActiveSupport::TestCase
       },
       servers: [ "1.1.1.1" ]
     }
-    @registry = Mrsk::Commands::Registry.new Mrsk::Configuration.new(@config)
+    @registry = Kamal::Commands::Registry.new Kamal::Configuration.new(@config)
   end
 
   test "registry login" do
@@ -20,25 +20,25 @@ class CommandsRegistryTest < ActiveSupport::TestCase
   end
 
   test "registry login with ENV password" do
-    ENV["MRSK_REGISTRY_PASSWORD"] = "more-secret"
-    @config[:registry]["password"] = [ "MRSK_REGISTRY_PASSWORD" ]
+    ENV["KAMAL_REGISTRY_PASSWORD"] = "more-secret"
+    @config[:registry]["password"] = [ "KAMAL_REGISTRY_PASSWORD" ]
 
     assert_equal \
       "docker login hub.docker.com -u dhh -p more-secret",
       @registry.login.join(" ")
   ensure
-    ENV.delete("MRSK_REGISTRY_PASSWORD")
+    ENV.delete("KAMAL_REGISTRY_PASSWORD")
   end
 
   test "registry login with ENV username" do
-    ENV["MRSK_REGISTRY_USERNAME"] = "also-secret"
-    @config[:registry]["username"] = [ "MRSK_REGISTRY_USERNAME" ]
+    ENV["KAMAL_REGISTRY_USERNAME"] = "also-secret"
+    @config[:registry]["username"] = [ "KAMAL_REGISTRY_USERNAME" ]
 
     assert_equal \
       "docker login hub.docker.com -u also-secret -p secret",
       @registry.login.join(" ")
   ensure
-    ENV.delete("MRSK_REGISTRY_USERNAME")
+    ENV.delete("KAMAL_REGISTRY_USERNAME")
   end
 
   test "registry logout" do

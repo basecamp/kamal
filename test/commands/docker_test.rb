@@ -5,7 +5,7 @@ class CommandsDockerTest < ActiveSupport::TestCase
     @config = {
       service: "app", image: "dhh/app", registry: { "username" => "dhh", "password" => "secret" }, servers: [ "1.1.1.1" ]
     }
-    @docker = Mrsk::Commands::Docker.new(Mrsk::Configuration.new(@config))
+    @docker = Kamal::Commands::Docker.new(Kamal::Configuration.new(@config))
   end
 
   test "install" do

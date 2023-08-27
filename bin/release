@@ -2,13 +2,13 @@
 
 VERSION=$1
 
-printf "module Mrsk\n  VERSION = \"$VERSION\"\nend\n" > ./lib/mrsk/version.rb
+printf "module Kamal\n  VERSION = \"$VERSION\"\nend\n" > ./lib/kamal/version.rb
 bundle
-git add Gemfile.lock lib/mrsk/version.rb
+git add Gemfile.lock lib/kamal/version.rb
 git commit -m "Bump version for $VERSION"
 git push
 git tag v$VERSION
 git push --tags
-gem build mrsk.gemspec
-gem push "mrsk-$VERSION.gem" --host https://rubygems.org
-rm "mrsk-$VERSION.gem"
+gem build kamal.gemspec
+gem push "kamal-$VERSION.gem" --host https://rubygems.org
+rm "kamal-$VERSION.gem"

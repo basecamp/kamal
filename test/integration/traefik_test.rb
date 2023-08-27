@@ -1,23 +1,37 @@
 require_relative "integration_test"
 
 class TraefikTest < IntegrationTest
-  test "boot, stop, start, restart, logs, remove" do
-    mrsk :traefik, :boot
+  test "boot, reboot, stop, start, restart, logs, remove" do
+    kamal :traefik, :boot
     assert_traefik_running
 
-    mrsk :traefik, :stop
+    kamal :traefik, :reboot
+    assert_traefik_running
+
+    kamal :traefik, :boot
+    assert_traefik_running
+
+    # Check booting when booted doesn't raise an error
+    kamal :traefik, :stop
     assert_traefik_not_running
 
-    mrsk :traefik, :start
+    # Check booting when stopped works
+    kamal :traefik, :boot
     assert_traefik_running
 
-    mrsk :traefik, :restart
+    kamal :traefik, :stop
+    assert_traefik_not_running
+
+    kamal :traefik, :start
     assert_traefik_running
 
-    logs = mrsk :traefik, :logs, capture: true
+    kamal :traefik, :restart
+    assert_traefik_running
+
+    logs = kamal :traefik, :logs, capture: true
     assert_match /Traefik version [\d.]+ built on/, logs
 
-    mrsk :traefik, :remove
+    kamal :traefik, :remove
     assert_traefik_not_running
   end
 
@@ -31,6 +45,6 @@ class TraefikTest < IntegrationTest
     end
 
     def traefik_details
-      mrsk :traefik, :details, capture: true
+      kamal :traefik, :details, capture: true
     end
 end

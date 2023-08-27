@@ -10,24 +10,24 @@ class CommandsLockTest < ActiveSupport::TestCase
 
   test "status" do
     assert_equal \
-      "stat mrsk_lock > /dev/null && cat mrsk_lock/details | base64 -d",
+      "stat kamal_lock-app > /dev/null && cat kamal_lock-app/details | base64 -d",
       new_command.status.join(" ")
   end
 
   test "acquire" do
     assert_match \
-      /mkdir mrsk_lock && echo ".*" > mrsk_lock\/details/m,
+      /mkdir kamal_lock-app && echo ".*" > kamal_lock-app\/details/m,
       new_command.acquire("Hello", "123").join(" ")
   end
 
   test "release" do
     assert_match \
-      "rm mrsk_lock/details && rm -r mrsk_lock",
+      "rm kamal_lock-app/details && rm -r kamal_lock-app",
       new_command.release.join(" ")
   end
 
   private
     def new_command
-      Mrsk::Commands::Lock.new(Mrsk::Configuration.new(@config, version: "123"))
+      Kamal::Commands::Lock.new(Kamal::Configuration.new(@config, version: "123"))
     end
 end

@@ -28,6 +28,6 @@ class CommandsPruneTest < ActiveSupport::TestCase
 
   private
     def new_command
-      Mrsk::Commands::Prune.new(Mrsk::Configuration.new(@config, version: "123"))
+      Kamal::Commands::Prune.new(Kamal::Configuration.new(@config, version: "123"))
     end
 end

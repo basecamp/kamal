@@ -11,7 +11,7 @@ class CliAppTest < CliTestCase
   end
 
   test "boot will rename if same version is already running" do
-    run_command("details") # Preheat MRSK const
+    run_command("details") # Preheat Kamal const
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
       .with(:docker, :container, :ls, "--filter", "name=^app-web-latest$", "--quiet", raise_on_non_zero_exit: false)
@@ -22,7 +22,7 @@ class CliAppTest < CliTestCase
       .returns("running") # health check
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=web", "--filter", "status=running", "--filter", "status=restarting", "--latest", "--format", "\"{{.Names}}\"", "|", "grep -oE \"\\-[^-]+$\"", "|", "cut -c 2-", raise_on_non_zero_exit: false)
+      .with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=web", "--filter", "status=running", "--filter", "status=restarting", "--latest", "--format", "\"{{.Names}}\"", "|", "while read line; do echo ${line#app-web-}; done", raise_on_non_zero_exit: false)
       .returns("123") # old version
 
     run_command("boot").tap do |output|
@@ -36,11 +36,11 @@ class CliAppTest < CliTestCase
   end
 
   test "boot uses group strategy when specified" do
-    Mrsk::Cli::App.any_instance.stubs(:on).with("1.1.1.1").twice # acquire & release lock
-    Mrsk::Cli::App.any_instance.stubs(:on).with([ "1.1.1.1" ]) # tag container
+    Kamal::Cli::App.any_instance.stubs(:on).with("1.1.1.1").twice # acquire & release lock
+    Kamal::Cli::App.any_instance.stubs(:on).with([ "1.1.1.1" ]) # tag container
 
     # Strategy is used when booting the containers
-    Mrsk::Cli::App.any_instance.expects(:on).with([ "1.1.1.1" ], in: :groups, limit: 3, wait: 2).with_block_given
+    Kamal::Cli::App.any_instance.expects(:on).with([ "1.1.1.1" ], in: :groups, limit: 3, wait: 2).with_block_given
 
     run_command("boot", config: :with_boot_strategy)
   end
@@ -48,13 +48,13 @@ class CliAppTest < CliTestCase
   test "boot errors leave lock in place" do
     invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999" }
 
-    Mrsk::Cli::App.any_instance.expects(:using_version).raises(RuntimeError)
+    Kamal::Cli::App.any_instance.expects(:using_version).raises(RuntimeError)
 
-    assert !MRSK.holding_lock?
+    assert !KAMAL.holding_lock?
     assert_raises(RuntimeError) do
       stderred { run_command("boot") }
     end
-    assert MRSK.holding_lock?
+    assert KAMAL.holding_lock?
   end
 
   test "start" do
@@ -71,7 +71,7 @@ class CliAppTest < CliTestCase
 
   test "stale_containers" do
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=web", "--format", "\"{{.Names}}\"", "|", "grep -oE \"\\-[^-]+$\"", "|", "cut -c 2-", raise_on_non_zero_exit: false)
+      .with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=web", "--format", "\"{{.Names}}\"", "|", "while read line; do echo ${line#app-web-}; done", raise_on_non_zero_exit: false)
       .returns("12345678\n87654321")
 
     run_command("stale_containers").tap do |output|
@@ -81,7 +81,7 @@ class CliAppTest < CliTestCase
 
   test "stop stale_containers" do
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=web", "--format", "\"{{.Names}}\"", "|", "grep -oE \"\\-[^-]+$\"", "|", "cut -c 2-", raise_on_non_zero_exit: false)
+      .with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=web", "--format", "\"{{.Names}}\"", "|", "while read line; do echo ${line#app-web-}; done", raise_on_non_zero_exit: false)
       .returns("12345678\n87654321")
 
     run_command("stale_containers", "--stop").tap do |output|
@@ -130,7 +130,7 @@ class CliAppTest < CliTestCase
 
   test "exec with reuse" do
     run_command("exec", "--reuse", "ruby -v").tap do |output|
-      assert_match "docker ps --filter label=service=app --filter status=running --filter status=restarting --latest --format \"{{.Names}}\" | grep -oE \"\\-[^-]+$\" | cut -c 2-", output # Get current version
+      assert_match "docker ps --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --latest --format \"{{.Names}}\" | while read line; do echo ${line#app-web-}; done", output # Get current version
       assert_match "docker exec app-web-999 ruby -v", output
     end
   end
@@ -163,20 +163,20 @@ class CliAppTest < CliTestCase
 
   test "version" do
     run_command("version").tap do |output|
-      assert_match "docker ps --filter label=service=app --filter status=running --filter status=restarting --latest --format \"{{.Names}}\" | grep -oE \"\\-[^-]+$\" | cut -c 2-", output
+      assert_match "docker ps --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --latest --format \"{{.Names}}\" | while read line; do echo ${line#app-web-}; done", output
     end
   end
 
 
   test "version through main" do
-    stdouted { Mrsk::Cli::Main.start(["app", "version", "-c", "test/fixtures/deploy_with_accessories.yml", "--hosts", "1.1.1.1"]) }.tap do |output|
-      assert_match "docker ps --filter label=service=app --filter status=running --filter status=restarting --latest --format \"{{.Names}}\" | grep -oE \"\\-[^-]+$\" | cut -c 2-", output
+    stdouted { Kamal::Cli::Main.start(["app", "version", "-c", "test/fixtures/deploy_with_accessories.yml", "--hosts", "1.1.1.1"]) }.tap do |output|
+      assert_match "docker ps --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --latest --format \"{{.Names}}\" | while read line; do echo ${line#app-web-}; done", output
     end
   end
 
   private
     def run_command(*command, config: :with_accessories)
-      stdouted { Mrsk::Cli::App.start([*command, "-c", "test/fixtures/deploy_#{config}.yml", "--hosts", "1.1.1.1"]) }
+      stdouted { Kamal::Cli::App.start([*command, "-c", "test/fixtures/deploy_#{config}.yml", "--hosts", "1.1.1.1"]) }
     end
 
     def stub_running

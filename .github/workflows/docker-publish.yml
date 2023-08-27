@@ -1,6 +1,12 @@
 name: Docker
 
 on:
+  workflow_dispatch:
+    inputs:
+      tagInput:
+        description: 'Tag'
+        required: true
+    
   release:
     types: [created]
     tags:
@@ -29,6 +35,14 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Determine version tag
+        id: version-tag
+        run: |
+          INPUT_VALUE="${{ github.event.inputs.tagInput }}"
+          if [ -z "$INPUT_VALUE" ]; then
+            INPUT_VALUE="${{ github.ref_name }}"
+          fi
+          echo "::set-output name=value::$INPUT_VALUE"
       -
         name: Build and push
         uses: docker/build-push-action@v3
@@ -37,5 +51,5 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            ghcr.io/mrsked/mrsk:latest
-            ghcr.io/mrsked/mrsk:${{ github.ref_name }}
+            ghcr.io/basecamp/kamal:latest
+            ghcr.io/basecamp/kamal:${{ steps.version-tag.outputs.value }}

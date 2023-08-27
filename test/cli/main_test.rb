@@ -2,9 +2,9 @@ require_relative "cli_test_case"
 
 class CliMainTest < CliTestCase
   test "setup" do
-    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:server:bootstrap")
-    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:accessory:boot", [ "all" ])
-    Mrsk::Cli::Main.any_instance.expects(:deploy)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:server:bootstrap")
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:accessory:boot", [ "all" ])
+    Kamal::Cli::Main.any_instance.expects(:deploy)
 
     run_command("setup")
   end
@@ -12,15 +12,15 @@ class CliMainTest < CliTestCase
   test "deploy" do
     invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false }
 
-    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:registry:login", [], invoke_options)
-    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:build:deliver", [], invoke_options)
-    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:traefik:boot", [], invoke_options)
-    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:healthcheck:perform", [], invoke_options)
-    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:app:stale_containers", [], invoke_options)
-    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:app:boot", [], invoke_options)
-    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:prune:all", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:registry:login", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:deliver", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:traefik:boot", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:healthcheck:perform", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:stale_containers", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:boot", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:prune:all", [], invoke_options)
 
-    Mrsk::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
+    Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
     hook_variables = { version: 999, service_version: "app@999", hosts: "1.1.1.1,1.1.1.2", command: "deploy" }
 
     run_command("deploy").tap do |output|
@@ -39,13 +39,13 @@ class CliMainTest < CliTestCase
   test "deploy with skip_push" do
     invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false }
 
-    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:registry:login", [], invoke_options)
-    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:build:pull", [], invoke_options)
-    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:traefik:boot", [], invoke_options)
-    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:healthcheck:perform", [], invoke_options)
-    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:app:stale_containers", [], invoke_options)
-    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:app:boot", [], invoke_options)
-    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:prune:all", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:registry:login", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:pull", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:traefik:boot", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:healthcheck:perform", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:stale_containers", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:boot", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:prune:all", [], invoke_options)
 
     run_command("deploy", "--skip_push").tap do |output|
       assert_match /Acquiring the deploy lock/, output
@@ -63,13 +63,13 @@ class CliMainTest < CliTestCase
     Thread.report_on_exception = false
 
     SSHKit::Backend::Abstract.any_instance.stubs(:execute)
-      .with { |*arg| arg[0..1] == [:mkdir, :mrsk_lock] }
-      .raises(RuntimeError, "mkdir: cannot create directory ‘mrsk_lock’: File exists")
+      .with { |*arg| arg[0..1] == [:mkdir, 'kamal_lock-app'] }
+      .raises(RuntimeError, "mkdir: cannot create directory ‘kamal_lock-app’: File exists")
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_debug)
-      .with(:stat, :mrsk_lock, ">", "/dev/null", "&&", :cat, "mrsk_lock/details", "|", :base64, "-d")
+      .with(:stat, 'kamal_lock-app', ">", "/dev/null", "&&", :cat, "kamal_lock-app/details", "|", :base64, "-d")
 
-    assert_raises(Mrsk::Cli::LockError) do
+    assert_raises(Kamal::Cli::LockError) do
       run_command("deploy")
     end
   end
@@ -78,7 +78,7 @@ class CliMainTest < CliTestCase
     Thread.report_on_exception = false
 
     SSHKit::Backend::Abstract.any_instance.stubs(:execute)
-      .with { |*arg| arg[0..1] == [:mkdir, :mrsk_lock] }
+      .with { |*arg| arg[0..1] == [:mkdir, 'kamal_lock-app'] }
       .raises(SocketError, "getaddrinfo: nodename nor servname provided, or not known")
 
     assert_raises(SSHKit::Runner::ExecuteError) do
@@ -89,27 +89,27 @@ class CliMainTest < CliTestCase
   test "deploy errors during outside section leave remove lock" do
     invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false }
 
-    Mrsk::Cli::Main.any_instance.expects(:invoke)
-      .with("mrsk:cli:registry:login", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke)
+      .with("kamal:cli:registry:login", [], invoke_options)
       .raises(RuntimeError)
 
-    assert !MRSK.holding_lock?
+    assert !KAMAL.holding_lock?
     assert_raises(RuntimeError) do
       stderred { run_command("deploy") }
     end
-    assert !MRSK.holding_lock?
+    assert !KAMAL.holding_lock?
   end
 
   test "deploy with skipped hooks" do
     invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => true }
 
-    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:registry:login", [], invoke_options)
-    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:build:deliver", [], invoke_options)
-    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:traefik:boot", [], invoke_options)
-    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:healthcheck:perform", [], invoke_options)
-    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:app:stale_containers", [], invoke_options)
-    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:app:boot", [], invoke_options)
-    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:prune:all", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:registry:login", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:deliver", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:traefik:boot", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:healthcheck:perform", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:stale_containers", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:boot", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:prune:all", [], invoke_options)
 
     run_command("deploy", "--skip_hooks") do
       refute_match /Running the post-deploy hook.../, output
@@ -125,12 +125,12 @@ class CliMainTest < CliTestCase
   test "redeploy" do
     invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false }
 
-    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:build:deliver", [], invoke_options)
-    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:healthcheck:perform", [], invoke_options)
-    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:app:stale_containers", [], invoke_options)
-    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:app:boot", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:deliver", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:healthcheck:perform", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:stale_containers", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:boot", [], invoke_options)
 
-    Mrsk::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
+    Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
 
     hook_variables = { version: 999, service_version: "app@999", hosts: "1.1.1.1,1.1.1.2", command: "redeploy" }
 
@@ -147,10 +147,10 @@ class CliMainTest < CliTestCase
   test "redeploy with skip_push" do
     invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false }
 
-    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:build:pull", [], invoke_options)
-    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:healthcheck:perform", [], invoke_options)
-    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:app:stale_containers", [], invoke_options)
-    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:app:boot", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:pull", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:healthcheck:perform", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:stale_containers", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:boot", [], invoke_options)
 
     run_command("redeploy", "--skip_push").tap do |output|
       assert_match /Pull app image/, output
@@ -161,7 +161,7 @@ class CliMainTest < CliTestCase
   test "rollback bad version" do
     Thread.report_on_exception = false
 
-    run_command("details") # Preheat MRSK const
+    run_command("details") # Preheat Kamal const
 
     run_command("rollback", "nonsense").tap do |output|
       assert_match /docker container ls --all --filter name=\^app-web-nonsense\$ --quiet/, output
@@ -178,14 +178,14 @@ class CliMainTest < CliTestCase
         .with(:docker, :container, :ls, "--all", "--filter", "name=^app-#{role}-123$", "--quiet")
         .returns("version-to-rollback\n").at_least_once
       SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-        .with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=#{role}", "--filter", "status=running", "--filter", "status=restarting", "--latest", "--format", "\"{{.Names}}\"", "|", "grep -oE \"\\-[^-]+$\"", "|", "cut -c 2-", raise_on_non_zero_exit: false)
+        .with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=#{role}", "--filter", "status=running", "--filter", "status=restarting", "--latest", "--format", "\"{{.Names}}\"", "|", "while read line; do echo ${line#app-#{role}-}; done", raise_on_non_zero_exit: false)
         .returns("version-to-rollback\n").at_least_once
       SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
         .with(:docker, :container, :ls, "--all", "--filter", "name=^app-#{role}-123$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
         .returns("running").at_least_once # health check
     end
 
-    Mrsk::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
+    Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
     hook_variables = { version: 123, service_version: "app@123", hosts: "1.1.1.1,1.1.1.2,1.1.1.3,1.1.1.4", command: "rollback" }
 
     run_command("rollback", "123", config_file: "deploy_with_accessories").tap do |output|
@@ -199,15 +199,15 @@ class CliMainTest < CliTestCase
   end
 
   test "rollback without old version" do
-    Mrsk::Cli::Main.any_instance.stubs(:container_available?).returns(true)
+    Kamal::Cli::Main.any_instance.stubs(:container_available?).returns(true)
 
-    Mrsk::Utils::HealthcheckPoller.stubs(:sleep)
+    Kamal::Utils::HealthcheckPoller.stubs(:sleep)
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
       .with(:docker, :container, :ls, "--filter", "name=^app-web-123$", "--quiet", raise_on_non_zero_exit: false)
       .returns("").at_least_once
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=web", "--filter", "status=running", "--filter", "status=restarting", "--latest", "--format", "\"{{.Names}}\"", "|", "grep -oE \"\\-[^-]+$\"", "|", "cut -c 2-", raise_on_non_zero_exit: false)
+      .with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=web", "--filter", "status=running", "--filter", "status=restarting", "--latest", "--format", "\"{{.Names}}\"", "|", "while read line; do echo ${line#app-web-}; done", raise_on_non_zero_exit: false)
       .returns("").at_least_once
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
       .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-123$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
@@ -221,16 +221,16 @@ class CliMainTest < CliTestCase
   end
 
   test "details" do
-    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:traefik:details")
-    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:app:details")
-    Mrsk::Cli::Main.any_instance.expects(:invoke).with("mrsk:cli:accessory:details", [ "all" ])
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:traefik:details")
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:details")
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:accessory:details", [ "all" ])
 
     run_command("details")
   end
 
   test "audit" do
     run_command("audit").tap do |output|
-      assert_match /tail -n 50 mrsk-app-audit.log on 1.1.1.1/, output
+      assert_match /tail -n 50 kamal-app-audit.log on 1.1.1.1/, output
       assert_match /App Host: 1.1.1.1/, output
     end
   end
@@ -305,10 +305,10 @@ class CliMainTest < CliTestCase
     run_command("init", "--bundle").tap do |output|
       assert_match /Created configuration file in config\/deploy.yml/, output
       assert_match /Created \.env file/, output
-      assert_match /Adding MRSK to Gemfile and bundle/, output
-      assert_match /bundle add mrsk/, output
-      assert_match /bundle binstubs mrsk/, output
-      assert_match /Created binstub file in bin\/mrsk/, output
+      assert_match /Adding Kamal to Gemfile and bundle/, output
+      assert_match /bundle add kamal/, output
+      assert_match /bundle binstubs kamal/, output
+      assert_match /Created binstub file in bin\/kamal/, output
     end
   end
 
@@ -321,7 +321,7 @@ class CliMainTest < CliTestCase
 
     run_command("init", "--bundle").tap do |output|
       assert_match /Config file already exists in config\/deploy.yml \(remove first to create a new one\)/, output
-      assert_match /Binstub already exists in bin\/mrsk \(remove first to create a new one\)/, output
+      assert_match /Binstub already exists in bin\/kamal \(remove first to create a new one\)/, output
     end
   end
 
@@ -364,12 +364,12 @@ class CliMainTest < CliTestCase
   end
 
   test "version" do
-    version = stdouted { Mrsk::Cli::Main.new.version }
-    assert_equal Mrsk::VERSION, version
+    version = stdouted { Kamal::Cli::Main.new.version }
+    assert_equal Kamal::VERSION, version
   end
 
   private
     def run_command(*command, config_file: "deploy_simple")
-      stdouted { Mrsk::Cli::Main.start([*command, "-c", "test/fixtures/#{config_file}.yml"]) }
+      stdouted { Kamal::Cli::Main.start([*command, "-c", "test/fixtures/#{config_file}.yml"]) }
     end
 end

@@ -11,7 +11,7 @@ class IntegrationTest < ActiveSupport::TestCase
 
   teardown do
     unless passed?
-      [:deployer, :vm1, :vm2, :shared, :load_balancer].each do |container|
+      [:deployer, :vm1, :vm2, :shared, :load_balancer, :registry].each do |container|
         puts
         puts "Logs for #{container}:"
         docker_compose :logs, container
@@ -38,8 +38,8 @@ class IntegrationTest < ActiveSupport::TestCase
       docker_compose("exec deployer #{commands.join(" ")}", **options)
     end
 
-    def mrsk(*commands, **options)
-      deployer_exec(:mrsk, *commands, **options)
+    def kamal(*commands, **options)
+      deployer_exec(:kamal, *commands, **options)
     end
 
     def assert_app_is_down
@@ -101,7 +101,7 @@ class IntegrationTest < ActiveSupport::TestCase
       code = response.code
       if code != "200"
         puts "Got response code #{code}, here are the traefik logs:"
-        mrsk :traefik, :logs
+        kamal :traefik, :logs
         puts "And here are the load balancer logs"
         docker_compose :logs, :load_balancer
         puts "Tried to get the response code again and got #{app_response.code}"
@@ -129,7 +129,7 @@ class IntegrationTest < ActiveSupport::TestCase
       code = app_response.code
       if code != expected_code
         puts "Got response code #{code}, here are the traefik logs:"
-        mrsk :traefik, :logs
+        kamal :traefik, :logs
         puts "And here are the load balancer logs"
         docker_compose :logs, :load_balancer
         puts "Tried to get the response code again and got #{app_response.code}"

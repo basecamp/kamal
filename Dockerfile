@@ -4,14 +4,14 @@ FROM ruby:3.2.0-alpine
 # Install  docker/buildx-bin
 COPY --from=docker/buildx-bin /buildx /usr/libexec/docker/cli-plugins/docker-buildx
 
-# Set the working directory to /mrsk
-WORKDIR /mrsk
+# Set the working directory to /kamal
+WORKDIR /kamal
 
 # Copy the Gemfile, Gemfile.lock into the container
-COPY Gemfile Gemfile.lock mrsk.gemspec ./
+COPY Gemfile Gemfile.lock kamal.gemspec ./
 
-# Required in mrsk.gemspec
-COPY lib/mrsk/version.rb /mrsk/lib/mrsk/version.rb
+# Required in kamal.gemspec
+COPY lib/kamal/version.rb /kamal/lib/kamal/version.rb
 
 # Install system dependencies
 RUN apk add --no-cache --update build-base git docker openrc openssh-client-default \
@@ -25,8 +25,8 @@ RUN apk add --no-cache --update build-base git docker openrc openssh-client-defa
 COPY . .
 
 # Install the gem locally from the project folder
-RUN gem build mrsk.gemspec && \
-    gem install ./mrsk-*.gem --no-document
+RUN gem build kamal.gemspec && \
+    gem install ./kamal-*.gem --no-document
 
 # Set the working directory to /workdir
 WORKDIR /workdir
@@ -36,5 +36,5 @@ WORKDIR /workdir
 RUN git config --global --add safe.directory /workdir
 
 # Set the entrypoint to run the installed binary in /workdir
-# Example:  docker run -it -v "$PWD:/workdir" mrsk init
-ENTRYPOINT ["mrsk"]
+# Example:  docker run -it -v "$PWD:/workdir" kamal init
+ENTRYPOINT ["kamal"]
