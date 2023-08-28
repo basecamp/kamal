@@ -9,7 +9,7 @@ class CommandsServerTest < ActiveSupport::TestCase
   end
 
   test "ensure run directory" do
-    assert_equal "mkdir -p kamal", new_command.ensure_run_directory.join(" ")
+    assert_equal "mkdir -p .kamal", new_command.ensure_run_directory.join(" ")
   end
 
   test "ensure non default run directory" do

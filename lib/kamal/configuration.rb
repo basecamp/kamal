@@ -58,7 +58,7 @@ class Kamal::Configuration
   end
 
   def run_directory
-    raw_config.run_directory || "kamal"
+    raw_config.run_directory || ".kamal"
   end
 
 

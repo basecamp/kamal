@@ -286,7 +286,7 @@ class ConfigurationTest < ActiveSupport::TestCase
 
   test "run directory" do
     config = Kamal::Configuration.new(@deploy)
-    assert_equal "kamal", config.run_directory
+    assert_equal ".kamal", config.run_directory
 
     config = Kamal::Configuration.new(@deploy.merge!(run_directory: "/root/kamal"))
     assert_equal "/root/kamal", config.run_directory
