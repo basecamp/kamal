@@ -115,4 +115,25 @@ module Kamal::Utils
 
     "#{key.to_s}=#{value.to_s}\n"
   end
+
+  def poll(max_attempts:, exception:, &block)
+    attempt = 1
+
+    begin
+      block.call
+    rescue exception => e
+      if attempt <= max_attempts
+        info "#{e.message}, retrying in #{attempt}s (attempt #{attempt}/#{max_attempts})..."
+        sleep attempt
+        attempt += 1
+        retry
+      else
+        raise
+      end
+    end
+  end
+
+  def info(message)
+    SSHKit.config.output.info(message)
+  end
 end

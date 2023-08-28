@@ -2,6 +2,8 @@ class Kamal::Cli::App < Kamal::Cli::Base
   desc "boot", "Boot app on servers (or reboot app if already running)"
   def boot
     mutating do
+      ensure_traefik_file_provider_enabled
+
       hold_lock_on_error do
         say "Get most recent version available as an image...", :magenta unless options[:version]
         using_version(version_or_latest) do |version|
@@ -18,6 +20,8 @@ class Kamal::Cli::App < Kamal::Cli::Base
             roles.each do |role|
               app = KAMAL.app(role: role)
               auditor = KAMAL.auditor(role: role)
+              traefik_dynamic = KAMAL.traefik_dynamic(role: role)
+              role_config = KAMAL.config.role(role)
 
               if capture_with_info(*app.container_id_for_version(version, only_running: true), raise_on_non_zero_exit: false).present?
                 tmp_version = "#{version}_replaced_#{SecureRandom.hex(8)}"
@@ -33,6 +37,12 @@ class Kamal::Cli::App < Kamal::Cli::Base
 
               Kamal::Utils::HealthcheckPoller.wait_for_healthy(pause_after_ready: true) { capture_with_info(*app.status(version: version)) }
 
+              if role_config.running_traefik?
+                ip_address = capture_with_info(*app.ip_address(version: version)).strip
+                execute *traefik_dynamic.write_config(ip_address: ip_address)
+                Kamal::Utils::SwitchPoller.wait_for_switch(traefik_dynamic) { capture_with_info(*traefik_dynamic.run_id)&.strip }
+              end
+
               execute *app.stop(version: old_version), raise_on_non_zero_exit: false if old_version.present?
             end
           end
@@ -44,12 +54,23 @@ class Kamal::Cli::App < Kamal::Cli::Base
   desc "start", "Start existing app container on servers"
   def start
     mutating do
+      ensure_traefik_file_provider_enabled
+
       on(KAMAL.hosts) do |host|
         roles = KAMAL.roles_on(host)
 
         roles.each do |role|
+          app = KAMAL.app(role: role)
+          role_config = KAMAL.config.role(role)
+
           execute *KAMAL.auditor.record("Started app version #{KAMAL.config.version}"), verbosity: :debug
-          execute *KAMAL.app(role: role).start, raise_on_non_zero_exit: false
+          execute *app.start, raise_on_non_zero_exit: false
+          version = capture_with_info(*app.current_running_version, raise_on_non_zero_exit: false).strip
+
+          if role_config.running_traefik?
+            ip_address = capture_with_info(*app.ip_address(version: version)).strip
+            execute *KAMAL.traefik_dynamic(role: role).write_config(ip_address: ip_address)
+          end
         end
       end
     end
@@ -62,8 +83,10 @@ class Kamal::Cli::App < Kamal::Cli::Base
         roles = KAMAL.roles_on(host)
 
         roles.each do |role|
+          app = KAMAL.app(role: role)
           execute *KAMAL.auditor.record("Stopped app", role: role), verbosity: :debug
-          execute *KAMAL.app(role: role).stop, raise_on_non_zero_exit: false
+          execute *KAMAL.traefik_dynamic(role: role).remove_config if KAMAL.config.role(role).running_traefik?
+          execute *app.stop, raise_on_non_zero_exit: false
         end
       end
     end
@@ -292,5 +315,14 @@ class Kamal::Cli::App < Kamal::Cli::Base
 
     def version_or_latest
       options[:version] || "latest"
+    end
+
+    def ensure_traefik_file_provider_enabled
+      # Ensure traefik has been rebooted to switch to the file provider
+      on(KAMAL.traefik_hosts) do
+        unless capture_with_info(*KAMAL.traefik_static.docker_entrypoint_args).include?("--providers.file.directory=")
+          raise Kamal::Cli::TraefikError, "File provider not enabled, you'll need to run `kamal traefik reboot` to deploy"
+        end
+      end
     end
 end

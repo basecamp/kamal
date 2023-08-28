@@ -13,22 +13,20 @@ class Kamal::Commands::App < Kamal::Commands::Base
   end
 
   def run(hostname: nil)
-    role = config.role(self.role)
-
     docker :run,
       "--detach",
       "--restart unless-stopped",
       "--name", container_name,
       *(["--hostname", hostname] if hostname),
       "-e", "KAMAL_CONTAINER_NAME=\"#{container_name}\"",
-      *role.env_args,
-      *role.health_check_args,
+      *role_config.env_args,
+      *role_config.health_check_args,
       *config.logging_args,
       *config.volume_args,
-      *role.label_args,
-      *role.option_args,
+      *role_config.label_args,
+      *role_config.option_args,
       config.absolute_image,
-      role.cmd
+      role_config.cmd
   end
 
   def start
@@ -47,6 +45,10 @@ class Kamal::Commands::App < Kamal::Commands::Base
 
   def info
     docker :ps, *filter_args
+  end
+
+  def ip_address(version:)
+    docker :inspect, "-f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}'", container_name(version)
   end
 
 
@@ -76,14 +78,12 @@ class Kamal::Commands::App < Kamal::Commands::Base
   end
 
   def execute_in_new_container(*command, interactive: false)
-    role = config.role(self.role)
-
     docker :run,
       ("-it" if interactive),
       "--rm",
-      *role&.env_args,
+      *role_config&.env_args,
       *config.volume_args,
-      *role&.option_args,
+      *role_config&.option_args,
       config.absolute_image,
       *command
   end
@@ -112,7 +112,7 @@ class Kamal::Commands::App < Kamal::Commands::Base
   def list_versions(*docker_args, statuses: nil)
     pipe \
       docker(:ps, *filter_args(statuses: statuses), *docker_args, "--format", '"{{.Names}}"'),
-      %(while read line; do echo ${line##{service_role_dest}-}; done) # Extract SHA from "service-role-dest-SHA"
+      %(while read line; do echo ${line##{role_config.full_name}-}; done) # Extract SHA from "service-role-dest-SHA"
   end
 
   def list_containers
@@ -157,17 +157,17 @@ class Kamal::Commands::App < Kamal::Commands::Base
     [:rm, "-f", config.role(role).host_env_file_path]
   end
 
+  def service_role_dest
+    [config.service, role, config.destination].compact.join("-")
+  end
+
   private
     def container_name(version = nil)
-      [ config.service, role, config.destination, version || config.version ].compact.join("-")
+      [ role_config.full_name, version || config.version ].compact.join("-")
     end
 
     def filter_args(statuses: nil)
       argumentize "--filter", filters(statuses: statuses)
-    end
-
-    def service_role_dest
-      [config.service, role, config.destination].compact.join("-")
     end
 
     def filters(statuses: nil)
@@ -178,5 +178,9 @@ class Kamal::Commands::App < Kamal::Commands::Base
           filters << "status=#{status}"
         end
       end
+    end
+
+    def role_config
+      @role_config ||= config.role(self.role)
     end
 end

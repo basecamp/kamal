@@ -86,6 +86,10 @@ class Kamal::Commands::Accessory < Kamal::Commands::Base
     end
   end
 
+  def make_directory_for(remote_file)
+    make_directory Pathname.new(remote_file).dirname.to_s
+  end
+
   def remove_service_directory
     [ :rm, "-rf", service_name ]
   end

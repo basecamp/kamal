@@ -81,7 +81,7 @@ class Kamal::Commander
 
 
   def app(role: nil)
-    Kamal::Commands::App.new(config, role: role)
+    Kamal::Commands::App.new(config, role: role || config.roles.first.name)
   end
 
   def accessory(name)
@@ -124,8 +124,12 @@ class Kamal::Commander
     @server ||= Kamal::Commands::Server.new(config)
   end
 
-  def traefik
-    @traefik ||= Kamal::Commands::Traefik.new(config)
+  def traefik_static
+    @traefik_static ||= Kamal::Commands::Traefik::Static.new(config)
+  end
+
+  def traefik_dynamic(role: nil)
+    Kamal::Commands::Traefik::Dynamic.new(config, role: role || config.roles.first.name)
   end
 
   def with_verbosity(level)

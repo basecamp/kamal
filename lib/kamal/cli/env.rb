@@ -13,8 +13,9 @@ class Kamal::Cli::Env < Kamal::Cli::Base
       end
 
       on(KAMAL.traefik_hosts) do
-        execute *KAMAL.traefik.make_env_directory
-        upload! StringIO.new(KAMAL.traefik.env_file), KAMAL.traefik.host_env_file_path, mode: 400
+        traefik_static_config = KAMAL.traefik_static.static_config
+        execute *KAMAL.traefik_static.make_env_directory
+        upload! StringIO.new(traefik_static_config.env_file), traefik_static_config.host_env_file_path, mode: 400
       end
 
       on(KAMAL.accessory_hosts) do
@@ -38,7 +39,7 @@ class Kamal::Cli::Env < Kamal::Cli::Base
       end
 
       on(KAMAL.traefik_hosts) do
-        execute *KAMAL.traefik.remove_env_file
+        execute *KAMAL.traefik_static.remove_env_file
       end
 
       on(KAMAL.accessory_hosts) do

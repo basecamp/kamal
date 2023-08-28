@@ -7,7 +7,7 @@ require "net/ssh/proxy/jump"
 
 class Kamal::Configuration
   delegate :service, :image, :servers, :env, :labels, :registry, :stop_wait_time, :hooks_path, to: :raw_config, allow_nil: true
-  delegate :argumentize, :optionize, to: Kamal::Utils
+  delegate :argumentize, :argumentize_env_with_secrets, :optionize, to: Kamal::Utils
 
   attr_accessor :destination
   attr_accessor :raw_config
@@ -153,7 +153,7 @@ class Kamal::Configuration
   end
 
   def valid?
-    ensure_required_keys_present && ensure_valid_kamal_version
+    ensure_required_keys_present && ensure_valid_kamal_version && ensure_no_traefik_labels
   end
 
 
@@ -226,6 +226,17 @@ class Kamal::Configuration
     def ensure_valid_kamal_version
       if minimum_version && Gem::Version.new(minimum_version) > Gem::Version.new(Kamal::VERSION)
         raise ArgumentError, "Current version is #{Kamal::VERSION}, minimum required is #{minimum_version}"
+      end
+
+      true
+    end
+
+    def ensure_no_traefik_labels
+      # The switch to a traefik file provider means that traefik labels on app containers are ignored
+      # We'll raise an error and suggest moving them
+
+      if roles.any? { |role| role.labels.keys.any? { |label| label.start_with?("traefik.") } }
+        raise ArgumentError, "Traefik is not configured to read labels, move traefik config to dynamic:"
       end
 
       true

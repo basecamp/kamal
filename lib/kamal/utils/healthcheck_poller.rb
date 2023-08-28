@@ -5,10 +5,7 @@ class Kamal::Utils::HealthcheckPoller
 
   class << self
     def wait_for_healthy(pause_after_ready: false, &block)
-      attempt = 1
-      max_attempts = KAMAL.config.healthcheck["max_attempts"]
-
-      begin
+      Kamal::Utils.poll(max_attempts: KAMAL.config.healthcheck["max_attempts"], exception: HealthcheckError) do
         case status = block.call
         when "healthy"
           sleep TRAEFIK_HEALTHY_DELAY if pause_after_ready
@@ -17,23 +14,9 @@ class Kamal::Utils::HealthcheckPoller
         else
           raise HealthcheckError, "container not ready (#{status})"
         end
-      rescue HealthcheckError => e
-        if attempt <= max_attempts
-          info "#{e.message}, retrying in #{attempt}s (attempt #{attempt}/#{max_attempts})..."
-          sleep attempt
-          attempt += 1
-          retry
-        else
-          raise
-        end
-      end
 
-      info "Container is healthy!"
+        SSHKit.config.output.info "Container is healthy!"
+      end
     end
-
-    private
-      def info(message)
-        SSHKit.config.output.info(message)
-      end
   end
 end

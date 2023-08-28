@@ -5,7 +5,7 @@ class CliHealthcheckTest < CliTestCase
     # Prevent expected failures from outputting to terminal
     Thread.report_on_exception = false
 
-    Kamal::Utils::HealthcheckPoller.stubs(:sleep) # No sleeping when retrying
+    Object.any_instance.stubs(:sleep) # No sleeping when retrying
 
     SSHKit::Backend::Abstract.any_instance.stubs(:execute)
       .with(:docker, :container, :ls, "--all", "--filter", "name=^healthcheck-app-999$", "--quiet", "|", :xargs, :docker, :stop, raise_on_non_zero_exit: false)
@@ -28,13 +28,15 @@ class CliHealthcheckTest < CliTestCase
       assert_match "container not ready (unhealthy), retrying in 2s (attempt 2/7)...", output
       assert_match "Container is healthy!", output
     end
+  ensure
+    Thread.report_on_exception = true
   end
 
   test "perform failing to become healthy" do
     # Prevent expected failures from outputting to terminal
     Thread.report_on_exception = false
 
-    Kamal::Utils::HealthcheckPoller.stubs(:sleep) # No sleeping when retrying
+    Object.any_instance.stubs(:sleep) # No sleeping when retrying
 
     SSHKit::Backend::Abstract.any_instance.stubs(:execute)
       .with(:docker, :container, :ls, "--all", "--filter", "name=^healthcheck-app-999$", "--quiet", "|", :xargs, :docker, :stop, raise_on_non_zero_exit: false)
@@ -62,6 +64,8 @@ class CliHealthcheckTest < CliTestCase
       run_command("perform")
     end
     assert_match "container not ready (unhealthy)", exception.message
+  ensure
+    Thread.report_on_exception = true
   end
 
   private

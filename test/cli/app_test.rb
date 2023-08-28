@@ -5,6 +5,7 @@ class CliAppTest < CliTestCase
     stub_running
     run_command("boot").tap do |output|
       assert_match "docker tag dhh/app:latest dhh/app:latest", output
+      assert_match /docker rename app-web-latest app-web-latest_replaced_[0-9a-f]{16}/, output
       assert_match /docker run --detach --restart unless-stopped --name app-web-latest --hostname 1.1.1.1-[0-9a-f]{12} /, output
       assert_match "docker container ls --all --filter name=^app-web-123$ --quiet | xargs docker stop", output
     end
@@ -13,26 +14,12 @@ class CliAppTest < CliTestCase
   test "boot will rename if same version is already running" do
     run_command("details") # Preheat Kamal const
 
-    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :container, :ls, "--filter", "name=^app-web-latest$", "--quiet", raise_on_non_zero_exit: false)
-      .returns("12345678") # running version
-
-    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-latest$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
-      .returns("running") # health check
-
-    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=web", "--filter", "status=running", "--filter", "status=restarting", "--latest", "--format", "\"{{.Names}}\"", "|", "while read line; do echo ${line#app-web-}; done", raise_on_non_zero_exit: false)
-      .returns("123") # old version
-
+    stub_running
     run_command("boot").tap do |output|
       assert_match /Renaming container .* to .* as already deployed on 1.1.1.1/, output # Rename
-      assert_match /docker rename app-web-latest app-web-latest_replaced_[0-9a-f]{16}/, output
       assert_match /docker run --detach --restart unless-stopped --name app-web-latest --hostname 1.1.1.1-[0-9a-f]{12} /, output
       assert_match "docker container ls --all --filter name=^app-web-123$ --quiet | xargs docker stop", output
     end
-  ensure
-    Thread.report_on_exception = true
   end
 
   test "boot uses group strategy when specified" do
@@ -45,8 +32,26 @@ class CliAppTest < CliTestCase
     run_command("boot", config: :with_boot_strategy)
   end
 
+  test "boot without traefik file provider raises exception" do
+    Thread.report_on_exception = false
+
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :inspect, "-f '{{index .Args 1 }}'", :traefik)
+      .returns("[--providers.docker --log.level=DEBUG --accesslog --accesslog.format=json]").at_least_once
+
+    assert_raises(SSHKit::Runner::ExecuteError, "Exception while executing on host 1.1.1.1: File provider not enabled, you'll need to run `kamal traefik reboot` to deploy") do
+      run_command("boot")
+    end
+  ensure
+    Thread.report_on_exception = true
+  end
+
   test "boot errors leave lock in place" do
     invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999" }
+
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :inspect, "-f '{{index .Args 1 }}'", :traefik)
+      .returns("[--providers.docker --providers.file.directory=/var/run/traefik-config --providers.file.watch --log.level=DEBUG --accesslog --accesslog.format=json]").at_least_once
 
     Kamal::Cli::App.any_instance.expects(:using_version).raises(RuntimeError)
 
@@ -58,6 +63,13 @@ class CliAppTest < CliTestCase
   end
 
   test "start" do
+    SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info)
+      .with { |*args| args == [ :docker, :inspect, "-f '{{index .Args 1 }}'", :traefik ] }
+      .returns("[--providers.docker --providers.file.directory=/var/run/traefik-config --providers.file.watch --log.level=DEBUG --accesslog --accesslog.format=json]").at_least_once
+    SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info)
+      .with { |*args| args != [ :docker, :inspect, "-f '{{index .Args 1 }}'", :traefik ] }
+      .returns("").at_least_once
+
     run_command("start").tap do |output|
       assert_match "docker start app-web-999", output
     end
@@ -124,7 +136,7 @@ class CliAppTest < CliTestCase
 
   test "exec" do
     run_command("exec", "ruby -v").tap do |output|
-      assert_match "docker run --rm dhh/app:latest ruby -v", output
+      assert_match "docker run --rm --env-file .kamal/env/roles/app-web.env dhh/app:latest ruby -v", output
     end
   end
 
@@ -180,10 +192,26 @@ class CliAppTest < CliTestCase
     end
 
     def stub_running
+      SecureRandom.stubs(:hex).with(16).returns("12345678901234567890123456789012")
+      SecureRandom.stubs(:hex).with(6).returns("123456789012")
+      SecureRandom.stubs(:hex).with(8).returns("1234567890123456")
+
       SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info).returns("123") # old version
+
+      SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+        .with(:docker, :inspect, "-f '{{index .Args 1 }}'", :traefik)
+        .returns("[--providers.docker --providers.file.directory=/var/run/traefik-config --providers.file.watch --log.level=DEBUG --accesslog --accesslog.format=json]").at_least_once
 
       SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
         .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-latest$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
         .returns("running") # health check
+
+      SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+        .with(:docker, :inspect, "-f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}'", "app-web-latest")
+        .returns("172.17.0.3").at_least_once
+
+      SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+        .with(:docker, :exec, :traefik, :wget, "-qSO", "/dev/null", "http://localhost:80/up", "2>&1", "|", :grep, "-i", "X-Kamal-Run-ID", "|", :cut, "-d ' ' -f 4")
+        .returns("12345678901234567890123456789012").at_least_once
     end
 end

@@ -4,7 +4,7 @@ class Kamal::Configuration::Role
   attr_accessor :name
 
   def initialize(name, config:)
-   @name, @config = name.inquiry, config
+    @name, @config = name.inquiry, config
   end
 
   def primary_host
@@ -16,7 +16,7 @@ class Kamal::Configuration::Role
   end
 
   def labels
-    default_labels.merge(traefik_labels).merge(custom_labels)
+    default_labels.merge(custom_labels)
   end
 
   def label_args
@@ -82,8 +82,22 @@ class Kamal::Configuration::Role
   end
 
   def running_traefik?
-    name.web? || specializations["traefik"]
+    name.web? || (specializations["traefik"] != nil && specializations["traefik"] != false)
   end
+
+  def traefik
+    case specializations["traefik"]
+    when NilClass, TrueClass, FalseClass
+      {}
+    else
+      specializations["traefik"]
+    end
+  end
+
+  def full_name
+    [ config.service, name, config.destination ].compact.join("-")
+  end
+
 
   private
     attr_accessor :config
@@ -103,26 +117,6 @@ class Kamal::Configuration::Role
       else
         { "service" => config.service, "role" => name }
       end
-    end
-
-    def traefik_labels
-      if running_traefik?
-        {
-          # Setting a service property ensures that the generated service name will be consistent between versions
-          "traefik.http.services.#{traefik_service}.loadbalancer.server.scheme" => "http",
-
-          "traefik.http.routers.#{traefik_service}.rule" => "PathPrefix(`/`)",
-          "traefik.http.middlewares.#{traefik_service}-retry.retry.attempts" => "5",
-          "traefik.http.middlewares.#{traefik_service}-retry.retry.initialinterval" => "500ms",
-          "traefik.http.routers.#{traefik_service}.middlewares" => "#{traefik_service}-retry@docker"
-        }
-      else
-        {}
-      end
-    end
-
-    def traefik_service
-      [ config.service, name, config.destination ].compact.join("-")
     end
 
     def custom_labels

@@ -4,7 +4,8 @@ class Kamal::Cli::Traefik < Kamal::Cli::Base
     mutating do
       on(KAMAL.traefik_hosts) do
         execute *KAMAL.registry.login
-        execute *KAMAL.traefik.start_or_run
+        execute *KAMAL.traefik_static.ensure_config_directory
+        execute *KAMAL.traefik_static.start_or_run
       end
     end
   end
@@ -16,9 +17,10 @@ class Kamal::Cli::Traefik < Kamal::Cli::Base
       on(KAMAL.traefik_hosts, in: options[:rolling] ? :sequence : :parallel) do
         execute *KAMAL.auditor.record("Rebooted traefik"), verbosity: :debug
         execute *KAMAL.registry.login
-        execute *KAMAL.traefik.stop
-        execute *KAMAL.traefik.remove_container
-        execute *KAMAL.traefik.run
+        execute *KAMAL.traefik_static.stop
+        execute *KAMAL.traefik_static.remove_container
+        execute *KAMAL.traefik_static.ensure_config_directory
+        execute *KAMAL.traefik_static.run
       end
     end
   end
@@ -28,7 +30,7 @@ class Kamal::Cli::Traefik < Kamal::Cli::Base
     mutating do
       on(KAMAL.traefik_hosts) do
         execute *KAMAL.auditor.record("Started traefik"), verbosity: :debug
-        execute *KAMAL.traefik.start
+        execute *KAMAL.traefik_static.start
       end
     end
   end
@@ -38,7 +40,7 @@ class Kamal::Cli::Traefik < Kamal::Cli::Base
     mutating do
       on(KAMAL.traefik_hosts) do
         execute *KAMAL.auditor.record("Stopped traefik"), verbosity: :debug
-        execute *KAMAL.traefik.stop
+        execute *KAMAL.traefik_static.stop
       end
     end
   end
@@ -53,7 +55,7 @@ class Kamal::Cli::Traefik < Kamal::Cli::Base
 
   desc "details", "Show details about Traefik container from servers"
   def details
-    on(KAMAL.traefik_hosts) { |host| puts_by_host host, capture_with_info(*KAMAL.traefik.info), type: "Traefik" }
+    on(KAMAL.traefik_hosts) { |host| puts_by_host host, capture_with_info(*KAMAL.traefik_static.info), type: "Traefik" }
   end
 
   desc "logs", "Show log lines from Traefik on servers"
@@ -67,15 +69,15 @@ class Kamal::Cli::Traefik < Kamal::Cli::Base
     if options[:follow]
       run_locally do
         info "Following logs on #{KAMAL.primary_host}..."
-        info KAMAL.traefik.follow_logs(host: KAMAL.primary_host, grep: grep)
-        exec KAMAL.traefik.follow_logs(host: KAMAL.primary_host, grep: grep)
+        info KAMAL.traefik_static.follow_logs(host: KAMAL.primary_host, grep: grep)
+        exec KAMAL.traefik_static.follow_logs(host: KAMAL.primary_host, grep: grep)
       end
     else
       since = options[:since]
       lines = options[:lines].presence || ((since || grep) ? nil : 100) # Default to 100 lines if since or grep isn't set
 
       on(KAMAL.traefik_hosts) do |host|
-        puts_by_host host, capture(*KAMAL.traefik.logs(since: since, lines: lines, grep: grep)), type: "Traefik"
+        puts_by_host host, capture(*KAMAL.traefik_static.logs(since: since, lines: lines, grep: grep)), type: "Traefik"
       end
     end
   end
@@ -94,7 +96,7 @@ class Kamal::Cli::Traefik < Kamal::Cli::Base
     mutating do
       on(KAMAL.traefik_hosts) do
         execute *KAMAL.auditor.record("Removed traefik container"), verbosity: :debug
-        execute *KAMAL.traefik.remove_container
+        execute *KAMAL.traefik_static.remove_container
       end
     end
   end
@@ -104,7 +106,7 @@ class Kamal::Cli::Traefik < Kamal::Cli::Base
     mutating do
       on(KAMAL.traefik_hosts) do
         execute *KAMAL.auditor.record("Removed traefik image"), verbosity: :debug
-        execute *KAMAL.traefik.remove_image
+        execute *KAMAL.traefik_static.remove_image
       end
     end
   end

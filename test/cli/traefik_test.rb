@@ -4,7 +4,7 @@ class CliTraefikTest < CliTestCase
   test "boot" do
     run_command("boot").tap do |output|
       assert_match "docker login", output
-      assert_match "docker run --name traefik --detach --restart unless-stopped --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock --env-file .kamal/env/traefik/traefik.env --log-opt max-size=\"10m\" #{Kamal::Commands::Traefik::DEFAULT_IMAGE} --providers.docker --log.level=\"DEBUG\"", output
+      assert_match "docker run --name traefik --detach --restart unless-stopped --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock --volume $(pwd)/.kamal/traefik-config:/var/run/traefik-config --env-file .kamal/env/traefik/traefik.env --log-opt max-size=\"10m\" #{Kamal::Configuration::Traefik::Static::DEFAULT_IMAGE} --providers.docker --providers.file.directory=\"/var/run/traefik-config\" --providers.file.watch --log.level=\"DEBUG\"", output
     end
   end
 
@@ -14,11 +14,13 @@ class CliTraefikTest < CliTestCase
     run_command("reboot").tap do |output|
       assert_match "docker container stop traefik", output
       assert_match "docker container prune --force --filter label=org.opencontainers.image.title=Traefik", output
-      assert_match "docker run --name traefik --detach --restart unless-stopped --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock --env-file .kamal/env/traefik/traefik.env --log-opt max-size=\"10m\" #{Kamal::Commands::Traefik::DEFAULT_IMAGE} --providers.docker --log.level=\"DEBUG\"", output
+      assert_match "docker run --name traefik --detach --restart unless-stopped --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock --volume $(pwd)/.kamal/traefik-config:/var/run/traefik-config --env-file .kamal/env/traefik/traefik.env --log-opt max-size=\"10m\" #{Kamal::Configuration::Traefik::Static::DEFAULT_IMAGE} --providers.docker --providers.file.directory=\"/var/run/traefik-config\" --providers.file.watch --log.level=\"DEBUG\"", output
     end
   end
 
   test "reboot --rolling" do
+    Object.any_instance.stubs(:sleep)
+
     run_command("reboot", "--rolling").tap do |output|
       assert_match "Running docker container prune --force --filter label=org.opencontainers.image.title=Traefik on 1.1.1.1", output
     end

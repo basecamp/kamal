@@ -66,7 +66,7 @@ class CliMainTest < CliTestCase
       .with { |*args| args == [ :mkdir, "-p", ".kamal" ] }
 
     SSHKit::Backend::Abstract.any_instance.stubs(:execute)
-      .with { |*arg| arg[0..1] == [:mkdir, ".kamal/lock-app"] }
+      .with { |*args| args[0..1] == [:mkdir, ".kamal/lock-app"] }
       .raises(RuntimeError, "mkdir: cannot create directory ‘kamal_lock-app’: File exists")
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_debug)
@@ -75,6 +75,8 @@ class CliMainTest < CliTestCase
     assert_raises(Kamal::Cli::LockError) do
       run_command("deploy")
     end
+  ensure
+    Thread.report_on_exception = true
   end
 
   test "deploy error when locking" do
@@ -90,6 +92,8 @@ class CliMainTest < CliTestCase
     assert_raises(SSHKit::Runner::ExecuteError) do
       run_command("deploy")
     end
+  ensure
+    Thread.report_on_exception = true
   end
 
   test "deploy errors during outside section leave remove lock" do
@@ -173,9 +177,14 @@ class CliMainTest < CliTestCase
       assert_match /docker container ls --all --filter name=\^app-web-nonsense\$ --quiet/, output
       assert_match /The app version 'nonsense' is not available as a container/, output
     end
+  ensure
+    Thread.report_on_exception = true
   end
 
   test "rollback good version" do
+    SecureRandom.stubs(:hex).with(16).returns("12345678901234567890123456789012")
+    SecureRandom.stubs(:hex).with(6).returns("123456789012")
+
     [ "web", "workers" ].each do |role|
       SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
         .with(:docker, :container, :ls, "--filter", "name=^app-#{role}-123$", "--quiet", raise_on_non_zero_exit: false)
@@ -190,6 +199,18 @@ class CliMainTest < CliTestCase
         .with(:docker, :container, :ls, "--all", "--filter", "name=^app-#{role}-123$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
         .returns("running").at_least_once # health check
     end
+
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :inspect, "-f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}'", "app-web-123")
+      .returns("172.17.0.3").at_least_once
+
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :inspect, "-f '{{index .Args 1 }}'", :traefik)
+      .returns("[--providers.docker --providers.file.directory=/var/run/traefik-config --providers.file.watch --log.level=DEBUG --accesslog --accesslog.format=json]").at_least_once
+
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :exec, :traefik, :wget, "-qSO", "/dev/null", "http://localhost:80/up", "2>&1", "|", :grep, "-i", "X-Kamal-Run-ID", "|", :cut, "-d ' ' -f 4")
+      .returns("12345678901234567890123456789012").at_least_once
 
     Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
     hook_variables = { version: 123, service_version: "app@123", hosts: "1.1.1.1,1.1.1.2,1.1.1.3,1.1.1.4", command: "rollback" }
@@ -207,8 +228,13 @@ class CliMainTest < CliTestCase
   test "rollback without old version" do
     Kamal::Cli::Main.any_instance.stubs(:container_available?).returns(true)
 
-    Kamal::Utils::HealthcheckPoller.stubs(:sleep)
+    Object.stubs(:sleep)
+    SecureRandom.stubs(:hex).with(16).returns("12345678901234567890123456789012")
+    SecureRandom.stubs(:hex).with(6).returns("123456789012")
 
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :inspect, "-f '{{index .Args 1 }}'", :traefik)
+      .returns("[--providers.docker --providers.file.directory=/var/run/traefik-config --providers.file.watch --log.level=DEBUG --accesslog --accesslog.format=json]").at_least_once
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
       .with(:docker, :container, :ls, "--filter", "name=^app-web-123$", "--quiet", raise_on_non_zero_exit: false)
       .returns("").at_least_once
@@ -218,6 +244,13 @@ class CliMainTest < CliTestCase
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
       .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-123$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
       .returns("running").at_least_once # health check
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :inspect, "-f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}'", "app-web-123")
+      .returns("172.17.0.3").at_least_once
+
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :exec, :traefik, :wget, "-qSO", "/dev/null", "http://localhost:80/up", "2>&1", "|", :grep, "-i", "X-Kamal-Run-ID", "|", :cut, "-d ' ' -f 4")
+      .returns("12345678901234567890123456789012").at_least_once
 
     run_command("rollback", "123").tap do |output|
       assert_match "Start container with version 123", output

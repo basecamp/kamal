@@ -39,6 +39,12 @@ class MainTest < IntegrationTest
     assert_no_remote_env_file
   end
 
+  test "envify" do
+    kamal :envify
+
+    assert_equal "SECRET_TOKEN=1234", deployer_exec("cat .env", capture: true)
+  end
+
   test "config" do
     config = YAML.load(kamal(:config, capture: true))
     version = latest_app_version

@@ -252,4 +252,10 @@ class ConfigurationTest < ActiveSupport::TestCase
     config = Kamal::Configuration.new(@deploy.merge!(run_directory: "/root/kamal"))
     assert_equal "/root/kamal", config.run_directory
   end
+
+  test "app traefik labels raise ArgumentError" do
+    assert_raises(ArgumentError) do
+      Kamal::Configuration.new(@deploy.tap { |c| c.merge!(labels: { "traefik.enabled": true }) })
+    end
+  end
 end
