@@ -21,7 +21,7 @@ class CommandsAuditorTest < ActiveSupport::TestCase
       :echo,
       "[#{@recorded_at}] [#{@performer}]",
       "app removed container",
-      ">>", "kamal-app-audit.log"
+      ">>", "kamal/app-audit.log"
     ], @auditor.record("app removed container")
   end
 
@@ -31,7 +31,7 @@ class CommandsAuditorTest < ActiveSupport::TestCase
         :echo,
         "[#{@recorded_at}] [#{@performer}] [staging]",
         "app removed container",
-        ">>", "kamal-app-staging-audit.log"
+        ">>", "kamal/app-staging-audit.log"
       ], auditor.record("app removed container")
     end
   end
@@ -42,7 +42,7 @@ class CommandsAuditorTest < ActiveSupport::TestCase
         :echo,
         "[#{@recorded_at}] [#{@performer}] [web]",
         "app removed container",
-        ">>", "kamal-app-audit.log"
+        ">>", "kamal/app-audit.log"
       ], auditor.record("app removed container")
     end
   end
@@ -52,7 +52,7 @@ class CommandsAuditorTest < ActiveSupport::TestCase
       :echo,
       "[#{@recorded_at}] [#{@performer}] [value]",
       "app removed container",
-      ">>", "kamal-app-audit.log"
+      ">>", "kamal/app-audit.log"
     ], @auditor.record("app removed container", detail: "value")
   end
 

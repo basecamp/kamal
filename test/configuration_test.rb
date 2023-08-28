@@ -283,4 +283,12 @@ class ConfigurationTest < ActiveSupport::TestCase
       Kamal::Configuration.new(@deploy.tap { |c| c.merge!(minimum_version: "10000.0.0") })
     end
   end
+
+  test "run directory" do
+    config = Kamal::Configuration.new(@deploy)
+    assert_equal "kamal", config.run_directory
+
+    config = Kamal::Configuration.new(@deploy.merge!(run_directory: "/root/kamal"))
+    assert_equal "/root/kamal", config.run_directory
+  end
 end

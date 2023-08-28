@@ -27,11 +27,13 @@ class CliTestCase < ActiveSupport::TestCase
         .raises(SSHKit::Command::Failed.new("failed"))
     end
 
-    def stub_locking
+    def stub_setup
       SSHKit::Backend::Abstract.any_instance.stubs(:execute)
-        .with { |arg1, arg2| arg1 == :mkdir && arg2 == "kamal_lock-app" }
+        .with { |*args| args == [ :mkdir, "-p", "kamal" ] }
       SSHKit::Backend::Abstract.any_instance.stubs(:execute)
-        .with { |arg1, arg2| arg1 == :rm && arg2 == "kamal_lock-app/details" }
+        .with { |arg1, arg2| arg1 == :mkdir && arg2 == "kamal/lock-app" }
+      SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+        .with { |arg1, arg2| arg1 == :rm && arg2 == "kamal/lock-app/details" }
     end
 
     def assert_hook_ran(hook, output, version:, service_version:, hosts:, command:, subcommand: nil, runtime: nil)

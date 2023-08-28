@@ -14,6 +14,10 @@ class Kamal::Cli::Server < Kamal::Cli::Base
       end
     end
 
+    on(KAMAL.hosts) do
+      execute(*KAMAL.server.ensure_run_directory)
+    end
+
     if missing.any?
       raise "Docker is not installed on #{missing.join(", ")} and can't be automatically installed without having root access and the `curl` command available. Install Docker manually: https://docs.docker.com/engine/install/"
     end

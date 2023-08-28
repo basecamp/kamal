@@ -116,6 +116,10 @@ class Kamal::Commander
     @registry ||= Kamal::Commands::Registry.new(config)
   end
 
+  def server
+    @server ||= Kamal::Commands::Server.new(config)
+  end
+
   def traefik
     @traefik ||= Kamal::Commands::Traefik.new(config)
   end
