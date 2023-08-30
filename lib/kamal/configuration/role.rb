@@ -1,5 +1,5 @@
 class Kamal::Configuration::Role
-  delegate :argumentize, :argumentize_env_with_secrets, :optionize, to: Kamal::Utils
+  delegate :argumentize, :env_file_with_secrets, :optionize, to: Kamal::Utils
 
   attr_accessor :name
 
@@ -31,8 +31,20 @@ class Kamal::Configuration::Role
     end
   end
 
+  def env_file
+    env_file_with_secrets env
+  end
+
+  def host_env_directory
+    File.join config.host_env_directory, "roles"
+  end
+
+  def host_env_file_path
+    File.join host_env_directory, "#{[config.service, name, config.destination].compact.join("-")}.env"
+  end
+
   def env_args
-    argumentize_env_with_secrets env
+    argumentize "--env-file", host_env_file_path
   end
 
   def health_check_args

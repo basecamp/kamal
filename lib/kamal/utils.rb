@@ -16,14 +16,24 @@ module Kamal::Utils
     end
   end
 
-  # Return a list of shell arguments using the same named argument against the passed attributes,
-  # but redacts and expands secrets.
-  def argumentize_env_with_secrets(env)
-    if (secrets = env["secret"]).present?
-      argumentize("-e", secrets.to_h { |key| [ key, ENV.fetch(key) ] }, sensitive: true) + argumentize("-e", env["clear"])
-    else
-      argumentize "-e", env.fetch("clear", env)
-    end
+  def env_file_with_secrets(env)
+    env_file = StringIO.new.tap do |contents|
+      if (secrets = env["secret"]).present?
+        env.fetch("secret", env)&.each do |key|
+          contents << docker_env_file_line(key, ENV.fetch(key))
+        end
+        env["clear"]&.each do |key, value|
+          contents << docker_env_file_line(key, value)
+        end
+      else
+        env.fetch("clear", env)&.each do |key, value|
+          contents << docker_env_file_line(key, value)
+        end
+      end
+    end.string
+
+    # Ensure the file has some contents to avoid the SSHKIT empty file warning
+    env_file || "\n"
   end
 
   # Returns a list of shell-dashed option arguments. If the value is true, it's treated like a value-less option.
@@ -96,5 +106,13 @@ module Kamal::Utils
 
   def uncommitted_changes
     `git status --porcelain`.strip
+  end
+
+  def docker_env_file_line(key, value)
+    if key.include?("\n") || value.to_s.include?("\n")
+      raise ArgumentError, "docker env file format does not support newlines in keys or values, key: #{key}"
+    end
+
+    "#{key.to_s}=#{value.to_s}\n"
   end
 end

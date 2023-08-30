@@ -71,7 +71,17 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
 
   test "env overwritten by role" do
     assert_equal "redis://a/b", @config_with_roles.role(:workers).env["REDIS_URL"]
-    assert_equal ["-e", "REDIS_URL=\"redis://a/b\"", "-e", "WEB_CONCURRENCY=\"4\""], @config_with_roles.role(:workers).env_args
+
+    expected_env = <<~ENV
+      REDIS_URL=redis://a/b
+      WEB_CONCURRENCY=4
+    ENV
+
+    assert_equal expected_env, @config_with_roles.role(:workers).env_file
+  end
+
+  test "env args" do
+    assert_equal ["--env-file", ".kamal/env/roles/app-workers.env"], @config_with_roles.role(:workers).env_args
   end
 
   test "env secret overwritten by role" do
@@ -97,10 +107,14 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
     ENV["REDIS_PASSWORD"] = "secret456"
     ENV["DB_PASSWORD"] = "secret&\"123"
 
-    @config_with_roles.role(:workers).env_args.tap do |env_args|
-      assert_equal ["-e", "REDIS_PASSWORD=\"secret456\"", "-e", "DB_PASSWORD=\"secret&\\\"123\"", "-e", "REDIS_URL=\"redis://a/b\"", "-e", "WEB_CONCURRENCY=\"4\""], Kamal::Utils.unredacted(env_args)
-      assert_equal ["-e", "REDIS_PASSWORD=[REDACTED]", "-e", "DB_PASSWORD=[REDACTED]", "-e", "REDIS_URL=\"redis://a/b\"", "-e", "WEB_CONCURRENCY=\"4\""], Kamal::Utils.redacted(env_args)
-    end
+    expected = <<~ENV
+      REDIS_PASSWORD=secret456
+      DB_PASSWORD=secret&\"123
+      REDIS_URL=redis://a/b
+      WEB_CONCURRENCY=4
+    ENV
+
+    assert_equal expected, @config_with_roles.role(:workers).env_file
   ensure
     ENV["REDIS_PASSWORD"] = nil
     ENV["DB_PASSWORD"] = nil
@@ -119,10 +133,13 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
 
     ENV["DB_PASSWORD"] = "secret123"
 
-    @config_with_roles.role(:workers).env_args.tap do |env_args|
-      assert_equal ["-e", "DB_PASSWORD=\"secret123\"", "-e", "REDIS_URL=\"redis://a/b\"", "-e", "WEB_CONCURRENCY=\"4\""], Kamal::Utils.unredacted(env_args)
-      assert_equal ["-e", "DB_PASSWORD=[REDACTED]", "-e", "REDIS_URL=\"redis://a/b\"", "-e", "WEB_CONCURRENCY=\"4\""], Kamal::Utils.redacted(env_args)
-    end
+    expected = <<~ENV
+      DB_PASSWORD=secret123
+      REDIS_URL=redis://a/b
+      WEB_CONCURRENCY=4
+    ENV
+
+    assert_equal expected, @config_with_roles.role(:workers).env_file
   ensure
     ENV["DB_PASSWORD"] = nil
   end
@@ -139,11 +156,23 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
 
     ENV["REDIS_PASSWORD"] = "secret456"
 
-    @config_with_roles.role(:workers).env_args.tap do |env_args|
-      assert_equal ["-e", "REDIS_PASSWORD=\"secret456\"", "-e", "REDIS_URL=\"redis://a/b\"", "-e", "WEB_CONCURRENCY=\"4\""], Kamal::Utils.unredacted(env_args)
-      assert_equal ["-e", "REDIS_PASSWORD=[REDACTED]", "-e", "REDIS_URL=\"redis://a/b\"", "-e", "WEB_CONCURRENCY=\"4\""], Kamal::Utils.redacted(env_args)
-    end
+    expected = <<~ENV
+      REDIS_PASSWORD=secret456
+      REDIS_URL=redis://a/b
+      WEB_CONCURRENCY=4
+    ENV
+
+    assert_equal expected, @config_with_roles.role(:workers).env_file
   ensure
     ENV["REDIS_PASSWORD"] = nil
   end
+
+  test "host_env_directory" do
+    assert_equal ".kamal/env/roles", @config_with_roles.role(:workers).host_env_directory
+  end
+
+  test "host_env_file_path" do
+    assert_equal ".kamal/env/roles/app-workers.env", @config_with_roles.role(:workers).host_env_file_path
+  end
+
 end
