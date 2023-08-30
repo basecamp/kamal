@@ -175,6 +175,9 @@ class Kamal::Cli::Main < Kamal::Cli::Base
     end
 
     File.write(env_path, ERB.new(File.read(env_template_path)).result, perm: 0600)
+
+    load_envs # reload new file
+    invoke "kamal:cli:env:push", options
   end
 
   desc "remove", "Remove Traefik, app, accessories, and registry session from servers"
@@ -203,6 +206,9 @@ class Kamal::Cli::Main < Kamal::Cli::Base
 
   desc "build", "Build application image"
   subcommand "build", Kamal::Cli::Build
+
+  desc "env", "Manage environment files"
+  subcommand "env", Kamal::Cli::Env
 
   desc "healthcheck", "Healthcheck application"
   subcommand "healthcheck", Kamal::Cli::Healthcheck

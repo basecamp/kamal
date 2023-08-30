@@ -26,6 +26,14 @@ module Kamal::Commands
       docker :container, :ls, *("--all" unless only_running), "--filter", "name=^#{container_name}$", "--quiet"
     end
 
+    def make_directory_for(remote_file)
+      make_directory Pathname.new(remote_file).dirname.to_s
+    end
+
+    def make_directory(path)
+      [ :mkdir, "-p", path ]
+    end
+
     private
       def combine(*commands, by: "&&")
         commands
