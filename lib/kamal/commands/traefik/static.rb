@@ -4,7 +4,6 @@ class Kamal::Commands::Traefik::Static < Kamal::Commands::Base
   def initialize(config, role: nil)
     super(config)
     @static_config = Kamal::Configuration::Traefik::Static.new(config: config)
-    @dynamic_config = Kamal::Configuration::Traefik::Dynamic.new(config: config, role: role)
   end
 
   def run
@@ -66,10 +65,6 @@ class Kamal::Commands::Traefik::Static < Kamal::Commands::Base
 
   def docker_entrypoint_args
     docker :inspect, "-f '{{index .Args 1 }}'", :traefik
-  end
-
-  def boot_check?
-    dynamic_config.boot_check?
   end
 end
 
