@@ -18,7 +18,7 @@ builder:
   args:
     COMMIT_SHA: <%= `git rev-parse HEAD` %>
 healthcheck:
-  cmd: wget -qO- http://localhost > /dev/null
+  cmd: wget -qO- http://localhost > /dev/null || exit 1
 traefik:
   args:
     accesslog: true

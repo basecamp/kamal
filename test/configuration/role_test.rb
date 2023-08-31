@@ -175,4 +175,24 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
     assert_equal ".kamal/env/roles/app-workers.env", @config_with_roles.role(:workers).host_env_file_path
   end
 
+  test "uses cord" do
+    assert @config_with_roles.role(:web).uses_cord?
+    assert !@config_with_roles.role(:workers).uses_cord?
+  end
+
+  test "cord host directory" do
+    assert_match %r{\$\(pwd\)/.kamal/cords/app-web-[0-9a-f]{32}}, @config_with_roles.role(:web).cord_host_directory
+  end
+
+  test "cord host file" do
+    assert_match %r{\$\(pwd\)/.kamal/cords/app-web-[0-9a-f]{32}/cord}, @config_with_roles.role(:web).cord_host_file
+  end
+
+  test "cord container directory" do
+    assert_equal "/tmp/kamal-cord", @config_with_roles.role(:web).cord_container_directory
+  end
+
+  test "cord container file" do
+    assert_equal "/tmp/kamal-cord/cord", @config_with_roles.role(:web).cord_container_file
+  end
 end

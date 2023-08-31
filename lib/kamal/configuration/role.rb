@@ -1,4 +1,5 @@
 class Kamal::Configuration::Role
+  CORD_FILE = "cord"
   delegate :argumentize, :env_file_with_secrets, :optionize, to: Kamal::Utils
 
   attr_accessor :name
@@ -47,27 +48,51 @@ class Kamal::Configuration::Role
     argumentize "--env-file", host_env_file_path
   end
 
-  def health_check_args
+  def health_check_args(cord: true)
     if health_check_cmd.present?
-      optionize({ "health-cmd" => health_check_cmd, "health-interval" => health_check_interval })
+      if cord && uses_cord?
+        optionize({ "health-cmd" => health_check_cmd_with_cord, "health-interval" => health_check_interval })
+          .concat(["--volume", "#{cord_host_directory}:#{cord_container_directory}"])
+      else
+        optionize({ "health-cmd" => health_check_cmd, "health-interval" => health_check_interval })
+      end
     else
       []
     end
   end
 
   def health_check_cmd
-    options = specializations["healthcheck"] || {}
-    options = config.healthcheck.merge(options) if running_traefik?
+    health_check_options["cmd"] || http_health_check(port: health_check_options["port"], path: health_check_options["path"])
+  end
 
-    options["cmd"] || http_health_check(port: options["port"], path: options["path"])
+  def health_check_cmd_with_cord
+    "(#{health_check_cmd}) && (stat #{cord_container_file} > /dev/null || exit 1)"
   end
 
   def health_check_interval
-    options = specializations["healthcheck"] || {}
-    options = config.healthcheck.merge(options) if running_traefik?
-
-    options["interval"] || "1s"
+    health_check_options["interval"] || "1s"
   end
+
+  def uses_cord?
+    running_traefik? && cord_container_directory.present? && health_check_cmd.present?
+  end
+
+  def cord_host_directory
+    File.join config.run_directory_as_docker_volume, "cords", [full_name, config.run_id].join("-")
+  end
+
+  def cord_host_file
+    File.join cord_host_directory, CORD_FILE
+  end
+
+  def cord_container_directory
+    health_check_options.fetch("cord", nil)
+  end
+
+  def cord_container_file
+    File.join cord_container_directory, CORD_FILE
+  end
+
 
   def cmd
     specializations["cmd"]
@@ -83,6 +108,10 @@ class Kamal::Configuration::Role
 
   def running_traefik?
     name.web? || specializations["traefik"]
+  end
+
+  def full_name
+    [ config.service, name, config.destination ].compact.join("-")
   end
 
   private
@@ -163,5 +192,13 @@ class Kamal::Configuration::Role
 
     def http_health_check(port:, path:)
       "curl -f #{URI.join("http://localhost:#{port}", path)} || exit 1" if path.present? || port.present?
+    end
+
+    def health_check_options
+      @health_check_options ||= begin
+        options = specializations["healthcheck"] || {}
+        options = config.healthcheck.merge(options) if running_traefik?
+        options
+      end
     end
 end

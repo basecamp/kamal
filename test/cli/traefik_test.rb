@@ -19,6 +19,8 @@ class CliTraefikTest < CliTestCase
   end
 
   test "reboot --rolling" do
+    Object.any_instance.stubs(:sleep)
+
     run_command("reboot", "--rolling").tap do |output|
       assert_match "Running docker container prune --force --filter label=org.opencontainers.image.title=Traefik on 1.1.1.1", output
     end

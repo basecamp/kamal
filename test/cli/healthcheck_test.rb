@@ -6,6 +6,7 @@ class CliHealthcheckTest < CliTestCase
     Thread.report_on_exception = false
 
     Kamal::Utils::HealthcheckPoller.stubs(:sleep) # No sleeping when retrying
+    Kamal::Configuration.any_instance.stubs(:run_id).returns("12345678901234567890123456789012")
 
     SSHKit::Backend::Abstract.any_instance.stubs(:execute)
       .with(:docker, :container, :ls, "--all", "--filter", "name=^healthcheck-app-999$", "--quiet", "|", :xargs, :docker, :stop, raise_on_non_zero_exit: false)
