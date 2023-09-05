@@ -1,5 +1,4 @@
 class Kamal::Commands::Healthcheck < Kamal::Commands::Base
-  EXPOSED_PORT = 3999
 
   def run
     web = config.role(:web)
@@ -7,7 +6,7 @@ class Kamal::Commands::Healthcheck < Kamal::Commands::Base
     docker :run,
       "--detach",
       "--name", container_name_with_version,
-      "--publish", "#{EXPOSED_PORT}:#{config.healthcheck["port"]}",
+      "--publish", "#{exposed_port}:#{config.healthcheck["port"]}",
       "--label", "service=#{container_name}",
       "-e", "KAMAL_CONTAINER_NAME=\"#{container_name}\"",
       *web.env_args,
@@ -52,6 +51,10 @@ class Kamal::Commands::Healthcheck < Kamal::Commands::Base
     end
 
     def health_url
-      "http://localhost:#{EXPOSED_PORT}#{config.healthcheck["path"]}"
+      "http://localhost:#{exposed_port}#{config.healthcheck["path"]}"
+    end
+
+    def exposed_port
+      config.healthcheck["exposed_port"]
     end
 end
