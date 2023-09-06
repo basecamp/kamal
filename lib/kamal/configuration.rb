@@ -145,7 +145,7 @@ class Kamal::Configuration
 
 
   def healthcheck
-    { "path" => "/up", "port" => 3000, "max_attempts" => 7 }.merge(raw_config.healthcheck || {})
+    { "path" => "/up", "port" => 3000, "max_attempts" => 7, "exposed_port" => 3999 }.merge(raw_config.healthcheck || {})
   end
 
   def readiness_delay
