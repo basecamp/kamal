@@ -263,7 +263,7 @@ class ConfigurationTest < ActiveSupport::TestCase
         :volume_args=>["--volume", "/local/path:/container/path"],
         :builder=>{},
         :logging=>["--log-opt", "max-size=\"10m\""],
-        :healthcheck=>{ "path"=>"/up", "port"=>3000, "max_attempts" => 7 }}
+        :healthcheck=>{ "path"=>"/up", "port"=>3000, "max_attempts" => 7, "exposed_port" => 3999 }}
 
     assert_equal expected_config, @config.to_h
   end
