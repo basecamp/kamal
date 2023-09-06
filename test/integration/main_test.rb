@@ -51,7 +51,7 @@ class MainTest < IntegrationTest
     assert_equal "app-#{version}", config[:service_with_version]
     assert_equal [], config[:env_args]
     assert_equal [], config[:volume_args]
-    assert_equal({ user: "root", auth_methods: [ "publickey" ], keepalive: true, keepalive_interval: 30, log_level: :fatal }, config[:ssh_options])
+    assert_equal({ user: "root", keepalive: true, keepalive_interval: 30, log_level: :fatal }, config[:ssh_options])
     assert_equal({ "multiarch" => false, "args" => { "COMMIT_SHA" => version } }, config[:builder])
     assert_equal [ "--log-opt", "max-size=\"10m\"" ], config[:logging]
     assert_equal({ "path" => "/up", "port" => 3000, "max_attempts" => 7, "cmd" => "wget -qO- http://localhost > /dev/null" }, config[:healthcheck])

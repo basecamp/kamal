@@ -258,7 +258,7 @@ class ConfigurationTest < ActiveSupport::TestCase
         :absolute_image=>"dhh/app:missing",
         :service_with_version=>"app-missing",
         :env_args=>["-e", "REDIS_URL=\"redis://x/y\""],
-        :ssh_options=>{ :user=>"root", :auth_methods=>["publickey"], log_level: :fatal, keepalive: true, keepalive_interval: 30 },
+        :ssh_options=>{ :user=>"root", log_level: :fatal, keepalive: true, keepalive_interval: 30 },
         :sshkit=>{},
         :volume_args=>["--volume", "/local/path:/container/path"],
         :builder=>{},
