@@ -92,6 +92,13 @@ class CommandsHealthcheckTest < ActiveSupport::TestCase
       new_command.logs.join(" ")
   end
 
+  test "logs with custom lines number" do
+    @config[:healthcheck] = { "lines" => 150 }
+    assert_equal \
+      "docker container ls --all --filter name=^healthcheck-app-123$ --quiet | xargs docker logs --tail 150 2>&1",
+      new_command.logs.join(" ")
+  end
+
   test "logs with destination" do
     @destination = "staging"
 
