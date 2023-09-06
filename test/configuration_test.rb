@@ -128,6 +128,12 @@ class ConfigurationTest < ActiveSupport::TestCase
     assert_equal [ "-e", "REDIS_URL=\"redis://x/y\"" ], @config.env_args
   end
 
+  test "env file" do
+    config = Kamal::Configuration.new({ env: { file: "/path/to/.env" } })
+
+    assert_equal [ "--env-file", "/path/to/.env" ], config.env_args
+  end
+
   test "env args with clear and secrets" do
     ENV["PASSWORD"] = "secret123"
 

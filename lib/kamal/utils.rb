@@ -21,6 +21,8 @@ module Kamal::Utils
   def argumentize_env_with_secrets(env)
     if (secrets = env["secret"]).present?
       argumentize("-e", secrets.to_h { |key| [ key, ENV.fetch(key) ] }, sensitive: true) + argumentize("-e", env["clear"])
+    elsif (file = env["file"]).present?
+      argumentize "--env-file", file
     else
       argumentize "-e", env.fetch("clear", env)
     end
