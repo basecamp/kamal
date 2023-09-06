@@ -111,6 +111,14 @@ class CommandsBuilderTest < ActiveSupport::TestCase
       builder.push.join(" ")
   end
 
+  test "build with ssh agent socket" do
+    builder = new_builder_command(builder: { "ssh" => 'default=$SSH_AUTH_SOCK' })
+
+    assert_equal \
+      "-t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile --ssh default=$SSH_AUTH_SOCK",
+      builder.target.build_options.join(" ")
+  end
+
   test "validate image" do
     assert_equal "docker inspect -f '{{ .Config.Labels.service }}' dhh/app:123 | grep -x app || (echo \"Image dhh/app:123 is missing the `service` label\" && exit 1)", new_builder_command.validate_image.join(" ")
   end
