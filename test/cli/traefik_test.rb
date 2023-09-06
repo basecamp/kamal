@@ -20,7 +20,7 @@ class CliTraefikTest < CliTestCase
 
   test "reboot --rolling" do
     run_command("reboot", "--rolling").tap do |output|
-      assert_match "Running docker container prune --force --filter label=org.opencontainers.image.title=Traefik on 1.1.1.1", output.lines[3]
+      assert_match "Running docker container prune --force --filter label=org.opencontainers.image.title=Traefik on 1.1.1.1", output
     end
   end
 

@@ -57,6 +57,10 @@ class Kamal::Configuration
     Kamal::Utils.abbreviate_version(version)
   end
 
+  def run_directory
+    raw_config.run_directory || ".kamal"
+  end
+
 
   def roles
     @roles ||= role_names.collect { |role_name| Role.new(role_name, config: self) }
