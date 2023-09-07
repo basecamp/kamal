@@ -193,7 +193,7 @@ class CliMainTest < CliTestCase
     end
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :inspect, "-f '{{ range .Mounts }}{{ .Source }} {{ .Destination }} {{ end }}'", "app-web-version-to-rollback", "|", :awk, "'$2 == \"/tmp/kamal-cord\" {print $1}'", :raise_on_non_zero_exit => false)
+      .with(:docker, :inspect, "-f '{{ range .Mounts }}{{printf \"%s %s\n\" .Source .Destination}}{{ end }}'", "app-web-version-to-rollback", "|", :awk, "'$2 == \"/tmp/kamal-cord\" {print $1}'", :raise_on_non_zero_exit => false)
       .returns("corddirectory").at_least_once # health check
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
