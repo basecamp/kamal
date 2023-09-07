@@ -61,6 +61,14 @@ class Kamal::Configuration
     raw_config.run_directory || ".kamal"
   end
 
+  def run_directory_as_docker_volume
+    if Pathname.new(run_directory).absolute?
+      run_directory
+    else
+      File.join "$(pwd)", run_directory
+    end
+  end
+
 
   def roles
     @roles ||= role_names.collect { |role_name| Role.new(role_name, config: self) }
@@ -141,7 +149,7 @@ class Kamal::Configuration
 
 
   def healthcheck
-    { "path" => "/up", "port" => 3000, "max_attempts" => 7, "exposed_port" => 3999 }.merge(raw_config.healthcheck || {})
+    { "path" => "/up", "port" => 3000, "max_attempts" => 7, "exposed_port" => 3999, "cord" => "/tmp/kamal-cord" }.merge(raw_config.healthcheck || {})
   end
 
   def readiness_delay
@@ -197,6 +205,10 @@ class Kamal::Configuration
 
   def host_env_directory
     "#{run_directory}/env"
+  end
+
+  def run_id
+    @run_id ||= SecureRandom.hex(16)
   end
 
   private

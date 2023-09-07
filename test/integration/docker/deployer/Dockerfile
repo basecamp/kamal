@@ -2,6 +2,8 @@ FROM ruby:3.2
 
 WORKDIR /app
 
+ENV VERBOSE=true
+
 RUN apt-get update --fix-missing && apt-get install -y ca-certificates openssh-client curl gnupg docker.io
 
 RUN install -m 0755 -d /etc/apt/keyrings

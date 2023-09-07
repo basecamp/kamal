@@ -34,6 +34,10 @@ module Kamal::Commands
       [ :mkdir, "-p", path ]
     end
 
+    def remove_directory(path)
+      [ :rm, "-r", path ]
+    end
+
     private
       def combine(*commands, by: "&&")
         commands
@@ -68,6 +72,12 @@ module Kamal::Commands
 
       def tags(**details)
         Kamal::Tags.from_config(config, **details)
+      end
+
+      def create_empty_file(file)
+        chain \
+          make_directory_for(file),
+          [:touch, file]
       end
   end
 end

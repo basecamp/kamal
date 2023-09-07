@@ -224,7 +224,7 @@ class ConfigurationTest < ActiveSupport::TestCase
         :volume_args=>["--volume", "/local/path:/container/path"],
         :builder=>{},
         :logging=>["--log-opt", "max-size=\"10m\""],
-        :healthcheck=>{ "path"=>"/up", "port"=>3000, "max_attempts" => 7, "exposed_port" => 3999 }}
+        :healthcheck=>{ "path"=>"/up", "port"=>3000, "max_attempts" => 7, "exposed_port" => 3999, "cord" => "/tmp/kamal-cord" }}
 
     assert_equal expected_config, @config.to_h
   end
@@ -251,5 +251,18 @@ class ConfigurationTest < ActiveSupport::TestCase
 
     config = Kamal::Configuration.new(@deploy.merge!(run_directory: "/root/kamal"))
     assert_equal "/root/kamal", config.run_directory
+  end
+
+  test "run directory as docker volume" do
+    config = Kamal::Configuration.new(@deploy)
+    assert_equal "$(pwd)/.kamal", config.run_directory_as_docker_volume
+
+    config = Kamal::Configuration.new(@deploy.merge!(run_directory: "/root/kamal"))
+    assert_equal "/root/kamal", config.run_directory_as_docker_volume
+  end
+
+  test "run id" do
+    SecureRandom.expects(:hex).with(16).returns("09876543211234567890098765432112")
+    assert_equal "09876543211234567890098765432112", @config.run_id
   end
 end
