@@ -345,8 +345,39 @@ class CommandsAppTest < ActiveSupport::TestCase
     assert_equal "rm -r corddir", new_command.cut_cord("corddir").join(" ")
   end
 
+  test "extract assets" do
+    assert_equal [
+      :mkdir, "-p", ".kamal/assets/extracted/app-web-999", "&&",
+      :docker, :stop, "-t 1", "app-web-assets", "2> /dev/null", "|| true", "&&",
+      :docker, :run, "--name", "app-web-assets", "--detach", "--rm", "dhh/app:latest", "sleep 1000000", "&&",
+      :docker, :cp, "-L", "app-web-assets:/public/assets/.", ".kamal/assets/extracted/app-web-999", "&&",
+      :docker, :stop, "-t 1", "app-web-assets"
+    ], new_command(asset_path: "/public/assets").extract_assets
+  end
+
+  test "sync asset volumes" do
+    assert_equal [
+      :mkdir, "-p", ".kamal/assets/volumes/app-web-999", ";",
+      :cp, "-rn", ".kamal/assets/extracted/app-web-999/*", ".kamal/assets/volumes/app-web-999"
+    ], new_command(asset_path: "/public/assets").sync_asset_volumes
+
+    assert_equal [
+      :mkdir, "-p", ".kamal/assets/volumes/app-web-999", ";",
+      :cp, "-rn", ".kamal/assets/extracted/app-web-999/*", ".kamal/assets/volumes/app-web-999", ";",
+      :cp, "-rn", ".kamal/assets/extracted/app-web-999/*", ".kamal/assets/volumes/app-web-998", "|| true", ";",
+      :cp, "-rn", ".kamal/assets/extracted/app-web-998/*", ".kamal/assets/volumes/app-web-999", "|| true",
+    ], new_command(asset_path: "/public/assets").sync_asset_volumes(old_version: 998)
+  end
+
+  test "clean up assets" do
+    assert_equal [
+      :find, ".kamal/assets/extracted", "-maxdepth 1", "-name", "'app-web-*'", "!", "-name", "app-web-999", "-exec rm -rf \"{}\" +", ";",
+      :find, ".kamal/assets/volumes", "-maxdepth 1", "-name", "'app-web-*'", "!", "-name", "app-web-999", "-exec rm -rf \"{}\" +"
+    ], new_command(asset_path: "/public/assets").clean_up_assets
+  end
+
   private
-    def new_command(role: "web")
-      Kamal::Commands::App.new(Kamal::Configuration.new(@config, destination: @destination, version: "999"), role: role)
+    def new_command(role: "web", **additional_config)
+      Kamal::Commands::App.new(Kamal::Configuration.new(@config.merge(additional_config), destination: @destination, version: "999"), role: role)
     end
 end

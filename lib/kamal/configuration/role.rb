@@ -48,11 +48,15 @@ class Kamal::Configuration::Role
     argumentize "--env-file", host_env_file_path
   end
 
+  def asset_volume_args
+    asset_volume&.docker_args
+  end
+
   def health_check_args(cord: true)
     if health_check_cmd.present?
       if cord && uses_cord?
         optionize({ "health-cmd" => health_check_cmd_with_cord, "health-interval" => health_check_interval })
-          .concat(["--volume", "#{cord_host_directory}:#{cord_container_directory}"])
+          .concat(cord_volume.docker_args)
       else
         optionize({ "health-cmd" => health_check_cmd, "health-interval" => health_check_interval })
       end
@@ -74,15 +78,23 @@ class Kamal::Configuration::Role
   end
 
   def uses_cord?
-    running_traefik? && cord_container_directory.present? && health_check_cmd.present?
+    running_traefik? && cord_volume && health_check_cmd.present?
   end
 
   def cord_host_directory
-    File.join config.run_directory_as_docker_volume, "cords", [full_name, config.run_id].join("-")
+    File.join config.run_directory_as_docker_volume, "cords", [container_prefix, config.run_id].join("-")
+  end
+
+  def cord_volume
+    if (cord = health_check_options["cord"])
+      @cord_volume ||= Kamal::Configuration::Volume.new \
+        host_path: File.join(config.run_directory, "cords", [container_prefix, config.run_id].join("-")),
+        container_path: cord
+    end
   end
 
   def cord_host_file
-    File.join cord_host_directory, CORD_FILE
+    File.join cord_volume.host_path, CORD_FILE
   end
 
   def cord_container_directory
@@ -90,7 +102,7 @@ class Kamal::Configuration::Role
   end
 
   def cord_container_file
-    File.join cord_container_directory, CORD_FILE
+    File.join cord_volume.container_path, CORD_FILE
   end
 
 
@@ -110,8 +122,35 @@ class Kamal::Configuration::Role
     name.web? || specializations["traefik"]
   end
 
-  def full_name
+  def container_name(version = nil)
+    [ container_prefix, version || config.version ].compact.join("-")
+  end
+
+  def container_prefix
     [ config.service, name, config.destination ].compact.join("-")
+  end
+
+  def asset_path
+    specializations["asset_path"] || config.asset_path
+  end
+
+  def assets?
+    asset_path.present? && running_traefik?
+  end
+
+  def asset_volume(version = nil)
+    if assets?
+      Kamal::Configuration::Volume.new \
+        host_path: asset_volume_path(version), container_path: asset_path
+    end
+  end
+
+  def asset_extracted_path(version = nil)
+    File.join config.run_directory, "assets", "extracted", container_name(version)
+  end
+
+  def asset_volume_path(version = nil)
+    File.join config.run_directory, "assets", "volumes", container_name(version)
   end
 
   private
