@@ -339,10 +339,10 @@ class CliMainTest < CliTestCase
   end
 
   test "envify with destination" do
-    File.expects(:read).with(".env.staging.erb").returns("HELLO=<%= 'world' %>")
-    File.expects(:write).with(".env.staging", "HELLO=world", perm: 0600)
+    File.expects(:read).with(".env.world.erb").returns("HELLO=<%= 'world' %>")
+    File.expects(:write).with(".env.world", "HELLO=world", perm: 0600)
 
-    run_command("envify", "-d", "staging")
+    run_command("envify", "-d", "world", config_file: "deploy_for_dest")
   end
 
   test "remove with confirmation" do

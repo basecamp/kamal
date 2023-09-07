@@ -81,7 +81,7 @@ class Kamal::Commands::App < Kamal::Commands::Base
     docker :run,
       ("-it" if interactive),
       "--rm",
-      *config.env_args,
+      *role&.env_args,
       *config.volume_args,
       *role&.option_args,
       config.absolute_image,
@@ -149,6 +149,13 @@ class Kamal::Commands::App < Kamal::Commands::Base
     docker :tag, config.absolute_image, config.latest_image
   end
 
+  def make_env_directory
+    make_directory config.role(role).host_env_directory
+  end
+
+  def remove_env_file
+    [:rm, "-f", config.role(role).host_env_file_path]
+  end
 
   private
     def container_name(version = nil)

@@ -124,45 +124,7 @@ class ConfigurationTest < ActiveSupport::TestCase
     assert_equal "app-missing", @config.service_with_version
   end
 
-  test "env args" do
-    assert_equal [ "-e", "REDIS_URL=\"redis://x/y\"" ], @config.env_args
-  end
-
-  test "env args with clear and secrets" do
-    ENV["PASSWORD"] = "secret123"
-
-    config = Kamal::Configuration.new(@deploy.tap { |c| c.merge!({
-      env: { "clear" => { "PORT" => "3000" }, "secret" => [ "PASSWORD" ] }
-    }) })
-
-    assert_equal [ "-e", "PASSWORD=\"secret123\"", "-e", "PORT=\"3000\"" ], Kamal::Utils.unredacted(config.env_args)
-    assert_equal [ "-e", "PASSWORD=[REDACTED]", "-e", "PORT=\"3000\"" ], Kamal::Utils.redacted(config.env_args)
-  ensure
-    ENV["PASSWORD"] = nil
-  end
-
-  test "env args with only clear" do
-    config = Kamal::Configuration.new(@deploy.tap { |c| c.merge!({
-      env: { "clear" => { "PORT" => "3000" } }
-    }) })
-
-    assert_equal [ "-e", "PORT=\"3000\"" ], config.env_args
-  end
-
-  test "env args with only secrets" do
-    ENV["PASSWORD"] = "secret123"
-
-    config = Kamal::Configuration.new(@deploy.tap { |c| c.merge!({
-      env: { "secret" => [ "PASSWORD" ] }
-    }) })
-
-    assert_equal [ "-e", "PASSWORD=\"secret123\"" ], Kamal::Utils.unredacted(config.env_args)
-    assert_equal [ "-e", "PASSWORD=[REDACTED]" ], Kamal::Utils.redacted(config.env_args)
-  ensure
-    ENV["PASSWORD"] = nil
-  end
-
-  test "env args with missing secret" do
+  test "env with missing secret" do
     assert_raises(KeyError) do
       config = Kamal::Configuration.new(@deploy.tap { |c| c.merge!({
         env: { "secret" => [ "PASSWORD" ] }
@@ -257,7 +219,6 @@ class ConfigurationTest < ActiveSupport::TestCase
         :repository=>"dhh/app",
         :absolute_image=>"dhh/app:missing",
         :service_with_version=>"app-missing",
-        :env_args=>["-e", "REDIS_URL=\"redis://x/y\""],
         :ssh_options=>{ :user=>"root", :auth_methods=>["publickey"], log_level: :fatal, keepalive: true, keepalive_interval: 30 },
         :sshkit=>{},
         :volume_args=>["--volume", "/local/path:/container/path"],
