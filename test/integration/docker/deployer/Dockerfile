@@ -2,6 +2,8 @@ FROM ruby:3.2
 
 WORKDIR /app
 
+ENV VERBOSE=true
+
 RUN apt-get update --fix-missing && apt-get install -y ca-certificates openssh-client curl gnupg docker.io
 
 RUN install -m 0755 -d /etc/apt/keyrings
@@ -23,7 +25,7 @@ RUN mkdir -p /etc/docker/certs.d/registry:4443 && ln -s /shared/certs/domain.crt
 
 RUN git config --global user.email "deployer@example.com"
 RUN git config --global user.name "Deployer"
-RUN git init && git add . && git commit -am "Initial version"
+RUN git init && echo ".env" >> .gitignore && git add . && git commit -am "Initial version"
 
 HEALTHCHECK --interval=1s CMD pgrep sleep
 

@@ -20,7 +20,7 @@ class CliBuildTest < CliTestCase
   end
 
   test "push without builder" do
-    stub_locking
+    stub_setup
     SSHKit::Backend::Abstract.any_instance.stubs(:execute)
       .with(:docker, "--version", "&&", :docker, :buildx, "version")
 
@@ -36,7 +36,7 @@ class CliBuildTest < CliTestCase
   end
 
   test "push with no buildx plugin" do
-    stub_locking
+    stub_setup
     SSHKit::Backend::Abstract.any_instance.stubs(:execute)
       .with(:docker, "--version", "&&", :docker, :buildx, "version")
       .raises(SSHKit::Command::Failed.new("no buildx"))
@@ -67,7 +67,7 @@ class CliBuildTest < CliTestCase
   end
 
   test "create with error" do
-    stub_locking
+    stub_setup
     SSHKit::Backend::Abstract.any_instance.stubs(:execute)
       .with { |arg| arg == :docker }
       .raises(SSHKit::Command::Failed.new("stderr=error"))

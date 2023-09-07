@@ -124,45 +124,7 @@ class ConfigurationTest < ActiveSupport::TestCase
     assert_equal "app-missing", @config.service_with_version
   end
 
-  test "env args" do
-    assert_equal [ "-e", "REDIS_URL=\"redis://x/y\"" ], @config.env_args
-  end
-
-  test "env args with clear and secrets" do
-    ENV["PASSWORD"] = "secret123"
-
-    config = Kamal::Configuration.new(@deploy.tap { |c| c.merge!({
-      env: { "clear" => { "PORT" => "3000" }, "secret" => [ "PASSWORD" ] }
-    }) })
-
-    assert_equal [ "-e", "PASSWORD=\"secret123\"", "-e", "PORT=\"3000\"" ], Kamal::Utils.unredacted(config.env_args)
-    assert_equal [ "-e", "PASSWORD=[REDACTED]", "-e", "PORT=\"3000\"" ], Kamal::Utils.redacted(config.env_args)
-  ensure
-    ENV["PASSWORD"] = nil
-  end
-
-  test "env args with only clear" do
-    config = Kamal::Configuration.new(@deploy.tap { |c| c.merge!({
-      env: { "clear" => { "PORT" => "3000" } }
-    }) })
-
-    assert_equal [ "-e", "PORT=\"3000\"" ], config.env_args
-  end
-
-  test "env args with only secrets" do
-    ENV["PASSWORD"] = "secret123"
-
-    config = Kamal::Configuration.new(@deploy.tap { |c| c.merge!({
-      env: { "secret" => [ "PASSWORD" ] }
-    }) })
-
-    assert_equal [ "-e", "PASSWORD=\"secret123\"" ], Kamal::Utils.unredacted(config.env_args)
-    assert_equal [ "-e", "PASSWORD=[REDACTED]" ], Kamal::Utils.redacted(config.env_args)
-  ensure
-    ENV["PASSWORD"] = nil
-  end
-
-  test "env args with missing secret" do
+  test "env with missing secret" do
     assert_raises(KeyError) do
       config = Kamal::Configuration.new(@deploy.tap { |c| c.merge!({
         env: { "secret" => [ "PASSWORD" ] }
@@ -257,13 +219,12 @@ class ConfigurationTest < ActiveSupport::TestCase
         :repository=>"dhh/app",
         :absolute_image=>"dhh/app:missing",
         :service_with_version=>"app-missing",
-        :env_args=>["-e", "REDIS_URL=\"redis://x/y\""],
         :ssh_options=>{ :user=>"root", log_level: :fatal, keepalive: true, keepalive_interval: 30 },
         :sshkit=>{},
         :volume_args=>["--volume", "/local/path:/container/path"],
         :builder=>{},
         :logging=>["--log-opt", "max-size=\"10m\""],
-        :healthcheck=>{ "path"=>"/up", "port"=>3000, "max_attempts" => 7 }}
+        :healthcheck=>{ "path"=>"/up", "port"=>3000, "max_attempts" => 7, "exposed_port" => 3999, "cord" => "/tmp/kamal-cord" }}
 
     assert_equal expected_config, @config.to_h
   end
@@ -282,5 +243,26 @@ class ConfigurationTest < ActiveSupport::TestCase
     assert_raises(ArgumentError) do
       Kamal::Configuration.new(@deploy.tap { |c| c.merge!(minimum_version: "10000.0.0") })
     end
+  end
+
+  test "run directory" do
+    config = Kamal::Configuration.new(@deploy)
+    assert_equal ".kamal", config.run_directory
+
+    config = Kamal::Configuration.new(@deploy.merge!(run_directory: "/root/kamal"))
+    assert_equal "/root/kamal", config.run_directory
+  end
+
+  test "run directory as docker volume" do
+    config = Kamal::Configuration.new(@deploy)
+    assert_equal "$(pwd)/.kamal", config.run_directory_as_docker_volume
+
+    config = Kamal::Configuration.new(@deploy.merge!(run_directory: "/root/kamal"))
+    assert_equal "/root/kamal", config.run_directory_as_docker_volume
+  end
+
+  test "run id" do
+    SecureRandom.expects(:hex).with(16).returns("09876543211234567890098765432112")
+    assert_equal "09876543211234567890098765432112", @config.run_id
   end
 end

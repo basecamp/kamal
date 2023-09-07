@@ -1,7 +1,11 @@
 require_relative "integration_test"
 
 class MainTest < IntegrationTest
-  test "deploy, redeploy, rollback, details and audit" do
+  test "envify, deploy, redeploy, rollback, details and audit" do
+    kamal :envify
+    assert_local_env_file "SECRET_TOKEN=1234"
+    assert_remote_env_file "SECRET_TOKEN=1234\nCLEAR_TOKEN=4321"
+
     first_version = latest_app_version
 
     assert_app_is_down
@@ -30,12 +34,9 @@ class MainTest < IntegrationTest
 
     audit = kamal :audit, capture: true
     assert_match /Booted app version #{first_version}.*Booted app version #{second_version}.*Booted app version #{first_version}.*/m, audit
-  end
 
-  test "envify" do
-    kamal :envify
-
-    assert_equal "SECRET_TOKEN=1234", deployer_exec("cat .env", capture: true)
+    kamal :env, :delete
+    assert_no_remote_env_file
   end
 
   test "config" do
@@ -49,11 +50,23 @@ class MainTest < IntegrationTest
     assert_equal "registry:4443/app", config[:repository]
     assert_equal "registry:4443/app:#{version}", config[:absolute_image]
     assert_equal "app-#{version}", config[:service_with_version]
-    assert_equal [], config[:env_args]
     assert_equal [], config[:volume_args]
     assert_equal({ user: "root", keepalive: true, keepalive_interval: 30, log_level: :fatal }, config[:ssh_options])
     assert_equal({ "multiarch" => false, "args" => { "COMMIT_SHA" => version } }, config[:builder])
     assert_equal [ "--log-opt", "max-size=\"10m\"" ], config[:logging]
-    assert_equal({ "path" => "/up", "port" => 3000, "max_attempts" => 7, "cmd" => "wget -qO- http://localhost > /dev/null" }, config[:healthcheck])
+    assert_equal({ "path" => "/up", "port" => 3000, "max_attempts" => 7, "exposed_port" => 3999, "cord"=>"/tmp/kamal-cord", "cmd"=>"wget -qO- http://localhost > /dev/null || exit 1" }, config[:healthcheck])
   end
+
+  private
+    def assert_local_env_file(contents)
+      assert_equal contents, deployer_exec("cat .env", capture: true)
+    end
+
+    def assert_remote_env_file(contents)
+      assert_equal contents, docker_compose("exec vm1 cat /root/.kamal/env/roles/app-web.env", capture: true)
+    end
+
+    def assert_no_remote_env_file
+      assert_equal "nofile", docker_compose("exec vm1 stat /root/.kamal/env/roles/app-web.env 2> /dev/null || echo nofile", capture: true)
+    end
 end

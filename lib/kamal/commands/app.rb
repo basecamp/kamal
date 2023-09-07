@@ -1,34 +1,29 @@
 class Kamal::Commands::App < Kamal::Commands::Base
   ACTIVE_DOCKER_STATUSES = [ :running, :restarting ]
 
-  attr_reader :role
+  attr_reader :role, :role_config
 
   def initialize(config, role: nil)
     super(config)
     @role = role
-  end
-
-  def start_or_run(hostname: nil)
-    combine start, run(hostname: hostname), by: "||"
+    @role_config = config.role(self.role)
   end
 
   def run(hostname: nil)
-    role = config.role(self.role)
-
     docker :run,
       "--detach",
       "--restart unless-stopped",
       "--name", container_name,
       *(["--hostname", hostname] if hostname),
       "-e", "KAMAL_CONTAINER_NAME=\"#{container_name}\"",
-      *role.env_args,
-      *role.health_check_args,
+      *role_config.env_args,
+      *role_config.health_check_args,
       *config.logging_args,
       *config.volume_args,
-      *role.label_args,
-      *role.option_args,
+      *role_config.label_args,
+      *role_config.option_args,
       config.absolute_image,
-      role.cmd
+      role_config.cmd
   end
 
   def start
@@ -76,14 +71,12 @@ class Kamal::Commands::App < Kamal::Commands::Base
   end
 
   def execute_in_new_container(*command, interactive: false)
-    role = config.role(self.role)
-
     docker :run,
       ("-it" if interactive),
       "--rm",
-      *config.env_args,
+      *role_config&.env_args,
       *config.volume_args,
-      *role&.option_args,
+      *role_config&.option_args,
       config.absolute_image,
       *command
   end
@@ -112,7 +105,7 @@ class Kamal::Commands::App < Kamal::Commands::Base
   def list_versions(*docker_args, statuses: nil)
     pipe \
       docker(:ps, *filter_args(statuses: statuses), *docker_args, "--format", '"{{.Names}}"'),
-      %(while read line; do echo ${line##{service_role_dest}-}; done) # Extract SHA from "service-role-dest-SHA"
+      %(while read line; do echo ${line##{role_config.full_name}-}; done) # Extract SHA from "service-role-dest-SHA"
   end
 
   def list_containers
@@ -149,10 +142,31 @@ class Kamal::Commands::App < Kamal::Commands::Base
     docker :tag, config.absolute_image, config.latest_image
   end
 
+  def make_env_directory
+    make_directory role_config.host_env_directory
+  end
+
+  def remove_env_file
+    [:rm, "-f", role_config.host_env_file_path]
+  end
+
+  def cord(version:)
+    pipe \
+      docker(:inspect, "-f '{{ range .Mounts }}{{ .Source }} {{ .Destination }} {{ end }}'", container_name(version)),
+      [:awk, "'$2 == \"#{role_config.cord_container_directory}\" {print $1}'"]
+  end
+
+  def tie_cord(cord)
+    create_empty_file(cord)
+  end
+
+  def cut_cord(cord)
+    remove_directory(cord)
+  end
 
   private
     def container_name(version = nil)
-      [ config.service, role, config.destination, version || config.version ].compact.join("-")
+      [ role_config.full_name, version || config.version ].compact.join("-")
     end
 
     def filter_args(statuses: nil)

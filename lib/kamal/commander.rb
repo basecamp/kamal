@@ -75,6 +75,10 @@ class Kamal::Commander
     config.accessories&.collect(&:name) || []
   end
 
+  def accessories_on(host)
+    config.accessories.select { |accessory| accessory.hosts.include?(host.to_s) }.map(&:name)
+  end
+
 
   def app(role: nil)
     Kamal::Commands::App.new(config, role: role)
@@ -114,6 +118,10 @@ class Kamal::Commander
 
   def registry
     @registry ||= Kamal::Commands::Registry.new(config)
+  end
+
+  def server
+    @server ||= Kamal::Commands::Server.new(config)
   end
 
   def traefik

@@ -26,6 +26,18 @@ module Kamal::Commands
       docker :container, :ls, *("--all" unless only_running), "--filter", "name=^#{container_name}$", "--quiet"
     end
 
+    def make_directory_for(remote_file)
+      make_directory Pathname.new(remote_file).dirname.to_s
+    end
+
+    def make_directory(path)
+      [ :mkdir, "-p", path ]
+    end
+
+    def remove_directory(path)
+      [ :rm, "-r", path ]
+    end
+
     private
       def combine(*commands, by: "&&")
         commands
@@ -60,6 +72,12 @@ module Kamal::Commands
 
       def tags(**details)
         Kamal::Tags.from_config(config, **details)
+      end
+
+      def create_empty_file(file)
+        chain \
+          make_directory_for(file),
+          [:touch, file]
       end
   end
 end

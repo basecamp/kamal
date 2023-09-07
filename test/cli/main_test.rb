@@ -63,11 +63,14 @@ class CliMainTest < CliTestCase
     Thread.report_on_exception = false
 
     SSHKit::Backend::Abstract.any_instance.stubs(:execute)
-      .with { |*arg| arg[0..1] == [:mkdir, 'kamal_lock-app'] }
+      .with { |*args| args == [ :mkdir, "-p", ".kamal" ] }
+
+    SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+      .with { |*arg| arg[0..1] == [:mkdir, ".kamal/lock-app"] }
       .raises(RuntimeError, "mkdir: cannot create directory ‘kamal_lock-app’: File exists")
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_debug)
-      .with(:stat, 'kamal_lock-app', ">", "/dev/null", "&&", :cat, "kamal_lock-app/details", "|", :base64, "-d")
+      .with(:stat, ".kamal/lock-app", ">", "/dev/null", "&&", :cat, ".kamal/lock-app/details", "|", :base64, "-d")
 
     assert_raises(Kamal::Cli::LockError) do
       run_command("deploy")
@@ -78,7 +81,10 @@ class CliMainTest < CliTestCase
     Thread.report_on_exception = false
 
     SSHKit::Backend::Abstract.any_instance.stubs(:execute)
-      .with { |*arg| arg[0..1] == [:mkdir, 'kamal_lock-app'] }
+      .with { |*args| args == [ :mkdir, "-p", ".kamal" ] }
+
+    SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+      .with { |*arg| arg[0..1] == [:mkdir, ".kamal/lock-app"] }
       .raises(SocketError, "getaddrinfo: nodename nor servname provided, or not known")
 
     assert_raises(SSHKit::Runner::ExecuteError) do
@@ -170,9 +176,10 @@ class CliMainTest < CliTestCase
   end
 
   test "rollback good version" do
+    Object.any_instance.stubs(:sleep)
     [ "web", "workers" ].each do |role|
       SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-        .with(:docker, :container, :ls, "--filter", "name=^app-#{role}-123$", "--quiet", raise_on_non_zero_exit: false)
+        .with(:docker, :container, :ls, "--all", "--filter", "name=^app-#{role}-123$", "--quiet", raise_on_non_zero_exit: false)
         .returns("").at_least_once
       SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
         .with(:docker, :container, :ls, "--all", "--filter", "name=^app-#{role}-123$", "--quiet")
@@ -185,14 +192,21 @@ class CliMainTest < CliTestCase
         .returns("running").at_least_once # health check
     end
 
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :inspect, "-f '{{ range .Mounts }}{{ .Source }} {{ .Destination }} {{ end }}'", "app-web-version-to-rollback", "|", :awk, "'$2 == \"/tmp/kamal-cord\" {print $1}'", :raise_on_non_zero_exit => false)
+      .returns("corddirectory").at_least_once # health check
+
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-version-to-rollback$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
+      .returns("unhealthy").at_least_once # health check
+
     Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
     hook_variables = { version: 123, service_version: "app@123", hosts: "1.1.1.1,1.1.1.2,1.1.1.3,1.1.1.4", command: "rollback" }
 
     run_command("rollback", "123", config_file: "deploy_with_accessories").tap do |output|
-      assert_match "Start container with version 123", output
       assert_hook_ran "pre-deploy", output, **hook_variables
       assert_match "docker tag dhh/app:123 dhh/app:latest", output
-      assert_match "docker start app-web-123", output
+      assert_match "docker run --detach --restart unless-stopped --name app-web-123", output
       assert_match "docker container ls --all --filter name=^app-web-version-to-rollback$ --quiet | xargs docker stop", output, "Should stop the container that was previously running"
       assert_hook_ran "post-deploy", output, **hook_variables, runtime: "0"
     end
@@ -204,7 +218,7 @@ class CliMainTest < CliTestCase
     Kamal::Utils::HealthcheckPoller.stubs(:sleep)
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :container, :ls, "--filter", "name=^app-web-123$", "--quiet", raise_on_non_zero_exit: false)
+      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-123$", "--quiet", raise_on_non_zero_exit: false)
       .returns("").at_least_once
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
       .with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=web", "--filter", "status=running", "--filter", "status=restarting", "--latest", "--format", "\"{{.Names}}\"", "|", "while read line; do echo ${line#app-web-}; done", raise_on_non_zero_exit: false)
@@ -214,8 +228,7 @@ class CliMainTest < CliTestCase
       .returns("running").at_least_once # health check
 
     run_command("rollback", "123").tap do |output|
-      assert_match "Start container with version 123", output
-      assert_match "docker start app-web-123 || docker run --detach --restart unless-stopped --name app-web-123", output
+      assert_match "docker run --detach --restart unless-stopped --name app-web-123", output
       assert_no_match "docker stop", output
     end
   end
@@ -230,7 +243,7 @@ class CliMainTest < CliTestCase
 
   test "audit" do
     run_command("audit").tap do |output|
-      assert_match /tail -n 50 kamal-app-audit.log on 1.1.1.1/, output
+      assert_match %r{tail -n 50 \.kamal/app-audit.log on 1.1.1.1}, output
       assert_match /App Host: 1.1.1.1/, output
     end
   end
@@ -333,10 +346,10 @@ class CliMainTest < CliTestCase
   end
 
   test "envify with destination" do
-    File.expects(:read).with(".env.staging.erb").returns("HELLO=<%= 'world' %>")
-    File.expects(:write).with(".env.staging", "HELLO=world", perm: 0600)
+    File.expects(:read).with(".env.world.erb").returns("HELLO=<%= 'world' %>")
+    File.expects(:write).with(".env.world", "HELLO=world", perm: 0600)
 
-    run_command("envify", "-d", "staging")
+    run_command("envify", "-d", "world", config_file: "deploy_for_dest")
   end
 
   test "remove with confirmation" do

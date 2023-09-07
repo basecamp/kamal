@@ -2,6 +2,8 @@ require_relative "integration_test"
 
 class AppTest < IntegrationTest
   test "stop, start, boot, logs, images, containers, exec, remove" do
+    kamal :envify
+
     kamal :deploy
 
     assert_app_is_up

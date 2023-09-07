@@ -40,7 +40,7 @@ class Kamal::Commands::Lock < Kamal::Commands::Base
     end
 
     def lock_dir
-      "kamal_lock-#{config.service}"
+      "#{config.run_directory}/lock-#{config.service}"
     end
 
     def lock_details_file

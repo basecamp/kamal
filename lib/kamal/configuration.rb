@@ -7,7 +7,7 @@ require "net/ssh/proxy/jump"
 
 class Kamal::Configuration
   delegate :service, :image, :servers, :env, :labels, :registry, :stop_wait_time, :hooks_path, to: :raw_config, allow_nil: true
-  delegate :argumentize, :argumentize_env_with_secrets, :optionize, to: Kamal::Utils
+  delegate :argumentize, :optionize, to: Kamal::Utils
 
   attr_accessor :destination
   attr_accessor :raw_config
@@ -55,6 +55,18 @@ class Kamal::Configuration
 
   def abbreviated_version
     Kamal::Utils.abbreviate_version(version)
+  end
+
+  def run_directory
+    raw_config.run_directory || ".kamal"
+  end
+
+  def run_directory_as_docker_volume
+    if Pathname.new(run_directory).absolute?
+      run_directory
+    else
+      File.join "$(pwd)", run_directory
+    end
   end
 
 
@@ -109,14 +121,6 @@ class Kamal::Configuration
   end
 
 
-  def env_args
-    if raw_config.env.present?
-      argumentize_env_with_secrets(raw_config.env)
-    else
-      []
-    end
-  end
-
   def volume_args
     if raw_config.volumes.present?
       argumentize "--volume", raw_config.volumes
@@ -145,7 +149,7 @@ class Kamal::Configuration
 
 
   def healthcheck
-    { "path" => "/up", "port" => 3000, "max_attempts" => 7 }.merge(raw_config.healthcheck || {})
+    { "path" => "/up", "port" => 3000, "max_attempts" => 7, "exposed_port" => 3999, "cord" => "/tmp/kamal-cord" }.merge(raw_config.healthcheck || {})
   end
 
   def readiness_delay
@@ -170,7 +174,6 @@ class Kamal::Configuration
       repository: repository,
       absolute_image: absolute_image,
       service_with_version: service_with_version,
-      env_args: env_args,
       volume_args: volume_args,
       ssh_options: ssh.to_h,
       sshkit: sshkit.to_h,
@@ -195,10 +198,17 @@ class Kamal::Configuration
 
   # Will raise KeyError if any secret ENVs are missing
   def ensure_env_available
-    env_args
-    roles.each(&:env_args)
+    roles.each(&:env_file)
 
     true
+  end
+
+  def host_env_directory
+    "#{run_directory}/env"
+  end
+
+  def run_id
+    @run_id ||= SecureRandom.hex(16)
   end
 
   private

@@ -3,6 +3,12 @@ image: app
 servers:
   - vm1
   - vm2
+env:
+  clear:
+    CLEAR_TOKEN: '4321'
+  secret:
+    - SECRET_TOKEN
+
 registry:
   server: registry:4443
   username: root
@@ -12,7 +18,7 @@ builder:
   args:
     COMMIT_SHA: <%= `git rev-parse HEAD` %>
 healthcheck:
-  cmd: wget -qO- http://localhost > /dev/null
+  cmd: wget -qO- http://localhost > /dev/null || exit 1
 traefik:
   args:
     accesslog: true

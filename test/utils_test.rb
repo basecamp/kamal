@@ -11,13 +11,65 @@ class UtilsTest < ActiveSupport::TestCase
       Kamal::Utils.argumentize("--label", { foo: "bar" }, sensitive: true).last
   end
 
-  test "argumentize_env_with_secrets" do
-    ENV.expects(:fetch).with("FOO").returns("secret")
+  test "env file simple" do
+    env = {
+      "foo" => "bar",
+      "baz" => "haz"
+    }
 
-    args = Kamal::Utils.argumentize_env_with_secrets({ "secret" => [ "FOO" ], "clear" => { BAZ: "qux" } })
+    assert_equal "foo=bar\nbaz=haz\n", \
+      Kamal::Utils.env_file_with_secrets(env)
+  end
 
-    assert_equal [ "-e", "FOO=[REDACTED]", "-e", "BAZ=\"qux\"" ], Kamal::Utils.redacted(args)
-    assert_equal [ "-e", "FOO=\"secret\"", "-e", "BAZ=\"qux\"" ], Kamal::Utils.unredacted(args)
+  test "env file clear" do
+    env = {
+      "clear" => {
+        "foo" => "bar",
+        "baz" => "haz"
+      }
+    }
+
+    assert_equal "foo=bar\nbaz=haz\n", \
+      Kamal::Utils.env_file_with_secrets(env)
+  end
+
+  test "env file secret" do
+    ENV["PASSWORD"] = "hello"
+    env = {
+      "secret" => [ "PASSWORD" ]
+    }
+
+    assert_equal "PASSWORD=hello\n", \
+      Kamal::Utils.env_file_with_secrets(env)
+  ensure
+    ENV.delete "PASSWORD"
+  end
+
+  test "env file missing secret" do
+    env = {
+      "secret" => [ "PASSWORD" ]
+    }
+
+    assert_raises(KeyError) { Kamal::Utils.env_file_with_secrets(env) }
+
+  ensure
+    ENV.delete "PASSWORD"
+  end
+
+  test "env file secret and clear" do
+    ENV["PASSWORD"] = "hello"
+    env = {
+      "secret" => [ "PASSWORD" ],
+      "clear" => {
+        "foo" => "bar",
+        "baz" => "haz"
+      }
+    }
+
+    assert_equal "PASSWORD=hello\nfoo=bar\nbaz=haz\n", \
+      Kamal::Utils.env_file_with_secrets(env)
+  ensure
+    ENV.delete "PASSWORD"
   end
 
   test "optionize" do
