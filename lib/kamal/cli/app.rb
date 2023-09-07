@@ -20,6 +20,9 @@ class Kamal::Cli::App < Kamal::Cli::Base
               auditor = KAMAL.auditor(role: role)
               role_config = KAMAL.config.role(role)
 
+              execute *app.extract_assets if role_config.assets?
+
+
               if capture_with_info(*app.container_id_for_version(version), raise_on_non_zero_exit: false).present?
                 tmp_version = "#{version}_replaced_#{SecureRandom.hex(8)}"
                 info "Renaming container #{version} to #{tmp_version} as already deployed on #{host}"
@@ -27,13 +30,14 @@ class Kamal::Cli::App < Kamal::Cli::Base
                 execute *app.rename_container(version: version, new_version: tmp_version)
               end
 
-              execute *auditor.record("Booted app version #{version}"), verbosity: :debug
-
               old_version = capture_with_info(*app.current_running_version, raise_on_non_zero_exit: false).strip
+              original_old_version = old_version.gsub(/_replaced_[a-f0-9]{16}$/, "")
 
-              if role_config.uses_cord?
-                execute *app.tie_cord(role_config.cord_host_file)
-              end
+              execute *app.sync_asset_volumes(old_version: original_old_version) if role_config.assets?
+
+              execute *app.tie_cord(role_config.cord_host_file) if role_config.uses_cord?
+
+              execute *auditor.record("Booted app version #{version}"), verbosity: :debug
 
               execute *app.run(hostname: "#{host}-#{SecureRandom.hex(6)}")
 
@@ -47,7 +51,10 @@ class Kamal::Cli::App < Kamal::Cli::Base
                     Kamal::Utils::HealthcheckPoller.wait_for_unhealthy(pause_after_ready: true) { capture_with_info(*app.status(version: old_version)) }
                   end
                 end
+
                 execute *app.stop(version: old_version), raise_on_non_zero_exit: false
+
+                execute *app.cleanup_assets if role_config.assets?
               end
             end
           end

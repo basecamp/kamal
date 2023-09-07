@@ -180,16 +180,15 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
     assert !@config_with_roles.role(:workers).uses_cord?
   end
 
-  test "cord host directory" do
-    assert_match %r{\$\(pwd\)/.kamal/cords/app-web-[0-9a-f]{32}}, @config_with_roles.role(:web).cord_host_directory
-  end
-
   test "cord host file" do
-    assert_match %r{\$\(pwd\)/.kamal/cords/app-web-[0-9a-f]{32}/cord}, @config_with_roles.role(:web).cord_host_file
+    assert_match %r{.kamal/cords/app-web-[0-9a-f]{32}/cord}, @config_with_roles.role(:web).cord_host_file
   end
 
-  test "cord container directory" do
-    assert_equal "/tmp/kamal-cord", @config_with_roles.role(:web).cord_container_directory
+  test "cord volume" do
+    assert_equal "/tmp/kamal-cord", @config_with_roles.role(:web).cord_volume.container_path
+    assert_match %r{.kamal/cords/app-web-[0-9a-f]{32}}, @config_with_roles.role(:web).cord_volume.host_path
+    assert_equal "--volume", @config_with_roles.role(:web).cord_volume.docker_args[0]
+    assert_match %r{\$\(pwd\)/.kamal/cords/app-web-[0-9a-f]{32}:/tmp/kamal-cord}, @config_with_roles.role(:web).cord_volume.docker_args[1]
   end
 
   test "cord container file" do

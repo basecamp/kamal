@@ -20,6 +20,7 @@ class Kamal::Commands::App < Kamal::Commands::Base
       *role_config.health_check_args,
       *config.logging_args,
       *config.volume_args,
+      *role_config.asset_volume_args,
       *role_config.label_args,
       *role_config.option_args,
       config.absolute_image,
@@ -105,7 +106,7 @@ class Kamal::Commands::App < Kamal::Commands::Base
   def list_versions(*docker_args, statuses: nil)
     pipe \
       docker(:ps, *filter_args(statuses: statuses), *docker_args, "--format", '"{{.Names}}"'),
-      %(while read line; do echo ${line##{role_config.full_name}-}; done) # Extract SHA from "service-role-dest-SHA"
+      %(while read line; do echo ${line##{role_config.container_prefix}-}; done) # Extract SHA from "service-role-dest-SHA"
   end
 
   def list_containers
@@ -153,7 +154,7 @@ class Kamal::Commands::App < Kamal::Commands::Base
   def cord(version:)
     pipe \
       docker(:inspect, "-f '{{ range .Mounts }}{{ .Source }} {{ .Destination }} {{ end }}'", container_name(version)),
-      [:awk, "'$2 == \"#{role_config.cord_container_directory}\" {print $1}'"]
+      [:awk, "'$2 == \"#{role_config.cord_volume.container_path}\" {print $1}'"]
   end
 
   def tie_cord(cord)
@@ -164,9 +165,43 @@ class Kamal::Commands::App < Kamal::Commands::Base
     remove_directory(cord)
   end
 
+  def extract_assets
+    asset_container = "#{role_config.container_prefix}-assets"
+
+    combine \
+      make_directory(role_config.asset_extracted_path),
+      [*docker(:stop, "-t 1", asset_container, "2> /dev/null"), "|| true"],
+      docker(:run, "--name", asset_container, "--detach", "--rm", config.latest_image, "sleep infinity"),
+      docker(:cp, "-L", "#{asset_container}:#{role_config.asset_path}/.", role_config.asset_extracted_path),
+      docker(:stop, "-t 1", asset_container),
+      by: "&&"
+  end
+
+  def sync_asset_volumes(old_version: nil)
+    new_extracted_path, new_volume_path = role_config.asset_extracted_path(config.version), role_config.asset_volume.host_path
+    if old_version.present?
+      old_extracted_path, old_volume_path = role_config.asset_extracted_path(old_version), role_config.asset_volume(old_version).host_path
+    end
+
+    commands = [make_directory(new_volume_path), copy_contents(new_extracted_path, new_volume_path)]
+
+    if old_version.present?
+      commands << copy_contents(new_extracted_path, old_volume_path)
+      commands << copy_contents(old_extracted_path, new_volume_path)
+    end
+
+    chain *commands
+  end
+
+  def cleanup_assets
+    chain \
+      find_and_remove_older_siblings(role_config.asset_extracted_path),
+      find_and_remove_older_siblings(role_config.asset_volume_path)
+  end
+
   private
     def container_name(version = nil)
-      [ role_config.full_name, version || config.version ].compact.join("-")
+      [ role_config.container_prefix, version || config.version ].compact.join("-")
     end
 
     def filter_args(statuses: nil)
@@ -185,5 +220,20 @@ class Kamal::Commands::App < Kamal::Commands::Base
           filters << "status=#{status}"
         end
       end
+    end
+
+    def find_and_remove_older_siblings(path)
+      [
+        :find,
+        Pathname.new(path).dirname,
+        "-maxdepth 1",
+        "-name", "'#{role_config.container_prefix}-*'",
+        "!", "-name", Pathname.new(path).basename,
+        "-exec rm -rf \"{}\" +"
+      ]
+    end
+
+    def copy_contents(source, destination)
+      [ :cp, "-rn", "#{source}/*", destination ]
     end
 end
