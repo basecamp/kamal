@@ -66,6 +66,14 @@ class CliBuildTest < CliTestCase
     end
   end
 
+  test "create remote" do
+    run_command("create", fixture: :with_remote_builder).tap do |output|
+      assert_match "Running /usr/bin/env true on 1.1.1.5", output
+      assert_match "docker context create kamal-app-native-remote-amd64 --description 'kamal-app-native-remote amd64 native host' --docker 'host=ssh://app@1.1.1.5'", output
+      assert_match "docker buildx create --name kamal-app-native-remote kamal-app-native-remote-amd64 --platform linux/amd64", output
+    end
+  end
+
   test "create with error" do
     stub_setup
     SSHKit::Backend::Abstract.any_instance.stubs(:execute)
@@ -95,8 +103,8 @@ class CliBuildTest < CliTestCase
   end
 
   private
-    def run_command(*command)
-      stdouted { Kamal::Cli::Build.start([*command, "-c", "test/fixtures/deploy_with_accessories.yml"]) }
+    def run_command(*command, fixture: :with_accessories)
+      stdouted { Kamal::Cli::Build.start([*command, "-c", "test/fixtures/deploy_#{fixture}.yml"]) }
     end
 
     def stub_dependency_checks
