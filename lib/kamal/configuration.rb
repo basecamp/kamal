@@ -9,8 +9,7 @@ class Kamal::Configuration
   delegate :service, :image, :servers, :env, :labels, :registry, :stop_wait_time, :hooks_path, to: :raw_config, allow_nil: true
   delegate :argumentize, :optionize, to: Kamal::Utils
 
-  attr_accessor :destination
-  attr_accessor :raw_config
+  attr_reader :destination, :raw_config
 
   class << self
     def create_from(config_file:, destination: nil, version: nil)
@@ -120,6 +119,10 @@ class Kamal::Configuration
     "#{service}-#{version}"
   end
 
+  def require_destination?
+    raw_config.require_destination
+  end
+
 
   def volume_args
     if raw_config.volumes.present?
@@ -161,7 +164,7 @@ class Kamal::Configuration
   end
 
   def valid?
-    ensure_required_keys_present && ensure_valid_kamal_version
+    ensure_destination_if_required && ensure_required_keys_present && ensure_valid_kamal_version
   end
 
 
@@ -238,6 +241,14 @@ class Kamal::Configuration
     def ensure_valid_kamal_version
       if minimum_version && Gem::Version.new(minimum_version) > Gem::Version.new(Kamal::VERSION)
         raise ArgumentError, "Current version is #{Kamal::VERSION}, minimum required is #{minimum_version}"
+      end
+
+      true
+    end
+
+    def ensure_destination_if_required
+      if require_destination? && destination.nil?
+        raise ArgumentError, "You must specify a destination"
       end
 
       true

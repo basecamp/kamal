@@ -210,6 +210,18 @@ class ConfigurationTest < ActiveSupport::TestCase
     end
   end
 
+  test "destination required" do
+    dest_config_file = Pathname.new(File.expand_path("fixtures/deploy_for_required_dest.yml", __dir__))
+
+    assert_raises(ArgumentError) do
+      config = Kamal::Configuration.create_from config_file: dest_config_file
+    end
+
+    assert_nothing_raised do
+      config = Kamal::Configuration.create_from config_file: dest_config_file, destination: "world"
+    end
+  end
+
   test "to_h" do
     expected_config = \
       { :roles=>["web"],
