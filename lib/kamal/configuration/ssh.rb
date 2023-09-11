@@ -18,7 +18,7 @@ class Kamal::Configuration::Ssh
   end
 
   def options
-    { user: user, proxy: proxy, auth_methods: [ "publickey" ], logger: logger, keepalive: true, keepalive_interval: 30 }.compact
+    { user: user, proxy: proxy, logger: logger, keepalive: true, keepalive_interval: 30 }.compact
   end
 
   def to_h
