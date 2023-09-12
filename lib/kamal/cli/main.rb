@@ -37,7 +37,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
         invoke "kamal:cli:healthcheck:perform", [], invoke_options
 
         say "Detect stale containers...", :magenta
-        invoke "kamal:cli:app:stale_containers", [], invoke_options
+        invoke "kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true)
 
         invoke "kamal:cli:app:boot", [], invoke_options
 
@@ -70,7 +70,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
         invoke "kamal:cli:healthcheck:perform", [], invoke_options
 
         say "Detect stale containers...", :magenta
-        invoke "kamal:cli:app:stale_containers", [], invoke_options
+        invoke "kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true)
 
         invoke "kamal:cli:app:boot", [], invoke_options
       end
