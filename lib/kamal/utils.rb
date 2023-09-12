@@ -33,7 +33,7 @@ module Kamal::Utils
     end.string
 
     # Ensure the file has some contents to avoid the SSHKIT empty file warning
-    env_file || "\n"
+    env_file.presence || "\n"
   end
 
   # Returns a list of shell-dashed option arguments. If the value is true, it's treated like a value-less option.

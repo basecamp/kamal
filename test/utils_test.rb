@@ -33,6 +33,10 @@ class UtilsTest < ActiveSupport::TestCase
       Kamal::Utils.env_file_with_secrets(env)
   end
 
+  test "env file empty" do
+    assert_equal "\n", Kamal::Utils.env_file_with_secrets({})
+  end
+
   test "env file secret" do
     ENV["PASSWORD"] = "hello"
     env = {
