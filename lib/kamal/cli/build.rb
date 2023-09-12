@@ -112,9 +112,11 @@ class Kamal::Cli::Build < Kamal::Cli::Base
 
     def connect_to_remote_host(remote_host)
       remote_uri = URI.parse(remote_host)
-      options = { user: remote_uri.user, port: remote_uri.port }.compact
-      on(remote_uri.host, options) do
-        execute "true"
+      if remote_uri.scheme == "ssh"
+        options = { user: remote_uri.user, port: remote_uri.port }.compact
+        on(remote_uri.host, options) do
+          execute "true"
+        end
       end
     end
 end
