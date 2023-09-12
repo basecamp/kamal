@@ -3,7 +3,7 @@ require "active_support/core_ext/numeric/time"
 
 class Kamal::Commands::Prune < Kamal::Commands::Base
   def dangling_images
-    docker :image, :prune, "--force", "--filter", "label=service=#{config.service}", "--filter", "dangling=true"
+    docker :image, :prune, "--force", "--filter", "label=service=#{config.service}"
   end
 
   def tagged_images
