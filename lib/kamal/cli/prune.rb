@@ -7,7 +7,7 @@ class Kamal::Cli::Prune < Kamal::Cli::Base
     end
   end
 
-  desc "images", "Prune dangling images"
+  desc "images", "Prune unused images"
   def images
     mutating do
       on(KAMAL.hosts) do
