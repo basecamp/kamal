@@ -153,7 +153,7 @@ class Kamal::Commands::App < Kamal::Commands::Base
 
   def cord(version:)
     pipe \
-      docker(:inspect, "-f '{{ range .Mounts }}{{printf \"%s %s\n\" .Source .Destination}}{{ end }}'", container_name(version)),
+      docker(:inspect, "-f '{{ range .Mounts }}{{printf \"%s %s\\n\" .Source .Destination}}{{ end }}'", container_name(version)),
       [:awk, "'$2 == \"#{role_config.cord_volume.container_path}\" {print $1}'"]
   end
 
