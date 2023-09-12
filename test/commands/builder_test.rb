@@ -103,6 +103,10 @@ class CommandsBuilderTest < ActiveSupport::TestCase
       builder.push.join(" ")
   end
 
+  test "validate image" do
+    assert_equal "docker inspect -f '{{ .Config.Labels.service }}' dhh/app:123 | grep -x app || (echo \"Image dhh/app:123 is missing the `service` label\" && exit 1)", new_builder_command.validate_image.join(" ")
+  end
+
   private
     def new_builder_command(additional_config = {})
       Kamal::Commands::Builder.new(Kamal::Configuration.new(@config.merge(additional_config), version: "123"))
