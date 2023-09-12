@@ -1,5 +1,5 @@
 class Kamal::Utils::HealthcheckPoller
-  TRAEFIK_UPDATE_DELAY = 2
+  TRAEFIK_UPDATE_DELAY = 5
 
   class HealthcheckError < StandardError; end
 
