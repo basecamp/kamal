@@ -332,7 +332,7 @@ class CommandsAppTest < ActiveSupport::TestCase
   end
 
   test "cord" do
-    assert_equal "docker inspect -f '{{ range .Mounts }}{{printf \"%s %s\n\" .Source .Destination}}{{ end }}' app-web-123 | awk '$2 == \"/tmp/kamal-cord\" {print $1}'", new_command.cord(version: 123).join(" ")
+    assert_equal "docker inspect -f '{{ range .Mounts }}{{printf \"%s %s\\n\" .Source .Destination}}{{ end }}' app-web-123 | awk '$2 == \"/tmp/kamal-cord\" {print $1}'", new_command.cord(version: 123).join(" ")
   end
 
   test "tie cord" do
