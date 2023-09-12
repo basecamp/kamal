@@ -1,3 +1,5 @@
+require "uri"
+
 class Kamal::Cli::Build < Kamal::Cli::Base
   class BuildError < StandardError; end
 
@@ -55,6 +57,10 @@ class Kamal::Cli::Build < Kamal::Cli::Base
   desc "create", "Create a build setup"
   def create
     mutating do
+      if (remote_host = KAMAL.config.builder.remote_host)
+        connect_to_remote_host(remote_host)
+      end
+
       run_locally do
         begin
           debug "Using builder: #{KAMAL.builder.name}"
@@ -100,6 +106,16 @@ class Kamal::Cli::Build < Kamal::Cli::Base
             "Docker buildx plugin is not installed locally"
 
           raise BuildError, build_error
+        end
+      end
+    end
+
+    def connect_to_remote_host(remote_host)
+      remote_uri = URI.parse(remote_host)
+      if remote_uri.scheme == "ssh"
+        options = { user: remote_uri.user, port: remote_uri.port }.compact
+        on(remote_uri.host, options) do
+          execute "true"
         end
       end
     end
