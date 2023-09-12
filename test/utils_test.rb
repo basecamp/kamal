@@ -49,6 +49,30 @@ class UtilsTest < ActiveSupport::TestCase
     ENV.delete "PASSWORD"
   end
 
+  test "env file secret escaped newline" do
+    ENV["PASSWORD"] = "hello\\nthere"
+    env = {
+      "secret" => [ "PASSWORD" ]
+    }
+
+    assert_equal "PASSWORD=hello\\\\nthere\n", \
+      Kamal::Utils.env_file_with_secrets(env)
+  ensure
+    ENV.delete "PASSWORD"
+  end
+
+  test "env file secret newline" do
+    ENV["PASSWORD"] = "hello\nthere"
+    env = {
+      "secret" => [ "PASSWORD" ]
+    }
+
+    assert_equal "PASSWORD=hello\\nthere\n", \
+      Kamal::Utils.env_file_with_secrets(env)
+  ensure
+    ENV.delete "PASSWORD"
+  end
+
   test "env file missing secret" do
     env = {
       "secret" => [ "PASSWORD" ]
