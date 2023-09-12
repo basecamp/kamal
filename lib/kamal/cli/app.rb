@@ -10,12 +10,21 @@ class Kamal::Cli::App < Kamal::Cli::Base
           on(KAMAL.hosts) do
             execute *KAMAL.auditor.record("Tagging #{KAMAL.config.absolute_image} as the latest image"), verbosity: :debug
             execute *KAMAL.app.tag_current_as_latest
+
+            KAMAL.roles_on(host).each do |role|
+              app = KAMAL.app(role: role)
+              role_config = KAMAL.config.role(role)
+
+              if role_config.assets?
+                execute *app.extract_assets
+                old_version = capture_with_info(*app.current_running_version, raise_on_non_zero_exit: false).strip
+                execute *app.sync_asset_volumes(old_version: old_version)
+              end
+            end
           end
 
           on(KAMAL.hosts, **KAMAL.boot_strategy) do |host|
-            roles = KAMAL.roles_on(host)
-
-            roles.each do |role|
+            KAMAL.roles_on(host).each do |role|
               app = KAMAL.app(role: role)
               auditor = KAMAL.auditor(role: role)
               role_config = KAMAL.config.role(role)
@@ -27,13 +36,11 @@ class Kamal::Cli::App < Kamal::Cli::Base
                 execute *app.rename_container(version: version, new_version: tmp_version)
               end
 
-              execute *auditor.record("Booted app version #{version}"), verbosity: :debug
-
               old_version = capture_with_info(*app.current_running_version, raise_on_non_zero_exit: false).strip
 
-              if role_config.uses_cord?
-                execute *app.tie_cord(role_config.cord_host_file)
-              end
+              execute *app.tie_cord(role_config.cord_host_file) if role_config.uses_cord?
+
+              execute *auditor.record("Booted app version #{version}"), verbosity: :debug
 
               execute *app.run(hostname: "#{host}-#{SecureRandom.hex(6)}")
 
@@ -47,7 +54,10 @@ class Kamal::Cli::App < Kamal::Cli::Base
                     Kamal::Utils::HealthcheckPoller.wait_for_unhealthy(pause_after_ready: true) { capture_with_info(*app.status(version: old_version)) }
                   end
                 end
+
                 execute *app.stop(version: old_version), raise_on_non_zero_exit: false
+
+                execute *app.clean_up_assets if role_config.assets?
               end
             end
           end

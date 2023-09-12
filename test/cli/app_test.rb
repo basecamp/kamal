@@ -55,8 +55,6 @@ class CliAppTest < CliTestCase
   end
 
   test "boot errors leave lock in place" do
-    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999" }
-
     Kamal::Cli::App.any_instance.expects(:using_version).raises(RuntimeError)
 
     assert !KAMAL.holding_lock?
@@ -64,6 +62,34 @@ class CliAppTest < CliTestCase
       stderred { run_command("boot") }
     end
     assert KAMAL.holding_lock?
+  end
+
+  test "boot with assets" do
+    Object.any_instance.stubs(:sleep)
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-latest$", "--quiet", raise_on_non_zero_exit: false)
+      .returns("12345678") # running version
+
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-latest$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
+      .returns("running") # health check
+
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=web", "--filter", "status=running", "--filter", "status=restarting", "--latest", "--format", "\"{{.Names}}\"", "|", "while read line; do echo ${line#app-web-}; done", raise_on_non_zero_exit: false)
+      .returns("123").twice # old version
+
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :inspect, "-f '{{ range .Mounts }}{{printf \"%s %s\n\" .Source .Destination}}{{ end }}'", "app-web-123", "|", :awk, "'$2 == \"/tmp/kamal-cord\" {print $1}'", :raise_on_non_zero_exit => false)
+      .returns("") # old version
+
+    run_command("boot", config: :with_assets).tap do |output|
+      assert_match "docker tag dhh/app:latest dhh/app:latest", output
+      assert_match "/usr/bin/env mkdir -p .kamal/assets/volumes/app-web-latest ; cp -rn .kamal/assets/extracted/app-web-latest/* .kamal/assets/volumes/app-web-latest ; cp -rn .kamal/assets/extracted/app-web-latest/* .kamal/assets/volumes/app-web-123 || true ; cp -rn .kamal/assets/extracted/app-web-123/* .kamal/assets/volumes/app-web-latest || true", output
+      assert_match "/usr/bin/env mkdir -p .kamal/assets/extracted/app-web-latest && docker stop -t 1 app-web-assets 2> /dev/null || true && docker run --name app-web-assets --detach --rm dhh/app:latest sleep 1000000 && docker cp -L app-web-assets:/public/assets/. .kamal/assets/extracted/app-web-latest && docker stop -t 1 app-web-assets", output
+      assert_match /docker run --detach --restart unless-stopped --name app-web-latest --hostname 1.1.1.1-[0-9a-f]{12} /, output
+      assert_match "docker container ls --all --filter name=^app-web-123$ --quiet | xargs docker stop", output
+      assert_match "/usr/bin/env find .kamal/assets/extracted -maxdepth 1 -name 'app-web-*' ! -name app-web-latest -exec rm -rf \"{}\" + ; find .kamal/assets/volumes -maxdepth 1 -name 'app-web-*' ! -name app-web-latest -exec rm -rf \"{}\" +", output
+    end
   end
 
   test "start" do

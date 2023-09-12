@@ -215,6 +215,10 @@ class Kamal::Configuration
     @run_id ||= SecureRandom.hex(16)
   end
 
+  def asset_path
+    raw_config.asset_path
+  end
+
   private
     # Will raise ArgumentError if any required config keys are missing
     def ensure_required_keys_present

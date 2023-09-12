@@ -269,4 +269,9 @@ class ConfigurationTest < ActiveSupport::TestCase
     SecureRandom.expects(:hex).with(16).returns("09876543211234567890098765432112")
     assert_equal "09876543211234567890098765432112", @config.run_id
   end
+
+  test "asset path" do
+    assert_nil @config.asset_path
+    assert_equal "foo", Kamal::Configuration.new(@deploy.merge!(asset_path: "foo")).asset_path
+  end
 end

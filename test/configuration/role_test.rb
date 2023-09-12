@@ -80,6 +80,15 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
     assert_equal expected_env, @config_with_roles.role(:workers).env_file
   end
 
+  test "container name" do
+    ENV["VERSION"] = "12345"
+
+    assert_equal "app-workers-12345", @config_with_roles.role(:workers).container_name
+    assert_equal "app-web-12345", @config_with_roles.role(:web).container_name
+  ensure
+    ENV.delete("VERSION")
+  end
+
   test "env args" do
     assert_equal ["--env-file", ".kamal/env/roles/app-workers.env"], @config_with_roles.role(:workers).env_args
   end
@@ -180,19 +189,67 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
     assert !@config_with_roles.role(:workers).uses_cord?
   end
 
-  test "cord host directory" do
-    assert_match %r{\$\(pwd\)/.kamal/cords/app-web-[0-9a-f]{32}}, @config_with_roles.role(:web).cord_host_directory
-  end
-
   test "cord host file" do
-    assert_match %r{\$\(pwd\)/.kamal/cords/app-web-[0-9a-f]{32}/cord}, @config_with_roles.role(:web).cord_host_file
+    assert_match %r{.kamal/cords/app-web-[0-9a-f]{32}/cord}, @config_with_roles.role(:web).cord_host_file
   end
 
-  test "cord container directory" do
-    assert_equal "/tmp/kamal-cord", @config_with_roles.role(:web).cord_container_directory
+  test "cord volume" do
+    assert_equal "/tmp/kamal-cord", @config_with_roles.role(:web).cord_volume.container_path
+    assert_match %r{.kamal/cords/app-web-[0-9a-f]{32}}, @config_with_roles.role(:web).cord_volume.host_path
+    assert_equal "--volume", @config_with_roles.role(:web).cord_volume.docker_args[0]
+    assert_match %r{\$\(pwd\)/.kamal/cords/app-web-[0-9a-f]{32}:/tmp/kamal-cord}, @config_with_roles.role(:web).cord_volume.docker_args[1]
   end
 
   test "cord container file" do
     assert_equal "/tmp/kamal-cord/cord", @config_with_roles.role(:web).cord_container_file
+  end
+
+  test "asset path and volume args" do
+    ENV["VERSION"] = "12345"
+    assert_nil @config_with_roles.role(:web).asset_volume_args
+    assert_nil @config_with_roles.role(:workers).asset_volume_args
+    assert_nil @config_with_roles.role(:web).asset_path
+    assert_nil @config_with_roles.role(:workers).asset_path
+    assert !@config_with_roles.role(:web).assets?
+    assert !@config_with_roles.role(:workers).assets?
+
+    config_with_assets = Kamal::Configuration.new(@deploy_with_roles.dup.tap { |c|
+      c[:asset_path] = "foo"
+    })
+    assert_equal "foo", config_with_assets.role(:web).asset_path
+    assert_equal "foo", config_with_assets.role(:workers).asset_path
+    assert_equal ["--volume", "$(pwd)/.kamal/assets/volumes/app-web-12345:foo"], config_with_assets.role(:web).asset_volume_args
+    assert_nil config_with_assets.role(:workers).asset_volume_args
+    assert config_with_assets.role(:web).assets?
+    assert !config_with_assets.role(:workers).assets?
+
+    config_with_assets = Kamal::Configuration.new(@deploy_with_roles.dup.tap { |c|
+      c[:servers]["web"] = { "hosts" => [ "1.1.1.1", "1.1.1.2" ], "asset_path" => "bar" }
+    })
+    assert_equal "bar", config_with_assets.role(:web).asset_path
+    assert_nil config_with_assets.role(:workers).asset_path
+    assert_equal ["--volume", "$(pwd)/.kamal/assets/volumes/app-web-12345:bar"], config_with_assets.role(:web).asset_volume_args
+    assert_nil config_with_assets.role(:workers).asset_volume_args
+    assert config_with_assets.role(:web).assets?
+    assert !config_with_assets.role(:workers).assets?
+
+  ensure
+    ENV.delete("VERSION")
+  end
+
+  test "asset extracted path" do
+    ENV["VERSION"] = "12345"
+    assert_equal ".kamal/assets/extracted/app-web-12345", @config_with_roles.role(:web).asset_extracted_path
+    assert_equal ".kamal/assets/extracted/app-workers-12345", @config_with_roles.role(:workers).asset_extracted_path
+  ensure
+    ENV.delete("VERSION")
+  end
+
+  test "asset volume path" do
+    ENV["VERSION"] = "12345"
+    assert_equal ".kamal/assets/volumes/app-web-12345", @config_with_roles.role(:web).asset_volume_path
+    assert_equal ".kamal/assets/volumes/app-workers-12345", @config_with_roles.role(:workers).asset_volume_path
+  ensure
+    ENV.delete("VERSION")
   end
 end

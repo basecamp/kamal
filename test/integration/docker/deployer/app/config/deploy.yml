@@ -8,6 +8,7 @@ env:
     CLEAR_TOKEN: '4321'
   secret:
     - SECRET_TOKEN
+asset_path: /usr/share/nginx/html/versions
 
 registry:
   server: registry:4443
