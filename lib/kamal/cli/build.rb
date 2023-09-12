@@ -50,6 +50,7 @@ class Kamal::Cli::Build < Kamal::Cli::Base
         execute *KAMAL.auditor.record("Pulled image with version #{KAMAL.config.version}"), verbosity: :debug
         execute *KAMAL.builder.clean, raise_on_non_zero_exit: false
         execute *KAMAL.builder.pull
+        execute *KAMAL.builder.validate_image
       end
     end
   end
