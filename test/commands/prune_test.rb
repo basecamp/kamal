@@ -20,10 +20,16 @@ class CommandsPruneTest < ActiveSupport::TestCase
       new_command.tagged_images.join(" ")
   end
 
-  test "containers" do
+  test "app containers" do
     assert_equal \
       "docker ps -q -a --filter label=service=app --filter status=created --filter status=exited --filter status=dead | tail -n +6 | while read container_id; do docker rm $container_id; done",
-      new_command.containers.join(" ")
+      new_command.app_containers.join(" ")
+  end
+
+  test "healthcheck containers" do
+    assert_equal \
+      "docker container prune --force --filter label=service=healthcheck-app",
+      new_command.healthcheck_containers.join(" ")
   end
 
   private

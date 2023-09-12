@@ -124,6 +124,10 @@ class ConfigurationTest < ActiveSupport::TestCase
     assert_equal "app-missing", @config.service_with_version
   end
 
+  test "healthcheck service" do
+    assert_equal "healthcheck-app", @config.healthcheck_service
+  end
+
   test "env with missing secret" do
     assert_raises(KeyError) do
       config = Kamal::Configuration.new(@deploy.tap { |c| c.merge!({

@@ -152,6 +152,10 @@ class Kamal::Configuration
     { "path" => "/up", "port" => 3000, "max_attempts" => 7, "exposed_port" => 3999, "cord" => "/tmp/kamal-cord" }.merge(raw_config.healthcheck || {})
   end
 
+  def healthcheck_service
+    [ "healthcheck", service, destination ].compact.join("-")
+  end
+
   def readiness_delay
     raw_config.readiness_delay || 7
   end

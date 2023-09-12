@@ -23,7 +23,8 @@ class Kamal::Cli::Prune < Kamal::Cli::Base
     mutating do
       on(KAMAL.hosts) do
         execute *KAMAL.auditor.record("Pruned containers"), verbosity: :debug
-        execute *KAMAL.prune.containers
+        execute *KAMAL.prune.app_containers
+        execute *KAMAL.prune.healthcheck_containers
       end
     end
   end
