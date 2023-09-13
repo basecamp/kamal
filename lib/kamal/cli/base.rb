@@ -41,6 +41,13 @@ module Kamal::Cli
         options.merge(@_initializer.last[:class_options] || {})
       end
 
+    def config_file_path
+      path = File.expand_path(options[:config_file])
+      return "#{path}.erb" if File.exist?("#{path}.erb")
+
+      path
+    end
+
       def initialize_commander(options)
         KAMAL.tap do |commander|
           if options[:verbose]
@@ -53,7 +60,7 @@ module Kamal::Cli
           end
 
           commander.configure \
-            config_file: Pathname.new(File.expand_path(options[:config_file])),
+            config_file: Pathname.new(File.expand_path(config_file_path)),
             destination: options[:destination],
             version: options[:version]
 

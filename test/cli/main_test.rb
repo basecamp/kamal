@@ -287,6 +287,14 @@ class CliMainTest < CliTestCase
     end
   end
 
+  test "config with config file that has .erb extension" do
+    run_command("config", config_file: "deploy").tap do |output|
+      config = YAML.load(output)
+
+      assert_equal "app-999", config[:service_with_version]
+    end
+  end
+
   test "init" do
     Pathname.any_instance.expects(:exist?).returns(false).times(3)
     Pathname.any_instance.stubs(:mkpath)

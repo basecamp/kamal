@@ -188,7 +188,7 @@ class ConfigurationTest < ActiveSupport::TestCase
   end
 
   test "erb evaluation of yml config" do
-    config = Kamal::Configuration.create_from config_file: Pathname.new(File.expand_path("fixtures/deploy.erb.yml", __dir__))
+    config = Kamal::Configuration.create_from config_file: Pathname.new(File.expand_path("fixtures/deploy.yml.erb", __dir__))
     assert_equal "my-user", config.registry["username"]
   end
 
