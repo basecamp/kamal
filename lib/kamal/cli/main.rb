@@ -1,10 +1,14 @@
 class Kamal::Cli::Main < Kamal::Cli::Base
-  desc "setup", "Setup all accessories and deploy app to servers"
+  desc "setup", "Setup all accessories, push the env, and deploy app to servers"
   def setup
     print_runtime do
       mutating do
         say "Ensure Docker is installed...", :magenta
         invoke "kamal:cli:server:bootstrap"
+
+        say "Push env files...", :magenta
+        invoke "kamal:cli:env:push"
+
         invoke "kamal:cli:accessory:boot", [ "all" ]
         deploy
       end
