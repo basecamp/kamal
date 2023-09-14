@@ -3,6 +3,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
   def setup
     print_runtime do
       mutating do
+        say "Ensure Docker is installed...", :magenta
         invoke "kamal:cli:server:bootstrap"
         invoke "kamal:cli:accessory:boot", [ "all" ]
         deploy
