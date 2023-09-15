@@ -5,6 +5,8 @@ class Kamal::Cli::Env < Kamal::Cli::Base
   def push
     mutating do
       on(KAMAL.hosts) do
+        execute *KAMAL.auditor.record("Pushed env files"), verbosity: :debug
+
         KAMAL.roles_on(host).each do |role|
           role_config = KAMAL.config.role(role)
           execute *KAMAL.app(role: role).make_env_directory
@@ -31,6 +33,8 @@ class Kamal::Cli::Env < Kamal::Cli::Base
   def delete
     mutating do
       on(KAMAL.hosts) do
+        execute *KAMAL.auditor.record("Deleted env files"), verbosity: :debug
+
         KAMAL.roles_on(host).each do |role|
           role_config = KAMAL.config.role(role)
           execute *KAMAL.app(role: role).remove_env_file
