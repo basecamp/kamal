@@ -52,7 +52,7 @@ registry:
 #         - MYSQL_ROOT_PASSWORD
 #     files:
 #       - config/mysql/production.cnf:/etc/mysql/my.cnf
-#       - db/production.sql.erb:/docker-entrypoint-initdb.d/setup.sql
+#       - db/production.sql:/docker-entrypoint-initdb.d/setup.sql
 #     directories:
 #       - data:/var/lib/mysql
 #   redis:
