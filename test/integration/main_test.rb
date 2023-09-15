@@ -76,5 +76,7 @@ class MainTest < IntegrationTest
       versions.each do |version|
         assert_equal "200", Net::HTTP.get_response(URI.parse("http://localhost:12345/versions/#{version}")).code
       end
+
+      assert_equal "200", Net::HTTP.get_response(URI.parse("http://localhost:12345/versions/.hidden")).code
     end
 end
