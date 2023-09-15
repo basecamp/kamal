@@ -358,14 +358,14 @@ class CommandsAppTest < ActiveSupport::TestCase
   test "sync asset volumes" do
     assert_equal [
       :mkdir, "-p", ".kamal/assets/volumes/app-web-999", ";",
-      :cp, "-rn", ".kamal/assets/extracted/app-web-999/*", ".kamal/assets/volumes/app-web-999"
+      :cp, "-rnT", ".kamal/assets/extracted/app-web-999", ".kamal/assets/volumes/app-web-999"
     ], new_command(asset_path: "/public/assets").sync_asset_volumes
 
     assert_equal [
       :mkdir, "-p", ".kamal/assets/volumes/app-web-999", ";",
-      :cp, "-rn", ".kamal/assets/extracted/app-web-999/*", ".kamal/assets/volumes/app-web-999", ";",
-      :cp, "-rn", ".kamal/assets/extracted/app-web-999/*", ".kamal/assets/volumes/app-web-998", "|| true", ";",
-      :cp, "-rn", ".kamal/assets/extracted/app-web-998/*", ".kamal/assets/volumes/app-web-999", "|| true",
+      :cp, "-rnT", ".kamal/assets/extracted/app-web-999", ".kamal/assets/volumes/app-web-999", ";",
+      :cp, "-rnT", ".kamal/assets/extracted/app-web-999", ".kamal/assets/volumes/app-web-998", "|| true", ";",
+      :cp, "-rnT", ".kamal/assets/extracted/app-web-998", ".kamal/assets/volumes/app-web-999", "|| true",
     ], new_command(asset_path: "/public/assets").sync_asset_volumes(old_version: 998)
   end
 

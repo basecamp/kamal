@@ -234,6 +234,6 @@ class Kamal::Commands::App < Kamal::Commands::Base
     end
 
     def copy_contents(source, destination, continue_on_error: false)
-      [ :cp, "-rn", "#{source}/*", destination, *("|| true" if continue_on_error)]
+      [ :cp, "-rnT", "#{source}", destination, *("|| true" if continue_on_error)]
     end
 end
