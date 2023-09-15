@@ -12,9 +12,7 @@ class Kamal::Cli::Server < Kamal::Cli::Base
           missing << host
         end
       end
-    end
 
-    on(KAMAL.hosts) do
       execute(*KAMAL.server.ensure_run_directory)
     end
 
