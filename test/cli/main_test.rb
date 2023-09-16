@@ -3,6 +3,7 @@ require_relative "cli_test_case"
 class CliMainTest < CliTestCase
   test "setup" do
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:server:bootstrap")
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:env:push")
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:accessory:boot", [ "all" ])
     Kamal::Cli::Main.any_instance.expects(:deploy)
 
