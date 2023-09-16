@@ -1,5 +1,5 @@
 class Kamal::Commands::App < Kamal::Commands::Base
-  include Assets, Containers, Cord, Execution, Images
+  include Assets, Containers, Cord, Execution, Images, Logging
 
   ACTIVE_DOCKER_STATUSES = [ :running, :restarting ]
 
@@ -48,24 +48,6 @@ class Kamal::Commands::App < Kamal::Commands::Base
   end
 
 
-  def logs(since: nil, lines: nil, grep: nil)
-    pipe \
-      current_running_container_id,
-      "xargs docker logs#{" --since #{since}" if since}#{" --tail #{lines}" if lines} 2>&1",
-      ("grep '#{grep}'" if grep)
-  end
-
-  def follow_logs(host:, grep: nil)
-    run_over_ssh \
-      pipe(
-        current_running_container_id,
-        "xargs docker logs --timestamps --tail 10 --follow 2>&1",
-        (%(grep "#{grep}") if grep)
-      ),
-      host: host
-  end
-
-
   def current_running_container_id
     docker :ps, "--quiet", *filter_args(statuses: ACTIVE_DOCKER_STATUSES), "--latest"
   end
@@ -90,7 +72,7 @@ class Kamal::Commands::App < Kamal::Commands::Base
   end
 
   def remove_env_file
-    [:rm, "-f", role_config.host_env_file_path]
+    [ :rm, "-f", role_config.host_env_file_path ]
   end
 
 
@@ -104,7 +86,7 @@ class Kamal::Commands::App < Kamal::Commands::Base
     end
 
     def service_role_dest
-      [config.service, role, config.destination].compact.join("-")
+      [ config.service, role, config.destination ].compact.join("-")
     end
 
     def filters(statuses: nil)
