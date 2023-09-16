@@ -16,26 +16,6 @@ module Kamal::Utils
     end
   end
 
-  def env_file_with_secrets(env)
-    env_file = StringIO.new.tap do |contents|
-      if (secrets = env["secret"]).present?
-        env.fetch("secret", env)&.each do |key|
-          contents << docker_env_file_line(key, ENV.fetch(key))
-        end
-        env["clear"]&.each do |key, value|
-          contents << docker_env_file_line(key, value)
-        end
-      else
-        env.fetch("clear", env)&.each do |key, value|
-          contents << docker_env_file_line(key, value)
-        end
-      end
-    end.string
-
-    # Ensure the file has some contents to avoid the SSHKIT empty file warning
-    env_file.presence || "\n"
-  end
-
   # Returns a list of shell-dashed option arguments. If the value is true, it's treated like a value-less option.
   def optionize(args, with: nil)
     options = if with
