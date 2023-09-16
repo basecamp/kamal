@@ -56,7 +56,7 @@ class Kamal::Commands::Lock < Kamal::Commands::Base
     end
 
     def locked_by
-      `git config user.name`.strip
+      Kamal::Git.user_name
     rescue Errno::ENOENT
       "Unknown"
     end

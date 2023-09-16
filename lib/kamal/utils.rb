@@ -86,10 +86,6 @@ module Kamal::Utils
     value.to_s.dump[1..-2].gsub(/\\"/, "\"")
   end
 
-  def uncommitted_changes
-    `git status --porcelain`.strip
-  end
-
   def docker_env_file_line(key, value)
     "#{key.to_s}=#{escape_docker_env_file_value(value)}\n"
   end

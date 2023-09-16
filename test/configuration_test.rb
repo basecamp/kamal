@@ -84,7 +84,7 @@ class ConfigurationTest < ActiveSupport::TestCase
     ENV.delete("VERSION")
 
     @config.expects(:`).with("git rev-parse HEAD").returns("git-version")
-    Kamal::Utils.expects(:uncommitted_changes).returns("")
+    Kamal::Git.expects(:uncommitted_changes).returns("")
     assert_equal "git-version", @config.version
   end
 
@@ -92,7 +92,7 @@ class ConfigurationTest < ActiveSupport::TestCase
     ENV.delete("VERSION")
 
     @config.expects(:`).with("git rev-parse HEAD").returns("git-version")
-    Kamal::Utils.expects(:uncommitted_changes).returns("M   file\n")
+    Kamal::Git.expects(:uncommitted_changes).returns("M   file\n")
     assert_match /^git-version_uncommitted_[0-9a-f]{16}$/, @config.version
   end
 
