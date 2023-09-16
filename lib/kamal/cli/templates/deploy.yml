@@ -19,6 +19,7 @@ registry:
     - KAMAL_REGISTRY_PASSWORD
 
 # Inject ENV variables into containers (secrets come from .env).
+# Remember to run `kamal env push` after making changes!
 # env:
 #   clear:
 #     DB_HOST: 192.168.0.2
