@@ -206,7 +206,7 @@ class Kamal::Configuration
 
   # Will raise KeyError if any secret ENVs are missing
   def ensure_env_available
-    roles.each(&:env_file)
+    roles.collect(&:env_file).each(&:to_s)
 
     true
   end
