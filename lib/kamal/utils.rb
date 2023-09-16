@@ -72,19 +72,6 @@ module Kamal::Utils
     end
   end
 
-  def unredacted(value)
-    case
-    when value.respond_to?(:unredacted)
-      value.unredacted
-    when value.respond_to?(:transform_values)
-      value.transform_values { |value| unredacted value }
-    when value.respond_to?(:map)
-      value.map { |element| unredacted element }
-    else
-      value
-    end
-  end
-
   # Escape a value to make it safe for shell use.
   def escape_shell_value(value)
     value.to_s.dump
