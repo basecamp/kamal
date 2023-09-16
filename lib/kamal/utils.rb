@@ -92,13 +92,6 @@ module Kamal::Utils
       .gsub(DOLLAR_SIGN_WITHOUT_SHELL_EXPANSION_REGEX, '\$')
   end
 
-  # Escape a value to make it safe to dump in a docker file.
-  def escape_docker_env_file_value(value)
-    # Doublequotes are treated literally in docker env files
-    # so remove leading and trailing ones and unescape any others
-    value.to_s.dump[1..-2].gsub(/\\"/, "\"")
-  end
-
   # Abbreviate a git revhash for concise display
   def abbreviate_version(version)
     if version
@@ -113,9 +106,5 @@ module Kamal::Utils
 
   def uncommitted_changes
     `git status --porcelain`.strip
-  end
-
-  def docker_env_file_line(key, value)
-    "#{key.to_s}=#{escape_docker_env_file_value(value)}\n"
   end
 end

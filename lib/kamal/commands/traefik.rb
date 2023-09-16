@@ -1,5 +1,5 @@
 class Kamal::Commands::Traefik < Kamal::Commands::Base
-  delegate :argumentize, :env_file_with_secrets, :optionize, to: Kamal::Utils
+  delegate :argumentize, :optionize, to: Kamal::Utils
 
   DEFAULT_IMAGE = "traefik:v2.9"
   CONTAINER_PORT = 80
@@ -64,7 +64,7 @@ class Kamal::Commands::Traefik < Kamal::Commands::Base
   end
 
   def env_file
-    env_file_with_secrets config.traefik.fetch("env", {})
+    Kamal::EnvFile.new(config.traefik.fetch("env", {}))
   end
 
   def host_env_file_path
