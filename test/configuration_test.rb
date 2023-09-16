@@ -75,7 +75,7 @@ class ConfigurationTest < ActiveSupport::TestCase
   test "version no git repo" do
     ENV.delete("VERSION")
 
-    @config.expects(:system).with("git rev-parse").returns(nil)
+    Kamal::Git.expects(:used?).returns(nil)
     error = assert_raises(RuntimeError) { @config.version}
     assert_match /no git repository found/, error.message
   end
@@ -83,7 +83,7 @@ class ConfigurationTest < ActiveSupport::TestCase
   test "version from git committed" do
     ENV.delete("VERSION")
 
-    @config.expects(:`).with("git rev-parse HEAD").returns("git-version")
+    Kamal::Git.expects(:revision).returns("git-version")
     Kamal::Git.expects(:uncommitted_changes).returns("")
     assert_equal "git-version", @config.version
   end
@@ -91,7 +91,7 @@ class ConfigurationTest < ActiveSupport::TestCase
   test "version from git uncommitted" do
     ENV.delete("VERSION")
 
-    @config.expects(:`).with("git rev-parse HEAD").returns("git-version")
+    Kamal::Git.expects(:revision).returns("git-version")
     Kamal::Git.expects(:uncommitted_changes).returns("M   file\n")
     assert_match /^git-version_uncommitted_[0-9a-f]{16}$/, @config.version
   end
