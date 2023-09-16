@@ -79,18 +79,6 @@ module Kamal::Utils
       .gsub(DOLLAR_SIGN_WITHOUT_SHELL_EXPANSION_REGEX, '\$')
   end
 
-  # Abbreviate a git revhash for concise display
-  def abbreviate_version(version)
-    if version
-      # Don't abbreviate <sha>_uncommitted_<etc>
-      if version.include?("_")
-        version
-      else
-        version[0...7]
-      end
-    end
-  end
-
   def uncommitted_changes
     `git status --porcelain`.strip
   end
