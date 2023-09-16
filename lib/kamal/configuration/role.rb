@@ -16,6 +16,18 @@ class Kamal::Configuration::Role
     @hosts ||= extract_hosts_from_config
   end
 
+  def cmd
+    specializations["cmd"]
+  end
+
+  def option_args
+    if args = specializations["options"]
+      optionize args
+    else
+      []
+    end
+  end
+
   def labels
     default_labels.merge(traefik_labels).merge(custom_labels)
   end
@@ -23,6 +35,7 @@ class Kamal::Configuration::Role
   def label_args
     argumentize "--label", labels
   end
+
 
   def env
     if config.env && config.env["secret"]
@@ -52,6 +65,7 @@ class Kamal::Configuration::Role
     asset_volume&.docker_args
   end
 
+
   def health_check_args(cord: true)
     if health_check_cmd.present?
       if cord && uses_cord?
@@ -76,6 +90,12 @@ class Kamal::Configuration::Role
   def health_check_interval
     health_check_options["interval"] || "1s"
   end
+
+
+  def running_traefik?
+    name.web? || specializations["traefik"]
+  end
+
 
   def uses_cord?
     running_traefik? && cord_volume && health_check_cmd.present?
@@ -106,22 +126,6 @@ class Kamal::Configuration::Role
   end
 
 
-  def cmd
-    specializations["cmd"]
-  end
-
-  def option_args
-    if args = specializations["options"]
-      optionize args
-    else
-      []
-    end
-  end
-
-  def running_traefik?
-    name.web? || specializations["traefik"]
-  end
-
   def container_name(version = nil)
     [ container_prefix, version || config.version ].compact.join("-")
   end
@@ -129,6 +133,7 @@ class Kamal::Configuration::Role
   def container_prefix
     [ config.service, name, config.destination ].compact.join("-")
   end
+
 
   def asset_path
     specializations["asset_path"] || config.asset_path
