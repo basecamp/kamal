@@ -84,6 +84,7 @@ class Kamal::Commands::App < Kamal::Commands::Base
       %(while read line; do echo ${line##{role_config.container_prefix}-}; done) # Extract SHA from "service-role-dest-SHA"
   end
 
+
   def list_containers
     docker :container, :ls, "--all", *filter_args
   end
@@ -106,6 +107,7 @@ class Kamal::Commands::App < Kamal::Commands::Base
     docker :container, :prune, "--force", *filter_args
   end
 
+
   def list_images
     docker :image, :ls, config.repository
   end
@@ -117,6 +119,7 @@ class Kamal::Commands::App < Kamal::Commands::Base
   def tag_current_as_latest
     docker :tag, config.absolute_image, config.latest_image
   end
+
 
   def make_env_directory
     make_directory role_config.host_env_directory
