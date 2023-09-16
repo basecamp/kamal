@@ -56,16 +56,8 @@ class Kamal::Configuration
     Kamal::Utils.abbreviate_version(version)
   end
 
-  def run_directory
-    raw_config.run_directory || ".kamal"
-  end
-
-  def run_directory_as_docker_volume
-    if Pathname.new(run_directory).absolute?
-      run_directory
-    else
-      File.join "$(pwd)", run_directory
-    end
+  def minimum_version
+    raw_config.minimum_version
   end
 
 
@@ -96,10 +88,6 @@ class Kamal::Configuration
 
   def traefik_hosts
     roles.select(&:running_traefik?).flat_map(&:hosts).uniq
-  end
-
-  def boot
-    Kamal::Configuration::Boot.new(config: self)
   end
 
 
@@ -142,6 +130,18 @@ class Kamal::Configuration
   end
 
 
+  def boot
+    Kamal::Configuration::Boot.new(config: self)
+  end
+
+  def builder
+    Kamal::Configuration::Builder.new(config: self)
+  end
+
+  def traefik
+    raw_config.traefik || {}
+  end
+
   def ssh
     Kamal::Configuration::Ssh.new(config: self)
   end
@@ -163,14 +163,46 @@ class Kamal::Configuration
     raw_config.readiness_delay || 7
   end
 
-  def minimum_version
-    raw_config.minimum_version
+  def run_id
+    @run_id ||= SecureRandom.hex(16)
   end
+
+
+  def run_directory
+    raw_config.run_directory || ".kamal"
+  end
+
+  def run_directory_as_docker_volume
+    if Pathname.new(run_directory).absolute?
+      run_directory
+    else
+      File.join "$(pwd)", run_directory
+    end
+  end
+
+  def hooks_path
+    raw_config.hooks_path || ".kamal/hooks"
+  end
+
+  def host_env_directory
+    "#{run_directory}/env"
+  end
+
+  def asset_path
+    raw_config.asset_path
+  end
+
 
   def valid?
     ensure_destination_if_required && ensure_required_keys_present && ensure_valid_kamal_version
   end
 
+  # Will raise KeyError if any secret ENVs are missing
+  def ensure_env_available
+    roles.each(&:env_file)
+
+    true
+  end
 
   def to_h
     {
@@ -191,39 +223,17 @@ class Kamal::Configuration
     }.compact
   end
 
-  def traefik
-    raw_config.traefik || {}
-  end
-
-  def hooks_path
-    raw_config.hooks_path || ".kamal/hooks"
-  end
-
-  def builder
-    Kamal::Configuration::Builder.new(config: self)
-  end
-
-  # Will raise KeyError if any secret ENVs are missing
-  def ensure_env_available
-    roles.each(&:env_file)
-
-    true
-  end
-
-  def host_env_directory
-    "#{run_directory}/env"
-  end
-
-  def run_id
-    @run_id ||= SecureRandom.hex(16)
-  end
-
-  def asset_path
-    raw_config.asset_path
-  end
 
   private
     # Will raise ArgumentError if any required config keys are missing
+    def ensure_destination_if_required
+      if require_destination? && destination.nil?
+        raise ArgumentError, "You must specify a destination"
+      end
+
+      true
+    end
+
     def ensure_required_keys_present
       %i[ service image registry servers ].each do |key|
         raise ArgumentError, "Missing required configuration for #{key}" unless raw_config[key].present?
@@ -249,14 +259,6 @@ class Kamal::Configuration
     def ensure_valid_kamal_version
       if minimum_version && Gem::Version.new(minimum_version) > Gem::Version.new(Kamal::VERSION)
         raise ArgumentError, "Current version is #{Kamal::VERSION}, minimum required is #{minimum_version}"
-      end
-
-      true
-    end
-
-    def ensure_destination_if_required
-      if require_destination? && destination.nil?
-        raise ArgumentError, "You must specify a destination"
       end
 
       true
