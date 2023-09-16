@@ -180,7 +180,7 @@ class CommandsTraefikTest < ActiveSupport::TestCase
   test "env_file" do
     @config[:traefik]["env"] = { "secret" => %w[EXAMPLE_API_KEY] }
 
-    assert_equal "EXAMPLE_API_KEY=456\n", new_command.env_file
+    assert_equal "EXAMPLE_API_KEY=456\n", new_command.env_file.to_s
   end
 
   test "host_env_file_path" do
