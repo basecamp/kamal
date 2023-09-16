@@ -9,7 +9,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
 
           on(KAMAL.hosts) do
             execute *KAMAL.auditor.record("Tagging #{KAMAL.config.absolute_image} as the latest image"), verbosity: :debug
-            execute *KAMAL.app.tag_current_as_latest
+            execute *KAMAL.app.tag_current_image_as_latest
 
             KAMAL.roles_on(host).each do |role|
               app = KAMAL.app(role: role)

@@ -116,7 +116,7 @@ class Kamal::Commands::App < Kamal::Commands::Base
     docker :image, :prune, "--all", "--force", *filter_args
   end
 
-  def tag_current_as_latest
+  def tag_current_image_as_latest
     docker :tag, config.absolute_image, config.latest_image
   end
 
