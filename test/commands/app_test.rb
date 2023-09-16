@@ -317,10 +317,10 @@ class CommandsAppTest < ActiveSupport::TestCase
       new_command.remove_images.join(" ")
   end
 
-  test "tag_current_as_latest" do
+  test "tag_current_image_as_latest" do
     assert_equal \
       "docker tag dhh/app:999 dhh/app:latest",
-      new_command.tag_current_as_latest.join(" ")
+      new_command.tag_current_image_as_latest.join(" ")
   end
 
   test "make_env_directory" do
