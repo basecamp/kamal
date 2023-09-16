@@ -216,7 +216,7 @@ class CliMainTest < CliTestCase
   test "rollback without old version" do
     Kamal::Cli::Main.any_instance.stubs(:container_available?).returns(true)
 
-    Kamal::Utils::HealthcheckPoller.stubs(:sleep)
+    Kamal::Cli::Healthcheck::Poller.stubs(:sleep)
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
       .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-123$", "--quiet", raise_on_non_zero_exit: false)

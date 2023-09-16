@@ -6,8 +6,8 @@ class Kamal::Cli::Healthcheck < Kamal::Cli::Base
     on(KAMAL.primary_host) do
       begin
         execute *KAMAL.healthcheck.run
-        Kamal::Utils::HealthcheckPoller.wait_for_healthy { capture_with_info(*KAMAL.healthcheck.status) }
-      rescue Kamal::Utils::HealthcheckPoller::HealthcheckError => e
+        Poller.wait_for_healthy { capture_with_info(*KAMAL.healthcheck.status) }
+      rescue Poller::HealthcheckError => e
         error capture_with_info(*KAMAL.healthcheck.logs)
         error capture_with_pretty_json(*KAMAL.healthcheck.container_health_log)
         raise

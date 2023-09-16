@@ -44,14 +44,14 @@ class Kamal::Cli::App < Kamal::Cli::Base
 
               execute *app.run(hostname: "#{host}-#{SecureRandom.hex(6)}")
 
-              Kamal::Utils::HealthcheckPoller.wait_for_healthy(pause_after_ready: true) { capture_with_info(*app.status(version: version)) }
+              Kamal::Cli::Healthcheck::Poller.wait_for_healthy(pause_after_ready: true) { capture_with_info(*app.status(version: version)) }
 
               if old_version.present?
                 if role_config.uses_cord?
                   cord = capture_with_info(*app.cord(version: old_version), raise_on_non_zero_exit: false).strip
                   if cord.present?
                     execute *app.cut_cord(cord)
-                    Kamal::Utils::HealthcheckPoller.wait_for_unhealthy(pause_after_ready: true) { capture_with_info(*app.status(version: old_version)) }
+                    Kamal::Cli::Healthcheck::Poller.wait_for_unhealthy(pause_after_ready: true) { capture_with_info(*app.status(version: old_version)) }
                   end
                 end
 
