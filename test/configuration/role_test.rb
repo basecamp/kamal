@@ -77,7 +77,7 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
       WEB_CONCURRENCY=4
     ENV
 
-    assert_equal expected_env, @config_with_roles.role(:workers).env_file
+    assert_equal expected_env, @config_with_roles.role(:workers).env_file.to_s
   end
 
   test "container name" do
@@ -123,7 +123,7 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
       WEB_CONCURRENCY=4
     ENV
 
-    assert_equal expected, @config_with_roles.role(:workers).env_file
+    assert_equal expected, @config_with_roles.role(:workers).env_file.to_s
   ensure
     ENV["REDIS_PASSWORD"] = nil
     ENV["DB_PASSWORD"] = nil
@@ -148,7 +148,7 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
       WEB_CONCURRENCY=4
     ENV
 
-    assert_equal expected, @config_with_roles.role(:workers).env_file
+    assert_equal expected, @config_with_roles.role(:workers).env_file.to_s
   ensure
     ENV["DB_PASSWORD"] = nil
   end
@@ -171,7 +171,7 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
       WEB_CONCURRENCY=4
     ENV
 
-    assert_equal expected, @config_with_roles.role(:workers).env_file
+    assert_equal expected, @config_with_roles.role(:workers).env_file.to_s
   ensure
     ENV["REDIS_PASSWORD"] = nil
   end

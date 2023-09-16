@@ -1,5 +1,5 @@
 class Kamal::Configuration::Accessory
-  delegate :argumentize, :env_file_with_secrets, :optionize, to: Kamal::Utils
+  delegate :argumentize, :optionize, to: Kamal::Utils
 
   attr_accessor :name, :specifics
 
@@ -46,7 +46,7 @@ class Kamal::Configuration::Accessory
   end
 
   def env_file
-    env_file_with_secrets env
+    Kamal::EnvFile.new(env)
   end
 
   def host_env_directory

@@ -123,7 +123,7 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
       MYSQL_ROOT_HOST=%
     ENV
 
-    assert_equal expected, @config.accessory(:mysql).env_file
+    assert_equal expected, @config.accessory(:mysql).env_file.to_s
   ensure
     ENV["MYSQL_ROOT_PASSWORD"] = nil
   end
