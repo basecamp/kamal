@@ -73,11 +73,5 @@ module Kamal::Commands
       def tags(**details)
         Kamal::Tags.from_config(config, **details)
       end
-
-      def create_empty_file(file)
-        chain \
-          make_directory_for(file),
-          [:touch, file]
-      end
   end
 end
