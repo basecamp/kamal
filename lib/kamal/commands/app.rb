@@ -1,5 +1,5 @@
 class Kamal::Commands::App < Kamal::Commands::Base
-  include Assets, Cord, Execution
+  include Assets, Containers, Cord, Execution, Images
 
   ACTIVE_DOCKER_STATUSES = [ :running, :restarting ]
 
@@ -82,42 +82,6 @@ class Kamal::Commands::App < Kamal::Commands::Base
     pipe \
       docker(:ps, *filter_args(statuses: statuses), *docker_args, "--format", '"{{.Names}}"'),
       %(while read line; do echo ${line##{role_config.container_prefix}-}; done) # Extract SHA from "service-role-dest-SHA"
-  end
-
-
-  def list_containers
-    docker :container, :ls, "--all", *filter_args
-  end
-
-  def list_container_names
-    [ *list_containers, "--format", "'{{ .Names }}'" ]
-  end
-
-  def remove_container(version:)
-    pipe \
-      container_id_for(container_name: container_name(version)),
-      xargs(docker(:container, :rm))
-  end
-
-  def rename_container(version:, new_version:)
-    docker :rename, container_name(version), container_name(new_version)
-  end
-
-  def remove_containers
-    docker :container, :prune, "--force", *filter_args
-  end
-
-
-  def list_images
-    docker :image, :ls, config.repository
-  end
-
-  def remove_images
-    docker :image, :prune, "--all", "--force", *filter_args
-  end
-
-  def tag_current_image_as_latest
-    docker :tag, config.absolute_image, config.latest_image
   end
 
 
