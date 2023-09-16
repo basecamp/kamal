@@ -53,7 +53,14 @@ class Kamal::Configuration
   end
 
   def abbreviated_version
-    Kamal::Utils.abbreviate_version(version)
+    if version
+      # Don't abbreviate <sha>_uncommitted_<etc>
+      if version.include?("_")
+        version
+      else
+        version[0...7]
+      end
+    end
   end
 
   def minimum_version
