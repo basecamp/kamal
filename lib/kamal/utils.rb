@@ -58,8 +58,4 @@ module Kamal::Utils
       .gsub(/`/, '\\\\`')
       .gsub(DOLLAR_SIGN_WITHOUT_SHELL_EXPANSION_REGEX, '\$')
   end
-
-  def uncommitted_changes
-    `git status --porcelain`.strip
-  end
 end

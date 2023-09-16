@@ -19,7 +19,7 @@ class Kamal::Cli::Build < Kamal::Cli::Base
       verify_local_dependencies
       run_hook "pre-build"
 
-      if (uncommitted_changes = Kamal::Utils.uncommitted_changes).present?
+      if (uncommitted_changes = Kamal::Git.uncommitted_changes).present?
         say "The following paths have uncommitted changes:\n #{uncommitted_changes}", :yellow
       end
 
