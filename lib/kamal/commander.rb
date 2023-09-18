@@ -39,6 +39,10 @@ class Kamal::Commander
     specific_hosts&.first || specific_roles&.first&.primary_host || config.primary_web_host
   end
 
+  def primary_role
+    roles_on(primary_host).first
+  end
+
   def roles
     (specific_roles || config.roles).select do |role|
       ((specific_hosts || config.all_hosts) & role.hosts).any?

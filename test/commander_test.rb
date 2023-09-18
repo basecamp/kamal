@@ -49,6 +49,12 @@ class CommanderTest < ActiveSupport::TestCase
     assert_equal "1.1.1.3", @kamal.primary_host
   end
 
+  test "primary_role" do
+    assert_equal "web", @kamal.primary_role
+    @kamal.specific_roles = "workers"
+    assert_equal "workers", @kamal.primary_role
+  end
+
   test "roles_on" do
     assert_equal [ "web" ], @kamal.roles_on("1.1.1.1")
     assert_equal [ "workers" ], @kamal.roles_on("1.1.1.3")
