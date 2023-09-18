@@ -18,6 +18,7 @@ class Kamal::Commands::App < Kamal::Commands::Base
       "--name", container_name,
       *(["--hostname", hostname] if hostname),
       "-e", "KAMAL_CONTAINER_NAME=\"#{container_name}\"",
+      "-e", "KAMAL_VERSION=\"#{config.version}\"",
       *role_config.env_args,
       *role_config.health_check_args,
       *config.logging_args,
