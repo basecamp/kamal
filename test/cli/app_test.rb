@@ -170,6 +170,25 @@ class CliAppTest < CliTestCase
     end
   end
 
+  test "exec interactive" do
+    SSHKit::Backend::Abstract.any_instance.expects(:exec)
+      .with("ssh -t root@1.1.1.1 'docker run -it --rm --env-file .kamal/env/roles/app-web.env dhh/app:latest ruby -v'")
+    run_command("exec", "-i", "ruby -v").tap do |output|
+      assert_match "Get most recent version available as an image...", output
+      assert_match "Launching interactive command with version latest via SSH from new container on 1.1.1.1...", output
+    end
+  end
+
+  test "exec interactive with reuse" do
+    SSHKit::Backend::Abstract.any_instance.expects(:exec)
+      .with("ssh -t root@1.1.1.1 'docker exec -it app-web-999 ruby -v'")
+    run_command("exec", "-i", "--reuse", "ruby -v").tap do |output|
+      assert_match "Get current version of running container...", output
+      assert_match "Running docker ps --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --latest --format \"{{.Names}}\" | while read line; do echo ${line#app-web-}; done on 1.1.1.1", output
+      assert_match "Launching interactive command with version 999 via SSH from existing container on 1.1.1.1...", output
+    end
+  end
+
   test "containers" do
     run_command("containers").tap do |output|
       assert_match "docker container ls --all --filter label=service=app", output
