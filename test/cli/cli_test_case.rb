@@ -37,7 +37,7 @@ class CliTestCase < ActiveSupport::TestCase
     end
 
     def assert_hook_ran(hook, output, version:, service_version:, hosts:, command:, subcommand: nil, runtime: nil)
-      performer = `whoami`.strip
+      performer = `git config user.email`.chomp.empty? ? `git config user.email`.chomp : `whoami`.chomp
 
       assert_match "Running the #{hook} hook...\n", output
 

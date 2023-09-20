@@ -12,7 +12,7 @@ class CommandsAuditorTest < ActiveSupport::TestCase
     }
 
     @auditor = new_command
-    @performer = `whoami`.strip
+    @performer = `git config user.email`.chomp.empty? ? `git config user.email`.chomp : `whoami`.chomp
     @recorded_at = Time.now.utc.iso8601
   end
 
