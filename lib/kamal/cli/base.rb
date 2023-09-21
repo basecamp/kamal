@@ -21,6 +21,7 @@ module Kamal::Cli
     class_option :destination, aliases: "-d", desc: "Specify destination to be used for config file (staging -> deploy.staging.yml)"
 
     class_option :skip_hooks, aliases: "-H", type: :boolean, default: false, desc: "Don't run hooks"
+    class_option :skip_env, type: boolean, default: false, desc: "Skip validating the .env file"
 
     def initialize(*)
       super
@@ -75,7 +76,9 @@ module Kamal::Cli
       def mutating
         return yield if KAMAL.holding_lock?
 
-        KAMAL.config.ensure_env_available
+        if !options[:skip_env]
+          KAMAL.config.ensure_env_available
+        end
 
         run_hook "pre-connect"
 
