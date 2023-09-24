@@ -8,7 +8,7 @@ class Kamal::Commands::Traefik < Kamal::Commands::Base
   }
 
   def run
-    docker :run, "--name traefik",
+    docker :run, "--name #{container_name}",
       "--detach",
       "--restart", "unless-stopped",
       *publish_args,
@@ -23,11 +23,11 @@ class Kamal::Commands::Traefik < Kamal::Commands::Base
   end
 
   def start
-    docker :container, :start, "traefik"
+    docker :container, :start, container_name
   end
 
   def stop
-    docker :container, :stop, "traefik"
+    docker :container, :stop, container_name
   end
 
   def start_or_run
@@ -35,18 +35,18 @@ class Kamal::Commands::Traefik < Kamal::Commands::Base
   end
 
   def info
-    docker :ps, "--filter", "name=^traefik$"
+    docker :ps, "--filter", "name=^#{container_name}$"
   end
 
   def logs(since: nil, lines: nil, grep: nil)
     pipe \
-      docker(:logs, "traefik", (" --since #{since}" if since), (" --tail #{lines}" if lines), "--timestamps", "2>&1"),
+      docker(:logs, container_name, (" --since #{since}" if since), (" --tail #{lines}" if lines), "--timestamps", "2>&1"),
       ("grep '#{grep}'" if grep)
   end
 
   def follow_logs(host:, grep: nil)
     run_over_ssh pipe(
-      docker(:logs, "traefik", "--timestamps", "--tail", "10", "--follow", "2>&1"),
+      docker(:logs, container_name, "--timestamps", "--tail", "10", "--follow", "2>&1"),
       (%(grep "#{grep}") if grep)
     ).join(" "), host: host
   end
@@ -68,7 +68,7 @@ class Kamal::Commands::Traefik < Kamal::Commands::Base
   end
 
   def host_env_file_path
-    File.join host_env_directory, "traefik.env"
+    File.join host_env_directory, "#{container_name}.env"
   end
 
   def make_env_directory
@@ -118,5 +118,9 @@ class Kamal::Commands::Traefik < Kamal::Commands::Base
 
     def host_port
       config.traefik["host_port"] || CONTAINER_PORT
+    end
+
+    def container_name
+      config.traefik["name"] || "traefik"
     end
 end
