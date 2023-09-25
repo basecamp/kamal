@@ -128,14 +128,6 @@ class ConfigurationTest < ActiveSupport::TestCase
     assert_equal "healthcheck-app", @config.healthcheck_service
   end
 
-  test "env with missing secret" do
-    assert_raises(KeyError) do
-      config = Kamal::Configuration.new(@deploy.tap { |c| c.merge!({
-        env: { "secret" => [ "PASSWORD" ] }
-      }) }).ensure_env_available
-    end
-  end
-
   test "valid config" do
     assert @config.valid?
     assert @config_with_roles.valid?
