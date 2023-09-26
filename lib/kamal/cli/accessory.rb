@@ -226,7 +226,8 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
 
   private
     def with_accessory(name)
-      if accessory = KAMAL.accessory(name)
+      if KAMAL.config.accessory(name)
+        accessory = KAMAL.accessory(name)
         yield accessory, accessory_hosts(accessory)
       else
         error_on_missing_accessory(name)
