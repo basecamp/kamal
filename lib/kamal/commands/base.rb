@@ -18,7 +18,7 @@ module Kamal::Commands
         elsif config.ssh.proxy && config.ssh.proxy.is_a?(Net::SSH::Proxy::Command)
           cmd << " -o ProxyCommand='#{config.ssh.proxy.command_line_template}'"
         end
-        cmd << " -t #{config.ssh.user}@#{host} '#{command.join(" ")}'"
+        cmd << " -t #{config.ssh.user}@#{host} -p #{config.ssh.port} '#{command.join(" ")}'"
       end
     end
 
