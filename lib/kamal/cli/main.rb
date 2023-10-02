@@ -10,11 +10,11 @@ class Kamal::Cli::Main < Kamal::Cli::Base
     end
   end
 
-  desc 'destinations', 'List available destinations'
-  option :json, alias: '-j', type: :boolean, default: false, desc: 'Output as JSON'
+  desc "destinations", "List available destinations"
+  option :json, alias: "-j", type: :boolean, default: false, desc: "Output as JSON"
   def destinations
-    pattern = options[:config_file].gsub(/deploy\.yml/, 'deploy.*.yml')
-    list = Dir.glob(pattern).map { |f| File.basename(f, '.yml.erb').gsub(/^deploy\./, '') }
+    pattern = options[:config_file].gsub(/deploy\.yml/, "deploy.*.yml")
+    list = Dir.glob(pattern).map { |f| File.basename(f, ".yml.erb").gsub(/^deploy\./, "") }
 
     if options[:json]
       puts list.to_json
