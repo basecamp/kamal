@@ -48,6 +48,18 @@ class CliAccessoryTest < CliTestCase
     run_command("reboot", "mysql")
   end
 
+  test "reboot all" do
+    Kamal::Commands::Registry.any_instance.expects(:login).times(3)
+    Kamal::Cli::Accessory.any_instance.expects(:stop).with("mysql")
+    Kamal::Cli::Accessory.any_instance.expects(:remove_container).with("mysql")
+    Kamal::Cli::Accessory.any_instance.expects(:boot).with("mysql", login: false)
+    Kamal::Cli::Accessory.any_instance.expects(:stop).with("redis")
+    Kamal::Cli::Accessory.any_instance.expects(:remove_container).with("redis")
+    Kamal::Cli::Accessory.any_instance.expects(:boot).with("redis", login: false)
+
+    run_command("reboot", "all")
+  end
+
   test "start" do
     assert_match "docker container start app-mysql", run_command("start", "mysql")
   end
