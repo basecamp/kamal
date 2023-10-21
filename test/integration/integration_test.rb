@@ -94,6 +94,9 @@ class IntegrationTest < ActiveSupport::TestCase
       hooks.each do |hook|
         file = "/tmp/#{ENV["TEST_ID"]}/#{hook}"
         assert_equal "removed '#{file}'", deployer_exec("rm -v #{file}", capture: true).strip
+
+        file = "/tmp/#{ENV["TEST_ID"]}/#{hook}.rb"
+        assert_equal "removed '#{file}'", deployer_exec("rm -v #{file}", capture: true).strip
       end
     end
 

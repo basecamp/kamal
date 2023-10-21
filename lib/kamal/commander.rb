@@ -104,6 +104,10 @@ class Kamal::Commander
     @hook ||= Kamal::Commands::Hook.new(config)
   end
 
+  def ruby_hook
+    @ruby_hook ||= Kamal::Commands::RubyHook.new(config)
+  end
+
   def lock
     @lock ||= Kamal::Commands::Lock.new(config)
   end

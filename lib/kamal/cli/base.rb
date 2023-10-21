@@ -136,7 +136,14 @@ module Kamal::Cli
       end
 
       def run_hook(hook, **extra_details)
-        if !options[:skip_hooks] && KAMAL.hook.hook_exists?(hook)
+        return if options[:skip_hooks]
+
+        if KAMAL.ruby_hook.hook_exists?(hook)
+          say "Running the ruby #{hook} hook...", :magenta
+          KAMAL.ruby_hook.run(hook, self)
+        end
+
+        if KAMAL.hook.hook_exists?(hook)
           details = { hosts: KAMAL.hosts.join(","), command: command, subcommand: subcommand }
 
           say "Running the #{hook} hook...", :magenta

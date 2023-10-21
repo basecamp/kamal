@@ -1,0 +1,16 @@
+# A sample ruby pre-connect hook
+#
+# Ruby hooks are an advanced extension mechanism that
+# should only be used in exceptional scenarios where a
+# regular hook or external helper-script doesn't suffice.
+
+# Ensure the 'moreutils' package is installed on all hosts
+on(KAMAL.hosts | KAMAL.accessory_hosts) do |host|
+  unless execute(:which, "ifdata", raise_on_non_zero_exit: false)
+    info "Installing baseline packages"
+    with DEBIAN_FRONTEND: "noninteractive" do
+      execute(:apt, "update")
+      execute(:apt, "install", "-qq", "-y", "moreutils")
+    end
+  end
+end
