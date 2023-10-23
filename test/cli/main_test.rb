@@ -353,6 +353,14 @@ class CliMainTest < CliTestCase
     run_command("envify", "-d", "world", config_file: "deploy_for_dest")
   end
 
+  test "envify with skip_push" do
+    File.expects(:read).with(".env.erb").returns("HELLO=<%= 'world' %>")
+    File.expects(:write).with(".env", "HELLO=world", perm: 0600)
+
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:env:push").never
+    run_command("envify", "--skip-push")
+  end
+
   test "remove with confirmation" do
     run_command("remove", "-y", config_file: "deploy_with_accessories").tap do |output|
       assert_match /docker container stop traefik/, output
