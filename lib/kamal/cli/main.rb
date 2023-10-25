@@ -179,7 +179,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
       env_path          = ".env"
     end
 
-    File.write(env_path, ERB.new(File.read(env_template_path)).result, perm: 0600)
+    File.write(env_path, ERB.new(File.read(env_template_path), trim_mode: "-").result, perm: 0600)
 
     load_envs # reload new file
     invoke "kamal:cli:env:push", options
