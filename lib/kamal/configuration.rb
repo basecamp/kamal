@@ -25,7 +25,7 @@ class Kamal::Configuration
 
       def load_config_file(file)
         if file.exist?
-          YAML.load(ERB.new(IO.read(file)).result).symbolize_keys
+          YAML.load(ERB.new(IO.read(file)).result, aliases: true).symbolize_keys
         else
           raise "Configuration file not found in #{file}"
         end
