@@ -249,7 +249,7 @@ class Kamal::Configuration
 
       roles.each do |role|
         if role.hosts.empty?
-          raise ArgumentError, "No servers specified for the #{role.name} role"
+          puts "Warning: No servers specified for the #{role.name} role"
         end
       end
 
