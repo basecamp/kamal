@@ -90,7 +90,7 @@ class Kamal::Configuration
   end
 
   def primary_web_host
-    role(:web).primary_host
+    (role(:web) || roles.select(&:running_traefik?).first).primary_host
   end
 
   def traefik_hosts
