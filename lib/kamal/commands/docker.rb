@@ -16,6 +16,6 @@ class Kamal::Commands::Docker < Kamal::Commands::Base
 
   # Do we have superuser access to install Docker and start system services?
   def superuser?
-    [ '[ "${EUID:-$(id -u)}" -eq 0 ]' ]
+    [ '[ "${EUID:-$(id -u)}" -eq 0 ] || command -v sudo >/dev/null || command -v su >/dev/null' ]
   end
 end
