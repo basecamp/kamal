@@ -147,8 +147,12 @@ class Kamal::Cli::App < Kamal::Cli::Base
       using_version(version_or_latest) do |version|
         say "Launching command with version #{version} from new container...", :magenta
         on(KAMAL.hosts) do |host|
-          execute *KAMAL.auditor.record("Executed cmd '#{cmd}' on app version #{version}"), verbosity: :debug
-          puts_by_host host, capture_with_info(*KAMAL.app.execute_in_new_container(cmd))
+          roles = KAMAL.roles_on(host)
+
+          roles.each do |role|
+            execute *KAMAL.auditor.record("Executed cmd '#{cmd}' on app version #{version}"), verbosity: :debug
+            puts_by_host host, capture_with_info(*KAMAL.app(role: role).execute_in_new_container(cmd))
+          end
         end
       end
     end
