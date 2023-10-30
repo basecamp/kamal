@@ -354,6 +354,20 @@ class CliMainTest < CliTestCase
     run_command("envify")
   end
 
+  test "envify with blank line trimming" do
+    file = <<~EOF
+      HELLO=<%= 'world' %>
+      <% if true -%>
+      KEY=value
+      <% end -%>
+    EOF
+
+    File.expects(:read).with(".env.erb").returns(file.strip)
+    File.expects(:write).with(".env", "HELLO=world\nKEY=value\n", perm: 0600)
+
+    run_command("envify")
+  end
+
   test "envify with destination" do
     File.expects(:read).with(".env.world.erb").returns("HELLO=<%= 'world' %>")
     File.expects(:write).with(".env.world", "HELLO=world", perm: 0600)
