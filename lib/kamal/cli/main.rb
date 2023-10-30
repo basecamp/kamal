@@ -182,8 +182,10 @@ class Kamal::Cli::Main < Kamal::Cli::Base
 
     File.write(env_path, ERB.new(File.read(env_template_path), trim_mode: "-").result, perm: 0600)
 
-    load_envs # reload new file
-    invoke "kamal:cli:env:push", options unless options[:skip_push]
+    unless options[:skip_push]
+      reload_envs
+      invoke "kamal:cli:env:push", options
+    end
   end
 
   desc "remove", "Remove Traefik, app, accessories, and registry session from servers"

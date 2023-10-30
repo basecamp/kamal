@@ -24,6 +24,7 @@ module Kamal::Cli
 
     def initialize(*)
       super
+      @original_env = ENV.to_h.dup
       load_envs
       initialize_commander(options_with_subcommand_class_options)
     end
@@ -35,6 +36,12 @@ module Kamal::Cli
         else
           Dotenv.load(".env")
         end
+      end
+
+      def reload_envs
+        ENV.clear
+        ENV.update(@original_env)
+        load_envs
       end
 
       def options_with_subcommand_class_options
