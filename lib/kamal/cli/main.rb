@@ -170,6 +170,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
   end
 
   desc "envify", "Create .env by evaluating .env.erb (or .env.staging.erb -> .env.staging when using -d staging)"
+  option :skip_push, aliases: "-P", type: :boolean, default: false, desc: "Skip .env file push"
   def envify
     if destination = options[:destination]
       env_template_path = ".env.#{destination}.erb"
@@ -182,7 +183,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
     File.write(env_path, ERB.new(File.read(env_template_path)).result, perm: 0600)
 
     load_envs # reload new file
-    invoke "kamal:cli:env:push", options
+    invoke "kamal:cli:env:push", options unless options[:skip_push]
   end
 
   desc "remove", "Remove Traefik, app, accessories, and registry session from servers"
