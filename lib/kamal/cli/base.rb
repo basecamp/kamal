@@ -75,8 +75,6 @@ module Kamal::Cli
       def mutating
         return yield if KAMAL.holding_lock?
 
-        KAMAL.config.ensure_env_available
-
         run_hook "pre-connect"
 
         ensure_run_directory

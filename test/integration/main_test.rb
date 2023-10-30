@@ -5,6 +5,7 @@ class MainTest < IntegrationTest
     kamal :envify
     assert_local_env_file "SECRET_TOKEN=1234"
     assert_remote_env_file "SECRET_TOKEN=1234\nCLEAR_TOKEN=4321"
+    remove_local_env_file
 
     first_version = latest_app_version
 
@@ -62,6 +63,10 @@ class MainTest < IntegrationTest
   private
     def assert_local_env_file(contents)
       assert_equal contents, deployer_exec("cat .env", capture: true)
+    end
+
+    def remove_local_env_file
+      deployer_exec("rm .env")
     end
 
     def assert_remote_env_file(contents)
