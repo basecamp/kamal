@@ -167,13 +167,13 @@ class CommandsTraefikTest < ActiveSupport::TestCase
 
   test "traefik follow logs" do
     assert_equal \
-      "ssh -t root@1.1.1.1 'docker logs traefik --timestamps --tail 10 --follow 2>&1'",
+      "ssh -t root@1.1.1.1 -p 22 'docker logs traefik --timestamps --tail 10 --follow 2>&1'",
       new_command.follow_logs(host: @config[:servers].first)
   end
 
   test "traefik follow logs with grep hello!" do
     assert_equal \
-      "ssh -t root@1.1.1.1 'docker logs traefik --timestamps --tail 10 --follow 2>&1 | grep \"hello!\"'",
+      "ssh -t root@1.1.1.1 -p 22 'docker logs traefik --timestamps --tail 10 --follow 2>&1 | grep \"hello!\"'",
       new_command.follow_logs(host: @config[:servers].first, grep: 'hello!')
   end
 

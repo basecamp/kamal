@@ -190,32 +190,37 @@ class CommandsAppTest < ActiveSupport::TestCase
   end
 
   test "run over ssh" do
-    assert_equal "ssh -t root@1.1.1.1 'ls'", new_command.run_over_ssh("ls", host: "1.1.1.1")
+    assert_equal "ssh -t root@1.1.1.1 -p 22 'ls'", new_command.run_over_ssh("ls", host: "1.1.1.1")
   end
 
   test "run over ssh with custom user" do
     @config[:ssh] = { "user" => "app" }
-    assert_equal "ssh -t app@1.1.1.1 'ls'", new_command.run_over_ssh("ls", host: "1.1.1.1")
+    assert_equal "ssh -t app@1.1.1.1 -p 22 'ls'", new_command.run_over_ssh("ls", host: "1.1.1.1")
+  end
+
+  test "run over ssh with custom port" do
+    @config[:ssh] = { "port" => "2222" }
+    assert_equal "ssh -t root@1.1.1.1 -p 2222 'ls'", new_command.run_over_ssh("ls", host: "1.1.1.1")
   end
 
   test "run over ssh with proxy" do
     @config[:ssh] = { "proxy" => "2.2.2.2" }
-    assert_equal "ssh -J root@2.2.2.2 -t root@1.1.1.1 'ls'", new_command.run_over_ssh("ls", host: "1.1.1.1")
+    assert_equal "ssh -J root@2.2.2.2 -t root@1.1.1.1 -p 22 'ls'", new_command.run_over_ssh("ls", host: "1.1.1.1")
   end
 
   test "run over ssh with proxy user" do
     @config[:ssh] = { "proxy" => "app@2.2.2.2" }
-    assert_equal "ssh -J app@2.2.2.2 -t root@1.1.1.1 'ls'", new_command.run_over_ssh("ls", host: "1.1.1.1")
+    assert_equal "ssh -J app@2.2.2.2 -t root@1.1.1.1 -p 22 'ls'", new_command.run_over_ssh("ls", host: "1.1.1.1")
   end
 
   test "run over ssh with custom user with proxy" do
     @config[:ssh] = { "user" => "app", "proxy" => "2.2.2.2" }
-    assert_equal "ssh -J root@2.2.2.2 -t app@1.1.1.1 'ls'", new_command.run_over_ssh("ls", host: "1.1.1.1")
+    assert_equal "ssh -J root@2.2.2.2 -t app@1.1.1.1 -p 22 'ls'", new_command.run_over_ssh("ls", host: "1.1.1.1")
   end
 
   test "run over ssh with proxy_command" do
     @config[:ssh] = { "proxy_command" => "ssh -W %h:%p user@proxy-server" }
-    assert_equal "ssh -o ProxyCommand='ssh -W %h:%p user@proxy-server' -t root@1.1.1.1 'ls'", new_command.run_over_ssh("ls", host: "1.1.1.1")
+    assert_equal "ssh -o ProxyCommand='ssh -W %h:%p user@proxy-server' -t root@1.1.1.1 -p 22 'ls'", new_command.run_over_ssh("ls", host: "1.1.1.1")
   end
 
   test "current_running_container_id" do

@@ -54,7 +54,7 @@ class MainTest < IntegrationTest
     assert_equal "registry:4443/app:#{version}", config[:absolute_image]
     assert_equal "app-#{version}", config[:service_with_version]
     assert_equal [], config[:volume_args]
-    assert_equal({ user: "root", keepalive: true, keepalive_interval: 30, log_level: :fatal }, config[:ssh_options])
+    assert_equal({ user: "root", port: 22, keepalive: true, keepalive_interval: 30, log_level: :fatal }, config[:ssh_options])
     assert_equal({ "multiarch" => false, "args" => { "COMMIT_SHA" => version } }, config[:builder])
     assert_equal [ "--log-opt", "max-size=\"10m\"" ], config[:logging]
     assert_equal({ "path" => "/up", "port" => 3000, "max_attempts" => 7, "exposed_port" => 3999, "cord"=>"/tmp/kamal-cord", "log_lines" => 50, "cmd"=>"wget -qO- http://localhost > /dev/null || exit 1" }, config[:healthcheck])

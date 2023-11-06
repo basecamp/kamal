@@ -97,7 +97,7 @@ class CliAccessoryTest < CliTestCase
 
   test "logs with follow" do
     SSHKit::Backend::Abstract.any_instance.stubs(:exec)
-      .with("ssh -t root@1.1.1.3 'docker logs app-mysql --timestamps --tail 10 --follow 2>&1'")
+      .with("ssh -t root@1.1.1.3 -p 22 'docker logs app-mysql --timestamps --tail 10 --follow 2>&1'")
 
     assert_match "docker logs app-mysql --timestamps --tail 10 --follow 2>&1", run_command("logs", "mysql", "--follow")
   end
