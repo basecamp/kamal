@@ -185,6 +185,7 @@ class Kamal::Configuration::Role
           "traefik.http.services.#{traefik_service}.loadbalancer.server.scheme" => "http",
 
           "traefik.http.routers.#{traefik_service}.rule" => "PathPrefix(`/`)",
+          "traefik.http.routers.#{traefik_service}.priority" => "2",
           "traefik.http.middlewares.#{traefik_service}-retry.retry.attempts" => "5",
           "traefik.http.middlewares.#{traefik_service}-retry.retry.initialinterval" => "500ms",
           "traefik.http.routers.#{traefik_service}.middlewares" => "#{traefik_service}-retry@docker"
