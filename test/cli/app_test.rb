@@ -104,6 +104,11 @@ class CliAppTest < CliTestCase
     end
   end
 
+  test "stop_async" do
+    Kamal::Cli::Async::Stopper.any_instance.expects(:stop).once
+    run_command("stop_async")
+  end
+  
   test "stale_containers" do
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
       .with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=web", "--format", "\"{{.Names}}\"", "|", "while read line; do echo ${line#app-web-}; done", raise_on_non_zero_exit: false)

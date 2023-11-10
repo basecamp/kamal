@@ -41,7 +41,25 @@ class Kamal::Commands::App < Kamal::Commands::Base
   def stop(version: nil)
     pipe \
       version ? container_id_for_version(version) : current_running_container_id,
-      xargs(config.stop_wait_time ? docker(:stop, "-t", config.stop_wait_time) : docker(:stop))
+      xargs(docker_stop)
+  end
+
+  def stop_containers_async(ids)
+    [:nohup, :sh, "-c", "'" + stop_containers(ids).join(" ")+ "'", ">", "/dev/null", "2>&1", "&", :disown]
+  end
+
+  def stop_containers(ids)
+    pipe \
+      [:echo, "\"#{ids.join("\n")}\""],
+      xargs(docker_stop)
+  end
+
+  def stop_container(id)
+    [*docker_stop, id]
+  end
+
+  def docker_stop
+    config.stop_wait_time ? docker(:stop, "-t", config.stop_wait_time) : docker(:stop)
   end
 
   def info
@@ -52,7 +70,7 @@ class Kamal::Commands::App < Kamal::Commands::Base
   def current_running_container_id
     docker :ps, "--quiet", *filter_args(statuses: ACTIVE_DOCKER_STATUSES), "--latest"
   end
-
+  
   def container_id_for_version(version, only_running: false)
     container_id_for(container_name: container_name(version), only_running: only_running)
   end

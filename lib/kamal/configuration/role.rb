@@ -158,6 +158,10 @@ class Kamal::Configuration::Role
     File.join config.run_directory, "assets", "volumes", container_name(version)
   end
 
+  def stop_async?
+    specializations["stop_asynchronously"] || false
+  end
+
   private
     attr_accessor :config
 

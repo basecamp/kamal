@@ -103,6 +103,17 @@ class CommandsAppTest < ActiveSupport::TestCase
       new_command.stop(version: "123").join(" ")
   end
 
+  test "stop_containers_async" do
+    expected_command = "nohup sh -c 'echo \"container1\ncontainer2\" | xargs docker stop' > /dev/null 2>&1 & disown"
+    assert_equal expected_command, new_command.stop_containers_async(['container1', 'container2']).join(" ")
+  end
+
+  test "stop_containers_async with custom stop wait time" do
+    @config[:stop_wait_time] = 30
+    expected_command = "nohup sh -c 'echo \"container1\ncontainer2\" | xargs docker stop -t 30' > /dev/null 2>&1 & disown"
+    assert_equal expected_command, new_command.stop_containers_async(['container1', 'container2']).join(" ")
+  end
+
   test "info" do
     assert_equal \
       "docker ps --filter label=service=app --filter label=role=web",

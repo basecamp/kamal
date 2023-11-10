@@ -3,6 +3,10 @@ module Kamal::Commands::App::Containers
     docker :container, :ls, "--all", *filter_args
   end
 
+  def list_active_containers
+    docker :container, :ls, *filter_args
+  end
+
   def list_container_names
     [ *list_containers, "--format", "'{{ .Names }}'" ]
   end

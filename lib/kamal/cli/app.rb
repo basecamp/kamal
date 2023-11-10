@@ -55,7 +55,12 @@ class Kamal::Cli::App < Kamal::Cli::Base
                   end
                 end
 
-                execute *app.stop(version: old_version), raise_on_non_zero_exit: false
+                if role_config.stop_async?
+                  ssh_context = self
+                  Kamal::Cli::Async::Stopper.new(app, ssh_context: ssh_context, version: old_version).stop
+                else
+                  execute *app.stop(version: old_version), raise_on_non_zero_exit: false
+                end
 
                 execute *app.clean_up_assets if role_config.assets?
               end
@@ -89,6 +94,22 @@ class Kamal::Cli::App < Kamal::Cli::Base
         roles.each do |role|
           execute *KAMAL.auditor.record("Stopped app", role: role), verbosity: :debug
           execute *KAMAL.app(role: role).stop, raise_on_non_zero_exit: false
+        end
+      end
+    end
+  end
+
+  desc "stop_async", "Stop app container on servers asynchronously"
+  def stop_async
+    using_version(version_or_latest) do |version|
+      mutating do
+        on(KAMAL.hosts) do |host|
+          ssh_context = self
+          roles = KAMAL.roles_on(host)
+          roles.each do |role|
+            app = KAMAL.app(role: role)
+            Kamal::Cli::Async::Stopper.new(app, ssh_context: ssh_context, version: version).stop
+          end
         end
       end
     end
@@ -178,7 +199,12 @@ class Kamal::Cli::App < Kamal::Cli::Base
           cli.send(:stale_versions, host: host, role: role).each do |version|
             if stop
               puts_by_host host, "Stopping stale container for role #{role} with version #{version}"
-              execute *KAMAL.app(role: role).stop(version: version), raise_on_non_zero_exit: false
+              if KAMAL.config.role(role).stop_async?
+                  ssh_context = self
+                  Kamal::Cli::Async::Stopper.new(KAMAL.app(role:role), ssh_context: ssh_context, version: version).stop
+              else
+                execute *KAMAL.app(role: role).stop(version: version), raise_on_non_zero_exit: false
+              end
             else
               puts_by_host host,  "Detected stale container for role #{role} with version #{version} (use `kamal app stale_containers --stop` to stop)"
             end
