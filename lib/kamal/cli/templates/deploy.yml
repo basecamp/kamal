@@ -83,3 +83,11 @@ registry:
 # boot:
 #   limit: 10 # Can also specify as a percentage of total hosts, such as "25%"
 #   wait: 2
+
+# Configure the role used to determine the primary_web_host. This host takes
+# deploy locks, runs health checks during the deploy, and follow logs, etc.
+# This role should have traefik enabled.
+#
+# Caution: there's no support for role renaming yet, so be careful to cleanup
+#          the previous role on the deployed hosts.
+# primary_web_role: web
