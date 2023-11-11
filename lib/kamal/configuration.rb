@@ -263,6 +263,10 @@ class Kamal::Configuration
         end
       end
 
+      unless role_names.include?(primary_web_role)
+        raise ArgumentError, "The primary_web_role #{primary_web_role} isn't defined"
+      end
+
       unless traefik_role_names.include?(primary_web_role)
         raise ArgumentError, "Role #{primary_web_role} needs to have traefik enabled"
       end
