@@ -1,7 +1,7 @@
 class Kamal::Commands::Healthcheck < Kamal::Commands::Base
 
   def run
-    web = config.role(:web)
+    web = config.role(config.primary_web_role)
 
     docker :run,
       "--detach",

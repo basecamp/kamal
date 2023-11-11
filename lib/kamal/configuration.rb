@@ -90,13 +90,20 @@ class Kamal::Configuration
   end
 
   def primary_web_host
-    role(:web).primary_host
+    role(primary_web_role)&.primary_host
+  end
+
+  def traefik_roles
+    roles.select(&:running_traefik?)
+  end
+
+  def traefik_role_names
+    traefik_roles.flat_map(&:name)
   end
 
   def traefik_hosts
-    roles.select(&:running_traefik?).flat_map(&:hosts).uniq
+    traefik_roles.flat_map(&:hosts).uniq
   end
-
 
   def repository
     [ raw_config.registry["server"], image ].compact.join("/")
@@ -199,6 +206,9 @@ class Kamal::Configuration
     raw_config.asset_path
   end
 
+  def primary_web_role
+    raw_config.primary_web_role || "web"
+  end
 
   def valid?
     ensure_destination_if_required && ensure_required_keys_present && ensure_valid_kamal_version
@@ -251,6 +261,10 @@ class Kamal::Configuration
         if role.hosts.empty?
           raise ArgumentError, "No servers specified for the #{role.name} role"
         end
+      end
+
+      unless traefik_role_names.include?(primary_web_role)
+        raise ArgumentError, "Role #{primary_web_role} needs to have traefik enabled"
       end
 
       true
