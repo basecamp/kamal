@@ -292,8 +292,15 @@ class ConfigurationTest < ActiveSupport::TestCase
 
   test "primary web role no traefik" do
     error = assert_raises(ArgumentError) do
+      Kamal::Configuration.new(@deploy_with_roles.merge(primary_web_role: "workers"))
+    end
+    assert_match /workers needs to have traefik enabled/, error.message
+  end
+
+  test "primary web role missing" do
+    error = assert_raises(ArgumentError) do
       Kamal::Configuration.new(@deploy.merge(primary_web_role: "bar"))
     end
-    assert_match /bar/, error.message
+    assert_match /bar isn't defined/, error.message
   end
 end
