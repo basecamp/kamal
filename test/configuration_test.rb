@@ -278,4 +278,22 @@ class ConfigurationTest < ActiveSupport::TestCase
     assert_nil @config.asset_path
     assert_equal "foo", Kamal::Configuration.new(@deploy.merge!(asset_path: "foo")).asset_path
   end
+
+  test "primary web role" do
+    assert_equal "web", @config.primary_web_role
+
+    config = Kamal::Configuration.new(@deploy_with_roles.deep_merge({
+      servers: { "alternate_web" => { "hosts" => [ "1.1.1.4", "1.1.1.5" ] , "traefik" => true } },
+      primary_web_role: "alternate_web" } ))
+
+    assert_equal "alternate_web", config.primary_web_role
+    assert_equal "1.1.1.4", config.primary_web_host
+  end
+
+  test "primary web role no traefik" do
+    error = assert_raises(ArgumentError) do
+      Kamal::Configuration.new(@deploy.merge(primary_web_role: "bar"))
+    end
+    assert_match /bar/, error.message
+  end
 end
