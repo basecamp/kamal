@@ -210,6 +210,11 @@ class Kamal::Configuration
     raw_config.primary_web_role || "web"
   end
 
+  def allow_empty_roles?
+    raw_config.allow_empty_roles
+  end
+
+
   def valid?
     ensure_destination_if_required && ensure_required_keys_present && ensure_valid_kamal_version
   end
@@ -257,18 +262,24 @@ class Kamal::Configuration
         raise ArgumentError, "You must specify a password for the registry in config/deploy.yml (or set the ENV variable if that's used)"
       end
 
-      roles.each do |role|
-        if role.hosts.empty?
-          raise ArgumentError, "No servers specified for the #{role.name} role"
-        end
-      end
-
       unless role_names.include?(primary_web_role)
         raise ArgumentError, "The primary_web_role #{primary_web_role} isn't defined"
       end
 
       unless traefik_role_names.include?(primary_web_role)
         raise ArgumentError, "Role #{primary_web_role} needs to have traefik enabled"
+      end
+
+      if role(primary_web_role).hosts.empty?
+        raise ArgumentError, "No servers specified for the #{primary_web_role} primary_web_role"
+      end
+
+      unless allow_empty_roles?
+        roles.each do |role|
+          if role.hosts.empty?
+            raise ArgumentError, "No servers specified for the #{role.name} role. You can ignore this with allow_empty_roles: true"
+          end
+        end
       end
 
       true

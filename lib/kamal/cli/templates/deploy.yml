@@ -91,3 +91,8 @@ registry:
 # Caution: there's no support for role renaming yet, so be careful to cleanup
 #          the previous role on the deployed hosts.
 # primary_web_role: web
+
+# Controls if we abort when see a role with no hosts. Disabling this may be
+# useful for more complex deploy configurations.
+#
+# allow_empty_roles: false
