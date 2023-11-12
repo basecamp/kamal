@@ -89,8 +89,12 @@ class Kamal::Configuration
     roles.flat_map(&:hosts).uniq
   end
 
-  def primary_web_host
-    role(:web).primary_host
+  def primary_host
+    primary_role.primary_host
+  end
+
+  def primary_role
+    role(:web) || roles.first
   end
 
   def traefik_hosts
@@ -208,7 +212,7 @@ class Kamal::Configuration
     {
       roles: role_names,
       hosts: all_hosts,
-      primary_host: primary_web_host,
+      primary_host: primary_host,
       version: version,
       repository: repository,
       absolute_image: absolute_image,

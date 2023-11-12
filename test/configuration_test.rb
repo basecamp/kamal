@@ -58,9 +58,9 @@ class ConfigurationTest < ActiveSupport::TestCase
     assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3" ], @config_with_roles.all_hosts
   end
 
-  test "primary web host" do
-    assert_equal "1.1.1.1", @config.primary_web_host
-    assert_equal "1.1.1.1", @config_with_roles.primary_web_host
+  test "primary host" do
+    assert_equal "1.1.1.1", @config.primary_host
+    assert_equal "1.1.1.1", @config_with_roles.primary_host
   end
 
   test "traefik hosts" do

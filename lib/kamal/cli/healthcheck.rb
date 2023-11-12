@@ -3,6 +3,7 @@ class Kamal::Cli::Healthcheck < Kamal::Cli::Base
 
   desc "perform", "Health check current app version"
   def perform
+    return unless KAMAL.primary_role.running_traefik?
     on(KAMAL.primary_host) do
       begin
         execute *KAMAL.healthcheck.run

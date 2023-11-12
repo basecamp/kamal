@@ -64,9 +64,14 @@ class CliHealthcheckTest < CliTestCase
     end
     assert_match "container not ready (unhealthy)", exception.message
   end
+  
+  test "does not perform if primary does not have traefik" do
+    SSHKit::Backend::Abstract.any_instance.expects(:execute).never
+    run_command("perform", config_file: "test/fixtures/deploy_workers_only.yml")
+  end
 
   private
-    def run_command(*command)
-      stdouted { Kamal::Cli::Healthcheck.start([*command, "-c", "test/fixtures/deploy_with_accessories.yml"]) }
+    def run_command(*command, config_file: "test/fixtures/deploy_with_accessories.yml")
+      stdouted { Kamal::Cli::Healthcheck.start([*command, "-c", config_file]) } 
     end
 end

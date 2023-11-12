@@ -1,0 +1,10 @@
+service: app
+image: dhh/app
+servers:
+  workers:
+    hosts:
+      - 1.1.1.1
+      - 1.1.1.2
+registry:
+  username: user
+  password: pw
