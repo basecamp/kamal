@@ -14,6 +14,18 @@ class CommanderTest < ActiveSupport::TestCase
 
     @kamal.specific_hosts = [ "1.1.1.1", "1.1.1.2" ]
     assert_equal [ "1.1.1.1", "1.1.1.2" ], @kamal.hosts
+
+    @kamal.specific_hosts = [ "1.1.1.1*" ]
+    assert_equal [ "1.1.1.1" ], @kamal.hosts
+
+    @kamal.specific_hosts = [ "1.1.1.*", "*.1.2.*" ]
+    assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3", "1.1.1.4" ], @kamal.hosts
+
+    @kamal.specific_hosts = [ "*" ]
+    assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3", "1.1.1.4" ], @kamal.hosts
+
+    @kamal.specific_hosts = [ "*miss" ]
+    assert_equal [], @kamal.hosts
   end
 
   test "filtering hosts by filtering roles" do
@@ -28,6 +40,18 @@ class CommanderTest < ActiveSupport::TestCase
 
     @kamal.specific_roles = [ "workers" ]
     assert_equal [ "workers" ], @kamal.roles.map(&:name)
+
+    @kamal.specific_roles = [ "w*" ]
+    assert_equal [ "web", "workers" ], @kamal.roles.map(&:name)
+
+    @kamal.specific_roles = [ "we*", "*orkers" ]
+    assert_equal [ "web", "workers" ], @kamal.roles.map(&:name)
+
+    @kamal.specific_roles = [ "*" ]
+    assert_equal [ "web", "workers" ], @kamal.roles.map(&:name)
+
+    @kamal.specific_roles = [ "*miss" ]
+    assert_equal [], @kamal.roles.map(&:name)
   end
 
   test "filtering roles by filtering hosts" do

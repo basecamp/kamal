@@ -58,4 +58,20 @@ module Kamal::Utils
       .gsub(/`/, '\\\\`')
       .gsub(DOLLAR_SIGN_WITHOUT_SHELL_EXPANSION_REGEX, '\$')
   end
+
+  # Apply a list of host or role filters, including wildcard matches
+  def filter_specific_items(filters, items)
+    matches = []
+
+    Array(filters).select do |filter|
+      matches += Array(items).select do |item|
+        # Only allow * for a wildcard
+        pattern = Regexp.escape(filter).gsub('\*', '.*')
+        # items are roles or hosts
+        (item.respond_to?(:name) ? item.name : item).match(/^#{pattern}$/)
+      end
+    end
+
+    matches
+  end
 end
