@@ -283,6 +283,16 @@ class CliMainTest < CliTestCase
     end
   end
 
+  test "config with primary web role override" do
+    run_command("config", config_file: "deploy_primary_web_role_override").tap do |output|
+      config = YAML.load(output)
+
+      assert_equal ["web_chicago", "web_tokyo"], config[:roles]
+      assert_equal ["1.1.1.1", "1.1.1.2", "1.1.1.3", "1.1.1.4"], config[:hosts]
+      assert_equal "1.1.1.3", config[:primary_host]
+    end
+  end
+
   test "config with destination" do
     run_command("config", "-d", "world", config_file: "deploy_for_dest").tap do |output|
       config = YAML.load(output)
