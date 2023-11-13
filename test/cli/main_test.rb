@@ -306,6 +306,19 @@ class CliMainTest < CliTestCase
     end
   end
 
+  test "config with aliases" do
+    run_command("config", config_file: "deploy_with_aliases").tap do |output|
+      config = YAML.load(output)
+
+      assert_equal ["web", "web_tokyo", "workers", "workers_tokyo"], config[:roles]
+      assert_equal ["1.1.1.1", "1.1.1.2", "1.1.1.3", "1.1.1.4"], config[:hosts]
+      assert_equal "999", config[:version]
+      assert_equal "registry.digitalocean.com/dhh/app", config[:repository]
+      assert_equal "registry.digitalocean.com/dhh/app:999", config[:absolute_image]
+      assert_equal "app-999", config[:service_with_version]
+    end
+  end
+
   test "init" do
     Pathname.any_instance.expects(:exist?).returns(false).times(3)
     Pathname.any_instance.stubs(:mkpath)
