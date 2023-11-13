@@ -165,6 +165,16 @@ class ConfigurationTest < ActiveSupport::TestCase
     end
   end
 
+  test "allow_empty_roles" do
+    assert_silent do
+      Kamal::Configuration.new @deploy.merge(servers: { "web" => %w[ web ], "workers" => { "hosts" => %w[ ] } }, allow_empty_roles: true)
+    end
+
+    assert_raises(ArgumentError) do
+      Kamal::Configuration.new @deploy.merge(servers: { "web" => %w[], "workers" => { "hosts" => %w[] } }, allow_empty_roles: true)
+    end
+  end
+
   test "volume_args" do
     assert_equal ["--volume", "/local/path:/container/path"], @config.volume_args
   end
