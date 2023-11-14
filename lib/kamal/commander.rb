@@ -28,11 +28,11 @@ class Kamal::Commander
   end
 
   def specific_roles=(role_names)
-    @specific_roles = config.roles.select { |r| role_names.include?(r.name) } if role_names.present?
+    @specific_roles = Kamal::Utils.filter_specific_items(role_names, config.roles) if role_names.present?
   end
 
   def specific_hosts=(hosts)
-    @specific_hosts = config.all_hosts & hosts if hosts.present?
+    @specific_hosts = Kamal::Utils.filter_specific_items(hosts, config.all_hosts) if hosts.present?
   end
 
   def primary_host
