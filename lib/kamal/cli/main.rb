@@ -38,7 +38,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
         say "Ensure Traefik is running...", :magenta
         invoke "kamal:cli:traefik:boot", [], invoke_options
 
-        if KAMAL.config.primary_role.running_traefik?
+        if KAMAL.config.role(KAMAL.config.primary_role).running_traefik?
           say "Ensure app can pass healthcheck...", :magenta
           invoke "kamal:cli:healthcheck:perform", [], invoke_options
         end

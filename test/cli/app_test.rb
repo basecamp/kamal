@@ -172,7 +172,7 @@ class CliAppTest < CliTestCase
 
   test "exec interactive" do
     SSHKit::Backend::Abstract.any_instance.expects(:exec)
-      .with("ssh -t root@1.1.1.1 'docker run -it --rm --env-file .kamal/env/roles/app-web.env dhh/app:latest ruby -v'")
+      .with("ssh -t root@1.1.1.1 -p 22 'docker run -it --rm --env-file .kamal/env/roles/app-web.env dhh/app:latest ruby -v'")
     run_command("exec", "-i", "ruby -v").tap do |output|
       assert_match "Get most recent version available as an image...", output
       assert_match "Launching interactive command with version latest via SSH from new container on 1.1.1.1...", output
@@ -181,7 +181,7 @@ class CliAppTest < CliTestCase
 
   test "exec interactive with reuse" do
     SSHKit::Backend::Abstract.any_instance.expects(:exec)
-      .with("ssh -t root@1.1.1.1 'docker exec -it app-web-999 ruby -v'")
+      .with("ssh -t root@1.1.1.1 -p 22 'docker exec -it app-web-999 ruby -v'")
     run_command("exec", "-i", "--reuse", "ruby -v").tap do |output|
       assert_match "Get current version of running container...", output
       assert_match "Running docker ps --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --latest --format \"{{.Names}}\" | while read line; do echo ${line#app-web-}; done on 1.1.1.1", output
@@ -210,7 +210,7 @@ class CliAppTest < CliTestCase
 
   test "logs with follow" do
     SSHKit::Backend::Abstract.any_instance.stubs(:exec)
-      .with("ssh -t root@1.1.1.1 'docker ps --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --latest | xargs docker logs --timestamps --tail 10 --follow 2>&1'")
+      .with("ssh -t root@1.1.1.1 -p 22 'docker ps --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --latest | xargs docker logs --timestamps --tail 10 --follow 2>&1'")
 
     assert_match "docker ps --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --latest | xargs docker logs --timestamps --tail 10 --follow 2>&1", run_command("logs", "--follow")
   end

@@ -128,7 +128,7 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
 
   test "follow logs" do
     assert_equal \
-      "ssh -t root@1.1.1.5 'docker logs app-mysql --timestamps --tail 10 --follow 2>&1'",
+      "ssh -t root@1.1.1.5 -p 22 'docker logs app-mysql --timestamps --tail 10 --follow 2>&1'",
       new_command(:mysql).follow_logs
   end
 

@@ -25,7 +25,9 @@ class Kamal::Configuration
 
       def load_config_file(file)
         if file.exist?
-          YAML.load(ERB.new(IO.read(file)).result).symbolize_keys
+          # Newer Psych doesn't load aliases by default
+          load_method = YAML.respond_to?(:unsafe_load) ? :unsafe_load : :load
+          YAML.send(load_method, ERB.new(IO.read(file)).result).symbolize_keys
         else
           raise "Configuration file not found in #{file}"
         end
@@ -90,17 +92,20 @@ class Kamal::Configuration
   end
 
   def primary_host
-    primary_role.primary_host
+    role(primary_role)&.primary_host
   end
 
-  def primary_role
-    role(:web) || roles.first
+  def traefik_roles
+    roles.select(&:running_traefik?)
+  end
+
+  def traefik_role_names
+    traefik_roles.flat_map(&:name)
   end
 
   def traefik_hosts
-    roles.select(&:running_traefik?).flat_map(&:hosts).uniq
+    traefik_roles.flat_map(&:hosts).uniq
   end
-
 
   def repository
     [ raw_config.registry["server"], image ].compact.join("/")
@@ -203,6 +208,14 @@ class Kamal::Configuration
     raw_config.asset_path
   end
 
+  def primary_role
+    raw_config.primary_role || "web"
+  end
+
+  def allow_empty_roles?
+    raw_config.allow_empty_roles
+  end
+
 
   def valid?
     ensure_destination_if_required && ensure_required_keys_present && ensure_valid_kamal_version
@@ -251,9 +264,19 @@ class Kamal::Configuration
         raise ArgumentError, "You must specify a password for the registry in config/deploy.yml (or set the ENV variable if that's used)"
       end
 
-      roles.each do |role|
-        if role.hosts.empty?
-          raise ArgumentError, "No servers specified for the #{role.name} role"
+      unless role_names.include?(primary_role)
+        raise ArgumentError, "The primary_role #{primary_role} isn't defined"
+      end
+
+      if role(primary_role).hosts.empty?
+        raise ArgumentError, "No servers specified for the #{primary_role} primary_role"
+      end
+
+      unless allow_empty_roles?
+        roles.each do |role|
+          if role.hosts.empty?
+            raise ArgumentError, "No servers specified for the #{role.name} role. You can ignore this with allow_empty_roles: true"
+          end
         end
       end
 
