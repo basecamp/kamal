@@ -17,4 +17,4 @@ registry:
   server: registry.digitalocean.com
   username: user
   password: pw
-primary_web_role: web_tokyo
+primary_role: web_tokyo

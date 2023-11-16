@@ -58,9 +58,9 @@ class ConfigurationTest < ActiveSupport::TestCase
     assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3" ], @config_with_roles.all_hosts
   end
 
-  test "primary web host" do
-    assert_equal "1.1.1.1", @config.primary_web_host
-    assert_equal "1.1.1.1", @config_with_roles.primary_web_host
+  test "primary host" do
+    assert_equal "1.1.1.1", @config.primary_host
+    assert_equal "1.1.1.1", @config_with_roles.primary_host
   end
 
   test "traefik hosts" do
@@ -289,27 +289,23 @@ class ConfigurationTest < ActiveSupport::TestCase
     assert_equal "foo", Kamal::Configuration.new(@deploy.merge!(asset_path: "foo")).asset_path
   end
 
-  test "primary web role" do
-    assert_equal "web", @config.primary_web_role
+  test "primary role" do
+    assert_equal "web", @config.primary_role
 
     config = Kamal::Configuration.new(@deploy_with_roles.deep_merge({
-      servers: { "alternate_web" => { "hosts" => [ "1.1.1.4", "1.1.1.5" ] , "traefik" => true } },
-      primary_web_role: "alternate_web" } ))
+      servers: { "alternate_web" => { "hosts" => [ "1.1.1.4", "1.1.1.5" ] } },
+      primary_role: "alternate_web" } ))
 
-    assert_equal "alternate_web", config.primary_web_role
-    assert_equal "1.1.1.4", config.primary_web_host
+
+    assert_equal "alternate_web", config.primary_role
+    assert_equal "1.1.1.4", config.primary_host
+    assert config.role(:alternate_web).primary? 
+    assert config.role(:alternate_web).running_traefik?
   end
 
-  test "primary web role no traefik" do
+  test "primary role missing" do
     error = assert_raises(ArgumentError) do
-      Kamal::Configuration.new(@deploy_with_roles.merge(primary_web_role: "workers"))
-    end
-    assert_match /workers needs to have traefik enabled/, error.message
-  end
-
-  test "primary web role missing" do
-    error = assert_raises(ArgumentError) do
-      Kamal::Configuration.new(@deploy.merge(primary_web_role: "bar"))
+      Kamal::Configuration.new(@deploy.merge(primary_role: "bar"))
     end
     assert_match /bar isn't defined/, error.message
   end

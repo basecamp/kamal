@@ -24,7 +24,7 @@ class Kamal::Commander
   attr_reader :specific_roles, :specific_hosts
 
   def specific_primary!
-    self.specific_hosts = [ config.primary_web_host ]
+    self.specific_hosts = [ config.primary_host ]
   end
 
   def specific_roles=(role_names)
@@ -36,7 +36,7 @@ class Kamal::Commander
   end
 
   def primary_host
-    specific_hosts&.first || specific_roles&.first&.primary_host || config.primary_web_host
+    specific_hosts&.first || specific_roles&.first&.primary_host || config.primary_host
   end
 
   def primary_role

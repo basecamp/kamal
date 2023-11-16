@@ -122,6 +122,21 @@ class CliMainTest < CliTestCase
       refute_match /Running the post-deploy hook.../, output
     end
   end
+  
+  test "deploy without healthcheck if primary host doesn't have traefik" do
+    invoke_options = { "config_file" => "test/fixtures/deploy_workers_only.yml", "version" => "999", "skip_hooks" => false }
+
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:healthcheck:perform", [], invoke_options).never
+    
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:registry:login", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:deliver", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:traefik:boot", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true))
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:boot", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:prune:all", [], invoke_options)
+
+    run_command("deploy", config_file: "deploy_workers_only")
+  end
 
   test "deploy with missing secrets" do
     invoke_options = { "config_file" => "test/fixtures/deploy_with_secrets.yml", "version" => "999", "skip_hooks" => false }

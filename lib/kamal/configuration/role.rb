@@ -93,7 +93,15 @@ class Kamal::Configuration::Role
 
 
   def running_traefik?
-    name.web? || specializations["traefik"]
+    if specializations["traefik"].nil?
+      primary?
+    else
+      specializations["traefik"]
+    end
+  end
+
+  def primary?
+    @config.primary_role == name
   end
 
 
