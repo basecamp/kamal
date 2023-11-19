@@ -290,14 +290,14 @@ class ConfigurationTest < ActiveSupport::TestCase
   end
 
   test "primary role" do
-    assert_equal "web", @config.primary_role
+    assert_equal "web", @config.primary_role_name
 
     config = Kamal::Configuration.new(@deploy_with_roles.deep_merge({
       servers: { "alternate_web" => { "hosts" => [ "1.1.1.4", "1.1.1.5" ] } },
       primary_role: "alternate_web" } ))
 
 
-    assert_equal "alternate_web", config.primary_role
+    assert_equal "alternate_web", config.primary_role_name
     assert_equal "1.1.1.4", config.primary_host
     assert config.role(:alternate_web).primary? 
     assert config.role(:alternate_web).running_traefik?

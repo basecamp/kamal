@@ -74,9 +74,9 @@ class CommanderTest < ActiveSupport::TestCase
   end
 
   test "primary_role" do
-    assert_equal "web", @kamal.primary_role
+    assert_equal "web", @kamal.primary_role_name
     @kamal.specific_roles = "workers"
-    assert_equal "workers", @kamal.primary_role
+    assert_equal "workers", @kamal.primary_role_name
   end
 
   test "roles_on" do

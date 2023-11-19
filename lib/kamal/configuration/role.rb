@@ -101,7 +101,7 @@ class Kamal::Configuration::Role
   end
 
   def primary?
-    @config.primary_role == name
+    @config.primary_role_name == name
   end
 
 

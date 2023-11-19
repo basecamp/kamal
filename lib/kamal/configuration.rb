@@ -92,7 +92,7 @@ class Kamal::Configuration
   end
 
   def primary_host
-    role(primary_role)&.primary_host
+    primary_role&.primary_host
   end
 
   def traefik_roles
@@ -209,6 +209,10 @@ class Kamal::Configuration
   end
 
   def primary_role
+    role(primary_role_name)
+  end
+
+  def primary_role_name
     raw_config.primary_role || "web"
   end
 
@@ -264,12 +268,12 @@ class Kamal::Configuration
         raise ArgumentError, "You must specify a password for the registry in config/deploy.yml (or set the ENV variable if that's used)"
       end
 
-      unless role_names.include?(primary_role)
-        raise ArgumentError, "The primary_role #{primary_role} isn't defined"
+      unless role_names.include?(primary_role_name)
+        raise ArgumentError, "The primary_role #{primary_role_name} isn't defined"
       end
 
-      if role(primary_role).hosts.empty?
-        raise ArgumentError, "No servers specified for the #{primary_role} primary_role"
+      if primary_role.hosts.empty?
+        raise ArgumentError, "No servers specified for the #{primary_role_name} primary_role"
       end
 
       unless allow_empty_roles?
