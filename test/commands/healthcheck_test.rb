@@ -46,6 +46,14 @@ class CommandsHealthcheckTest < ActiveSupport::TestCase
       new_command.run.join(" ")
   end
 
+  test "run with custom per-role healthcheck options" do
+    @config[:servers] = { "web" => { "hosts" => [ "1.1.1.1" ], 
+      "healthcheck" => { "log_lines" => 150 } } }
+    assert_equal \
+      "docker container ls --all --filter name=^healthcheck-app-123$ --quiet | xargs docker logs --tail 150 2>&1",
+      new_command.logs.join(" ")
+  end
+
   test "status" do
     assert_equal \
       "docker container ls --all --filter name=^healthcheck-app-123$ --quiet | xargs docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'",
