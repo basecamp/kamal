@@ -93,7 +93,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
       mutating do
         invoke_options = deploy_options
 
-        KAMAL.config.version = version
+        KAMAL.config.version = Kamal::Git.used? ? Kamal::Git.resolve_revision(version) : version
         old_version = nil
 
         if container_available?(version)
