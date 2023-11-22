@@ -21,7 +21,7 @@ class Kamal::Commands::App < Kamal::Commands::Base
       "-e", "KAMAL_VERSION=\"#{config.version}\"",
       *role_config.env_args,
       *role_config.health_check_args,
-      *config.logging_args,
+      *role_config.logging_args,
       *config.volume_args,
       *role_config.asset_volume_args,
       *role_config.label_args,
