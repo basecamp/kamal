@@ -36,7 +36,8 @@ class Kamal::Commander
   end
 
   def primary_host
-    specific_hosts&.first || specific_roles&.first&.primary_host || config.primary_host
+    # Given a list of specific roles, make an effort to match up with the primary_role
+    specific_hosts&.first || specific_roles&.detect { |role| role.name == config.primary_role }&.primary_host || specific_roles&.first&.primary_host || config.primary_host
   end
 
   def primary_role

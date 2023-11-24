@@ -100,6 +100,15 @@ class CommanderTest < ActiveSupport::TestCase
     assert_equal({ in: :groups, limit: 1, wait: 2 }, @kamal.boot_strategy)
   end
 
+  test "try to match the primary role from a list of specific roles" do
+    configure_with(:deploy_primary_web_role_override)
+
+    @kamal.specific_roles = [ "web_*" ]
+    assert_equal [ "web_chicago", "web_tokyo" ], @kamal.roles.map(&:name)
+    assert_equal "web_tokyo", @kamal.primary_role
+    assert_equal "1.1.1.3", @kamal.primary_host
+  end
+
   private
     def configure_with(variant)
       @kamal = Kamal::Commander.new.tap do |kamal|
