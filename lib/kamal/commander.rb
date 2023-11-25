@@ -28,11 +28,27 @@ class Kamal::Commander
   end
 
   def specific_roles=(role_names)
-    @specific_roles = Kamal::Utils.filter_specific_items(role_names, config.roles) if role_names.present?
+    if role_names.present?
+      @specific_roles = Kamal::Utils.filter_specific_items(role_names, config.roles)
+
+      if @specific_roles.empty?
+        raise ArgumentError, "No --roles match for #{role_names.join(',')}"
+      end
+
+      @specific_roles
+    end
   end
 
   def specific_hosts=(hosts)
-    @specific_hosts = Kamal::Utils.filter_specific_items(hosts, config.all_hosts) if hosts.present?
+    if hosts.present?
+      @specific_hosts = Kamal::Utils.filter_specific_items(hosts, config.all_hosts)
+
+      if @specific_hosts.empty?
+        raise ArgumentError, "No --hosts match for #{hosts.join(',')}"
+      end
+
+      @specific_hosts
+    end
   end
 
   def primary_host
