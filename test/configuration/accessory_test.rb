@@ -149,8 +149,14 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
     assert_match "%", @config.accessory(:mysql).files.keys[2].read
   end
 
-  test "directories" do
+  test "directory with a relative path" do
+    @deploy[:accessories]["mysql"]["directories"] = [ "data:/var/lib/mysql" ]
     assert_equal({"$PWD/app-mysql/data"=>"/var/lib/mysql"}, @config.accessory(:mysql).directories)
+  end
+
+  test "directory with an absolute path" do
+    @deploy[:accessories]["mysql"]["directories"] = [ "/var/data/mysql:/var/lib/mysql" ]
+    assert_equal({"/var/data/mysql"=>"/var/lib/mysql"}, @config.accessory(:mysql).directories)
   end
 
   test "options" do

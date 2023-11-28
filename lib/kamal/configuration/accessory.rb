@@ -70,8 +70,8 @@ class Kamal::Configuration::Accessory
 
   def directories
     specifics["directories"]&.to_h do |host_to_container_mapping|
-      host_relative_path, container_path = host_to_container_mapping.split(":")
-      [ expand_host_path(host_relative_path), container_path ]
+      host_path, container_path = host_to_container_mapping.split(":")
+      [ expand_host_path(host_path), container_path ]
     end || {}
   end
 
@@ -138,13 +138,17 @@ class Kamal::Configuration::Accessory
 
     def remote_directories_as_volumes
       specifics["directories"]&.collect do |host_to_container_mapping|
-        host_relative_path, container_path = host_to_container_mapping.split(":")
-        [ expand_host_path(host_relative_path), container_path ].join(":")
+        host_path, container_path = host_to_container_mapping.split(":")
+        [ expand_host_path(host_path), container_path ].join(":")
       end || []
     end
 
-    def expand_host_path(host_relative_path)
-      "#{service_data_directory}/#{host_relative_path}"
+    def expand_host_path(host_path)
+      absolute_path?(host_path) ? host_path : "#{service_data_directory}/#{host_path}"
+    end
+
+    def absolute_path?(path)
+      Pathname.new(path).absolute?
     end
 
     def service_data_directory
