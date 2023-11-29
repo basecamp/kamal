@@ -239,7 +239,7 @@ class Kamal::Configuration::Role
         clear_app_env  = config.env["secret"] ? Array(config.env["clear"]) : Array(config.env["clear"] || config.env)
         clear_role_env = specialized_env["secret"] ? Array(specialized_env["clear"]) : Array(specialized_env["clear"] || specialized_env)
 
-        new_env["clear"] = (clear_app_env + clear_role_env).uniq
+        new_env["clear"] = clear_app_env.to_h.merge(clear_role_env.to_h)
       end
     end
 

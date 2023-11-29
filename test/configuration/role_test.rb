@@ -176,6 +176,34 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
     ENV["REDIS_PASSWORD"] = nil
   end
 
+  test "env overwritten by role with secrets" do
+    @deploy_with_roles[:env] = {
+      "clear" => {
+        "REDIS_URL" => "redis://a/b"
+      },
+      "secret" => [
+        "REDIS_PASSWORD"
+      ]
+    }
+
+    @deploy_with_roles[:servers]["workers"]["env"] = {
+      "clear" => {
+        "REDIS_URL" => "redis://c/d",
+      },
+    }
+
+    ENV["REDIS_PASSWORD"] = "secret456"
+
+    expected = <<~ENV
+      REDIS_PASSWORD=secret456
+      REDIS_URL=redis://c/d
+    ENV
+
+    assert_equal expected, @config_with_roles.role(:workers).env_file.to_s
+  ensure
+    ENV["REDIS_PASSWORD"] = nil
+  end
+
   test "host_env_directory" do
     assert_equal ".kamal/env/roles", @config_with_roles.role(:workers).host_env_directory
   end
