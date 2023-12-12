@@ -160,7 +160,7 @@ class CliAccessoryTest < CliTestCase
     end
   end
 
-  test "hosts param intersects hosts" do
+  test "hosts param intersected with configuration" do
     Kamal::Cli::Accessory.any_instance.expects(:directories).with("redis")
     Kamal::Cli::Accessory.any_instance.expects(:upload).with("redis")
 
