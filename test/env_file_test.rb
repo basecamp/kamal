@@ -90,6 +90,14 @@ class EnvFileTest < ActiveSupport::TestCase
     ENV.delete "PASSWORD"
   end
 
+  test "env file variable from host" do
+    env = {
+      "host" => [ "DATABASE_URL" ]
+    }
+
+    assert_equal "DATABASE_URL\n", Kamal::EnvFile.new(env).to_s
+  end
+
   test "stringIO conversion" do
     env = {
       "foo" => "bar",
