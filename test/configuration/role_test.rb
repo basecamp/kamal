@@ -15,6 +15,7 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
         "web" => [ "1.1.1.1", "1.1.1.2" ],
         "workers" => {
           "hosts" => [ "1.1.1.3", "1.1.1.4" ],
+          "volumes" => [ "/tmp/test:/tmp/test" ],
           "cmd" => "bin/jobs",
           "env" => {
             "REDIS_URL" => "redis://a/b",
@@ -39,6 +40,10 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
 
   test "label args" do
     assert_equal [ "--label", "service=\"app\"", "--label", "role=\"workers\"" ], @config_with_roles.role(:workers).label_args
+  end
+
+  test "volume args" do
+    assert_equal [ "--volume", "/tmp/test:/tmp/test" ], @config_with_roles.role(:workers).volume_args
   end
 
   test "special label args for web" do
