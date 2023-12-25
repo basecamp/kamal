@@ -49,15 +49,15 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
 
   test "run" do
     assert_equal \
-      "docker run --name app-mysql --detach --restart unless-stopped --log-opt max-size=\"10m\" --publish 3306:3306 -e MYSQL_ROOT_PASSWORD=\"secret123\" -e MYSQL_ROOT_HOST=\"%\" --label service=\"app-mysql\" private.registry/mysql:8.0",
+      "docker run --name app-mysql --detach --restart unless-stopped --log-opt max-size=\"10m\" --publish 3306:3306 --env-file .kamal/env/accessories/app-mysql.env --label service=\"app-mysql\" private.registry/mysql:8.0",
       new_command(:mysql).run.join(" ")
 
     assert_equal \
-      "docker run --name app-redis --detach --restart unless-stopped --log-opt max-size=\"10m\" --publish 6379:6379 -e SOMETHING=\"else\" --volume /var/lib/redis:/data --label service=\"app-redis\" --label cache=\"true\" redis:latest",
+      "docker run --name app-redis --detach --restart unless-stopped --log-opt max-size=\"10m\" --publish 6379:6379 --env-file .kamal/env/accessories/app-redis.env --volume /var/lib/redis:/data --label service=\"app-redis\" --label cache=\"true\" redis:latest",
       new_command(:redis).run.join(" ")
 
     assert_equal \
-      "docker run --name app-busybox --detach --restart unless-stopped --log-opt max-size=\"10m\" --label service=\"app-busybox\" busybox:latest",
+      "docker run --name app-busybox --detach --restart unless-stopped --log-opt max-size=\"10m\" --env-file .kamal/env/accessories/app-busybox.env --label service=\"app-busybox\" busybox:latest",
       new_command(:busybox).run.join(" ")
   end
 
@@ -65,7 +65,7 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
     @config[:logging] = { "driver" => "local", "options" => { "max-size" => "100m", "max-file" => "3" } }
 
     assert_equal \
-      "docker run --name app-busybox --detach --restart unless-stopped --log-driver \"local\" --log-opt max-size=\"100m\" --log-opt max-file=\"3\" --label service=\"app-busybox\" busybox:latest",
+      "docker run --name app-busybox --detach --restart unless-stopped --log-driver \"local\" --log-opt max-size=\"100m\" --log-opt max-file=\"3\" --env-file .kamal/env/accessories/app-busybox.env --label service=\"app-busybox\" busybox:latest",
       new_command(:busybox).run.join(" ")
   end
 
@@ -90,7 +90,7 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
 
   test "execute in new container" do
     assert_equal \
-      "docker run --rm -e MYSQL_ROOT_PASSWORD=\"secret123\" -e MYSQL_ROOT_HOST=\"%\" private.registry/mysql:8.0 mysql -u root",
+      "docker run --rm --env-file .kamal/env/accessories/app-mysql.env private.registry/mysql:8.0 mysql -u root",
       new_command(:mysql).execute_in_new_container("mysql", "-u", "root").join(" ")
   end
 
@@ -102,7 +102,7 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
 
   test "execute in new container over ssh" do
     new_command(:mysql).stub(:run_over_ssh, ->(cmd) { cmd.join(" ") }) do
-      assert_match %r|docker run -it --rm -e MYSQL_ROOT_PASSWORD=\"secret123\" -e MYSQL_ROOT_HOST=\"%\" private.registry/mysql:8.0 mysql -u root|,
+      assert_match %r|docker run -it --rm --env-file .kamal/env/accessories/app-mysql.env private.registry/mysql:8.0 mysql -u root|,
         new_command(:mysql).execute_in_new_container_over_ssh("mysql", "-u", "root")
     end
   end
@@ -128,7 +128,7 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
 
   test "follow logs" do
     assert_equal \
-      "ssh -t root@1.1.1.5 'docker logs app-mysql --timestamps --tail 10 --follow 2>&1'",
+      "ssh -t root@1.1.1.5 -p 22 'docker logs app-mysql --timestamps --tail 10 --follow 2>&1'",
       new_command(:mysql).follow_logs
   end
 
@@ -142,6 +142,14 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
     assert_equal \
       "docker image rm --force private.registry/mysql:8.0",
       new_command(:mysql).remove_image.join(" ")
+  end
+
+  test "make_env_directory" do
+    assert_equal "mkdir -p .kamal/env/accessories", new_command(:mysql).make_env_directory.join(" ")
+  end
+
+  test "remove_env_file" do
+    assert_equal "rm -f .kamal/env/accessories/app-mysql.env", new_command(:mysql).remove_env_file.join(" ")
   end
 
   private

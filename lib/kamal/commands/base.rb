@@ -18,12 +18,24 @@ module Kamal::Commands
         elsif config.ssh.proxy && config.ssh.proxy.is_a?(Net::SSH::Proxy::Command)
           cmd << " -o ProxyCommand='#{config.ssh.proxy.command_line_template}'"
         end
-        cmd << " -t #{config.ssh.user}@#{host} '#{command.join(" ")}'"
+        cmd << " -t #{config.ssh.user}@#{host} -p #{config.ssh.port} '#{command.join(" ")}'"
       end
     end
 
     def container_id_for(container_name:, only_running: false)
       docker :container, :ls, *("--all" unless only_running), "--filter", "name=^#{container_name}$", "--quiet"
+    end
+
+    def make_directory_for(remote_file)
+      make_directory Pathname.new(remote_file).dirname.to_s
+    end
+
+    def make_directory(path)
+      [ :mkdir, "-p", path ]
+    end
+
+    def remove_directory(path)
+      [ :rm, "-r", path ]
     end
 
     private

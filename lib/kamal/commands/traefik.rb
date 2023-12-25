@@ -1,10 +1,18 @@
 class Kamal::Commands::Traefik < Kamal::Commands::Base
-  delegate :argumentize, :argumentize_env_with_secrets, :optionize, to: Kamal::Utils
+  delegate :argumentize, :optionize, to: Kamal::Utils
 
   DEFAULT_IMAGE = "traefik:v2.9"
   CONTAINER_PORT = 80
   DEFAULT_ARGS = {
     'log.level' => 'DEBUG'
+  }
+  DEFAULT_LABELS = {
+    # These ensure we serve a 502 rather than a 404 if no containers are available
+    "traefik.http.routers.catchall.entryPoints" => "http",
+    "traefik.http.routers.catchall.rule" => "PathPrefix(`/`)",
+    "traefik.http.routers.catchall.service" => "unavailable",
+    "traefik.http.routers.catchall.priority" => 1,
+    "traefik.http.services.unavailable.loadbalancer.server.port" => "0"
   }
 
   def run
@@ -63,6 +71,22 @@ class Kamal::Commands::Traefik < Kamal::Commands::Base
     "#{host_port}:#{CONTAINER_PORT}"
   end
 
+  def env_file
+    Kamal::EnvFile.new(config.traefik.fetch("env", {}))
+  end
+
+  def host_env_file_path
+    File.join host_env_directory, "traefik.env"
+  end
+
+  def make_env_directory
+    make_directory(host_env_directory)
+  end
+
+  def remove_env_file
+    [:rm, "-f", host_env_file_path]
+  end
+
   private
     def publish_args
       argumentize "--publish", port unless config.traefik["publish"] == false
@@ -73,17 +97,15 @@ class Kamal::Commands::Traefik < Kamal::Commands::Base
     end
 
     def env_args
-      env_config = config.traefik["env"] || {}
+      argumentize "--env-file", host_env_file_path
+    end
 
-      if env_config.present?
-        argumentize_env_with_secrets(env_config)
-      else
-        []
-      end
+    def host_env_directory
+      File.join config.host_env_directory, "traefik"
     end
 
     def labels
-      config.traefik["labels"] || []
+      DEFAULT_LABELS.merge(config.traefik["labels"] || {})
     end
 
     def image

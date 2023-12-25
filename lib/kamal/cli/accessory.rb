@@ -49,17 +49,21 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
     end
   end
 
-  desc "reboot [NAME]", "Reboot existing accessory on host (stop container, remove container, start new container)"
+  desc "reboot [NAME]", "Reboot existing accessory on host (stop container, remove container, start new container; use NAME=all to boot all accessories)"
   def reboot(name)
     mutating do
-      with_accessory(name) do |accessory|
-        on(accessory.hosts) do
-          execute *KAMAL.registry.login
-        end
+      if name == "all"
+        KAMAL.accessory_names.each { |accessory_name| reboot(accessory_name) }
+      else
+        with_accessory(name) do |accessory|
+          on(accessory.hosts) do
+            execute *KAMAL.registry.login
+          end
 
-        stop(name)
-        remove_container(name)
-        boot(name, login: false)
+          stop(name)
+          remove_container(name)
+          boot(name, login: false)
+        end
       end
     end
   end

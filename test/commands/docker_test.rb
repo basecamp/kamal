@@ -21,6 +21,6 @@ class CommandsDockerTest < ActiveSupport::TestCase
   end
 
   test "superuser?" do
-    assert_equal '[ "${EUID:-$(id -u)}" -eq 0 ]', @docker.superuser?.join(" ")
+    assert_equal '[ "${EUID:-$(id -u)}" -eq 0 ] || command -v sudo >/dev/null || command -v su >/dev/null', @docker.superuser?.join(" ")
   end
 end

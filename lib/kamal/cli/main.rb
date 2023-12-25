@@ -1,9 +1,14 @@
 class Kamal::Cli::Main < Kamal::Cli::Base
-  desc "setup", "Setup all accessories and deploy app to servers"
+  desc "setup", "Setup all accessories, push the env, and deploy app to servers"
   def setup
     print_runtime do
       mutating do
+        say "Ensure Docker is installed...", :magenta
         invoke "kamal:cli:server:bootstrap"
+
+        say "Push env files...", :magenta
+        invoke "kamal:cli:env:push"
+
         invoke "kamal:cli:accessory:boot", [ "all" ]
         deploy
       end
@@ -46,11 +51,13 @@ class Kamal::Cli::Main < Kamal::Cli::Base
         say "Ensure Traefik is running...", :magenta
         invoke "kamal:cli:traefik:boot", [], invoke_options
 
-        say "Ensure app can pass healthcheck...", :magenta
-        invoke "kamal:cli:healthcheck:perform", [], invoke_options
+        if KAMAL.config.role(KAMAL.config.primary_role).running_traefik?
+          say "Ensure app can pass healthcheck...", :magenta
+          invoke "kamal:cli:healthcheck:perform", [], invoke_options
+        end
 
         say "Detect stale containers...", :magenta
-        invoke "kamal:cli:app:stale_containers", [], invoke_options
+        invoke "kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true)
 
         invoke "kamal:cli:app:boot", [], invoke_options
 
@@ -83,7 +90,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
         invoke "kamal:cli:healthcheck:perform", [], invoke_options
 
         say "Detect stale containers...", :magenta
-        invoke "kamal:cli:app:stale_containers", [], invoke_options
+        invoke "kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true)
 
         invoke "kamal:cli:app:boot", [], invoke_options
       end
@@ -178,6 +185,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
   end
 
   desc "envify", "Create .env by evaluating .env.erb (or .env.staging.erb -> .env.staging when using -d staging)"
+  option :skip_push, aliases: "-P", type: :boolean, default: false, desc: "Skip .env file push"
   def envify
     if destination = options[:destination]
       env_template_path = ".env.#{destination}.erb"
@@ -187,7 +195,12 @@ class Kamal::Cli::Main < Kamal::Cli::Base
       env_path          = ".env"
     end
 
-    File.write(env_path, ERB.new(File.read(env_template_path)).result, perm: 0600)
+    File.write(env_path, ERB.new(File.read(env_template_path), trim_mode: "-").result, perm: 0600)
+
+    unless options[:skip_push]
+      reload_envs
+      invoke "kamal:cli:env:push", options
+    end
   end
 
   desc "remove", "Remove Traefik, app, accessories, and registry session from servers"
@@ -216,6 +229,9 @@ class Kamal::Cli::Main < Kamal::Cli::Base
 
   desc "build", "Build application image"
   subcommand "build", Kamal::Cli::Build
+
+  desc "env", "Manage environment files"
+  subcommand "env", Kamal::Cli::Env
 
   desc "healthcheck", "Healthcheck application"
   subcommand "healthcheck", Kamal::Cli::Healthcheck

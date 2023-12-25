@@ -1,5 +1,5 @@
 class Kamal::Configuration::Accessory
-  delegate :argumentize, :argumentize_env_with_secrets, :optionize, to: Kamal::Utils
+  delegate :argumentize, :optionize, to: Kamal::Utils
 
   attr_accessor :name, :specifics
 
@@ -45,8 +45,20 @@ class Kamal::Configuration::Accessory
     specifics["env"] || {}
   end
 
+  def env_file
+    Kamal::EnvFile.new(env)
+  end
+
+  def host_env_directory
+    File.join config.host_env_directory, "accessories"
+  end
+
+  def host_env_file_path
+    File.join host_env_directory, "#{service_name}.env"
+  end
+
   def env_args
-    argumentize_env_with_secrets env
+    argumentize "--env-file", host_env_file_path
   end
 
   def files
@@ -58,8 +70,8 @@ class Kamal::Configuration::Accessory
 
   def directories
     specifics["directories"]&.to_h do |host_to_container_mapping|
-      host_relative_path, container_path = host_to_container_mapping.split(":")
-      [ expand_host_path(host_relative_path), container_path ]
+      host_path, container_path = host_to_container_mapping.split(":")
+      [ expand_host_path(host_path), container_path ]
     end || {}
   end
 
@@ -126,13 +138,17 @@ class Kamal::Configuration::Accessory
 
     def remote_directories_as_volumes
       specifics["directories"]&.collect do |host_to_container_mapping|
-        host_relative_path, container_path = host_to_container_mapping.split(":")
-        [ expand_host_path(host_relative_path), container_path ].join(":")
+        host_path, container_path = host_to_container_mapping.split(":")
+        [ expand_host_path(host_path), container_path ].join(":")
       end || []
     end
 
-    def expand_host_path(host_relative_path)
-      "#{service_data_directory}/#{host_relative_path}"
+    def expand_host_path(host_path)
+      absolute_path?(host_path) ? host_path : "#{service_data_directory}/#{host_path}"
+    end
+
+    def absolute_path?(path)
+      Pathname.new(path).absolute?
     end
 
     def service_data_directory

@@ -3,6 +3,7 @@ require_relative "cli_test_case"
 class CliMainTest < CliTestCase
   test "setup" do
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:server:bootstrap")
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:env:push")
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:accessory:boot", [ "all" ])
     Kamal::Cli::Main.any_instance.expects(:deploy)
 
@@ -16,7 +17,7 @@ class CliMainTest < CliTestCase
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:deliver", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:traefik:boot", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:healthcheck:perform", [], invoke_options)
-    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:stale_containers", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true))
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:boot", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:prune:all", [], invoke_options)
 
@@ -43,7 +44,7 @@ class CliMainTest < CliTestCase
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:pull", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:traefik:boot", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:healthcheck:perform", [], invoke_options)
-    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:stale_containers", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true))
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:boot", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:prune:all", [], invoke_options)
 
@@ -63,11 +64,14 @@ class CliMainTest < CliTestCase
     Thread.report_on_exception = false
 
     SSHKit::Backend::Abstract.any_instance.stubs(:execute)
-      .with { |*arg| arg[0..1] == [:mkdir, 'kamal_lock-app'] }
+      .with { |*args| args == [ :mkdir, "-p", ".kamal" ] }
+
+    SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+      .with { |*arg| arg[0..1] == [:mkdir, ".kamal/lock-app"] }
       .raises(RuntimeError, "mkdir: cannot create directory ‘kamal_lock-app’: File exists")
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_debug)
-      .with(:stat, 'kamal_lock-app', ">", "/dev/null", "&&", :cat, "kamal_lock-app/details", "|", :base64, "-d")
+      .with(:stat, ".kamal/lock-app", ">", "/dev/null", "&&", :cat, ".kamal/lock-app/details", "|", :base64, "-d")
 
     assert_raises(Kamal::Cli::LockError) do
       run_command("deploy")
@@ -78,7 +82,10 @@ class CliMainTest < CliTestCase
     Thread.report_on_exception = false
 
     SSHKit::Backend::Abstract.any_instance.stubs(:execute)
-      .with { |*arg| arg[0..1] == [:mkdir, 'kamal_lock-app'] }
+      .with { |*args| args == [ :mkdir, "-p", ".kamal" ] }
+
+    SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+      .with { |*arg| arg[0..1] == [:mkdir, ".kamal/lock-app"] }
       .raises(SocketError, "getaddrinfo: nodename nor servname provided, or not known")
 
     assert_raises(SSHKit::Runner::ExecuteError) do
@@ -107,7 +114,7 @@ class CliMainTest < CliTestCase
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:deliver", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:traefik:boot", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:healthcheck:perform", [], invoke_options)
-    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:stale_containers", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true))
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:boot", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:prune:all", [], invoke_options)
 
@@ -115,11 +122,34 @@ class CliMainTest < CliTestCase
       refute_match /Running the post-deploy hook.../, output
     end
   end
+  
+  test "deploy without healthcheck if primary host doesn't have traefik" do
+    invoke_options = { "config_file" => "test/fixtures/deploy_workers_only.yml", "version" => "999", "skip_hooks" => false }
+
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:healthcheck:perform", [], invoke_options).never
+    
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:registry:login", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:deliver", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:traefik:boot", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true))
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:boot", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:prune:all", [], invoke_options)
+
+    run_command("deploy", config_file: "deploy_workers_only")
+  end
 
   test "deploy with missing secrets" do
-    assert_raises(KeyError) do
-      run_command("deploy", config_file: "deploy_with_secrets")
-    end
+    invoke_options = { "config_file" => "test/fixtures/deploy_with_secrets.yml", "version" => "999", "skip_hooks" => false }
+
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:registry:login", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:deliver", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:traefik:boot", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:healthcheck:perform", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true))
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:boot", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:prune:all", [], invoke_options)
+
+    run_command("deploy", config_file: "deploy_with_secrets")
   end
 
   test "redeploy" do
@@ -127,7 +157,7 @@ class CliMainTest < CliTestCase
 
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:deliver", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:healthcheck:perform", [], invoke_options)
-    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:stale_containers", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true))
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:boot", [], invoke_options)
 
     Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
@@ -149,7 +179,7 @@ class CliMainTest < CliTestCase
 
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:pull", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:healthcheck:perform", [], invoke_options)
-    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:stale_containers", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true))
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:boot", [], invoke_options)
 
     run_command("redeploy", "--skip_push").tap do |output|
@@ -170,9 +200,10 @@ class CliMainTest < CliTestCase
   end
 
   test "rollback good version" do
+    Object.any_instance.stubs(:sleep)
     [ "web", "workers" ].each do |role|
       SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-        .with(:docker, :container, :ls, "--filter", "name=^app-#{role}-123$", "--quiet", raise_on_non_zero_exit: false)
+        .with(:docker, :container, :ls, "--all", "--filter", "name=^app-#{role}-123$", "--quiet", raise_on_non_zero_exit: false)
         .returns("").at_least_once
       SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
         .with(:docker, :container, :ls, "--all", "--filter", "name=^app-#{role}-123$", "--quiet")
@@ -185,14 +216,21 @@ class CliMainTest < CliTestCase
         .returns("running").at_least_once # health check
     end
 
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :inspect, "-f '{{ range .Mounts }}{{printf \"%s %s\\n\" .Source .Destination}}{{ end }}'", "app-web-version-to-rollback", "|", :awk, "'$2 == \"/tmp/kamal-cord\" {print $1}'", :raise_on_non_zero_exit => false)
+      .returns("corddirectory").at_least_once # health check
+
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-version-to-rollback$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
+      .returns("unhealthy").at_least_once # health check
+
     Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
     hook_variables = { version: 123, service_version: "app@123", hosts: "1.1.1.1,1.1.1.2,1.1.1.3,1.1.1.4", command: "rollback" }
 
     run_command("rollback", "123", config_file: "deploy_with_accessories").tap do |output|
-      assert_match "Start container with version 123", output
       assert_hook_ran "pre-deploy", output, **hook_variables
       assert_match "docker tag dhh/app:123 dhh/app:latest", output
-      assert_match "docker start app-web-123", output
+      assert_match "docker run --detach --restart unless-stopped --name app-web-123", output
       assert_match "docker container ls --all --filter name=^app-web-version-to-rollback$ --quiet | xargs docker stop", output, "Should stop the container that was previously running"
       assert_hook_ran "post-deploy", output, **hook_variables, runtime: "0"
     end
@@ -201,10 +239,10 @@ class CliMainTest < CliTestCase
   test "rollback without old version" do
     Kamal::Cli::Main.any_instance.stubs(:container_available?).returns(true)
 
-    Kamal::Utils::HealthcheckPoller.stubs(:sleep)
+    Kamal::Cli::Healthcheck::Poller.stubs(:sleep)
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :container, :ls, "--filter", "name=^app-web-123$", "--quiet", raise_on_non_zero_exit: false)
+      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-123$", "--quiet", raise_on_non_zero_exit: false)
       .returns("").at_least_once
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
       .with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=web", "--filter", "status=running", "--filter", "status=restarting", "--latest", "--format", "\"{{.Names}}\"", "|", "while read line; do echo ${line#app-web-}; done", raise_on_non_zero_exit: false)
@@ -214,8 +252,7 @@ class CliMainTest < CliTestCase
       .returns("running").at_least_once # health check
 
     run_command("rollback", "123").tap do |output|
-      assert_match "Start container with version 123", output
-      assert_match "docker start app-web-123 || docker run --detach --restart unless-stopped --name app-web-123", output
+      assert_match "docker run --detach --restart unless-stopped --name app-web-123", output
       assert_no_match "docker stop", output
     end
   end
@@ -230,7 +267,7 @@ class CliMainTest < CliTestCase
 
   test "audit" do
     run_command("audit").tap do |output|
-      assert_match /tail -n 50 kamal-app-audit.log on 1.1.1.1/, output
+      assert_match %r{tail -n 50 \.kamal/app-audit.log on 1.1.1.1}, output
       assert_match /App Host: 1.1.1.1/, output
     end
   end
@@ -261,12 +298,35 @@ class CliMainTest < CliTestCase
     end
   end
 
+  test "config with primary web role override" do
+    run_command("config", config_file: "deploy_primary_web_role_override").tap do |output|
+      config = YAML.load(output)
+
+      assert_equal ["web_chicago", "web_tokyo"], config[:roles]
+      assert_equal ["1.1.1.1", "1.1.1.2", "1.1.1.3", "1.1.1.4"], config[:hosts]
+      assert_equal "1.1.1.3", config[:primary_host]
+    end
+  end
+
   test "config with destination" do
     run_command("config", "-d", "world", config_file: "deploy_for_dest").tap do |output|
       config = YAML.load(output)
 
       assert_equal ["web"], config[:roles]
       assert_equal ["1.1.1.1", "1.1.1.2"], config[:hosts]
+      assert_equal "999", config[:version]
+      assert_equal "registry.digitalocean.com/dhh/app", config[:repository]
+      assert_equal "registry.digitalocean.com/dhh/app:999", config[:absolute_image]
+      assert_equal "app-999", config[:service_with_version]
+    end
+  end
+
+  test "config with aliases" do
+    run_command("config", config_file: "deploy_with_aliases").tap do |output|
+      config = YAML.load(output)
+
+      assert_equal ["web", "web_tokyo", "workers", "workers_tokyo"], config[:roles]
+      assert_equal ["1.1.1.1", "1.1.1.2", "1.1.1.3", "1.1.1.4"], config[:hosts]
       assert_equal "999", config[:version]
       assert_equal "registry.digitalocean.com/dhh/app", config[:repository]
       assert_equal "registry.digitalocean.com/dhh/app:999", config[:absolute_image]
@@ -332,11 +392,33 @@ class CliMainTest < CliTestCase
     run_command("envify")
   end
 
-  test "envify with destination" do
-    File.expects(:read).with(".env.staging.erb").returns("HELLO=<%= 'world' %>")
-    File.expects(:write).with(".env.staging", "HELLO=world", perm: 0600)
+  test "envify with blank line trimming" do
+    file = <<~EOF
+      HELLO=<%= 'world' %>
+      <% if true -%>
+      KEY=value
+      <% end -%>
+    EOF
 
-    run_command("envify", "-d", "staging")
+    File.expects(:read).with(".env.erb").returns(file.strip)
+    File.expects(:write).with(".env", "HELLO=world\nKEY=value\n", perm: 0600)
+
+    run_command("envify")
+  end
+
+  test "envify with destination" do
+    File.expects(:read).with(".env.world.erb").returns("HELLO=<%= 'world' %>")
+    File.expects(:write).with(".env.world", "HELLO=world", perm: 0600)
+
+    run_command("envify", "-d", "world", config_file: "deploy_for_dest")
+  end
+
+  test "envify with skip_push" do
+    File.expects(:read).with(".env.erb").returns("HELLO=<%= 'world' %>")
+    File.expects(:write).with(".env", "HELLO=world", perm: 0600)
+
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:env:push").never
+    run_command("envify", "--skip-push")
   end
 
   test "remove with confirmation" do

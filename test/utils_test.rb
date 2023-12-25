@@ -11,15 +11,6 @@ class UtilsTest < ActiveSupport::TestCase
       Kamal::Utils.argumentize("--label", { foo: "bar" }, sensitive: true).last
   end
 
-  test "argumentize_env_with_secrets" do
-    ENV.expects(:fetch).with("FOO").returns("secret")
-
-    args = Kamal::Utils.argumentize_env_with_secrets({ "secret" => [ "FOO" ], "clear" => { BAZ: "qux" } })
-
-    assert_equal [ "-e", "FOO=[REDACTED]", "-e", "BAZ=\"qux\"" ], Kamal::Utils.redacted(args)
-    assert_equal [ "-e", "FOO=\"secret\"", "-e", "BAZ=\"qux\"" ], Kamal::Utils.unredacted(args)
-  end
-
   test "optionize" do
     assert_equal [ "--foo", "\"bar\"", "--baz", "\"qux\"", "--quux" ], \
       Kamal::Utils.optionize({ foo: "bar", baz: "qux", quux: true })
@@ -60,15 +51,5 @@ class UtilsTest < ActiveSupport::TestCase
       Kamal::Utils.escape_shell_value("^(https?://)www.example.com/(.*)$")
     assert_equal "\"https://example.com/\\$2\"",
       Kamal::Utils.escape_shell_value("https://example.com/$2")
-  end
-
-  test "uncommitted changes exist" do
-    Kamal::Utils.expects(:`).with("git status --porcelain").returns("M   file\n")
-    assert_equal "M   file", Kamal::Utils.uncommitted_changes
-  end
-
-  test "uncommitted changes do not exist" do
-    Kamal::Utils.expects(:`).with("git status --porcelain").returns("")
-    assert_equal "", Kamal::Utils.uncommitted_changes
   end
 end

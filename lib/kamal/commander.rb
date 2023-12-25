@@ -24,19 +24,40 @@ class Kamal::Commander
   attr_reader :specific_roles, :specific_hosts
 
   def specific_primary!
-    self.specific_hosts = [ config.primary_web_host ]
+    self.specific_hosts = [ config.primary_host ]
   end
 
   def specific_roles=(role_names)
-    @specific_roles = config.roles.select { |r| role_names.include?(r.name) } if role_names.present?
+    if role_names.present?
+      @specific_roles = Kamal::Utils.filter_specific_items(role_names, config.roles)
+
+      if @specific_roles.empty?
+        raise ArgumentError, "No --roles match for #{role_names.join(',')}"
+      end
+
+      @specific_roles
+    end
   end
 
   def specific_hosts=(hosts)
-    @specific_hosts = config.all_hosts & hosts if hosts.present?
+    if hosts.present?
+      @specific_hosts = Kamal::Utils.filter_specific_items(hosts, config.all_hosts)
+
+      if @specific_hosts.empty?
+        raise ArgumentError, "No --hosts match for #{hosts.join(',')}"
+      end
+
+      @specific_hosts
+    end
   end
 
   def primary_host
-    specific_hosts&.first || specific_roles&.first&.primary_host || config.primary_web_host
+    # Given a list of specific roles, make an effort to match up with the primary_role
+    specific_hosts&.first || specific_roles&.detect { |role| role.name == config.primary_role }&.primary_host || specific_roles&.first&.primary_host || config.primary_host
+  end
+
+  def primary_role
+    roles_on(primary_host).first
   end
 
   def roles
@@ -48,14 +69,6 @@ class Kamal::Commander
   def hosts
     (specific_hosts || config.all_hosts).select do |host|
       (specific_roles || config.roles).flat_map(&:hosts).include?(host)
-    end
-  end
-
-  def boot_strategy
-    if config.boot.limit.present?
-      { in: :groups, limit: config.boot.limit, wait: config.boot.wait }
-    else
-      {}
     end
   end
 
@@ -73,6 +86,10 @@ class Kamal::Commander
 
   def accessory_names
     config.accessories&.collect(&:name) || []
+  end
+
+  def accessories_on(host)
+    config.accessories.select { |accessory| accessory.hosts.include?(host.to_s) }.map(&:name)
   end
 
 
@@ -116,9 +133,14 @@ class Kamal::Commander
     @registry ||= Kamal::Commands::Registry.new(config)
   end
 
+  def server
+    @server ||= Kamal::Commands::Server.new(config)
+  end
+
   def traefik
     @traefik ||= Kamal::Commands::Traefik.new(config)
   end
+
 
   def with_verbosity(level)
     old_level = self.verbosity
@@ -130,6 +152,14 @@ class Kamal::Commander
   ensure
     self.verbosity = old_level
     SSHKit.config.output_verbosity = old_level
+  end
+
+  def boot_strategy
+    if config.boot.limit.present?
+      { in: :groups, limit: config.boot.limit, wait: config.boot.wait }
+    else
+      {}
+    end
   end
 
   def holding_lock?

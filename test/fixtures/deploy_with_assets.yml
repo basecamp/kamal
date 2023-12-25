@@ -1,0 +1,9 @@
+service: app
+image: dhh/app
+servers:
+  - "1.1.1.1"
+  - "1.1.1.2"
+registry:
+  username: user
+  password: pw
+asset_path: /public/assets
