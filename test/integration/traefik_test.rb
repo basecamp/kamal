@@ -2,11 +2,24 @@ require_relative "integration_test"
 
 class TraefikTest < IntegrationTest
   test "boot, reboot, stop, start, restart, logs, remove" do
+    kamal :envify
+
     kamal :traefik, :boot
     assert_traefik_running
 
-    kamal :traefik, :reboot
+    output = kamal :traefik, :reboot, capture: true
     assert_traefik_running
+    assert_hooks_ran "pre-traefik-reboot", "post-traefik-reboot"
+    assert_match /Rebooting Traefik on vm1,vm2.../, output
+    assert_match /Rebooted Traefik on vm1,vm2/, output
+
+    output = kamal :traefik, :reboot, :"--rolling", capture: true
+    assert_traefik_running
+    assert_hooks_ran "pre-traefik-reboot", "post-traefik-reboot"
+    assert_match /Rebooting Traefik on vm1.../, output
+    assert_match /Rebooted Traefik on vm1/, output
+    assert_match /Rebooting Traefik on vm2.../, output
+    assert_match /Rebooted Traefik on vm2/, output
 
     kamal :traefik, :boot
     assert_traefik_running
@@ -33,6 +46,8 @@ class TraefikTest < IntegrationTest
 
     kamal :traefik, :remove
     assert_traefik_not_running
+
+    kamal :env, :delete
   end
 
   private

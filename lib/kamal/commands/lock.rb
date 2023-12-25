@@ -40,7 +40,7 @@ class Kamal::Commands::Lock < Kamal::Commands::Base
     end
 
     def lock_dir
-      "kamal_lock-#{config.service}"
+      "#{config.run_directory}/lock-#{config.service}"
     end
 
     def lock_details_file
@@ -56,7 +56,7 @@ class Kamal::Commands::Lock < Kamal::Commands::Base
     end
 
     def locked_by
-      `git config user.name`.strip
+      Kamal::Git.user_name
     rescue Errno::ENOENT
       "Unknown"
     end

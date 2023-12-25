@@ -7,7 +7,7 @@ class CliAccessoryTest < CliTestCase
 
     run_command("boot", "mysql").tap do |output|
       assert_match /docker login.*on 1.1.1.3/, output
-      assert_match "docker run --name app-mysql --detach --restart unless-stopped --log-opt max-size=\"10m\" --publish 3306:3306 -e [REDACTED] -e MYSQL_ROOT_HOST=\"%\" --volume $PWD/app-mysql/etc/mysql/my.cnf:/etc/mysql/my.cnf --volume $PWD/app-mysql/data:/var/lib/mysql --label service=\"app-mysql\" mysql:5.7 on 1.1.1.3", output
+      assert_match "docker run --name app-mysql --detach --restart unless-stopped --log-opt max-size=\"10m\" --publish 3306:3306 --env-file .kamal/env/accessories/app-mysql.env --volume $PWD/app-mysql/etc/mysql/my.cnf:/etc/mysql/my.cnf --volume $PWD/app-mysql/data:/var/lib/mysql --label service=\"app-mysql\" mysql:5.7 on 1.1.1.3", output
     end
   end
 
@@ -21,9 +21,9 @@ class CliAccessoryTest < CliTestCase
       assert_match /docker login.*on 1.1.1.3/, output
       assert_match /docker login.*on 1.1.1.1/, output
       assert_match /docker login.*on 1.1.1.2/, output
-      assert_match "docker run --name app-mysql --detach --restart unless-stopped --log-opt max-size=\"10m\" --publish 3306:3306 -e [REDACTED] -e MYSQL_ROOT_HOST=\"%\" --volume $PWD/app-mysql/etc/mysql/my.cnf:/etc/mysql/my.cnf --volume $PWD/app-mysql/data:/var/lib/mysql --label service=\"app-mysql\" mysql:5.7 on 1.1.1.3", output
-      assert_match "docker run --name app-redis --detach --restart unless-stopped --log-opt max-size=\"10m\" --publish 6379:6379 --volume $PWD/app-redis/data:/data --label service=\"app-redis\" redis:latest on 1.1.1.1", output
-      assert_match "docker run --name app-redis --detach --restart unless-stopped --log-opt max-size=\"10m\" --publish 6379:6379 --volume $PWD/app-redis/data:/data --label service=\"app-redis\" redis:latest on 1.1.1.2", output
+      assert_match "docker run --name app-mysql --detach --restart unless-stopped --log-opt max-size=\"10m\" --publish 3306:3306 --env-file .kamal/env/accessories/app-mysql.env --volume $PWD/app-mysql/etc/mysql/my.cnf:/etc/mysql/my.cnf --volume $PWD/app-mysql/data:/var/lib/mysql --label service=\"app-mysql\" mysql:5.7 on 1.1.1.3", output
+      assert_match "docker run --name app-redis --detach --restart unless-stopped --log-opt max-size=\"10m\" --publish 6379:6379 --env-file .kamal/env/accessories/app-redis.env --volume $PWD/app-redis/data:/data --label service=\"app-redis\" redis:latest on 1.1.1.1", output
+      assert_match "docker run --name app-redis --detach --restart unless-stopped --log-opt max-size=\"10m\" --publish 6379:6379 --env-file .kamal/env/accessories/app-redis.env --volume $PWD/app-redis/data:/data --label service=\"app-redis\" redis:latest on 1.1.1.2", output
     end
   end
 
@@ -46,6 +46,18 @@ class CliAccessoryTest < CliTestCase
     Kamal::Cli::Accessory.any_instance.expects(:boot).with("mysql", login: false)
 
     run_command("reboot", "mysql")
+  end
+
+  test "reboot all" do
+    Kamal::Commands::Registry.any_instance.expects(:login).times(3)
+    Kamal::Cli::Accessory.any_instance.expects(:stop).with("mysql")
+    Kamal::Cli::Accessory.any_instance.expects(:remove_container).with("mysql")
+    Kamal::Cli::Accessory.any_instance.expects(:boot).with("mysql", login: false)
+    Kamal::Cli::Accessory.any_instance.expects(:stop).with("redis")
+    Kamal::Cli::Accessory.any_instance.expects(:remove_container).with("redis")
+    Kamal::Cli::Accessory.any_instance.expects(:boot).with("redis", login: false)
+
+    run_command("reboot", "all")
   end
 
   test "start" do
@@ -97,7 +109,7 @@ class CliAccessoryTest < CliTestCase
 
   test "logs with follow" do
     SSHKit::Backend::Abstract.any_instance.stubs(:exec)
-      .with("ssh -t root@1.1.1.3 'docker logs app-mysql --timestamps --tail 10 --follow 2>&1'")
+      .with("ssh -t root@1.1.1.3 -p 22 'docker logs app-mysql --timestamps --tail 10 --follow 2>&1'")
 
     assert_match "docker logs app-mysql --timestamps --tail 10 --follow 2>&1", run_command("logs", "mysql", "--follow")
   end

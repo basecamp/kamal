@@ -21,6 +21,12 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
     config.builder.context
   end
 
+  def validate_image
+    pipe \
+      docker(:inspect, "-f", "'{{ .Config.Labels.service }}'", config.absolute_image),
+      [:grep, "-x", config.service, "||", "(echo \"Image #{config.absolute_image} is missing the `service` label\" && exit 1)"]
+  end
+
 
   private
     def build_tags

@@ -16,16 +16,6 @@ module Kamal::Utils
     end
   end
 
-  # Return a list of shell arguments using the same named argument against the passed attributes,
-  # but redacts and expands secrets.
-  def argumentize_env_with_secrets(env)
-    if (secrets = env["secret"]).present?
-      argumentize("-e", secrets.to_h { |key| [ key, ENV.fetch(key) ] }, sensitive: true) + argumentize("-e", env["clear"])
-    else
-      argumentize "-e", env.fetch("clear", env)
-    end
-  end
-
   # Returns a list of shell-dashed option arguments. If the value is true, it's treated like a value-less option.
   def optionize(args, with: nil)
     options = if with
@@ -62,19 +52,6 @@ module Kamal::Utils
     end
   end
 
-  def unredacted(value)
-    case
-    when value.respond_to?(:unredacted)
-      value.unredacted
-    when value.respond_to?(:transform_values)
-      value.transform_values { |value| unredacted value }
-    when value.respond_to?(:map)
-      value.map { |element| unredacted element }
-    else
-      value
-    end
-  end
-
   # Escape a value to make it safe for shell use.
   def escape_shell_value(value)
     value.to_s.dump
@@ -82,19 +59,19 @@ module Kamal::Utils
       .gsub(DOLLAR_SIGN_WITHOUT_SHELL_EXPANSION_REGEX, '\$')
   end
 
-  # Abbreviate a git revhash for concise display
-  def abbreviate_version(version)
-    if version
-      # Don't abbreviate <sha>_uncommitted_<etc>
-      if version.include?("_")
-        version
-      else
-        version[0...7]
+  # Apply a list of host or role filters, including wildcard matches
+  def filter_specific_items(filters, items)
+    matches = []
+
+    Array(filters).select do |filter|
+      matches += Array(items).select do |item|
+        # Only allow * for a wildcard
+        pattern = Regexp.escape(filter).gsub('\*', '.*')
+        # items are roles or hosts
+        (item.respond_to?(:name) ? item.name : item).match(/^#{pattern}$/)
       end
     end
-  end
 
-  def uncommitted_changes
-    `git status --porcelain`.strip
+    matches
   end
 end

@@ -55,12 +55,6 @@ class IntegrationTest < ActiveSupport::TestCase
       assert_app_version(version, response) if version
     end
 
-    def assert_app_not_found
-      response = app_response
-      debug_response_code(response, "404")
-      assert_equal "404", response.code
-    end
-
     def wait_for_app_to_be_up(timeout: 20, up_count: 3)
       timeout_at = Time.now + timeout
       up_times = 0

@@ -1,4 +1,5 @@
 require "active_support/core_ext/module/delegation"
+require "sshkit"
 
 class Kamal::Utils::Sensitive
   # So SSHKit knows to redact these values.

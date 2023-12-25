@@ -9,31 +9,56 @@ class Kamal::Cli::App < Kamal::Cli::Base
 
           on(KAMAL.hosts) do
             execute *KAMAL.auditor.record("Tagging #{KAMAL.config.absolute_image} as the latest image"), verbosity: :debug
-            execute *KAMAL.app.tag_current_as_latest
+            execute *KAMAL.app.tag_current_image_as_latest
+
+            KAMAL.roles_on(host).each do |role|
+              app = KAMAL.app(role: role)
+              role_config = KAMAL.config.role(role)
+
+              if role_config.assets?
+                execute *app.extract_assets
+                old_version = capture_with_info(*app.current_running_version, raise_on_non_zero_exit: false).strip
+                execute *app.sync_asset_volumes(old_version: old_version)
+              end
+            end
           end
 
           on(KAMAL.hosts, **KAMAL.boot_strategy) do |host|
-            roles = KAMAL.roles_on(host)
-
-            roles.each do |role|
+            KAMAL.roles_on(host).each do |role|
               app = KAMAL.app(role: role)
               auditor = KAMAL.auditor(role: role)
+              role_config = KAMAL.config.role(role)
 
-              if capture_with_info(*app.container_id_for_version(version, only_running: true), raise_on_non_zero_exit: false).present?
+              if capture_with_info(*app.container_id_for_version(version), raise_on_non_zero_exit: false).present?
                 tmp_version = "#{version}_replaced_#{SecureRandom.hex(8)}"
                 info "Renaming container #{version} to #{tmp_version} as already deployed on #{host}"
                 execute *auditor.record("Renaming container #{version} to #{tmp_version}"), verbosity: :debug
                 execute *app.rename_container(version: version, new_version: tmp_version)
               end
 
+              old_version = capture_with_info(*app.current_running_version, raise_on_non_zero_exit: false).strip
+
+              execute *app.tie_cord(role_config.cord_host_file) if role_config.uses_cord?
+
               execute *auditor.record("Booted app version #{version}"), verbosity: :debug
 
-              old_version = capture_with_info(*app.current_running_version, raise_on_non_zero_exit: false).strip
-              execute *app.start_or_run(hostname: "#{host}-#{SecureRandom.hex(6)}")
+              execute *app.run(hostname: "#{host}-#{SecureRandom.hex(6)}")
 
-              Kamal::Utils::HealthcheckPoller.wait_for_healthy(pause_after_ready: true) { capture_with_info(*app.status(version: version)) }
+              Kamal::Cli::Healthcheck::Poller.wait_for_healthy(pause_after_ready: true) { capture_with_info(*app.status(version: version)) }
 
-              execute *app.stop(version: old_version), raise_on_non_zero_exit: false if old_version.present?
+              if old_version.present?
+                if role_config.uses_cord?
+                  cord = capture_with_info(*app.cord(version: old_version), raise_on_non_zero_exit: false).strip
+                  if cord.present?
+                    execute *app.cut_cord(cord)
+                    Kamal::Cli::Healthcheck::Poller.wait_for_unhealthy(pause_after_ready: true) { capture_with_info(*app.status(version: old_version)) }
+                  end
+                end
+
+                execute *app.stop(version: old_version), raise_on_non_zero_exit: false
+
+                execute *app.clean_up_assets if role_config.assets?
+              end
             end
           end
         end
@@ -90,14 +115,16 @@ class Kamal::Cli::App < Kamal::Cli::Base
       say "Get current version of running container...", :magenta unless options[:version]
       using_version(options[:version] || current_running_version) do |version|
         say "Launching interactive command with version #{version} via SSH from existing container on #{KAMAL.primary_host}...", :magenta
-        run_locally { exec KAMAL.app(role: "web").execute_in_existing_container_over_ssh(cmd, host: KAMAL.primary_host) }
+        run_locally { exec KAMAL.app(role: KAMAL.primary_role).execute_in_existing_container_over_ssh(cmd, host: KAMAL.primary_host) }
       end
 
     when options[:interactive]
       say "Get most recent version available as an image...", :magenta unless options[:version]
       using_version(version_or_latest) do |version|
         say "Launching interactive command with version #{version} via SSH from new container on #{KAMAL.primary_host}...", :magenta
-        run_locally { exec KAMAL.app(role: KAMAL.roles_on(KAMAL.primary_host).first).execute_in_new_container_over_ssh(cmd, host: KAMAL.primary_host) }
+        run_locally do
+          exec KAMAL.app(role: KAMAL.primary_role).execute_in_new_container_over_ssh(cmd, host: KAMAL.primary_host)
+        end
       end
 
     when options[:reuse]
@@ -120,8 +147,12 @@ class Kamal::Cli::App < Kamal::Cli::Base
       using_version(version_or_latest) do |version|
         say "Launching command with version #{version} from new container...", :magenta
         on(KAMAL.hosts) do |host|
-          execute *KAMAL.auditor.record("Executed cmd '#{cmd}' on app version #{version}"), verbosity: :debug
-          puts_by_host host, capture_with_info(*KAMAL.app.execute_in_new_container(cmd))
+          roles = KAMAL.roles_on(host)
+
+          roles.each do |role|
+            execute *KAMAL.auditor.record("Executed cmd '#{cmd}' on app version #{version}"), verbosity: :debug
+            puts_by_host host, capture_with_info(*KAMAL.app(role: role).execute_in_new_container(cmd))
+          end
         end
       end
     end

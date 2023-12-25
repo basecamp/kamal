@@ -2,14 +2,15 @@ require_relative "integration_test"
 
 class AppTest < IntegrationTest
   test "stop, start, boot, logs, images, containers, exec, remove" do
+    kamal :envify
+
     kamal :deploy
 
     assert_app_is_up
 
     kamal :app, :stop
 
-    # traefik is up and returns 404s when it can't match a route
-    assert_app_not_found
+    assert_app_is_down
 
     kamal :app, :start
 
@@ -49,7 +50,6 @@ class AppTest < IntegrationTest
 
     kamal :app, :remove
 
-    # traefik is up and returns 404s when it can't match a route
-    assert_app_not_found
+    assert_app_is_down
   end
 end

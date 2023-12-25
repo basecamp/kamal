@@ -86,14 +86,6 @@ class Kamal::Commands::Accessory < Kamal::Commands::Base
     end
   end
 
-  def make_directory_for(remote_file)
-    make_directory Pathname.new(remote_file).dirname.to_s
-  end
-
-  def make_directory(path)
-    [ :mkdir, "-p", path ]
-  end
-
   def remove_service_directory
     [ :rm, "-rf", service_name ]
   end
@@ -104,6 +96,14 @@ class Kamal::Commands::Accessory < Kamal::Commands::Base
 
   def remove_image
     docker :image, :rm, "--force", image
+  end
+
+  def make_env_directory
+    make_directory accessory_config.host_env_directory
+  end
+
+  def remove_env_file
+    [:rm, "-f", accessory_config.host_env_file_path]
   end
 
   private

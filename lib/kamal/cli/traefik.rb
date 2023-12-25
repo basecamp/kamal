@@ -13,12 +13,18 @@ class Kamal::Cli::Traefik < Kamal::Cli::Base
   option :rolling, type: :boolean, default: false, desc: "Reboot traefik on hosts in sequence, rather than in parallel"
   def reboot
     mutating do
-      on(KAMAL.traefik_hosts, in: options[:rolling] ? :sequence : :parallel) do
-        execute *KAMAL.auditor.record("Rebooted traefik"), verbosity: :debug
-        execute *KAMAL.registry.login
-        execute *KAMAL.traefik.stop
-        execute *KAMAL.traefik.remove_container
-        execute *KAMAL.traefik.run
+      host_groups = options[:rolling] ? KAMAL.traefik_hosts : [KAMAL.traefik_hosts]
+      host_groups.each do |hosts|
+        host_list = Array(hosts).join(",")
+        run_hook "pre-traefik-reboot", hosts: host_list
+        on(hosts) do
+          execute *KAMAL.auditor.record("Rebooted traefik"), verbosity: :debug
+          execute *KAMAL.registry.login
+          execute *KAMAL.traefik.stop
+          execute *KAMAL.traefik.remove_container
+          execute *KAMAL.traefik.run
+        end
+        run_hook "post-traefik-reboot", hosts: host_list
       end
     end
   end

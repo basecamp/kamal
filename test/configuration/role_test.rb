@@ -42,7 +42,7 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
   end
 
   test "special label args for web" do
-    assert_equal [ "--label", "service=\"app\"", "--label", "role=\"web\"", "--label", "traefik.http.services.app-web.loadbalancer.server.scheme=\"http\"", "--label", "traefik.http.routers.app-web.rule=\"PathPrefix(\\`/\\`)\"", "--label", "traefik.http.middlewares.app-web-retry.retry.attempts=\"5\"", "--label", "traefik.http.middlewares.app-web-retry.retry.initialinterval=\"500ms\"", "--label", "traefik.http.routers.app-web.middlewares=\"app-web-retry@docker\"" ], @config.role(:web).label_args
+    assert_equal [ "--label", "service=\"app\"", "--label", "role=\"web\"", "--label", "traefik.http.services.app-web.loadbalancer.server.scheme=\"http\"", "--label", "traefik.http.routers.app-web.rule=\"PathPrefix(\\`/\\`)\"", "--label", "traefik.http.routers.app-web.priority=\"2\"", "--label", "traefik.http.middlewares.app-web-retry.retry.attempts=\"5\"", "--label", "traefik.http.middlewares.app-web-retry.retry.initialinterval=\"500ms\"", "--label", "traefik.http.routers.app-web.middlewares=\"app-web-retry@docker\"" ], @config.role(:web).label_args
   end
 
   test "custom labels" do
@@ -66,12 +66,31 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
       c[:servers]["beta"] = { "traefik" => "true", "hosts" => [ "1.1.1.5" ] }
     })
 
-    assert_equal [ "--label", "service=\"app\"", "--label", "role=\"beta\"", "--label", "traefik.http.services.app-beta.loadbalancer.server.scheme=\"http\"", "--label", "traefik.http.routers.app-beta.rule=\"PathPrefix(\\`/\\`)\"", "--label", "traefik.http.middlewares.app-beta-retry.retry.attempts=\"5\"", "--label", "traefik.http.middlewares.app-beta-retry.retry.initialinterval=\"500ms\"", "--label", "traefik.http.routers.app-beta.middlewares=\"app-beta-retry@docker\"" ], config.role(:beta).label_args
+    assert_equal [ "--label", "service=\"app\"", "--label", "role=\"beta\"", "--label", "traefik.http.services.app-beta.loadbalancer.server.scheme=\"http\"", "--label", "traefik.http.routers.app-beta.rule=\"PathPrefix(\\`/\\`)\"", "--label", "traefik.http.routers.app-beta.priority=\"2\"", "--label", "traefik.http.middlewares.app-beta-retry.retry.attempts=\"5\"", "--label", "traefik.http.middlewares.app-beta-retry.retry.initialinterval=\"500ms\"", "--label", "traefik.http.routers.app-beta.middlewares=\"app-beta-retry@docker\"" ], config.role(:beta).label_args
   end
 
   test "env overwritten by role" do
     assert_equal "redis://a/b", @config_with_roles.role(:workers).env["REDIS_URL"]
-    assert_equal ["-e", "REDIS_URL=\"redis://a/b\"", "-e", "WEB_CONCURRENCY=\"4\""], @config_with_roles.role(:workers).env_args
+
+    expected_env = <<~ENV
+      REDIS_URL=redis://a/b
+      WEB_CONCURRENCY=4
+    ENV
+
+    assert_equal expected_env, @config_with_roles.role(:workers).env_file.to_s
+  end
+
+  test "container name" do
+    ENV["VERSION"] = "12345"
+
+    assert_equal "app-workers-12345", @config_with_roles.role(:workers).container_name
+    assert_equal "app-web-12345", @config_with_roles.role(:web).container_name
+  ensure
+    ENV.delete("VERSION")
+  end
+
+  test "env args" do
+    assert_equal ["--env-file", ".kamal/env/roles/app-workers.env"], @config_with_roles.role(:workers).env_args
   end
 
   test "env secret overwritten by role" do
@@ -97,10 +116,14 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
     ENV["REDIS_PASSWORD"] = "secret456"
     ENV["DB_PASSWORD"] = "secret&\"123"
 
-    @config_with_roles.role(:workers).env_args.tap do |env_args|
-      assert_equal ["-e", "REDIS_PASSWORD=\"secret456\"", "-e", "DB_PASSWORD=\"secret&\\\"123\"", "-e", "REDIS_URL=\"redis://a/b\"", "-e", "WEB_CONCURRENCY=\"4\""], Kamal::Utils.unredacted(env_args)
-      assert_equal ["-e", "REDIS_PASSWORD=[REDACTED]", "-e", "DB_PASSWORD=[REDACTED]", "-e", "REDIS_URL=\"redis://a/b\"", "-e", "WEB_CONCURRENCY=\"4\""], Kamal::Utils.redacted(env_args)
-    end
+    expected = <<~ENV
+      REDIS_PASSWORD=secret456
+      DB_PASSWORD=secret&\"123
+      REDIS_URL=redis://a/b
+      WEB_CONCURRENCY=4
+    ENV
+
+    assert_equal expected, @config_with_roles.role(:workers).env_file.to_s
   ensure
     ENV["REDIS_PASSWORD"] = nil
     ENV["DB_PASSWORD"] = nil
@@ -119,10 +142,13 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
 
     ENV["DB_PASSWORD"] = "secret123"
 
-    @config_with_roles.role(:workers).env_args.tap do |env_args|
-      assert_equal ["-e", "DB_PASSWORD=\"secret123\"", "-e", "REDIS_URL=\"redis://a/b\"", "-e", "WEB_CONCURRENCY=\"4\""], Kamal::Utils.unredacted(env_args)
-      assert_equal ["-e", "DB_PASSWORD=[REDACTED]", "-e", "REDIS_URL=\"redis://a/b\"", "-e", "WEB_CONCURRENCY=\"4\""], Kamal::Utils.redacted(env_args)
-    end
+    expected = <<~ENV
+      DB_PASSWORD=secret123
+      REDIS_URL=redis://a/b
+      WEB_CONCURRENCY=4
+    ENV
+
+    assert_equal expected, @config_with_roles.role(:workers).env_file.to_s
   ensure
     ENV["DB_PASSWORD"] = nil
   end
@@ -139,11 +165,119 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
 
     ENV["REDIS_PASSWORD"] = "secret456"
 
-    @config_with_roles.role(:workers).env_args.tap do |env_args|
-      assert_equal ["-e", "REDIS_PASSWORD=\"secret456\"", "-e", "REDIS_URL=\"redis://a/b\"", "-e", "WEB_CONCURRENCY=\"4\""], Kamal::Utils.unredacted(env_args)
-      assert_equal ["-e", "REDIS_PASSWORD=[REDACTED]", "-e", "REDIS_URL=\"redis://a/b\"", "-e", "WEB_CONCURRENCY=\"4\""], Kamal::Utils.redacted(env_args)
-    end
+    expected = <<~ENV
+      REDIS_PASSWORD=secret456
+      REDIS_URL=redis://a/b
+      WEB_CONCURRENCY=4
+    ENV
+
+    assert_equal expected, @config_with_roles.role(:workers).env_file.to_s
   ensure
     ENV["REDIS_PASSWORD"] = nil
+  end
+
+  test "env overwritten by role with secrets" do
+    @deploy_with_roles[:env] = {
+      "clear" => {
+        "REDIS_URL" => "redis://a/b"
+      },
+      "secret" => [
+        "REDIS_PASSWORD"
+      ]
+    }
+
+    @deploy_with_roles[:servers]["workers"]["env"] = {
+      "clear" => {
+        "REDIS_URL" => "redis://c/d",
+      },
+    }
+
+    ENV["REDIS_PASSWORD"] = "secret456"
+
+    expected = <<~ENV
+      REDIS_PASSWORD=secret456
+      REDIS_URL=redis://c/d
+    ENV
+
+    assert_equal expected, @config_with_roles.role(:workers).env_file.to_s
+  ensure
+    ENV["REDIS_PASSWORD"] = nil
+  end
+
+  test "host_env_directory" do
+    assert_equal ".kamal/env/roles", @config_with_roles.role(:workers).host_env_directory
+  end
+
+  test "host_env_file_path" do
+    assert_equal ".kamal/env/roles/app-workers.env", @config_with_roles.role(:workers).host_env_file_path
+  end
+
+  test "uses cord" do
+    assert @config_with_roles.role(:web).uses_cord?
+    assert !@config_with_roles.role(:workers).uses_cord?
+  end
+
+  test "cord host file" do
+    assert_match %r{.kamal/cords/app-web-[0-9a-f]{32}/cord}, @config_with_roles.role(:web).cord_host_file
+  end
+
+  test "cord volume" do
+    assert_equal "/tmp/kamal-cord", @config_with_roles.role(:web).cord_volume.container_path
+    assert_match %r{.kamal/cords/app-web-[0-9a-f]{32}}, @config_with_roles.role(:web).cord_volume.host_path
+    assert_equal "--volume", @config_with_roles.role(:web).cord_volume.docker_args[0]
+    assert_match %r{\$\(pwd\)/.kamal/cords/app-web-[0-9a-f]{32}:/tmp/kamal-cord}, @config_with_roles.role(:web).cord_volume.docker_args[1]
+  end
+
+  test "cord container file" do
+    assert_equal "/tmp/kamal-cord/cord", @config_with_roles.role(:web).cord_container_file
+  end
+
+  test "asset path and volume args" do
+    ENV["VERSION"] = "12345"
+    assert_nil @config_with_roles.role(:web).asset_volume_args
+    assert_nil @config_with_roles.role(:workers).asset_volume_args
+    assert_nil @config_with_roles.role(:web).asset_path
+    assert_nil @config_with_roles.role(:workers).asset_path
+    assert !@config_with_roles.role(:web).assets?
+    assert !@config_with_roles.role(:workers).assets?
+
+    config_with_assets = Kamal::Configuration.new(@deploy_with_roles.dup.tap { |c|
+      c[:asset_path] = "foo"
+    })
+    assert_equal "foo", config_with_assets.role(:web).asset_path
+    assert_equal "foo", config_with_assets.role(:workers).asset_path
+    assert_equal ["--volume", "$(pwd)/.kamal/assets/volumes/app-web-12345:foo"], config_with_assets.role(:web).asset_volume_args
+    assert_nil config_with_assets.role(:workers).asset_volume_args
+    assert config_with_assets.role(:web).assets?
+    assert !config_with_assets.role(:workers).assets?
+
+    config_with_assets = Kamal::Configuration.new(@deploy_with_roles.dup.tap { |c|
+      c[:servers]["web"] = { "hosts" => [ "1.1.1.1", "1.1.1.2" ], "asset_path" => "bar" }
+    })
+    assert_equal "bar", config_with_assets.role(:web).asset_path
+    assert_nil config_with_assets.role(:workers).asset_path
+    assert_equal ["--volume", "$(pwd)/.kamal/assets/volumes/app-web-12345:bar"], config_with_assets.role(:web).asset_volume_args
+    assert_nil config_with_assets.role(:workers).asset_volume_args
+    assert config_with_assets.role(:web).assets?
+    assert !config_with_assets.role(:workers).assets?
+
+  ensure
+    ENV.delete("VERSION")
+  end
+
+  test "asset extracted path" do
+    ENV["VERSION"] = "12345"
+    assert_equal ".kamal/assets/extracted/app-web-12345", @config_with_roles.role(:web).asset_extracted_path
+    assert_equal ".kamal/assets/extracted/app-workers-12345", @config_with_roles.role(:workers).asset_extracted_path
+  ensure
+    ENV.delete("VERSION")
+  end
+
+  test "asset volume path" do
+    ENV["VERSION"] = "12345"
+    assert_equal ".kamal/assets/volumes/app-web-12345", @config_with_roles.role(:web).asset_volume_path
+    assert_equal ".kamal/assets/volumes/app-workers-12345", @config_with_roles.role(:workers).asset_volume_path
+  ensure
+    ENV.delete("VERSION")
   end
 end

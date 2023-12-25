@@ -1,21 +1,20 @@
 class Kamal::Commands::Healthcheck < Kamal::Commands::Base
-  EXPOSED_PORT = 3999
 
   def run
-    web = config.role(:web)
+    primary = config.role(config.primary_role)
 
     docker :run,
       "--detach",
       "--name", container_name_with_version,
-      "--publish", "#{EXPOSED_PORT}:#{config.healthcheck["port"]}",
-      "--label", "service=#{container_name}",
-      "-e", "KAMAL_CONTAINER_NAME=\"#{container_name}\"",
-      *web.env_args,
-      *web.health_check_args,
+      "--publish", "#{exposed_port}:#{config.healthcheck["port"]}",
+      "--label", "service=#{config.healthcheck_service}",
+      "-e", "KAMAL_CONTAINER_NAME=\"#{config.healthcheck_service}\"",
+      *primary.env_args,
+      *primary.health_check_args(cord: false),
       *config.volume_args,
-      *web.option_args,
+      *primary.option_args,
       config.absolute_image,
-      web.cmd
+      primary.cmd
   end
 
   def status
@@ -27,7 +26,7 @@ class Kamal::Commands::Healthcheck < Kamal::Commands::Base
   end
 
   def logs
-    pipe container_id, xargs(docker(:logs, "--tail", 50, "2>&1"))
+    pipe container_id, xargs(docker(:logs, "--tail", log_lines, "2>&1"))
   end
 
   def stop
@@ -39,12 +38,8 @@ class Kamal::Commands::Healthcheck < Kamal::Commands::Base
   end
 
   private
-    def container_name
-      [ "healthcheck", config.service, config.destination ].compact.join("-")
-    end
-
     def container_name_with_version
-      "#{container_name}-#{config.version}"
+      "#{config.healthcheck_service}-#{config.version}"
     end
 
     def container_id
@@ -52,6 +47,14 @@ class Kamal::Commands::Healthcheck < Kamal::Commands::Base
     end
 
     def health_url
-      "http://localhost:#{EXPOSED_PORT}#{config.healthcheck["path"]}"
+      "http://localhost:#{exposed_port}#{config.healthcheck["path"]}"
+    end
+
+    def exposed_port
+      config.healthcheck["exposed_port"]
+    end
+
+    def log_lines
+      config.healthcheck["log_lines"]
     end
 end

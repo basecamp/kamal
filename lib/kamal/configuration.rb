@@ -7,10 +7,9 @@ require "net/ssh/proxy/jump"
 
 class Kamal::Configuration
   delegate :service, :image, :servers, :env, :labels, :registry, :stop_wait_time, :hooks_path, to: :raw_config, allow_nil: true
-  delegate :argumentize, :argumentize_env_with_secrets, :optionize, to: Kamal::Utils
+  delegate :argumentize, :optionize, to: Kamal::Utils
 
-  attr_accessor :destination
-  attr_accessor :raw_config
+  attr_reader :destination, :raw_config
 
   class << self
     def create_from(config_file:, destination: nil, version: nil)
@@ -26,7 +25,9 @@ class Kamal::Configuration
 
       def load_config_file(file)
         if file.exist?
-          YAML.load(ERB.new(IO.read(file)).result).symbolize_keys
+          # Newer Psych doesn't load aliases by default
+          load_method = YAML.respond_to?(:unsafe_load) ? :unsafe_load : :load
+          YAML.send(load_method, ERB.new(IO.read(file)).result).symbolize_keys
         else
           raise "Configuration file not found in #{file}"
         end
@@ -59,7 +60,18 @@ class Kamal::Configuration
   end
 
   def abbreviated_version
-    Kamal::Utils.abbreviate_version(version)
+    if version
+      # Don't abbreviate <sha>_uncommitted_<etc>
+      if version.include?("_")
+        version
+      else
+        version[0...7]
+      end
+    end
+  end
+
+  def minimum_version
+    raw_config.minimum_version
   end
 
 
@@ -84,18 +96,21 @@ class Kamal::Configuration
     roles.flat_map(&:hosts).uniq
   end
 
-  def primary_web_host
-    role(:web).primary_host
+  def primary_host
+    role(primary_role)&.primary_host
+  end
+
+  def traefik_roles
+    roles.select(&:running_traefik?)
+  end
+
+  def traefik_role_names
+    traefik_roles.flat_map(&:name)
   end
 
   def traefik_hosts
-    roles.select(&:running_traefik?).flat_map(&:hosts).uniq
+    traefik_roles.flat_map(&:hosts).uniq
   end
-
-  def boot
-    Kamal::Configuration::Boot.new(config: self)
-  end
-
 
   def repository
     [ raw_config.registry["server"], image ].compact.join("/")
@@ -113,14 +128,10 @@ class Kamal::Configuration
     "#{service}-#{version}"
   end
 
-
-  def env_args
-    if raw_config.env.present?
-      argumentize_env_with_secrets(raw_config.env)
-    else
-      []
-    end
+  def require_destination?
+    raw_config.require_destination
   end
+
 
   def volume_args
     if raw_config.volumes.present?
@@ -140,6 +151,18 @@ class Kamal::Configuration
   end
 
 
+  def boot
+    Kamal::Configuration::Boot.new(config: self)
+  end
+
+  def builder
+    Kamal::Configuration::Builder.new(config: self)
+  end
+
+  def traefik
+    raw_config.traefik || {}
+  end
+
   def ssh
     Kamal::Configuration::Ssh.new(config: self)
   end
@@ -150,32 +173,68 @@ class Kamal::Configuration
 
 
   def healthcheck
-    { "path" => "/up", "port" => 3000, "max_attempts" => 7 }.merge(raw_config.healthcheck || {})
+    { "path" => "/up", "port" => 3000, "max_attempts" => 7, "exposed_port" => 3999, "cord" => "/tmp/kamal-cord", "log_lines" => 50 }.merge(raw_config.healthcheck || {})
+  end
+
+  def healthcheck_service
+    [ "healthcheck", service, destination ].compact.join("-")
   end
 
   def readiness_delay
     raw_config.readiness_delay || 7
   end
 
-  def minimum_version
-    raw_config.minimum_version
+  def run_id
+    @run_id ||= SecureRandom.hex(16)
   end
+
+
+  def run_directory
+    raw_config.run_directory || ".kamal"
+  end
+
+  def run_directory_as_docker_volume
+    if Pathname.new(run_directory).absolute?
+      run_directory
+    else
+      File.join "$(pwd)", run_directory
+    end
+  end
+
+  def hooks_path
+    raw_config.hooks_path || ".kamal/hooks"
+  end
+
+  def host_env_directory
+    "#{run_directory}/env"
+  end
+
+  def asset_path
+    raw_config.asset_path
+  end
+
+  def primary_role
+    raw_config.primary_role || "web"
+  end
+
+  def allow_empty_roles?
+    raw_config.allow_empty_roles
+  end
+
 
   def valid?
-    ensure_required_keys_present && ensure_valid_kamal_version
+    ensure_destination_if_required && ensure_required_keys_present && ensure_valid_kamal_version
   end
-
 
   def to_h
     {
       roles: role_names,
       hosts: all_hosts,
-      primary_host: primary_web_host,
+      primary_host: primary_host,
       version: version,
       repository: repository,
       absolute_image: absolute_image,
       service_with_version: service_with_version,
-      env_args: env_args,
       volume_args: volume_args,
       ssh_options: ssh.to_h,
       sshkit: sshkit.to_h,
@@ -186,28 +245,17 @@ class Kamal::Configuration
     }.compact
   end
 
-  def traefik
-    raw_config.traefik || {}
-  end
-
-  def hooks_path
-    raw_config.hooks_path || ".kamal/hooks"
-  end
-
-  def builder
-    Kamal::Configuration::Builder.new(config: self)
-  end
-
-  # Will raise KeyError if any secret ENVs are missing
-  def ensure_env_available
-    env_args
-    roles.each(&:env_args)
-
-    true
-  end
 
   private
     # Will raise ArgumentError if any required config keys are missing
+    def ensure_destination_if_required
+      if require_destination? && destination.nil?
+        raise ArgumentError, "You must specify a destination"
+      end
+
+      true
+    end
+
     def ensure_required_keys_present
       %i[ service image registry servers ].each do |key|
         raise ArgumentError, "Missing required configuration for #{key}" unless raw_config[key].present?
@@ -221,9 +269,19 @@ class Kamal::Configuration
         raise ArgumentError, "You must specify a password for the registry in config/deploy.yml (or set the ENV variable if that's used)"
       end
 
-      roles.each do |role|
-        if role.hosts.empty?
-          raise ArgumentError, "No servers specified for the #{role.name} role"
+      unless role_names.include?(primary_role)
+        raise ArgumentError, "The primary_role #{primary_role} isn't defined"
+      end
+
+      if role(primary_role).hosts.empty?
+        raise ArgumentError, "No servers specified for the #{primary_role} primary_role"
+      end
+
+      unless allow_empty_roles?
+        roles.each do |role|
+          if role.hosts.empty?
+            raise ArgumentError, "No servers specified for the #{role.name} role. You can ignore this with allow_empty_roles: true"
+          end
         end
       end
 
@@ -245,10 +303,8 @@ class Kamal::Configuration
 
     def git_version
       @git_version ||=
-        if system("git rev-parse")
-          uncommitted_suffix = Kamal::Utils.uncommitted_changes.present? ? "_uncommitted_#{SecureRandom.hex(8)}" : ""
-
-          "#{`git rev-parse HEAD`.strip}#{uncommitted_suffix}"
+        if Kamal::Git.used?
+          [ Kamal::Git.revision, Kamal::Git.uncommitted_changes.present? ? "_uncommitted_#{SecureRandom.hex(8)}" : "" ].join
         else
           raise "Can't use commit hash as version, no git repository found in #{Dir.pwd}"
         end

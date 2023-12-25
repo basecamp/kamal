@@ -5,12 +5,13 @@ class CliHealthcheckTest < CliTestCase
     # Prevent expected failures from outputting to terminal
     Thread.report_on_exception = false
 
-    Kamal::Utils::HealthcheckPoller.stubs(:sleep) # No sleeping when retrying
+    Kamal::Cli::Healthcheck::Poller.stubs(:sleep) # No sleeping when retrying
+    Kamal::Configuration.any_instance.stubs(:run_id).returns("12345678901234567890123456789012")
 
     SSHKit::Backend::Abstract.any_instance.stubs(:execute)
       .with(:docker, :container, :ls, "--all", "--filter", "name=^healthcheck-app-999$", "--quiet", "|", :xargs, :docker, :stop, raise_on_non_zero_exit: false)
     SSHKit::Backend::Abstract.any_instance.stubs(:execute)
-      .with(:docker, :run, "--detach", "--name", "healthcheck-app-999", "--publish", "3999:3000", "--label", "service=healthcheck-app", "-e", "KAMAL_CONTAINER_NAME=\"healthcheck-app\"", "--health-cmd", "\"curl -f http://localhost:3000/up || exit 1\"", "--health-interval", "\"1s\"", "dhh/app:999")
+      .with(:docker, :run, "--detach", "--name", "healthcheck-app-999", "--publish", "3999:3000", "--label", "service=healthcheck-app", "-e", "KAMAL_CONTAINER_NAME=\"healthcheck-app\"", "--env-file", ".kamal/env/roles/app-web.env", "--health-cmd", "\"curl -f http://localhost:3000/up || exit 1\"", "--health-interval", "\"1s\"", "dhh/app:999")
     SSHKit::Backend::Abstract.any_instance.stubs(:execute)
       .with(:docker, :container, :ls, "--all", "--filter", "name=^healthcheck-app-999$", "--quiet", "|", :xargs, :docker, :container, :rm, raise_on_non_zero_exit: false)
 
@@ -34,12 +35,12 @@ class CliHealthcheckTest < CliTestCase
     # Prevent expected failures from outputting to terminal
     Thread.report_on_exception = false
 
-    Kamal::Utils::HealthcheckPoller.stubs(:sleep) # No sleeping when retrying
+    Kamal::Cli::Healthcheck::Poller.stubs(:sleep) # No sleeping when retrying
 
     SSHKit::Backend::Abstract.any_instance.stubs(:execute)
       .with(:docker, :container, :ls, "--all", "--filter", "name=^healthcheck-app-999$", "--quiet", "|", :xargs, :docker, :stop, raise_on_non_zero_exit: false)
     SSHKit::Backend::Abstract.any_instance.stubs(:execute)
-      .with(:docker, :run, "--detach", "--name", "healthcheck-app-999", "--publish", "3999:3000", "--label", "service=healthcheck-app", "-e", "KAMAL_CONTAINER_NAME=\"healthcheck-app\"", "--health-cmd", "\"curl -f http://localhost:3000/up || exit 1\"", "--health-interval", "\"1s\"", "dhh/app:999")
+      .with(:docker, :run, "--detach", "--name", "healthcheck-app-999", "--publish", "3999:3000", "--label", "service=healthcheck-app", "-e", "KAMAL_CONTAINER_NAME=\"healthcheck-app\"", "--env-file", ".kamal/env/roles/app-web.env", "--health-cmd", "\"curl -f http://localhost:3000/up || exit 1\"", "--health-interval", "\"1s\"", "dhh/app:999")
     SSHKit::Backend::Abstract.any_instance.stubs(:execute)
       .with(:docker, :container, :ls, "--all", "--filter", "name=^healthcheck-app-999$", "--quiet", "|", :xargs, :docker, :container, :rm, raise_on_non_zero_exit: false)
 
@@ -63,9 +64,19 @@ class CliHealthcheckTest < CliTestCase
     end
     assert_match "container not ready (unhealthy)", exception.message
   end
+  
+  test "raises an exception if primary does not have traefik" do
+    SSHKit::Backend::Abstract.any_instance.expects(:execute).never
+    
+    exception = assert_raises do
+      run_command("perform", config_file: "test/fixtures/deploy_workers_only.yml")
+    end
+
+    assert_equal "The primary host is not configured to run Traefik", exception.message
+  end
 
   private
-    def run_command(*command)
-      stdouted { Kamal::Cli::Healthcheck.start([*command, "-c", "test/fixtures/deploy_with_accessories.yml"]) }
+    def run_command(*command, config_file: "test/fixtures/deploy_with_accessories.yml")
+      stdouted { Kamal::Cli::Healthcheck.start([*command, "-c", config_file]) } 
     end
 end

@@ -1,0 +1,12 @@
+service: app
+image: dhh/app
+servers:
+  workers:
+    traefik: false
+    hosts:
+      - 1.1.1.1
+      - 1.1.1.2
+primary_role: workers
+registry:
+  username: user
+  password: pw

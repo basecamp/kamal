@@ -3,7 +3,7 @@ require "active_support/core_ext/numeric/time"
 
 class Kamal::Commands::Prune < Kamal::Commands::Base
   def dangling_images
-    docker :image, :prune, "--force", "--filter", "label=service=#{config.service}", "--filter", "dangling=true"
+    docker :image, :prune, "--force", "--filter", "label=service=#{config.service}"
   end
 
   def tagged_images
@@ -13,11 +13,15 @@ class Kamal::Commands::Prune < Kamal::Commands::Base
       "while read image tag; do docker rmi $tag; done"
   end
 
-  def containers(keep_last: 5)
+  def app_containers(keep_last: 5)
     pipe \
       docker(:ps, "-q", "-a", *service_filter, *stopped_containers_filters),
       "tail -n +#{keep_last + 1}",
       "while read container_id; do docker rm $container_id; done"
+  end
+
+  def healthcheck_containers
+    docker :container, :prune, "--force", *healthcheck_service_filter
   end
 
   private
@@ -35,4 +39,8 @@ class Kamal::Commands::Prune < Kamal::Commands::Base
     def service_filter
       [ "--filter", "label=service=#{config.service}" ]
     end
-end
+
+    def healthcheck_service_filter
+      [ "--filter", "label=service=#{config.healthcheck_service}" ]
+    end
+  end
