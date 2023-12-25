@@ -10,6 +10,22 @@ class CliMainTest < CliTestCase
     run_command("setup")
   end
 
+  test "destinations" do
+    run_command("destinations", config_file: "deploy_for_dest").tap do |output|
+      assert_equal "mars\nworld", output
+    end
+  end
+
+  test "destinations --json" do
+    run_command("destinations", "--json", config_file: "deploy_for_dest").tap do |output|
+      assert_equal '["mars","world"]', output
+    end
+
+    run_command("destinations", "-j", config_file: "deploy_for_dest").tap do |output|
+      assert_equal '["mars","world"]', output
+    end
+  end
+
   test "deploy" do
     invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false }
 
