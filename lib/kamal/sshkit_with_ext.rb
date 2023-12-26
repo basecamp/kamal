@@ -80,7 +80,8 @@ class SSHKit::Backend::Netssh
   module LimitConcurrentStartsInstance
     private
       def with_ssh(&block)
-        host.ssh_options = self.class.config.ssh_options.merge(host.ssh_options || {})
+        host.ssh_options = (host.ssh_options || {}).merge({ port: host.port, user: host.user }.compact)
+        host.ssh_options = self.class.config.ssh_options.merge(host.ssh_options)
         self.class.pool.with(
           method(:start_with_concurrency_limit),
           String(host.hostname),
