@@ -63,6 +63,9 @@ class Kamal::Cli::Main < Kamal::Cli::Base
       mutating do
         invoke_options = deploy_options
 
+        say "Log into image registry...", :magenta
+        invoke "kamal:cli:registry:login", [], invoke_options
+
         if options[:skip_push]
           say "Pull app image...", :magenta
           invoke "kamal:cli:build:pull", [], invoke_options
