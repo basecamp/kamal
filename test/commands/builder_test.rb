@@ -37,6 +37,14 @@ class CommandsBuilderTest < ActiveSupport::TestCase
       builder.push.join(" ")
   end
 
+  test "target multiarch local when arch is set" do
+    builder = new_builder_command(builder: { "local" => { "arch" => "amd64" } })
+    assert_equal "multiarch", builder.name
+    assert_equal \
+      "docker buildx build --push --platform linux/amd64 --builder kamal-app-multiarch -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile .",
+      builder.push.join(" ")
+  end
+
   test "target native remote when only remote is set" do
     builder = new_builder_command(builder: { "remote" => { "arch" => "amd64" }, "cache" => { "type" => "gha" } })
     assert_equal "native/remote", builder.name
