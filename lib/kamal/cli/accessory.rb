@@ -170,19 +170,20 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
     end
   end
 
-  desc "remove [NAME]", "Remove accessory container, image and data directory from host (use NAME=all to remove all accessories)"
+  desc "remove [NAME]", "Remove accessory container, image, data directory and env file from host (use NAME=all to remove all accessories)"
   option :confirmed, aliases: "-y", type: :boolean, default: false, desc: "Proceed without confirmation question"
   def remove(name)
     mutating do
       if name == "all"
         KAMAL.accessory_names.each { |accessory_name| remove(accessory_name) }
       else
-        if options[:confirmed] || ask("This will remove all containers, images and data directories for #{name}. Are you sure?", limited_to: %w( y N ), default: "N") == "y"
+        if options[:confirmed] || ask("This will remove all containers, images, data directories and env files for #{name}. Are you sure?", limited_to: %w( y N ), default: "N") == "y"
           with_accessory(name) do
             stop(name)
             remove_container(name)
             remove_image(name)
             remove_service_directory(name)
+            remove_env_file(name)
           end
         end
       end
@@ -219,6 +220,17 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
       with_accessory(name) do |accessory|
         on(accessory.hosts) do
           execute *accessory.remove_service_directory
+        end
+      end
+    end
+  end
+
+  desc "remove_env_file [NAME]", "Remove accessory env file from host", hide: true
+  def remove_env_file(name)
+    mutating do
+      with_accessory(name) do |accessory|
+        on(accessory.hosts) do
+          execute *accessory.remove_env_file
         end
       end
     end
