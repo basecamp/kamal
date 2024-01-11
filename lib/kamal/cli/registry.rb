@@ -1,8 +1,7 @@
 class Kamal::Cli::Registry < Kamal::Cli::Base
   desc "login", "Log in to registry locally and remotely"
   def login
-    run_locally    { execute *KAMAL.registry.login }
-    on(KAMAL.hosts) { execute *KAMAL.registry.login }
+    on([ :local ] + KAMAL.hosts) { execute *KAMAL.registry.login }
   # FIXME: This rescue needed?
   rescue ArgumentError => e
     puts e.message
