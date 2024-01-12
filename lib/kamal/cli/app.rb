@@ -106,7 +106,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
     end
   end
 
-  desc "exec [CMD]", "Execute a custom command on servers (use --help to show options)"
+  desc "exec [CMD]", "Execute a custom command on servers within the app container (use --help to show options)"
   option :interactive, aliases: "-i", type: :boolean, default: false, desc: "Execute command over ssh for an interactive shell (use for console/bash)"
   option :reuse, type: :boolean, default: false, desc: "Reuse currently running container instead of starting a new one"
   def exec(cmd)
