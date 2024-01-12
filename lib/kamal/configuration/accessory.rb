@@ -23,14 +23,16 @@ class Kamal::Configuration::Accessory
     hosts_from_host || hosts_from_hosts || hosts_from_roles
   end
 
-  def port
-    if port = specifics["port"]&.to_s
-      port.include?(":") ? port : "#{port}:#{port}"
-    end
+  def ports
+    Array(specifics["port"]).map do |port|
+      if port = port&.to_s
+        port.include?(":") ? port : "#{port}:#{port}"
+      end
+    end.compact
   end
 
   def publish_args
-    argumentize "--publish", port if port
+    argumentize "--publish", ports if ports.any?
   end
 
   def labels

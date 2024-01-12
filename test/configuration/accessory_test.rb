@@ -51,7 +51,7 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
         "monitoring" => {
           "image" => "monitoring:latest",
           "roles" => [ "web" ],
-          "port" => "4321:4321",
+          "port" => ["4321:4321", "8080:80"],
           "labels" => {
             "cache" => true
           },
@@ -74,9 +74,10 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
     assert_equal "app-redis", @config.accessory(:redis).service_name
   end
 
-  test "port" do
-    assert_equal "3306:3306", @config.accessory(:mysql).port
-    assert_equal "6379:6379", @config.accessory(:redis).port
+  test "ports" do
+    assert_equal ["3306:3306"], @config.accessory(:mysql).ports
+    assert_equal ["6379:6379"], @config.accessory(:redis).ports
+    assert_equal ["4321:4321", "8080:80"], @config.accessory(:monitoring).ports
   end
 
   test "host" do
