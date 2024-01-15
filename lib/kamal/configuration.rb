@@ -127,6 +127,10 @@ class Kamal::Configuration
     raw_config.require_destination
   end
 
+  def retain_containers
+    raw_config.retain_containers || 5
+  end
+
 
   def volume_args
     if raw_config.volumes.present?
@@ -218,7 +222,7 @@ class Kamal::Configuration
 
 
   def valid?
-    ensure_destination_if_required && ensure_required_keys_present && ensure_valid_kamal_version
+    ensure_destination_if_required && ensure_required_keys_present && ensure_valid_kamal_version && ensure_retain_containers_valid
   end
 
   def to_h
@@ -287,6 +291,12 @@ class Kamal::Configuration
       if minimum_version && Gem::Version.new(minimum_version) > Gem::Version.new(Kamal::VERSION)
         raise ArgumentError, "Current version is #{Kamal::VERSION}, minimum required is #{minimum_version}"
       end
+
+      true
+    end
+
+    def ensure_retain_containers_valid
+      raise ArgumentError, "Must retain at least 1 container" if retain_containers < 1
 
       true
     end

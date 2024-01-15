@@ -23,7 +23,11 @@ class CommandsPruneTest < ActiveSupport::TestCase
   test "app containers" do
     assert_equal \
       "docker ps -q -a --filter label=service=app --filter status=created --filter status=exited --filter status=dead | tail -n +6 | while read container_id; do docker rm $container_id; done",
-      new_command.app_containers.join(" ")
+      new_command.app_containers(retain: 5).join(" ")
+
+    assert_equal \
+      "docker ps -q -a --filter label=service=app --filter status=created --filter status=exited --filter status=dead | tail -n +4 | while read container_id; do docker rm $container_id; done",
+      new_command.app_containers(retain: 3).join(" ")
   end
 
   test "healthcheck containers" do

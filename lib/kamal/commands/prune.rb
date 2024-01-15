@@ -13,10 +13,10 @@ class Kamal::Commands::Prune < Kamal::Commands::Base
       "while read image tag; do docker rmi $tag; done"
   end
 
-  def app_containers(keep_last: 5)
+  def app_containers(retain:)
     pipe \
       docker(:ps, "-q", "-a", *service_filter, *stopped_containers_filters),
-      "tail -n +#{keep_last + 1}",
+      "tail -n +#{retain + 1}",
       "while read container_id; do docker rm $container_id; done"
   end
 
