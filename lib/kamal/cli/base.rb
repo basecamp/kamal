@@ -124,7 +124,7 @@ module Kamal::Cli
       rescue SSHKit::Runner::ExecuteError => e
         if e.message =~ /cannot create directory/
           on(KAMAL.primary_host) { puts capture_with_debug(*KAMAL.lock.status) }
-          raise LockError, "Deploy lock found. See https://kamal-deploy.org/docs/commands#checking-and-setting-the-lock"
+          raise LockError, "Deploy lock found. Run 'kamal lock help' for more information"
         else
           raise e
         end
