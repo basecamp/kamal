@@ -123,6 +123,7 @@ module Kamal::Cli
         yield
       rescue SSHKit::Runner::ExecuteError => e
         if e.message =~ /cannot create directory/
+          say "Deploy lock already in place!", :red
           on(KAMAL.primary_host) { puts capture_with_debug(*KAMAL.lock.status) }
           raise LockError, "Deploy lock found. Run 'kamal lock help' for more information"
         else
