@@ -122,12 +122,12 @@ class CliMainTest < CliTestCase
       refute_match /Running the post-deploy hook.../, output
     end
   end
-  
+
   test "deploy without healthcheck if primary host doesn't have traefik" do
     invoke_options = { "config_file" => "test/fixtures/deploy_workers_only.yml", "version" => "999", "skip_hooks" => false }
 
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:healthcheck:perform", [], invoke_options).never
-    
+
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:registry:login", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:deliver", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:traefik:boot", [], invoke_options)
@@ -407,8 +407,8 @@ class CliMainTest < CliTestCase
   end
 
   test "envify with destination" do
-    File.expects(:read).with(".env.world.erb").returns("HELLO=<%= 'world' %>")
-    File.expects(:write).with(".env.world", "HELLO=world", perm: 0600)
+    File.expects(:read).with(".env.world.erb").returns("DESTINATION=<%= ENV['KAMAL_DESTINATION'] %>\nHELLO=<%= 'world' %>")
+    File.expects(:write).with(".env.world", "DESTINATION=world\nHELLO=world", perm: 0600)
 
     run_command("envify", "-d", "world", config_file: "deploy_for_dest")
   end

@@ -175,6 +175,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
   option :skip_push, aliases: "-P", type: :boolean, default: false, desc: "Skip .env file push"
   def envify
     if destination = options[:destination]
+      ENV['KAMAL_DESTINATION'] = destination
       env_template_path = ".env.#{destination}.erb"
       env_path          = ".env.#{destination}"
     else
