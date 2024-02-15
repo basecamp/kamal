@@ -27,6 +27,7 @@ traefik:
   image: registry:4443/traefik:v2.9
 accessories:
   busybox:
+    service: custom-busybox
     image: registry:4443/busybox:1.36.0
     cmd: sh -c 'echo "Starting busybox..."; trap exit term; while true; do sleep 1; done'
     roles:
