@@ -2,8 +2,6 @@ require_relative "cli_test_case"
 
 class CliMainTest < CliTestCase
   test "setup" do
-    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false }
-
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:server:bootstrap")
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:env:push")
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:accessory:boot", [ "all" ])
