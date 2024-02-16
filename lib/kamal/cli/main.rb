@@ -4,15 +4,13 @@ class Kamal::Cli::Main < Kamal::Cli::Base
   def setup
     print_runtime do
       mutating do
-        invoke_options = deploy_options
-
         say "Ensure Docker is installed...", :magenta
-        invoke "kamal:cli:server:bootstrap", [], invoke_options
+        invoke "kamal:cli:server:bootstrap"
 
         say "Push env files...", :magenta
-        invoke "kamal:cli:env:push", [], invoke_options
+        invoke "kamal:cli:env:push"
 
-        invoke "kamal:cli:accessory:boot", [ "all" ], invoke_options
+        invoke "kamal:cli:accessory:boot", [ "all" ]
         deploy
       end
     end
