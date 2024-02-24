@@ -2,9 +2,11 @@ require_relative "cli_test_case"
 
 class CliMainTest < CliTestCase
   test "setup" do
-    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:server:bootstrap")
-    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:env:push")
-    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:accessory:boot", [ "all" ])
+    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false }
+    
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:server:bootstrap", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:env:push", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:accessory:boot", [ "all" ], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:deploy)
 
     run_command("setup").tap do |output|
@@ -16,9 +18,9 @@ class CliMainTest < CliTestCase
   test "setup with skip_push" do
     invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false }
 
-    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:server:bootstrap")
-    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:env:push")
-    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:accessory:boot", [ "all" ])
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:server:bootstrap", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:env:push", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:accessory:boot", [ "all" ], invoke_options)
     # deploy
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:registry:login", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:pull", [], invoke_options)
