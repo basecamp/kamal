@@ -1,5 +1,7 @@
 class Kamal::Commands::Traefik < Kamal::Commands::Base
   delegate :argumentize, :optionize, to: Kamal::Utils
+  delegate :volume_args, to: :volumes_config
+  attr_accessor :volumes_config
 
   DEFAULT_IMAGE = "traefik:v2.9"
   CONTAINER_PORT = 80
@@ -15,6 +17,11 @@ class Kamal::Commands::Traefik < Kamal::Commands::Base
     "traefik.http.services.unavailable.loadbalancer.server.port" => "0"
   }
 
+  def initialize(config)
+    super(config)
+    @volumes_config = Kamal::Configuration::VolumesFilesAndFolders.new "traefik", config.traefik
+  end
+
   def run
     docker :run, "--name traefik",
       "--detach",
@@ -24,6 +31,7 @@ class Kamal::Commands::Traefik < Kamal::Commands::Base
       *env_args,
       *config.logging_args,
       *label_args,
+      *volume_args,
       *docker_options_args,
       image,
       "--providers.docker",
