@@ -19,7 +19,7 @@ class Kamal::Commands::Traefik < Kamal::Commands::Base
 
   def initialize(config)
     super(config)
-    @volumes_config = Kamal::Configuration::VolumesFilesAndFolders.new "traefik", config.traefik
+    @volumes_config = Kamal::Configuration::VolumesFilesAndDirectories.new "traefik", config.traefik
   end
 
   def run

@@ -29,6 +29,31 @@ module Kamal::Cli
       initialize_commander(options_with_subcommand_class_options)
     end
 
+    desc "upload [NAME]", "Upload files and directories to host", hide: true
+    def upload(role, hosts)
+      mutating do
+        on(hosts) do
+          volumes_config = case role.class.to_s
+            when "Kamal::Commands::Accessory"
+              role.accessory_config.volumes_config
+            when "Kamal::Commands::App"
+              role.config.volumes_config
+            when "Kamal::Commands::Traefik"
+              role.volumes_config
+          end
+
+          files_and_directories = volumes_config.files.merge(volumes_config.directories_to_upload)
+          files_and_directories.each do |(local, remote)|
+            role.ensure_local_file_present(local)
+
+            execute *role.make_directory_for(remote)
+            upload! local, remote, recursive: true
+            execute :chmod, "755", remote
+          end
+        end
+      end
+    end
+
     private
       def load_envs
         if destination = options[:destination]
@@ -180,5 +205,5 @@ module Kamal::Cli
           execute(*KAMAL.server.ensure_run_directory)
         end
       end
-    end
+  end
 end

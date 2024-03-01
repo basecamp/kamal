@@ -2,6 +2,7 @@ class Kamal::Cli::Traefik < Kamal::Cli::Base
   desc "boot", "Boot Traefik on servers"
   def boot
     mutating do
+      upload(KAMAL.traefik, KAMAL.traefik_hosts)
       on(KAMAL.traefik_hosts) do
         execute *KAMAL.registry.login
         execute *KAMAL.traefik.start_or_run
@@ -17,6 +18,8 @@ class Kamal::Cli::Traefik < Kamal::Cli::Base
       host_groups.each do |hosts|
         host_list = Array(hosts).join(",")
         run_hook "pre-traefik-reboot", hosts: host_list
+
+        upload(KAMAL.traefik, hosts)
         on(hosts) do
           execute *KAMAL.auditor.record("Rebooted traefik"), verbosity: :debug
           execute *KAMAL.registry.login

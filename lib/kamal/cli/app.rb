@@ -3,6 +3,8 @@ class Kamal::Cli::App < Kamal::Cli::Base
   def boot
     mutating do
       hold_lock_on_error do
+        upload(KAMAL.app, KAMAL.hosts)
+
         say "Get most recent version available as an image...", :magenta unless options[:version]
         using_version(version_or_latest) do |version|
           say "Start container with version #{version} using a #{KAMAL.config.readiness_delay}s readiness delay (or reboot if already running)...", :magenta

@@ -10,7 +10,9 @@ class ConfigurationTest < ActiveSupport::TestCase
       registry: { "username" => "dhh", "password" => "secret" },
       env: { "REDIS_URL" => "redis://x/y" },
       servers: [ "1.1.1.1", "1.1.1.2" ],
-      volumes: ["/local/path:/container/path"]
+      volumes: ["/local/path:/container/path"],
+      files: ["/local/file.yaml:/container/file.yaml"],
+      directories: ["/local/dir:/container/dir"],
     }
 
     @config = Kamal::Configuration.new(@deploy)
@@ -176,7 +178,7 @@ class ConfigurationTest < ActiveSupport::TestCase
   end
 
   test "volume_args" do
-    assert_equal ["--volume", "/local/path:/container/path"], @config.volume_args
+    assert_equal ["--volume", "/local/path:/container/path", "--volume", "$PWD/app/container/file.yaml:/container/file.yaml", "--volume", "/local/dir:/container/dir"], @config.volume_args
   end
 
   test "logging args default" do
@@ -239,7 +241,7 @@ class ConfigurationTest < ActiveSupport::TestCase
         :service_with_version=>"app-missing",
         :ssh_options=>{ :user=>"root", port: 22, log_level: :fatal, keepalive: true, keepalive_interval: 30 },
         :sshkit=>{},
-        :volume_args=>["--volume", "/local/path:/container/path"],
+        :volume_args=>["--volume", "/local/path:/container/path", "--volume", "$PWD/app/container/file.yaml:/container/file.yaml", "--volume", "/local/dir:/container/dir"],
         :builder=>{},
         :logging=>["--log-opt", "max-size=\"10m\""],
         :healthcheck=>{ "path"=>"/up", "port"=>3000, "max_attempts" => 7, "exposed_port" => 3999, "cord" => "/tmp/kamal-cord", "log_lines" => 50 }}
@@ -299,7 +301,7 @@ class ConfigurationTest < ActiveSupport::TestCase
 
     assert_equal "alternate_web", config.primary_role
     assert_equal "1.1.1.4", config.primary_host
-    assert config.role(:alternate_web).primary? 
+    assert config.role(:alternate_web).primary?
     assert config.role(:alternate_web).running_traefik?
   end
 

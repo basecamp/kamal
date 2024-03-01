@@ -8,8 +8,8 @@ require "net/ssh/proxy/jump"
 class Kamal::Configuration
   delegate :service, :image, :servers, :env, :labels, :registry, :stop_wait_time, :hooks_path, to: :raw_config, allow_nil: true
   delegate :argumentize, :optionize, to: Kamal::Utils
-
-  attr_reader :destination, :raw_config
+  delegate :volume_args, to: :volumes_config
+  attr_reader :destination, :raw_config, :volumes_config
 
   class << self
     def create_from(config_file:, destination: nil, version: nil)
@@ -42,9 +42,9 @@ class Kamal::Configuration
     @raw_config = ActiveSupport::InheritableOptions.new(raw_config)
     @destination = destination
     @declared_version = version
+    @volumes_config = Kamal::Configuration::VolumesFilesAndDirectories.new service, @raw_config
     valid? if validate
   end
-
 
   def version=(version)
     @declared_version = version
@@ -127,15 +127,6 @@ class Kamal::Configuration
     raw_config.require_destination
   end
 
-
-  def volume_args
-    if raw_config.volumes.present?
-      argumentize "--volume", raw_config.volumes
-    else
-      []
-    end
-  end
-
   def logging_args
     if raw_config.logging.present?
       optionize({ "log-driver" => raw_config.logging["driver"] }.compact) +
@@ -144,7 +135,6 @@ class Kamal::Configuration
       argumentize("--log-opt", { "max-size" => "10m" })
     end
   end
-
 
   def boot
     Kamal::Configuration::Boot.new(config: self)

@@ -5,7 +5,7 @@ class Kamal::Configuration::Accessory
 
   def initialize(name, config:)
     @name, @config, @specifics = name.inquiry, config, config.raw_config["accessories"][name]
-    @volumes_config = Kamal::Configuration::VolumesFilesAndFolders.new service_name, @specifics
+    @volumes_config = Kamal::Configuration::VolumesFilesAndDirectories.new service_name, @specifics
   end
 
   def service_name

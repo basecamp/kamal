@@ -79,13 +79,6 @@ class Kamal::Commands::Accessory < Kamal::Commands::Base
     super command, host: hosts.first
   end
 
-
-  def ensure_local_file_present(local_file)
-    if !local_file.is_a?(StringIO) && !Pathname.new(local_file).exist?
-      raise "Missing file: #{local_file}"
-    end
-  end
-
   def remove_service_directory
     [ :rm, "-rf", service_name ]
   end

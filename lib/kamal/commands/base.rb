@@ -38,6 +38,12 @@ module Kamal::Commands
       [ :rm, "-r", path ]
     end
 
+    def ensure_local_file_present(local_file)
+      if !local_file.is_a?(StringIO) && !Pathname.new(local_file).exist?
+        raise "Missing file: #{local_file}"
+      end
+    end
+
     private
       def combine(*commands, by: "&&")
         commands

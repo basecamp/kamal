@@ -1,4 +1,4 @@
-class Kamal::Configuration::VolumesFilesAndFolders
+class Kamal::Configuration::VolumesFilesAndDirectories
   delegate :argumentize, :optionize, to: Kamal::Utils
   delegate :argumentize, to: Kamal::Utils
 
@@ -18,15 +18,23 @@ class Kamal::Configuration::VolumesFilesAndFolders
     end || {}
   end
 
+  def directories_to_upload
+    local_to_remote_mapping(config["directories"])
+  end
+
   def files
-    config["files"]&.to_h do |local_to_remote_mapping|
-      local_file, remote_file = local_to_remote_mapping.split(":")
-      [ expand_local_file(local_file), expand_remote_file(remote_file) ]
-    end || {}
+    local_to_remote_mapping(config["files"])
   end
 
   private
     attr_reader :config, :service_name
+
+    def local_to_remote_mapping(to_map)
+      to_map&.to_h do |local_to_remote_mapping|
+        local_file, remote_file = local_to_remote_mapping.split(":")
+        [ expand_local_file(local_file), expand_remote_file(remote_file) ]
+      end || {}
+    end
 
     def env
       config["env"] || {}

@@ -7,29 +7,12 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
       else
         with_accessory(name) do |accessory|
           directories(name)
-          upload(name)
+          upload(accessory, accessory.hosts)
 
           on(accessory.hosts) do
             execute *KAMAL.registry.login if login
             execute *KAMAL.auditor.record("Booted #{name} accessory"), verbosity: :debug
             execute *accessory.run
-          end
-        end
-      end
-    end
-  end
-
-  desc "upload [NAME]", "Upload accessory files to host", hide: true
-  def upload(name)
-    mutating do
-      with_accessory(name) do |accessory|
-        on(accessory.hosts) do
-          accessory.files.each do |(local, remote)|
-            accessory.ensure_local_file_present(local)
-
-            execute *accessory.make_directory_for(remote)
-            upload! local, remote
-            execute :chmod, "755", remote
           end
         end
       end

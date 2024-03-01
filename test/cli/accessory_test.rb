@@ -1,9 +1,10 @@
 require_relative "cli_test_case"
 
 class CliAccessoryTest < CliTestCase
+
   test "boot" do
     Kamal::Cli::Accessory.any_instance.expects(:directories).with("mysql")
-    Kamal::Cli::Accessory.any_instance.expects(:upload).with("mysql")
+    Kamal::Cli::Accessory.any_instance.expects(:upload)
 
     run_command("boot", "mysql").tap do |output|
       assert_match /docker login.*on 1.1.1.3/, output
@@ -13,9 +14,8 @@ class CliAccessoryTest < CliTestCase
 
   test "boot all" do
     Kamal::Cli::Accessory.any_instance.expects(:directories).with("mysql")
-    Kamal::Cli::Accessory.any_instance.expects(:upload).with("mysql")
+    Kamal::Cli::Accessory.any_instance.expects(:upload).twice
     Kamal::Cli::Accessory.any_instance.expects(:directories).with("redis")
-    Kamal::Cli::Accessory.any_instance.expects(:upload).with("redis")
 
     run_command("boot", "all").tap do |output|
       assert_match /docker login.*on 1.1.1.3/, output
@@ -28,7 +28,9 @@ class CliAccessoryTest < CliTestCase
   end
 
   test "upload" do
-    run_command("upload", "mysql").tap do |output|
+    KAMAL.configure(config_file: Pathname.new(File.expand_path("test/fixtures/deploy_with_accessories.yml")))
+    Kamal::Commands::Base.any_instance.expects(:ensure_local_file_present).twice
+    run_command("upload", KAMAL.accessory('mysql'), KAMAL.accessory('mysql').hosts).tap do |output|
       assert_match "mkdir -p app-mysql/etc/mysql", output
       assert_match "test/fixtures/files/my.cnf app-mysql/etc/mysql/my.cnf", output
       assert_match "chmod 755 app-mysql/etc/mysql/my.cnf", output

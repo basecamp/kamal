@@ -1,6 +1,6 @@
 require "test_helper"
 
-class ConfigurationVolumesFilesAndFoldersTest < ActiveSupport::TestCase
+class ConfigurationVolumesFilesAndDirectoriesTest < ActiveSupport::TestCase
   setup do
     @deploy = {
       service: "app", image: "dhh/app", registry: { "username" => "dhh", "password" => "secret" },
