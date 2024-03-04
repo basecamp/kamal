@@ -37,6 +37,14 @@ class CommandsBuilderTest < ActiveSupport::TestCase
       builder.push.join(" ")
   end
 
+  test "target multiarch local when arch is set" do
+    builder = new_builder_command(builder: { "local" => { "arch" => "amd64" } })
+    assert_equal "multiarch", builder.name
+    assert_equal \
+      "docker buildx build --push --platform linux/amd64 --builder kamal-app-multiarch -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile .",
+      builder.push.join(" ")
+  end
+
   test "target native remote when only remote is set" do
     builder = new_builder_command(builder: { "remote" => { "arch" => "amd64" }, "cache" => { "type" => "gha" } })
     assert_equal "native/remote", builder.name
@@ -101,6 +109,14 @@ class CommandsBuilderTest < ActiveSupport::TestCase
     assert_equal \
       "docker build -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --secret id=\"a\" --secret id=\"b\" --file Dockerfile . && docker push dhh/app:123 && docker push dhh/app:latest",
       builder.push.join(" ")
+  end
+
+  test "build with ssh agent socket" do
+    builder = new_builder_command(builder: { "ssh" => 'default=$SSH_AUTH_SOCK' })
+
+    assert_equal \
+      "-t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile --ssh default=$SSH_AUTH_SOCK",
+      builder.target.build_options.join(" ")
   end
 
   test "validate image" do

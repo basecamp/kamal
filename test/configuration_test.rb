@@ -299,7 +299,7 @@ class ConfigurationTest < ActiveSupport::TestCase
 
     assert_equal "alternate_web", config.primary_role
     assert_equal "1.1.1.4", config.primary_host
-    assert config.role(:alternate_web).primary? 
+    assert config.role(:alternate_web).primary?
     assert config.role(:alternate_web).running_traefik?
   end
 
@@ -308,5 +308,13 @@ class ConfigurationTest < ActiveSupport::TestCase
       Kamal::Configuration.new(@deploy.merge(primary_role: "bar"))
     end
     assert_match /bar isn't defined/, error.message
+  end
+
+  test "retain_containers" do
+    assert_equal 5, @config.retain_containers
+    config = Kamal::Configuration.new(@deploy_with_roles.merge(retain_containers: 2))
+    assert_equal 2, config.retain_containers
+
+    assert_raises(ArgumentError) { Kamal::Configuration.new(@deploy_with_roles.merge(retain_containers: 0)) }
   end
 end

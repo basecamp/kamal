@@ -148,6 +148,30 @@ class CliAccessoryTest < CliTestCase
     assert_match "rm -rf app-mysql", run_command("remove_service_directory", "mysql")
   end
 
+  test "hosts param respected" do
+    Kamal::Cli::Accessory.any_instance.expects(:directories).with("redis")
+    Kamal::Cli::Accessory.any_instance.expects(:upload).with("redis")
+
+    run_command("boot", "redis", "--hosts", "1.1.1.1").tap do |output|
+      assert_match /docker login.*on 1.1.1.1/, output
+      refute_match /docker login.*on 1.1.1.2/, output
+      assert_match "docker run --name app-redis --detach --restart unless-stopped --log-opt max-size=\"10m\" --publish 6379:6379 --env-file .kamal/env/accessories/app-redis.env --volume $PWD/app-redis/data:/data --label service=\"app-redis\" redis:latest on 1.1.1.1", output
+      refute_match "docker run --name app-redis --detach --restart unless-stopped --log-opt max-size=\"10m\" --publish 6379:6379 --env-file .kamal/env/accessories/app-redis.env --volume $PWD/app-redis/data:/data --label service=\"app-redis\" redis:latest on 1.1.1.2", output
+    end
+  end
+
+  test "hosts param intersected with configuration" do
+    Kamal::Cli::Accessory.any_instance.expects(:directories).with("redis")
+    Kamal::Cli::Accessory.any_instance.expects(:upload).with("redis")
+
+    run_command("boot", "redis", "--hosts", "1.1.1.1,1.1.1.3").tap do |output|
+      assert_match /docker login.*on 1.1.1.1/, output
+      refute_match /docker login.*on 1.1.1.3/, output
+      assert_match "docker run --name app-redis --detach --restart unless-stopped --log-opt max-size=\"10m\" --publish 6379:6379 --env-file .kamal/env/accessories/app-redis.env --volume $PWD/app-redis/data:/data --label service=\"app-redis\" redis:latest on 1.1.1.1", output
+      refute_match "docker run --name app-redis --detach --restart unless-stopped --log-opt max-size=\"10m\" --publish 6379:6379 --env-file .kamal/env/accessories/app-redis.env --volume $PWD/app-redis/data:/data --label service=\"app-redis\" redis:latest on 1.1.1.3", output
+    end
+  end
+
   private
     def run_command(*command)
       stdouted { Kamal::Cli::Accessory.start([*command, "-c", "test/fixtures/deploy_with_accessories.yml"]) }
