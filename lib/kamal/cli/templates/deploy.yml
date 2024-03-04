@@ -78,8 +78,8 @@ registry:
 # hitting 404 on in-flight requests. Combines all files from new and old
 # version inside the asset_path.
 #
-# If your app is using Sprockets gem, ensure it has `config.assets.manifest`
-# set. See https://github.com/basecamp/kamal/issues/626 for details
+# If your app is using the Sprockets gem, ensure it sets `config.assets.manifest`.
+# See https://github.com/basecamp/kamal/issues/626 for details
 #
 # asset_path: /rails/public/assets
 
