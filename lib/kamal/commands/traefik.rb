@@ -1,7 +1,7 @@
 class Kamal::Commands::Traefik < Kamal::Commands::Base
   delegate :argumentize, :optionize, to: Kamal::Utils
 
-  DEFAULT_IMAGE = "traefik:v2.9"
+  DEFAULT_IMAGE = "traefik:v2.10"
   CONTAINER_PORT = 80
   DEFAULT_ARGS = {
     'log.level' => 'DEBUG'
