@@ -38,7 +38,7 @@ class Kamal::Configuration::Role
 
   def logging_args
     args = config.logging || {}
-    args.deep_merge!(specializations['logging']) if specializations['logging'].present?
+    args.deep_merge!(specializations["logging"]) if specializations["logging"].present?
 
     if args.any?
       optionize({ "log-driver" => args["driver"] }.compact) +
