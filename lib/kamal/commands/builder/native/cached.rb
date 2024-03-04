@@ -7,10 +7,11 @@ class Kamal::Commands::Builder::Native::Cached < Kamal::Commands::Builder::Nativ
     docker :buildx, :rm, builder_name
   end
 
-  def push
-    docker :buildx, :build,
-      "--push",
-      *build_options,
-      build_context
-  end
+  private
+    def build_and_push
+      docker :buildx, :build,
+        "--push",
+        *build_options,
+        build_context
+    end
 end

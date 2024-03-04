@@ -123,6 +123,34 @@ class CommandsBuilderTest < ActiveSupport::TestCase
     assert_equal "docker inspect -f '{{ .Config.Labels.service }}' dhh/app:123 | grep -x app || (echo \"Image dhh/app:123 is missing the 'service' label\" && exit 1)", new_builder_command.validate_image.join(" ")
   end
 
+  test "multiarch git archive build" do
+    builder = new_builder_command(builder: { "git_archive" => true })
+    assert_equal \
+      "git archive --format=tar HEAD | docker buildx build --push --platform linux/amd64,linux/arm64 --builder kamal-app-multiarch -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile -",
+      builder.push.join(" ")
+  end
+
+  test "native git archive build" do
+    builder = new_builder_command(builder: { "multiarch" => false, "git_archive" => true })
+    assert_equal \
+      "git archive --format=tar HEAD | docker build -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile - && docker push dhh/app:123 && docker push dhh/app:latest",
+      builder.push.join(" ")
+  end
+
+  test "cached git archive build" do
+    builder = new_builder_command(builder: { "multiarch" => false, "git_archive" => true, "cache" => { "type" => "gha" } })
+    assert_equal \
+      "git archive --format=tar HEAD | docker buildx build --push -t dhh/app:123 -t dhh/app:latest --cache-to type=gha --cache-from type=gha --label service=\"app\" --file Dockerfile -",
+      builder.push.join(" ")
+  end
+
+  test "remote git archive build" do
+    builder = new_builder_command(builder: { "remote" => { "arch" => "amd64" }, "git_archive" => true })
+    assert_equal \
+      "git archive --format=tar HEAD | docker buildx build --push --platform linux/amd64 --builder kamal-app-native-remote -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile -",
+      builder.push.join(" ")
+  end
+
   private
     def new_builder_command(additional_config = {})
       Kamal::Commands::Builder.new(Kamal::Configuration.new(@config.merge(additional_config), version: "123"))

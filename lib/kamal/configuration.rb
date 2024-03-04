@@ -324,7 +324,10 @@ class Kamal::Configuration
     def git_version
       @git_version ||=
         if Kamal::Git.used?
-          [ Kamal::Git.revision, Kamal::Git.uncommitted_changes.present? ? "_uncommitted_#{SecureRandom.hex(8)}" : "" ].join
+          if Kamal::Git.uncommitted_changes.present? && !builder.git_archive?
+            uncommitted_suffix = "_uncommitted_#{SecureRandom.hex(8)}"
+          end
+          [ Kamal::Git.revision, uncommitted_suffix ].compact.join
         else
           raise "Can't use commit hash as version, no git repository found in #{Dir.pwd}"
         end

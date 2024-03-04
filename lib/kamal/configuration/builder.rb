@@ -40,7 +40,7 @@ class Kamal::Configuration::Builder
   end
 
   def context
-    @options["context"] || "."
+    @options["context"] || (git_archive? ? "-" : ".")
   end
 
   def local_arch
@@ -85,10 +85,17 @@ class Kamal::Configuration::Builder
     @options["ssh"]
   end
 
+  def git_archive?
+    @options["git_archive"]
+  end
+
   private
     def valid?
       if @options["cache"] && @options["cache"]["type"]
         raise ArgumentError, "Invalid cache type: #{@options["cache"]["type"]}" unless [ "gha", "registry" ].include?(@options["cache"]["type"])
+      end
+      if @options["context"] && @options["git_archive"]
+        raise ArgumentError, "Cannot set a builder context when building from a git archive"
       end
     end
 

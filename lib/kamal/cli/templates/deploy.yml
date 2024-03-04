@@ -31,6 +31,7 @@ registry:
 #   user: app
 
 # Configure builder setup.
+# Set git_archive: true to build from a git archive of HEAD
 # builder:
 #   args:
 #     RUBY_VERSION: 3.2.0
@@ -39,6 +40,7 @@ registry:
 #   remote:
 #     arch: amd64
 #     host: ssh://app@192.168.0.1
+#   git_archive: false
 
 # Use accessory services (secrets come from .env).
 # accessories:
