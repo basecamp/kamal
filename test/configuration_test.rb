@@ -43,7 +43,7 @@ class ConfigurationTest < ActiveSupport::TestCase
   end
 
   test "service name valid" do
-    assert Kamal::Configuration.new(@deploy.tap { _1[:service] = "hey-app1" }).valid?
+    assert Kamal::Configuration.new(@deploy.tap { _1[:service] = "hey-app1_primary" }).valid?
   end
 
   test "service name invalid" do
