@@ -148,4 +148,14 @@ class ConfigurationBuilderTest < ActiveSupport::TestCase
 
     assert_equal "..", @config_with_builder_option.builder.context
   end
+
+  test "ssh" do
+    assert_nil @config.builder.ssh
+  end
+
+  test "setting ssh params" do
+    @deploy_with_builder_option[:builder] = { "ssh" => 'default=$SSH_AUTH_SOCK' }
+
+    assert_equal 'default=$SSH_AUTH_SOCK', @config_with_builder_option.builder.ssh
+  end
 end
