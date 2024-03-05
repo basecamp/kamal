@@ -81,6 +81,10 @@ class Kamal::Configuration::Builder
     end
   end
 
+  def ssh
+    @options["ssh"]
+  end
+
   private
     def valid?
       if @options["cache"] && @options["cache"]["type"]

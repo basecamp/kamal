@@ -34,6 +34,7 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
           ]
         },
         "busybox" => {
+          "service" => "custom-busybox",
           "image" => "busybox:latest",
           "host" => "1.1.1.7"
         }
@@ -57,7 +58,7 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
       new_command(:redis).run.join(" ")
 
     assert_equal \
-      "docker run --name app-busybox --detach --restart unless-stopped --log-opt max-size=\"10m\" --env-file .kamal/env/accessories/app-busybox.env --label service=\"app-busybox\" busybox:latest",
+      "docker run --name custom-busybox --detach --restart unless-stopped --log-opt max-size=\"10m\" --env-file .kamal/env/accessories/custom-busybox.env --label service=\"custom-busybox\" busybox:latest",
       new_command(:busybox).run.join(" ")
   end
 
@@ -65,7 +66,7 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
     @config[:logging] = { "driver" => "local", "options" => { "max-size" => "100m", "max-file" => "3" } }
 
     assert_equal \
-      "docker run --name app-busybox --detach --restart unless-stopped --log-driver \"local\" --log-opt max-size=\"100m\" --log-opt max-file=\"3\" --env-file .kamal/env/accessories/app-busybox.env --label service=\"app-busybox\" busybox:latest",
+      "docker run --name custom-busybox --detach --restart unless-stopped --log-driver \"local\" --log-opt max-size=\"100m\" --log-opt max-file=\"3\" --env-file .kamal/env/accessories/custom-busybox.env --label service=\"custom-busybox\" busybox:latest",
       new_command(:busybox).run.join(" ")
   end
 

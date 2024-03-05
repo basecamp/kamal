@@ -49,6 +49,7 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
           }
         },
         "monitoring" => {
+          "service" => "custom-monitoring",
           "image" => "monitoring:latest",
           "roles" => [ "web" ],
           "port" => "4321:4321",
@@ -72,6 +73,7 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
   test "service name" do
     assert_equal "app-mysql", @config.accessory(:mysql).service_name
     assert_equal "app-redis", @config.accessory(:redis).service_name
+    assert_equal "custom-monitoring", @config.accessory(:monitoring).service_name
   end
 
   test "port" do

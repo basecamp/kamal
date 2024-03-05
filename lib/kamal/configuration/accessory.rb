@@ -8,7 +8,7 @@ class Kamal::Configuration::Accessory
   end
 
   def service_name
-    "#{config.service}-#{name}"
+    specifics["service"] || "#{config.service}-#{name}"
   end
 
   def image

@@ -319,4 +319,12 @@ class ConfigurationTest < ActiveSupport::TestCase
     end
     assert_match /bar isn't defined/, error.message
   end
+
+  test "retain_containers" do
+    assert_equal 5, @config.retain_containers
+    config = Kamal::Configuration.new(@deploy_with_roles.merge(retain_containers: 2))
+    assert_equal 2, config.retain_containers
+
+    assert_raises(ArgumentError) { Kamal::Configuration.new(@deploy_with_roles.merge(retain_containers: 0)) }
+  end
 end
