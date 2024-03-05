@@ -46,19 +46,26 @@ class Kamal::Configuration::Role
   end
 
   def env_file
-    Kamal::EnvFile.new(env)
+    Kamal::EnvFiles.new(env)
   end
 
   def host_env_directory
     File.join config.host_env_directory, "roles"
   end
 
-  def host_env_file_path
-    File.join host_env_directory, "#{[config.service, name, config.destination].compact.join("-")}.env"
+  def host_clear_env_file_path
+    host_env_file_path(:clear)
+  end
+
+  def host_secret_env_file_path
+    host_env_file_path(:secret)
   end
 
   def env_args
-    argumentize "--env-file", host_env_file_path
+    [
+      *argumentize("--env-file", host_secret_env_file_path),
+      *argumentize("--env-file", host_clear_env_file_path)
+    ]
   end
 
   def asset_volume_args
@@ -241,6 +248,10 @@ class Kamal::Configuration::Role
 
         new_env["clear"] = clear_app_env.to_h.merge(clear_role_env.to_h)
       end
+    end
+
+    def host_env_file_path(env_type)
+      File.join host_env_directory, "#{[container_prefix, env_type].compact.join("-")}.env"
     end
 
     def http_health_check(port:, path:)

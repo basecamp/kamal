@@ -102,8 +102,8 @@ class Kamal::Commands::Accessory < Kamal::Commands::Base
     make_directory accessory_config.host_env_directory
   end
 
-  def remove_env_file
-    [:rm, "-f", accessory_config.host_env_file_path]
+  def remove_env_files
+    [:rm, "-f", File.join(accessory_config.host_env_directory, "#{accessory_config.service_name}*.env")]
   end
 
   private

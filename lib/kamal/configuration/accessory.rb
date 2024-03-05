@@ -46,19 +46,26 @@ class Kamal::Configuration::Accessory
   end
 
   def env_file
-    Kamal::EnvFile.new(env)
+    Kamal::EnvFiles.new(env)
   end
 
   def host_env_directory
     File.join config.host_env_directory, "accessories"
   end
 
-  def host_env_file_path
-    File.join host_env_directory, "#{service_name}.env"
+  def host_clear_env_file_path
+    File.join host_env_directory, "#{service_name}-clear.env"
+  end
+
+  def host_secret_env_file_path
+    File.join host_env_directory, "#{service_name}-secret.env"
   end
 
   def env_args
-    argumentize "--env-file", host_env_file_path
+    [
+      *argumentize("--env-file", host_secret_env_file_path),
+      *argumentize("--env-file", host_clear_env_file_path)
+    ]
   end
 
   def files

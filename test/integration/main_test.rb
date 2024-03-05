@@ -4,7 +4,8 @@ class MainTest < IntegrationTest
   test "envify, deploy, redeploy, rollback, details and audit" do
     kamal :envify
     assert_local_env_file "SECRET_TOKEN=1234"
-    assert_remote_env_file "SECRET_TOKEN=1234\nCLEAR_TOKEN=4321"
+    assert_remote_env_file "CLEAR_TOKEN=4321", :clear
+    assert_remote_env_file "SECRET_TOKEN=1234", :secret
     remove_local_env_file
 
     first_version = latest_app_version
@@ -39,7 +40,7 @@ class MainTest < IntegrationTest
     assert_match /Booted app version #{first_version}.*Booted app version #{second_version}.*Booted app version #{first_version}.*/m, audit
 
     kamal :env, :delete
-    assert_no_remote_env_file
+    assert_no_remote_env_files
   end
 
   test "config" do
@@ -69,12 +70,13 @@ class MainTest < IntegrationTest
       deployer_exec("rm .env")
     end
 
-    def assert_remote_env_file(contents)
-      assert_equal contents, docker_compose("exec vm1 cat /root/.kamal/env/roles/app-web.env", capture: true)
+    def assert_remote_env_file(contents, env_type)
+      assert_equal contents, docker_compose("exec vm1 cat /root/.kamal/env/roles/app-web-#{env_type}.env", capture: true)
     end
 
-    def assert_no_remote_env_file
-      assert_equal "nofile", docker_compose("exec vm1 stat /root/.kamal/env/roles/app-web.env 2> /dev/null || echo nofile", capture: true)
+    def assert_no_remote_env_files
+      assert_equal "nofile", docker_compose("exec vm1 stat /root/.kamal/env/roles/app-web-clear.env 2> /dev/null || echo nofile", capture: true)
+      assert_equal "nofile", docker_compose("exec vm1 stat /root/.kamal/env/roles/app-web-secret.env 2> /dev/null || echo nofile", capture: true)
     end
 
     def assert_accumulated_assets(*versions)

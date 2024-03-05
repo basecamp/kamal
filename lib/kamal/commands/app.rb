@@ -72,8 +72,8 @@ class Kamal::Commands::App < Kamal::Commands::Base
     make_directory role_config.host_env_directory
   end
 
-  def remove_env_file
-    [ :rm, "-f", role_config.host_env_file_path ]
+  def remove_env_files
+    [ :rm, "-f", File.join(role_config.host_env_directory, "#{role_config.container_prefix}*.env") ]
   end
 
 

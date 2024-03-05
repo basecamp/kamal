@@ -113,19 +113,27 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
   end
 
   test "env args" do
-    assert_equal ["--env-file", ".kamal/env/accessories/app-mysql.env"], @config.accessory(:mysql).env_args
-    assert_equal ["--env-file", ".kamal/env/accessories/app-redis.env"], @config.accessory(:redis).env_args
+    assert_equal \
+      ["--env-file", ".kamal/env/accessories/app-mysql-secret.env", "--env-file", ".kamal/env/accessories/app-mysql-clear.env"],
+      @config.accessory(:mysql).env_args
+    assert_equal \
+      ["--env-file", ".kamal/env/accessories/app-redis-secret.env", "--env-file", ".kamal/env/accessories/app-redis-clear.env"],
+      @config.accessory(:redis).env_args
   end
 
   test "env file with secret" do
     ENV["MYSQL_ROOT_PASSWORD"] = "secret123"
 
-    expected = <<~ENV
+    expected_secret = <<~ENV
       MYSQL_ROOT_PASSWORD=secret123
+    ENV
+
+    expected_clear = <<~ENV
       MYSQL_ROOT_HOST=%
     ENV
 
-    assert_equal expected, @config.accessory(:mysql).env_file.to_s
+    assert_equal expected_secret, @config.accessory(:mysql).env_file.secret
+    assert_equal expected_clear, @config.accessory(:mysql).env_file.clear
   ensure
     ENV["MYSQL_ROOT_PASSWORD"] = nil
   end
@@ -134,8 +142,12 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
     assert_equal ".kamal/env/accessories", @config.accessory(:mysql).host_env_directory
   end
 
-  test "host_env_file_path" do
-    assert_equal ".kamal/env/accessories/app-mysql.env", @config.accessory(:mysql).host_env_file_path
+  test "host_secret_env_file_path" do
+    assert_equal ".kamal/env/accessories/app-mysql-secret.env", @config.accessory(:mysql).host_secret_env_file_path
+  end
+
+  test "host_clear_env_file_path" do
+    assert_equal ".kamal/env/accessories/app-mysql-clear.env", @config.accessory(:mysql).host_clear_env_file_path
   end
 
   test "volume args" do

@@ -72,19 +72,23 @@ class Kamal::Commands::Traefik < Kamal::Commands::Base
   end
 
   def env_file
-    Kamal::EnvFile.new(config.traefik.fetch("env", {}))
+    Kamal::EnvFiles.new(config.traefik.fetch("env", {}))
   end
 
-  def host_env_file_path
-    File.join host_env_directory, "traefik.env"
+  def host_clear_env_file_path
+    File.join host_env_directory, "traefik-clear.env"
+  end
+
+  def host_secret_env_file_path
+    File.join host_env_directory, "traefik-secret.env"
   end
 
   def make_env_directory
     make_directory(host_env_directory)
   end
 
-  def remove_env_file
-    [:rm, "-f", host_env_file_path]
+  def remove_env_files
+    [:rm, "-f", File.join(host_env_directory, "traefik*.env")]
   end
 
   private
@@ -97,7 +101,10 @@ class Kamal::Commands::Traefik < Kamal::Commands::Base
     end
 
     def env_args
-      argumentize "--env-file", host_env_file_path
+      [
+        *argumentize("--env-file", host_secret_env_file_path),
+        *argumentize("--env-file", host_clear_env_file_path)
+      ]
     end
 
     def host_env_directory
