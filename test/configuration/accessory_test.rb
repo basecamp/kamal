@@ -20,7 +20,7 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
             },
             "secret" => [
               "MYSQL_ROOT_PASSWORD"
-            ],
+            ]
           },
           "files" => [
             "config/mysql/my.cnf:/etc/mysql/my.cnf",
@@ -82,9 +82,9 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
   end
 
   test "host" do
-    assert_equal ["1.1.1.5"], @config.accessory(:mysql).hosts
-    assert_equal ["1.1.1.6", "1.1.1.7"], @config.accessory(:redis).hosts
-    assert_equal ["1.1.1.1", "1.1.1.2"], @config.accessory(:monitoring).hosts
+    assert_equal [ "1.1.1.5" ], @config.accessory(:mysql).hosts
+    assert_equal [ "1.1.1.6", "1.1.1.7" ], @config.accessory(:redis).hosts
+    assert_equal [ "1.1.1.1", "1.1.1.2" ], @config.accessory(:monitoring).hosts
   end
 
   test "missing host" do
@@ -108,13 +108,13 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
   end
 
   test "label args" do
-    assert_equal ["--label", "service=\"app-mysql\""], @config.accessory(:mysql).label_args
-    assert_equal ["--label", "service=\"app-redis\"", "--label", "cache=\"true\""], @config.accessory(:redis).label_args
+    assert_equal [ "--label", "service=\"app-mysql\"" ], @config.accessory(:mysql).label_args
+    assert_equal [ "--label", "service=\"app-redis\"", "--label", "cache=\"true\"" ], @config.accessory(:redis).label_args
   end
 
   test "env args" do
-    assert_equal ["--env-file", ".kamal/env/accessories/app-mysql.env"], @config.accessory(:mysql).env_args
-    assert_equal ["--env-file", ".kamal/env/accessories/app-redis.env"], @config.accessory(:redis).env_args
+    assert_equal [ "--env-file", ".kamal/env/accessories/app-mysql.env" ], @config.accessory(:mysql).env_args
+    assert_equal [ "--env-file", ".kamal/env/accessories/app-redis.env" ], @config.accessory(:redis).env_args
   end
 
   test "env file with secret" do
@@ -139,8 +139,8 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
   end
 
   test "volume args" do
-    assert_equal ["--volume", "$PWD/app-mysql/etc/mysql/my.cnf:/etc/mysql/my.cnf", "--volume", "$PWD/app-mysql/docker-entrypoint-initdb.d/structure.sql:/docker-entrypoint-initdb.d/structure.sql", "--volume", "$PWD/app-mysql/data:/var/lib/mysql"], @config.accessory(:mysql).volume_args
-    assert_equal ["--volume", "/var/lib/redis:/data"], @config.accessory(:redis).volume_args
+    assert_equal [ "--volume", "$PWD/app-mysql/etc/mysql/my.cnf:/etc/mysql/my.cnf", "--volume", "$PWD/app-mysql/docker-entrypoint-initdb.d/structure.sql:/docker-entrypoint-initdb.d/structure.sql", "--volume", "$PWD/app-mysql/data:/var/lib/mysql" ], @config.accessory(:mysql).volume_args
+    assert_equal [ "--volume", "/var/lib/redis:/data" ], @config.accessory(:redis).volume_args
   end
 
   test "dynamic file expansion" do
@@ -153,15 +153,15 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
 
   test "directory with a relative path" do
     @deploy[:accessories]["mysql"]["directories"] = [ "data:/var/lib/mysql" ]
-    assert_equal({"$PWD/app-mysql/data"=>"/var/lib/mysql"}, @config.accessory(:mysql).directories)
+    assert_equal({ "$PWD/app-mysql/data"=>"/var/lib/mysql" }, @config.accessory(:mysql).directories)
   end
 
   test "directory with an absolute path" do
     @deploy[:accessories]["mysql"]["directories"] = [ "/var/data/mysql:/var/lib/mysql" ]
-    assert_equal({"/var/data/mysql"=>"/var/lib/mysql"}, @config.accessory(:mysql).directories)
+    assert_equal({ "/var/data/mysql"=>"/var/lib/mysql" }, @config.accessory(:mysql).directories)
   end
 
   test "options" do
-    assert_equal ["--cpus", "\"4\"", "--memory", "\"2GB\""], @config.accessory(:redis).option_args
+    assert_equal [ "--cpus", "\"4\"", "--memory", "\"2GB\"" ], @config.accessory(:redis).option_args
   end
 end

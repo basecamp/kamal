@@ -56,7 +56,7 @@ class TraefikTest < IntegrationTest
     end
 
     def assert_traefik_not_running
-      refute_match /traefik:v2.10   "\/entrypoint.sh/, traefik_details
+      assert_no_match /traefik:v2.10   "\/entrypoint.sh/, traefik_details
     end
 
     def traefik_details

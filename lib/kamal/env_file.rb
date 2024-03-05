@@ -3,7 +3,7 @@ class Kamal::EnvFile
   def initialize(env)
     @env = env
   end
-  
+
   def to_s
     env_file = StringIO.new.tap do |contents|
       if (secrets = @env["secret"]).present?
@@ -26,10 +26,10 @@ class Kamal::EnvFile
   end
 
   alias to_str to_s
-  
+
   private
     def docker_env_file_line(key, value)
-      "#{key.to_s}=#{escape_docker_env_file_value(value)}\n"
+      "#{key}=#{escape_docker_env_file_value(value)}\n"
     end
 
     # Escape a value to make it safe to dump in a docker file.

@@ -27,7 +27,7 @@ class CliAppTest < CliTestCase
       .returns("123") # old version
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :inspect, "-f '{{ range .Mounts }}{{printf \"%s %s\\n\" .Source .Destination}}{{ end }}'", "app-web-123", "|", :awk, "'$2 == \"/tmp/kamal-cord\" {print $1}'", :raise_on_non_zero_exit => false)
+      .with(:docker, :inspect, "-f '{{ range .Mounts }}{{printf \"%s %s\\n\" .Source .Destination}}{{ end }}'", "app-web-123", "|", :awk, "'$2 == \"/tmp/kamal-cord\" {print $1}'", raise_on_non_zero_exit: false)
       .returns("cordfile") # old version
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
@@ -57,7 +57,7 @@ class CliAppTest < CliTestCase
   test "boot errors leave lock in place" do
     Kamal::Cli::App.any_instance.expects(:using_version).raises(RuntimeError)
 
-    assert !KAMAL.holding_lock?
+    assert_not KAMAL.holding_lock?
     assert_raises(RuntimeError) do
       stderred { run_command("boot") }
     end
@@ -79,7 +79,7 @@ class CliAppTest < CliTestCase
       .returns("123").twice # old version
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :inspect, "-f '{{ range .Mounts }}{{printf \"%s %s\\n\" .Source .Destination}}{{ end }}'", "app-web-123", "|", :awk, "'$2 == \"/tmp/kamal-cord\" {print $1}'", :raise_on_non_zero_exit => false)
+      .with(:docker, :inspect, "-f '{{ range .Mounts }}{{printf \"%s %s\\n\" .Source .Destination}}{{ end }}'", "app-web-123", "|", :awk, "'$2 == \"/tmp/kamal-cord\" {print $1}'", raise_on_non_zero_exit: false)
       .returns("") # old version
 
     run_command("boot", config: :with_assets).tap do |output|
@@ -223,14 +223,14 @@ class CliAppTest < CliTestCase
 
 
   test "version through main" do
-    stdouted { Kamal::Cli::Main.start(["app", "version", "-c", "test/fixtures/deploy_with_accessories.yml", "--hosts", "1.1.1.1"]) }.tap do |output|
+    stdouted { Kamal::Cli::Main.start([ "app", "version", "-c", "test/fixtures/deploy_with_accessories.yml", "--hosts", "1.1.1.1" ]) }.tap do |output|
       assert_match "docker ps --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --latest --format \"{{.Names}}\" | while read line; do echo ${line#app-web-}; done", output
     end
   end
 
   private
     def run_command(*command, config: :with_accessories)
-      stdouted { Kamal::Cli::App.start([*command, "-c", "test/fixtures/deploy_#{config}.yml", "--hosts", "1.1.1.1"]) }
+      stdouted { Kamal::Cli::App.start([ *command, "-c", "test/fixtures/deploy_#{config}.yml", "--hosts", "1.1.1.1" ]) }
     end
 
     def stub_running

@@ -6,7 +6,7 @@ class CommandsBuilderTest < ActiveSupport::TestCase
   end
 
   test "target multiarch by default" do
-    builder = new_builder_command(builder: { "cache" => { "type" => "gha" }})
+    builder = new_builder_command(builder: { "cache" => { "type" => "gha" } })
     assert_equal "multiarch", builder.name
     assert_equal \
       "docker buildx build --push --platform linux/amd64,linux/arm64 --builder kamal-app-multiarch -t dhh/app:123 -t dhh/app:latest --cache-to type=gha --cache-from type=gha --label service=\"app\" --file Dockerfile .",
@@ -22,7 +22,7 @@ class CommandsBuilderTest < ActiveSupport::TestCase
   end
 
   test "target native cached when multiarch is off and cache is set" do
-    builder = new_builder_command(builder: { "multiarch" => false, "cache" => { "type" => "gha" }})
+    builder = new_builder_command(builder: { "multiarch" => false, "cache" => { "type" => "gha" } })
     assert_equal "native/cached", builder.name
     assert_equal \
       "docker buildx build --push -t dhh/app:123 -t dhh/app:latest --cache-to type=gha --cache-from type=gha --label service=\"app\" --file Dockerfile .",
@@ -30,7 +30,7 @@ class CommandsBuilderTest < ActiveSupport::TestCase
   end
 
   test "target multiarch remote when local and remote is set" do
-    builder = new_builder_command(builder: { "local" => { }, "remote" => { }, "cache" => { "type" => "gha" } })
+    builder = new_builder_command(builder: { "local" => {}, "remote" => {}, "cache" => { "type" => "gha" } })
     assert_equal "multiarch/remote", builder.name
     assert_equal \
       "docker buildx build --push --platform linux/amd64,linux/arm64 --builder kamal-app-multiarch-remote -t dhh/app:123 -t dhh/app:latest --cache-to type=gha --cache-from type=gha --label service=\"app\" --file Dockerfile .",
@@ -61,7 +61,7 @@ class CommandsBuilderTest < ActiveSupport::TestCase
   end
 
   test "build secrets" do
-    builder = new_builder_command(builder: { "secrets" => ["token_a", "token_b"] })
+    builder = new_builder_command(builder: { "secrets" => [ "token_a", "token_b" ] })
     assert_equal \
       "-t dhh/app:123 -t dhh/app:latest --label service=\"app\" --secret id=\"token_a\" --secret id=\"token_b\" --file Dockerfile",
       builder.target.build_options.join(" ")
@@ -112,7 +112,7 @@ class CommandsBuilderTest < ActiveSupport::TestCase
   end
 
   test "build with ssh agent socket" do
-    builder = new_builder_command(builder: { "ssh" => 'default=$SSH_AUTH_SOCK' })
+    builder = new_builder_command(builder: { "ssh" => "default=$SSH_AUTH_SOCK" })
 
     assert_equal \
       "-t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile --ssh default=$SSH_AUTH_SOCK",

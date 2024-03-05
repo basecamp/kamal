@@ -13,7 +13,6 @@ class CliEnvTest < CliTestCase
       assert_match ".kamal/env/roles/app-workers.env", output
       assert_match ".kamal/env/traefik/traefik.env", output
       assert_match ".kamal/env/accessories/app-redis.env", output
-
     end
   end
 
@@ -33,6 +32,6 @@ class CliEnvTest < CliTestCase
 
   private
     def run_command(*command)
-      stdouted { Kamal::Cli::Env.start([*command, "-c", "test/fixtures/deploy_with_accessories.yml"]) }
+      stdouted { Kamal::Cli::Env.start([ *command, "-c", "test/fixtures/deploy_with_accessories.yml" ]) }
     end
 end

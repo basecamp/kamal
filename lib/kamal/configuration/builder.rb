@@ -88,7 +88,7 @@ class Kamal::Configuration::Builder
   private
     def valid?
       if @options["cache"] && @options["cache"]["type"]
-        raise ArgumentError, "Invalid cache type: #{@options["cache"]["type"]}" unless ["gha", "registry"].include?(@options["cache"]["type"])
+        raise ArgumentError, "Invalid cache type: #{@options["cache"]["type"]}" unless [ "gha", "registry" ].include?(@options["cache"]["type"])
       end
     end
 
@@ -109,7 +109,7 @@ class Kamal::Configuration::Builder
     end
 
     def cache_to_config_for_gha
-      [ "type=gha", @options["cache"]&.fetch("options", nil)].compact.join(",")
+      [ "type=gha", @options["cache"]&.fetch("options", nil) ].compact.join(",")
     end
 
     def cache_to_config_for_registry

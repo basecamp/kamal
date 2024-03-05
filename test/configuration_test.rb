@@ -10,7 +10,7 @@ class ConfigurationTest < ActiveSupport::TestCase
       registry: { "username" => "dhh", "password" => "secret" },
       env: { "REDIS_URL" => "redis://x/y" },
       servers: [ "1.1.1.1", "1.1.1.2" ],
-      volumes: ["/local/path:/container/path"]
+      volumes: [ "/local/path:/container/path" ]
     }
 
     @config = Kamal::Configuration.new(@deploy)
@@ -64,7 +64,7 @@ class ConfigurationTest < ActiveSupport::TestCase
   end
 
   test "all hosts" do
-    assert_equal [ "1.1.1.1", "1.1.1.2"], @config.all_hosts
+    assert_equal [ "1.1.1.1", "1.1.1.2" ], @config.all_hosts
     assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3" ], @config_with_roles.all_hosts
   end
 
@@ -86,7 +86,7 @@ class ConfigurationTest < ActiveSupport::TestCase
     ENV.delete("VERSION")
 
     Kamal::Git.expects(:used?).returns(nil)
-    error = assert_raises(RuntimeError) { @config.version}
+    error = assert_raises(RuntimeError) { @config.version }
     assert_match /no git repository found/, error.message
   end
 
@@ -186,21 +186,21 @@ class ConfigurationTest < ActiveSupport::TestCase
   end
 
   test "volume_args" do
-    assert_equal ["--volume", "/local/path:/container/path"], @config.volume_args
+    assert_equal [ "--volume", "/local/path:/container/path" ], @config.volume_args
   end
 
   test "logging args default" do
-    assert_equal ["--log-opt", "max-size=\"10m\""], @config.logging_args
+    assert_equal [ "--log-opt", "max-size=\"10m\"" ], @config.logging_args
   end
 
   test "logging args with configured options" do
     config = Kamal::Configuration.new(@deploy.tap { |c| c.merge!(logging: { "options" => { "max-size" => "100m", "max-file" => 5 } }) })
-    assert_equal ["--log-opt", "max-size=\"100m\"", "--log-opt", "max-file=\"5\""], @config.logging_args
+    assert_equal [ "--log-opt", "max-size=\"100m\"", "--log-opt", "max-file=\"5\"" ], @config.logging_args
   end
 
   test "logging args with configured driver and options" do
     config = Kamal::Configuration.new(@deploy.tap { |c| c.merge!(logging: { "driver" => "local", "options" => { "max-size" => "100m", "max-file" => 5 } }) })
-    assert_equal ["--log-driver", "\"local\"", "--log-opt", "max-size=\"100m\"", "--log-opt", "max-file=\"5\""], @config.logging_args
+    assert_equal [ "--log-driver", "\"local\"", "--log-opt", "max-size=\"100m\"", "--log-opt", "max-file=\"5\"" ], @config.logging_args
   end
 
   test "erb evaluation of yml config" do
@@ -240,19 +240,19 @@ class ConfigurationTest < ActiveSupport::TestCase
 
   test "to_h" do
     expected_config = \
-      { :roles=>["web"],
-        :hosts=>["1.1.1.1", "1.1.1.2"],
-        :primary_host=>"1.1.1.1",
-        :version=>"missing",
-        :repository=>"dhh/app",
-        :absolute_image=>"dhh/app:missing",
-        :service_with_version=>"app-missing",
-        :ssh_options=>{ :user=>"root", port: 22, log_level: :fatal, keepalive: true, keepalive_interval: 30 },
-        :sshkit=>{},
-        :volume_args=>["--volume", "/local/path:/container/path"],
-        :builder=>{},
-        :logging=>["--log-opt", "max-size=\"10m\""],
-        :healthcheck=>{ "path"=>"/up", "port"=>3000, "max_attempts" => 7, "exposed_port" => 3999, "cord" => "/tmp/kamal-cord", "log_lines" => 50 }}
+      { roles: [ "web" ],
+        hosts: [ "1.1.1.1", "1.1.1.2" ],
+        primary_host: "1.1.1.1",
+        version: "missing",
+        repository: "dhh/app",
+        absolute_image: "dhh/app:missing",
+        service_with_version: "app-missing",
+        ssh_options: { user: "root", port: 22, log_level: :fatal, keepalive: true, keepalive_interval: 30 },
+        sshkit: {},
+        volume_args: [ "--volume", "/local/path:/container/path" ],
+        builder: {},
+        logging: [ "--log-opt", "max-size=\"10m\"" ],
+        healthcheck: { "path"=>"/up", "port"=>3000, "max_attempts" => 7, "exposed_port" => 3999, "cord" => "/tmp/kamal-cord", "log_lines" => 50 } }
 
     assert_equal expected_config, @config.to_h
   end
@@ -304,7 +304,7 @@ class ConfigurationTest < ActiveSupport::TestCase
 
     config = Kamal::Configuration.new(@deploy_with_roles.deep_merge({
       servers: { "alternate_web" => { "hosts" => [ "1.1.1.4", "1.1.1.5" ] } },
-      primary_role: "alternate_web" } ))
+      primary_role: "alternate_web" }))
 
 
     assert_equal "alternate_web", config.primary_role.name

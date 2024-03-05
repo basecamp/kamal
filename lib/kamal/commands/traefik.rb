@@ -4,7 +4,7 @@ class Kamal::Commands::Traefik < Kamal::Commands::Base
   DEFAULT_IMAGE = "traefik:v2.10"
   CONTAINER_PORT = 80
   DEFAULT_ARGS = {
-    'log.level' => 'DEBUG'
+    "log.level" => "DEBUG"
   }
   DEFAULT_LABELS = {
     # These ensure we serve a 502 rather than a 404 if no containers are available
@@ -84,7 +84,7 @@ class Kamal::Commands::Traefik < Kamal::Commands::Base
   end
 
   def remove_env_file
-    [:rm, "-f", host_env_file_path]
+    [ :rm, "-f", host_env_file_path ]
   end
 
   private

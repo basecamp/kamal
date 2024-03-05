@@ -25,7 +25,7 @@ class CliBuildTest < CliTestCase
       .with(:docker, "--version", "&&", :docker, :buildx, "version")
 
     SSHKit::Backend::Abstract.any_instance.stubs(:execute)
-      .with { |*args| args[0..1] == [:docker, :buildx] }
+      .with { |*args| args[0..1] == [ :docker, :buildx ] }
       .raises(SSHKit::Command::Failed.new("no builder"))
       .then
       .returns(true)
@@ -50,7 +50,7 @@ class CliBuildTest < CliTestCase
 
     assert_raises(Kamal::Cli::HookError) { run_command("push") }
 
-    assert @executions.none? { |args| args[0..2] == [:docker, :buildx, :build] }
+    assert @executions.none? { |args| args[0..2] == [ :docker, :buildx, :build ] }
   end
 
   test "pull" do
@@ -105,13 +105,13 @@ class CliBuildTest < CliTestCase
 
   private
     def run_command(*command, fixture: :with_accessories)
-      stdouted { Kamal::Cli::Build.start([*command, "-c", "test/fixtures/deploy_#{fixture}.yml"]) }
+      stdouted { Kamal::Cli::Build.start([ *command, "-c", "test/fixtures/deploy_#{fixture}.yml" ]) }
     end
 
     def stub_dependency_checks
       SSHKit::Backend::Abstract.any_instance.stubs(:execute)
         .with(:docker, "--version", "&&", :docker, :buildx, "version")
       SSHKit::Backend::Abstract.any_instance.stubs(:execute)
-        .with { |*args| args[0..1] == [:docker, :buildx] }
+        .with { |*args| args[0..1] == [ :docker, :buildx ] }
     end
 end

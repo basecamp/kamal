@@ -25,7 +25,7 @@ class CommandsAppTest < ActiveSupport::TestCase
   end
 
   test "run with volumes" do
-    @config[:volumes] = ["/local/path:/container/path" ]
+    @config[:volumes] = [ "/local/path:/container/path" ]
 
     assert_equal \
       "docker run --detach --restart unless-stopped --name app-web-999 -e KAMAL_CONTAINER_NAME=\"app-web-999\" -e KAMAL_VERSION=\"999\" --env-file .kamal/env/roles/app-web.env --health-cmd \"(curl -f http://localhost:3000/up || exit 1) && (stat /tmp/kamal-cord/cord > /dev/null || exit 1)\" --health-interval \"1s\" --volume $(pwd)/.kamal/cords/app-web-12345678901234567890123456789012:/tmp/kamal-cord --log-opt max-size=\"10m\" --volume /local/path:/container/path --label service=\"app\" --label role=\"web\" --label traefik.http.services.app-web.loadbalancer.server.scheme=\"http\" --label traefik.http.routers.app-web.rule=\"PathPrefix(\\`/\\`)\" --label traefik.http.routers.app-web.priority=\"2\" --label traefik.http.middlewares.app-web-retry.retry.attempts=\"5\" --label traefik.http.middlewares.app-web-retry.retry.initialinterval=\"500ms\" --label traefik.http.routers.app-web.middlewares=\"app-web-retry@docker\" dhh/app:999",
@@ -191,18 +191,18 @@ class CommandsAppTest < ActiveSupport::TestCase
   end
 
   test "execute in new container over ssh" do
-    assert_match %r|docker run -it --rm --env-file .kamal/env/roles/app-web.env dhh/app:999 bin/rails c|,
+    assert_match %r{docker run -it --rm --env-file .kamal/env/roles/app-web.env dhh/app:999 bin/rails c},
       new_command.execute_in_new_container_over_ssh("bin/rails", "c", host: "app-1")
   end
 
   test "execute in new container with custom options over ssh" do
     @config[:servers] = { "web" => { "hosts" => [ "1.1.1.1" ], "options" => { "mount" => "somewhere", "cap-add" => true } } }
-    assert_match %r|docker run -it --rm --env-file .kamal/env/roles/app-web.env --mount \"somewhere\" --cap-add dhh/app:999 bin/rails c|,
+    assert_match %r{docker run -it --rm --env-file .kamal/env/roles/app-web.env --mount \"somewhere\" --cap-add dhh/app:999 bin/rails c},
       new_command.execute_in_new_container_over_ssh("bin/rails", "c", host: "app-1")
   end
 
   test "execute in existing container over ssh" do
-    assert_match %r|docker exec -it app-web-999 bin/rails c|,
+    assert_match %r{docker exec -it app-web-999 bin/rails c},
       new_command.execute_in_existing_container_over_ssh("bin/rails", "c", host: "app-1")
   end
 
@@ -387,7 +387,7 @@ class CommandsAppTest < ActiveSupport::TestCase
       :mkdir, "-p", ".kamal/assets/volumes/app-web-999", ";",
       :cp, "-rnT", ".kamal/assets/extracted/app-web-999", ".kamal/assets/volumes/app-web-999", ";",
       :cp, "-rnT", ".kamal/assets/extracted/app-web-999", ".kamal/assets/volumes/app-web-998", "|| true", ";",
-      :cp, "-rnT", ".kamal/assets/extracted/app-web-998", ".kamal/assets/volumes/app-web-999", "|| true",
+      :cp, "-rnT", ".kamal/assets/extracted/app-web-998", ".kamal/assets/volumes/app-web-999", "|| true"
     ], new_command(asset_path: "/public/assets").sync_asset_volumes(old_version: 998)
   end
 

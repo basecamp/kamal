@@ -1,5 +1,4 @@
 class Kamal::Commands::Healthcheck < Kamal::Commands::Base
-
   def run
     primary = config.role(config.primary_role)
 

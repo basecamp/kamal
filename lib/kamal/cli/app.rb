@@ -207,7 +207,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
       run_locally do
         info "Following logs on #{KAMAL.primary_host}..."
 
-        KAMAL.specific_roles ||= ["web"]
+        KAMAL.specific_roles ||= [ "web" ]
         role = KAMAL.roles_on(KAMAL.primary_host).first
 
         info KAMAL.app(role: role).follow_logs(host: KAMAL.primary_host, lines: lines, grep: grep)

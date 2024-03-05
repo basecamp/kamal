@@ -16,7 +16,7 @@ class Kamal::Configuration::Accessory
   end
 
   def hosts
-    if (specifics.keys & ["host", "hosts", "roles"]).size != 1
+    if (specifics.keys & [ "host", "hosts", "roles" ]).size != 1
       raise ArgumentError, "Specify one of `host`, `hosts` or `roles` for accessory `#{name}`"
     end
 
@@ -159,7 +159,7 @@ class Kamal::Configuration::Accessory
       if specifics.key?("host")
         host = specifics["host"]
         if host
-          [host]
+          [ host ]
         else
           raise ArgumentError, "Missing host for accessory `#{name}`"
         end

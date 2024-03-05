@@ -26,7 +26,7 @@ class Kamal::Commands::Prune < Kamal::Commands::Base
 
   private
     def stopped_containers_filters
-      [ "created", "exited", "dead" ].flat_map { |status| ["--filter", "status=#{status}"] }
+      [ "created", "exited", "dead" ].flat_map { |status| [ "--filter", "status=#{status}" ] }
     end
 
     def active_image_list
@@ -43,4 +43,4 @@ class Kamal::Commands::Prune < Kamal::Commands::Base
     def healthcheck_service_filter
       [ "--filter", "label=service=#{config.healthcheck_service}" ]
     end
-  end
+end

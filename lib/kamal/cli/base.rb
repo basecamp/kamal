@@ -73,7 +73,7 @@ module Kamal::Cli
       def print_runtime
         started_at = Time.now
         yield
-        return Time.now - started_at
+        Time.now - started_at
       ensure
         runtime = Time.now - started_at
         puts "  Finished all in #{sprintf("%.1f seconds", runtime)}"
@@ -181,5 +181,5 @@ module Kamal::Cli
           execute(*KAMAL.server.ensure_run_directory)
         end
       end
-    end
+  end
 end
