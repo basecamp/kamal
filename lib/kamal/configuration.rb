@@ -222,7 +222,7 @@ class Kamal::Configuration
 
 
   def valid?
-    ensure_destination_if_required && ensure_required_keys_present && ensure_valid_kamal_version && ensure_retain_containers_valid
+    ensure_destination_if_required && ensure_required_keys_present && ensure_valid_kamal_version && ensure_retain_containers_valid && ensure_valid_service_name
   end
 
   def to_h
@@ -283,6 +283,12 @@ class Kamal::Configuration
           end
         end
       end
+
+      true
+    end
+
+    def ensure_valid_service_name
+      raise ArgumentError, "Service name can only include alphanumeric characters, hyphens, and underscores" unless raw_config[:service] =~ /^[a-z0-9-_]+$/
 
       true
     end
