@@ -42,6 +42,16 @@ class ConfigurationTest < ActiveSupport::TestCase
     end
   end
 
+  test "service name valid" do
+    assert Kamal::Configuration.new(@deploy.tap { _1[:service] = "hey-app1_primary" }).valid?
+  end
+
+  test "service name invalid" do
+    assert_raise(ArgumentError) do
+      Kamal::Configuration.new @deploy.tap { _1[:service] = "app.com" }
+    end
+  end
+
   test "roles" do
     assert_equal %w[ web ], @config.roles.collect(&:name)
     assert_equal %w[ web workers ], @config_with_roles.roles.collect(&:name)
