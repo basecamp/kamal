@@ -36,6 +36,13 @@ class Kamal::Configuration::Role
     argumentize "--label", labels
   end
 
+  def volume_args
+    if specializations["volumes"].present?
+      argumentize "--volume", specializations["volumes"]
+    else
+      []
+    end
+  end
 
   def env
     if config.env && config.env["secret"]

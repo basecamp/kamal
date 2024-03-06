@@ -23,6 +23,7 @@ class Kamal::Commands::App < Kamal::Commands::Base
       *role_config.health_check_args,
       *config.logging_args,
       *config.volume_args,
+      *role_config.volume_args,
       *role_config.asset_volume_args,
       *role_config.label_args,
       *role_config.option_args,
