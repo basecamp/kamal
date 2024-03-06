@@ -20,7 +20,7 @@ class Kamal::Cli::Traefik < Kamal::Cli::Base
         on(hosts) do
           execute *KAMAL.auditor.record("Rebooted traefik"), verbosity: :debug
           execute *KAMAL.registry.login
-          execute *KAMAL.traefik.stop
+          execute *KAMAL.traefik.stop, raise_on_non_zero_exit: false
           execute *KAMAL.traefik.remove_container
           execute *KAMAL.traefik.run
         end
@@ -44,7 +44,7 @@ class Kamal::Cli::Traefik < Kamal::Cli::Base
     mutating do
       on(KAMAL.traefik_hosts) do
         execute *KAMAL.auditor.record("Stopped traefik"), verbosity: :debug
-        execute *KAMAL.traefik.stop
+        execute *KAMAL.traefik.stop, raise_on_non_zero_exit: false
       end
     end
   end

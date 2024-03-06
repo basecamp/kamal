@@ -60,6 +60,19 @@ class MainTest < IntegrationTest
     assert_equal({ "path" => "/up", "port" => 3000, "max_attempts" => 7, "exposed_port" => 3999, "cord"=>"/tmp/kamal-cord", "log_lines" => 50, "cmd"=>"wget -qO- http://localhost > /dev/null || exit 1" }, config[:healthcheck])
   end
 
+  test "setup and remove" do
+    # Check remove completes when nothing has been setup yet
+    kamal :remove, "-y"
+    assert_no_images_or_containers
+
+    kamal :envify
+    kamal :setup
+    assert_images_and_containers
+
+    kamal :remove, "-y"
+    assert_no_images_or_containers
+  end
+
   private
     def assert_local_env_file(contents)
       assert_equal contents, deployer_exec("cat .env", capture: true)
@@ -83,5 +96,23 @@ class MainTest < IntegrationTest
       end
 
       assert_equal "200", Net::HTTP.get_response(URI.parse("http://localhost:12345/versions/.hidden")).code
+    end
+
+    def vm1_image_ids
+      docker_compose("exec vm1 docker image ls -q", capture: true).strip.split("\n")
+    end
+
+    def vm1_container_ids
+      docker_compose("exec vm1 docker ps -a -q", capture: true).strip.split("\n")
+    end
+
+    def assert_no_images_or_containers
+      assert vm1_image_ids.empty?
+      assert vm1_container_ids.empty?
+    end
+
+    def assert_images_and_containers
+      assert vm1_image_ids.any?
+      assert vm1_container_ids.any?
     end
 end
