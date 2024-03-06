@@ -15,7 +15,7 @@ class CommandsRegistryTest < ActiveSupport::TestCase
 
   test "registry login" do
     assert_equal \
-      "docker login hub.docker.com -u dhh -p secret",
+      "docker login hub.docker.com -u \"dhh\" -p \"secret\"",
       @registry.login.join(" ")
   end
 
@@ -24,7 +24,18 @@ class CommandsRegistryTest < ActiveSupport::TestCase
     @config[:registry]["password"] = [ "KAMAL_REGISTRY_PASSWORD" ]
 
     assert_equal \
-      "docker login hub.docker.com -u dhh -p more-secret",
+      "docker login hub.docker.com -u \"dhh\" -p \"more-secret\"",
+      @registry.login.join(" ")
+  ensure
+    ENV.delete("KAMAL_REGISTRY_PASSWORD")
+  end
+
+  test "registry login escape password" do
+    ENV["KAMAL_REGISTRY_PASSWORD"] = "more-secret'\""
+    @config[:registry]["password"] = [ "KAMAL_REGISTRY_PASSWORD" ]
+
+    assert_equal \
+      "docker login hub.docker.com -u \"dhh\" -p \"more-secret'\\\"\"",
       @registry.login.join(" ")
   ensure
     ENV.delete("KAMAL_REGISTRY_PASSWORD")
@@ -35,7 +46,7 @@ class CommandsRegistryTest < ActiveSupport::TestCase
     @config[:registry]["username"] = [ "KAMAL_REGISTRY_USERNAME" ]
 
     assert_equal \
-      "docker login hub.docker.com -u also-secret -p secret",
+      "docker login hub.docker.com -u \"also-secret\" -p \"secret\"",
       @registry.login.join(" ")
   ensure
     ENV.delete("KAMAL_REGISTRY_USERNAME")
