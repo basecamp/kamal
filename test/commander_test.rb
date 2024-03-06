@@ -109,6 +109,12 @@ class CommanderTest < ActiveSupport::TestCase
     assert_equal({ in: :groups, limit: 1, wait: 2 }, @kamal.boot_strategy)
   end
 
+  test "percentage-based group strategy limit is at least 1" do
+    configure_with(:deploy_with_low_percentage_boot_strategy)
+
+    assert_equal({ in: :groups, limit: 1, wait: 2 }, @kamal.boot_strategy)
+  end
+
   test "try to match the primary role from a list of specific roles" do
     configure_with(:deploy_primary_web_role_override)
 
