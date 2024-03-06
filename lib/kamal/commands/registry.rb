@@ -2,7 +2,10 @@ class Kamal::Commands::Registry < Kamal::Commands::Base
   delegate :registry, to: :config
 
   def login
-    docker :login, registry["server"], "-u", sensitive(lookup("username")), "-p", sensitive(lookup("password"))
+    docker :login,
+      registry["server"],
+      "-u", sensitive(Kamal::Utils.escape_shell_value(lookup("username"))),
+      "-p", sensitive(Kamal::Utils.escape_shell_value(lookup("password")))
   end
 
   def logout

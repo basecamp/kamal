@@ -57,7 +57,7 @@ class CliBuildTest < CliTestCase
     run_command("pull").tap do |output|
       assert_match /docker image rm --force dhh\/app:999/, output
       assert_match /docker pull dhh\/app:999/, output
-      assert_match "docker inspect -f '{{ .Config.Labels.service }}' dhh/app:999 | grep -x app || (echo \"Image dhh/app:999 is missing the `service` label\" && exit 1)", output
+      assert_match "docker inspect -f '{{ .Config.Labels.service }}' dhh/app:999 | grep -x app || (echo \"Image dhh/app:999 is missing the 'service' label\" && exit 1)", output
     end
   end
 
