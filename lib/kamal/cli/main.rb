@@ -35,6 +35,8 @@ class Kamal::Cli::Main < Kamal::Cli::Base
 
         run_hook "pre-deploy"
 
+        push_env(invoke_options)
+
         say "Ensure Traefik is running...", :magenta
         invoke "kamal:cli:traefik:boot", [], invoke_options
 
@@ -73,6 +75,8 @@ class Kamal::Cli::Main < Kamal::Cli::Base
 
         run_hook "pre-deploy"
 
+        push_env(invoke_options)
+
         say "Ensure app can pass healthcheck...", :magenta
         invoke "kamal:cli:healthcheck:perform", [], invoke_options
 
@@ -98,6 +102,8 @@ class Kamal::Cli::Main < Kamal::Cli::Base
 
         if container_available?(version)
           run_hook "pre-deploy"
+
+          push_env(invoke_options)
 
           invoke "kamal:cli:app:boot", [], invoke_options.merge(version: version)
           rolled_back = true
@@ -261,5 +267,12 @@ class Kamal::Cli::Main < Kamal::Cli::Base
 
     def deploy_options
       { "version" => KAMAL.config.version }.merge(options.without("skip_push"))
+    end
+
+    def push_env(invoke_options)
+      if KAMAL.config.push_env
+        say "Pushing #{KAMAL.config.push_env} env files..."
+        invoke "kamal:cli:env:push", [], invoke_options.merge(env_type: KAMAL.config.push_env)
+      end
     end
 end

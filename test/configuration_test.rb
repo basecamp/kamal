@@ -317,4 +317,13 @@ class ConfigurationTest < ActiveSupport::TestCase
 
     assert_raises(ArgumentError) { Kamal::Configuration.new(@deploy_with_roles.merge(retain_containers: 0)) }
   end
+
+  test "push_env" do
+    assert_nil @config.push_env
+    assert_equal "all", Kamal::Configuration.new(@deploy.merge(push_env: "all")).push_env
+    assert_equal "clear", Kamal::Configuration.new(@deploy.merge(push_env: "clear")).push_env
+    assert_equal "secret", Kamal::Configuration.new(@deploy.merge(push_env: "secret")).push_env
+
+    assert_raises(ArgumentError) { Kamal::Configuration.new(@deploy_with_roles.merge(push_env: "foo")) }
+  end
 end

@@ -6,7 +6,7 @@ require "erb"
 require "net/ssh/proxy/jump"
 
 class Kamal::Configuration
-  delegate :service, :image, :servers, :env, :labels, :registry, :stop_wait_time, :hooks_path, to: :raw_config, allow_nil: true
+  delegate :service, :image, :servers, :env, :labels, :registry, :stop_wait_time, :hooks_path, :push_env, to: :raw_config, allow_nil: true
   delegate :argumentize, :optionize, to: Kamal::Utils
 
   attr_reader :destination, :raw_config
@@ -222,7 +222,11 @@ class Kamal::Configuration
 
 
   def valid?
-    ensure_destination_if_required && ensure_required_keys_present && ensure_valid_kamal_version && ensure_retain_containers_valid
+    ensure_destination_if_required \
+      && ensure_required_keys_present \
+      && ensure_valid_kamal_version \
+      && ensure_retain_containers_valid \
+      && ensure_push_env_valid
   end
 
   def to_h
@@ -297,6 +301,14 @@ class Kamal::Configuration
 
     def ensure_retain_containers_valid
       raise ArgumentError, "Must retain at least 1 container" if retain_containers < 1
+
+      true
+    end
+
+    def ensure_push_env_valid
+      if raw_config.push_env && !%w[ all clear secret ].include?(raw_config.push_env)
+        raise ArgumentError, "push_env must be one of `all`, `clear` `secret`"
+      end
 
       true
     end

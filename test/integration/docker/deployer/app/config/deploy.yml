@@ -33,3 +33,4 @@ accessories:
     roles:
       - web
 stop_wait_time: 1
+push_env: clear

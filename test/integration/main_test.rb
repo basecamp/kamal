@@ -7,6 +7,7 @@ class MainTest < IntegrationTest
     assert_remote_env_file "CLEAR_TOKEN=4321", :clear
     assert_remote_env_file "SECRET_TOKEN=1234", :secret
     remove_local_env_file
+    remove_remote_env_file :clear
 
     first_version = latest_app_version
 
@@ -15,6 +16,7 @@ class MainTest < IntegrationTest
     kamal :deploy
     assert_app_is_up version: first_version
     assert_hooks_ran "pre-connect", "pre-build", "pre-deploy", "post-deploy"
+    assert_remote_env_file "CLEAR_TOKEN=4321", :clear
 
     second_version = update_app_rev
 
@@ -68,6 +70,10 @@ class MainTest < IntegrationTest
 
     def remove_local_env_file
       deployer_exec("rm .env")
+    end
+
+    def remove_remote_env_file(env_type)
+      docker_compose("exec vm1 cat /root/.kamal/env/roles/app-web-#{env_type}.env")
     end
 
     def assert_remote_env_file(contents, env_type)

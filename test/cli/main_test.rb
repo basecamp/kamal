@@ -122,12 +122,12 @@ class CliMainTest < CliTestCase
       refute_match /Running the post-deploy hook.../, output
     end
   end
-  
+
   test "deploy without healthcheck if primary host doesn't have traefik" do
     invoke_options = { "config_file" => "test/fixtures/deploy_workers_only.yml", "version" => "999", "skip_hooks" => false }
 
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:healthcheck:perform", [], invoke_options).never
-    
+
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:registry:login", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:deliver", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:traefik:boot", [], invoke_options)
@@ -150,6 +150,26 @@ class CliMainTest < CliTestCase
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:prune:all", [], invoke_options)
 
     run_command("deploy", config_file: "deploy_with_secrets")
+  end
+
+  test "deploy with push_env" do
+    invoke_options = { "config_file" => "test/fixtures/deploy_push_clear_env.yml", "version" => "999", "skip_hooks" => false }
+
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:registry:login", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:deliver", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:env:push", [], invoke_options.merge(env_type: "clear"))
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:traefik:boot", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:healthcheck:perform", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true))
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:boot", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:prune:all", [], invoke_options)
+
+    Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
+    hook_variables = { version: 999, service_version: "app@999", hosts: "1.1.1.1,1.1.1.2", command: "deploy" }
+
+    run_command("deploy", config_file: "deploy_push_clear_env").tap do |output|
+      assert_match /Pushing clear env files.../, output
+    end
   end
 
   test "redeploy" do
@@ -188,6 +208,23 @@ class CliMainTest < CliTestCase
     end
   end
 
+  test "redeploy with push_env" do
+    invoke_options = { "config_file" => "test/fixtures/deploy_push_clear_env.yml", "version" => "999", "skip_hooks" => false }
+
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:deliver", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:env:push", [], invoke_options.merge(env_type: "clear"))
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:healthcheck:perform", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true))
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:boot", [], invoke_options)
+
+    Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
+    hook_variables = { version: 999, service_version: "app@999", hosts: "1.1.1.1,1.1.1.2", command: "redeploy" }
+
+    run_command("redeploy", config_file: "deploy_push_clear_env").tap do |output|
+      assert_match /Pushing clear env files.../, output
+    end
+  end
+
   test "rollback bad version" do
     Thread.report_on_exception = false
 
@@ -200,31 +237,8 @@ class CliMainTest < CliTestCase
   end
 
   test "rollback good version" do
-    Object.any_instance.stubs(:sleep)
-    [ "web", "workers" ].each do |role|
-      SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-        .with(:docker, :container, :ls, "--all", "--filter", "name=^app-#{role}-123$", "--quiet", raise_on_non_zero_exit: false)
-        .returns("").at_least_once
-      SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-        .with(:docker, :container, :ls, "--all", "--filter", "name=^app-#{role}-123$", "--quiet")
-        .returns("version-to-rollback\n").at_least_once
-      SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-        .with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=#{role}", "--filter", "status=running", "--filter", "status=restarting", "--latest", "--format", "\"{{.Names}}\"", "|", "while read line; do echo ${line#app-#{role}-}; done", raise_on_non_zero_exit: false)
-        .returns("version-to-rollback\n").at_least_once
-      SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-        .with(:docker, :container, :ls, "--all", "--filter", "name=^app-#{role}-123$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
-        .returns("running").at_least_once # health check
-    end
+    stub_good_rollback
 
-    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :inspect, "-f '{{ range .Mounts }}{{printf \"%s %s\\n\" .Source .Destination}}{{ end }}'", "app-web-version-to-rollback", "|", :awk, "'$2 == \"/tmp/kamal-cord\" {print $1}'", :raise_on_non_zero_exit => false)
-      .returns("corddirectory").at_least_once # health check
-
-    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-version-to-rollback$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
-      .returns("unhealthy").at_least_once # health check
-
-    Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
     hook_variables = { version: 123, service_version: "app@123", hosts: "1.1.1.1,1.1.1.2,1.1.1.3,1.1.1.4", command: "rollback" }
 
     run_command("rollback", "123", config_file: "deploy_with_accessories").tap do |output|
@@ -254,6 +268,16 @@ class CliMainTest < CliTestCase
     run_command("rollback", "123").tap do |output|
       assert_match "docker run --detach --restart unless-stopped --name app-web-123", output
       assert_no_match "docker stop", output
+    end
+  end
+
+  test "rollback with push_env" do
+    invoke_options = { "config_file" => "test/fixtures/deploy_push_clear_env.yml", "version" => "999", "skip_hooks" => false }
+
+    stub_good_rollback
+
+    run_command("rollback", "123", config_file: "deploy_push_clear_env").tap do |output|
+      assert_match /Pushing clear env files.../, output
     end
   end
 
@@ -453,5 +477,33 @@ class CliMainTest < CliTestCase
   private
     def run_command(*command, config_file: "deploy_simple")
       stdouted { Kamal::Cli::Main.start([*command, "-c", "test/fixtures/#{config_file}.yml"]) }
+    end
+
+    def stub_good_rollback
+      Object.any_instance.stubs(:sleep)
+      [ "web", "workers" ].each do |role|
+        SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+          .with(:docker, :container, :ls, "--all", "--filter", "name=^app-#{role}-123$", "--quiet", raise_on_non_zero_exit: false)
+          .returns("").at_least_once
+        SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+          .with(:docker, :container, :ls, "--all", "--filter", "name=^app-#{role}-123$", "--quiet")
+          .returns("version-to-rollback\n").at_least_once
+        SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+          .with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=#{role}", "--filter", "status=running", "--filter", "status=restarting", "--latest", "--format", "\"{{.Names}}\"", "|", "while read line; do echo ${line#app-#{role}-}; done", raise_on_non_zero_exit: false)
+          .returns("version-to-rollback\n").at_least_once
+        SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+          .with(:docker, :container, :ls, "--all", "--filter", "name=^app-#{role}-123$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
+          .returns("running").at_least_once # health check
+      end
+
+      SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+        .with(:docker, :inspect, "-f '{{ range .Mounts }}{{printf \"%s %s\\n\" .Source .Destination}}{{ end }}'", "app-web-version-to-rollback", "|", :awk, "'$2 == \"/tmp/kamal-cord\" {print $1}'", :raise_on_non_zero_exit => false)
+        .returns("corddirectory").at_least_once # health check
+
+      SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+        .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-version-to-rollback$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
+        .returns("unhealthy").at_least_once # health check
+
+      Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
     end
 end
