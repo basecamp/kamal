@@ -202,19 +202,20 @@ class Kamal::Cli::App < Kamal::Cli::Base
     # FIXME: Catch when app containers aren't running
 
     grep = options[:grep]
-
+    since = options[:since]
     if options[:follow]
+      lines = options[:lines].presence || ((since || grep) ? nil : 10) # Default to 10 lines if since or grep isn't set
+
       run_locally do
         info "Following logs on #{KAMAL.primary_host}..."
 
         KAMAL.specific_roles ||= ["web"]
         role = KAMAL.roles_on(KAMAL.primary_host).first
 
-        info KAMAL.app(role: role).follow_logs(host: KAMAL.primary_host, grep: grep)
-        exec KAMAL.app(role: role).follow_logs(host: KAMAL.primary_host, grep: grep)
+        info KAMAL.app(role: role).follow_logs(host: KAMAL.primary_host, lines: lines, grep: grep)
+        exec KAMAL.app(role: role).follow_logs(host: KAMAL.primary_host, lines: lines, grep: grep)
       end
     else
-      since = options[:since]
       lines = options[:lines].presence || ((since || grep) ? nil : 100) # Default to 100 lines if since or grep isn't set
 
       on(KAMAL.hosts) do |host|
