@@ -36,6 +36,18 @@ class Kamal::Configuration::Role
     argumentize "--label", labels
   end
 
+  def logging_args
+    args = config.logging || {}
+    args.deep_merge!(specializations["logging"]) if specializations["logging"].present?
+
+    if args.any?
+      optionize({ "log-driver" => args["driver"] }.compact) +
+        argumentize("--log-opt", args["options"])
+    else
+      config.logging_args
+    end
+  end
+
 
   def env
     if config.env && config.env["secret"]
