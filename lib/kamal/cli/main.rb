@@ -1,15 +1,18 @@
 class Kamal::Cli::Main < Kamal::Cli::Base
   desc "setup", "Setup all accessories, push the env, and deploy app to servers"
+  option :skip_push, aliases: "-P", type: :boolean, default: false, desc: "Skip image build and push"
   def setup
     print_runtime do
       mutating do
+        invoke_options = deploy_options
+
         say "Ensure Docker is installed...", :magenta
-        invoke "kamal:cli:server:bootstrap"
+        invoke "kamal:cli:server:bootstrap", [], invoke_options
 
         say "Push env files...", :magenta
-        invoke "kamal:cli:env:push"
+        invoke "kamal:cli:env:push", [], invoke_options
 
-        invoke "kamal:cli:accessory:boot", [ "all" ]
+        invoke "kamal:cli:accessory:boot", [ "all" ], invoke_options
         deploy
       end
     end

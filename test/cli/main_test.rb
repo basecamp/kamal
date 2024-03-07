@@ -2,12 +2,47 @@ require_relative "cli_test_case"
 
 class CliMainTest < CliTestCase
   test "setup" do
-    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:server:bootstrap")
-    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:env:push")
-    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:accessory:boot", [ "all" ])
+    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false }
+    
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:server:bootstrap", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:env:push", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:accessory:boot", [ "all" ], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:deploy)
 
-    run_command("setup")
+    run_command("setup").tap do |output|
+      assert_match /Ensure Docker is installed.../, output
+      assert_match /Push env files.../, output
+    end
+  end
+
+  test "setup with skip_push" do
+    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false }
+
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:server:bootstrap", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:env:push", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:accessory:boot", [ "all" ], invoke_options)
+    # deploy
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:registry:login", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:pull", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:traefik:boot", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:healthcheck:perform", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true))
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:boot", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:prune:all", [], invoke_options)
+
+    run_command("setup", "--skip_push").tap do |output|
+      assert_match /Ensure Docker is installed.../, output
+      assert_match /Push env files.../, output
+      # deploy
+      assert_match /Acquiring the deploy lock/, output
+      assert_match /Log into image registry/, output
+      assert_match /Pull app image/, output
+      assert_match /Ensure Traefik is running/, output
+      assert_match /Ensure app can pass healthcheck/, output
+      assert_match /Detect stale containers/, output
+      assert_match /Prune old containers and images/, output
+      assert_match /Releasing the deploy lock/, output
+    end
   end
 
   test "deploy" do
