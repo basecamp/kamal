@@ -154,11 +154,11 @@ class CommandsAppTest < ActiveSupport::TestCase
 
   test "follow logs" do
     assert_match \
-      "docker ps --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --latest | xargs docker logs --timestamps --tail 10 --follow 2>&1",
+      "docker ps --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --latest | xargs docker logs --timestamps --follow 2>&1",
       new_command.follow_logs(host: "app-1")
 
     assert_match \
-      "docker ps --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --latest | xargs docker logs --timestamps --tail 10 --follow 2>&1 | grep \"Completed\"",
+      "docker ps --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --latest | xargs docker logs --timestamps --follow 2>&1 | grep \"Completed\"",
       new_command.follow_logs(host: "app-1", grep: "Completed")
 
     assert_match \
@@ -166,7 +166,7 @@ class CommandsAppTest < ActiveSupport::TestCase
       new_command.follow_logs(host: "app-1", lines: 123)
 
     assert_match \
-      "docker ps --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --latest | xargs docker logs --timestamps --follow 2>&1 | grep \"Completed\"",
+      "docker ps --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --latest | xargs docker logs --timestamps --tail 123 --follow 2>&1 | grep \"Completed\"",
       new_command.follow_logs(host: "app-1", lines: 123, grep: "Completed")
   end
 
