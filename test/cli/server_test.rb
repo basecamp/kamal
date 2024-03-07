@@ -23,10 +23,13 @@ class CliServerTest < CliTestCase
     SSHKit::Backend::Abstract.any_instance.expects(:execute).with('[ "${EUID:-$(id -u)}" -eq 0 ] || command -v sudo >/dev/null || command -v su >/dev/null', raise_on_non_zero_exit: false).returns(true).at_least_once
     SSHKit::Backend::Abstract.any_instance.expects(:execute).with(:curl, "-fsSL", "https://get.docker.com", "|", :sh).at_least_once
     SSHKit::Backend::Abstract.any_instance.expects(:execute).with(:mkdir, "-p", ".kamal").returns("").at_least_once
+    Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
+    SSHKit::Backend::Abstract.any_instance.expects(:execute).with(".kamal/hooks/docker-setup", anything).at_least_once
 
     run_command("bootstrap").tap do |output|
       ("1.1.1.1".."1.1.1.4").map do |host|
         assert_match "Missing Docker on #{host}. Installing…", output
+        assert_match "Running the docker-setup hook", output
       end
     end
   end
