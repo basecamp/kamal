@@ -62,8 +62,16 @@ module Kamal::Commands
         combine *commands, by: ">"
       end
 
+      def any(*commands)
+        combine *commands, by: "||"
+      end
+
       def xargs(command)
         [ :xargs, command ].flatten
+      end
+
+      def shell(command)
+        [ :sh, "-c", "'#{command.flatten.join(" ").gsub("'", "'\\''")}'" ]
       end
 
       def docker(*args)

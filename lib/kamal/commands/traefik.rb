@@ -39,7 +39,7 @@ class Kamal::Commands::Traefik < Kamal::Commands::Base
   end
 
   def start_or_run
-    combine start, run, by: "||"
+    any start, run
   end
 
   def info
