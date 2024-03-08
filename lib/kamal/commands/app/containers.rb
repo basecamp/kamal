@@ -23,9 +23,10 @@ module Kamal::Commands::App::Containers
     docker :container, :prune, "--force", *filter_args
   end
 
-  def container_health_log(version:)
+  def container_endpoint(version:)
     pipe \
       container_id_for(container_name: container_name(version)),
-      xargs(docker(:inspect, "--format", DOCKER_HEALTH_LOG_FORMAT))
+      xargs(docker(:inspect, "--format", "'{{.NetworkSettings.IPAddress}}{{range $k, $v := .NetworkSettings.Ports}}{{printf \":%s\" $k}}{{break}}{{end}}'")),
+      [ :sed, "-e", "'s/\\/tcp$//'" ]
   end
 end

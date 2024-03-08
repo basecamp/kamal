@@ -1,6 +1,6 @@
 require_relative "integration_test"
 
-class AccessoryTest < IntegrationTest
+class IntegrationAccessoryTest < IntegrationTest
   test "boot, stop, start, restart, logs, remove" do
     kamal :envify
 

@@ -11,7 +11,6 @@ class CliAppTest < CliTestCase
   end
 
   test "boot will rename if same version is already running" do
-    Object.any_instance.stubs(:sleep)
     run_command("details") # Preheat Kamal const
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
@@ -19,20 +18,13 @@ class CliAppTest < CliTestCase
       .returns("12345678") # running version
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-latest$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
-      .returns("running") # health check
-
-    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
       .with(:sh, "-c", "'docker ps --latest --format '\\''{{.Names}}'\\'' --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --format '\\''{{.Names}}'\\'' --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting'", "|", :head, "-1", "|", "while read line; do echo ${line#app-web-}; done", raise_on_non_zero_exit: false)
       .returns("123") # old version
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :inspect, "-f '{{ range .Mounts }}{{printf \"%s %s\\n\" .Source .Destination}}{{ end }}'", "app-web-123", "|", :awk, "'$2 == \"/tmp/kamal-cord\" {print $1}'", raise_on_non_zero_exit: false)
-      .returns("cordfile") # old version
-
-    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-123$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
-      .returns("unhealthy") # old version unhealthy
+      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-latest$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{.NetworkSettings.IPAddress}}{{range $k, $v := .NetworkSettings.Ports}}{{printf \":%s\" $k}}{{break}}{{end}}'", "|", :sed, "-e", "'s/\\/tcp$//'")
+      .returns("172.1.0.2:80")
+      .at_least_once
 
     run_command("boot").tap do |output|
       assert_match /Renaming container .* to .* as already deployed on 1.1.1.1/, output # Rename
@@ -65,22 +57,16 @@ class CliAppTest < CliTestCase
   end
 
   test "boot with assets" do
-    Object.any_instance.stubs(:sleep)
-    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-latest$", "--quiet", raise_on_non_zero_exit: false)
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-latest$", "--quiet", raise_on_non_zero_exit: false)
       .returns("12345678") # running version
-
-    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-latest$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
-      .returns("running") # health check
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
       .with(:sh, "-c", "'docker ps --latest --format '\\''{{.Names}}'\\'' --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --format '\\''{{.Names}}'\\'' --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting'", "|", :head, "-1", "|", "while read line; do echo ${line#app-web-}; done", raise_on_non_zero_exit: false)
       .returns("123").twice # old version
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :inspect, "-f '{{ range .Mounts }}{{printf \"%s %s\\n\" .Source .Destination}}{{ end }}'", "app-web-123", "|", :awk, "'$2 == \"/tmp/kamal-cord\" {print $1}'", raise_on_non_zero_exit: false)
-      .returns("") # old version
+      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-latest$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{.NetworkSettings.IPAddress}}{{range $k, $v := .NetworkSettings.Ports}}{{printf \":%s\" $k}}{{break}}{{end}}'", "|", :sed, "-e", "'s/\\/tcp$//'")
+      .returns("172.1.0.2:80").at_least_once
 
     run_command("boot", config: :with_assets).tap do |output|
       assert_match "docker tag dhh/app:latest dhh/app:latest", output
@@ -93,23 +79,17 @@ class CliAppTest < CliTestCase
   end
 
   test "boot with host tags" do
-    Object.any_instance.stubs(:sleep)
-
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-    .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-latest$", "--quiet", raise_on_non_zero_exit: false)
-    .returns("12345678") # running version
-
-    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-latest$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
-      .returns("running") # health check
+      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-latest$", "--quiet", raise_on_non_zero_exit: false)
+      .returns("12345678") # running version
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
       .with(:sh, "-c", "'docker ps --latest --format '\\''{{.Names}}'\\'' --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --format '\\''{{.Names}}'\\'' --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting'", "|", :head, "-1", "|", "while read line; do echo ${line#app-web-}; done", raise_on_non_zero_exit: false)
       .returns("123") # old version
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :inspect, "-f '{{ range .Mounts }}{{printf \"%s %s\\n\" .Source .Destination}}{{ end }}'", "app-web-123", "|", :awk, "'$2 == \"/tmp/kamal-cord\" {print $1}'", raise_on_non_zero_exit: false)
-      .returns("") # old version
+      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-latest$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{.NetworkSettings.IPAddress}}{{range $k, $v := .NetworkSettings.Ports}}{{printf \":%s\" $k}}{{break}}{{end}}'", "|", :sed, "-e", "'s/\\/tcp$//'")
+      .returns("172.1.0.2:80").at_least_once
 
     run_command("boot", config: :with_env_tags).tap do |output|
       assert_match "docker tag dhh/app:latest dhh/app:latest", output
@@ -119,49 +99,52 @@ class CliAppTest < CliTestCase
   end
 
   test "boot with web barrier opened" do
-    Object.any_instance.stubs(:sleep)
-
-    SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info).returns("123") # old version
+    SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info).returns("")
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-latest$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
-      .returns("running").at_least_once # web health check passing
-
-    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-123$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
-      .returns("unhealthy").at_least_once # web health check failing
-
-    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-workers-latest$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
-      .returns("running").at_least_once # workers health check
+      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-latest$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{.NetworkSettings.IPAddress}}{{range $k, $v := .NetworkSettings.Ports}}{{printf \":%s\" $k}}{{break}}{{end}}'", "|", :sed, "-e", "'s/\\/tcp$//'")
+      .returns("172.1.0.2:80").at_least_once
 
     run_command("boot", config: :with_roles, host: nil).tap do |output|
       assert_match "Waiting for the first healthy web container before booting workers on 1.1.1.3...", output
       assert_match "Waiting for the first healthy web container before booting workers on 1.1.1.4...", output
       assert_match "First web container is healthy, booting workers on 1.1.1.3", output
       assert_match "First web container is healthy, booting workers on 1.1.1.4", output
-  end
+    end
   end
 
   test "boot with web barrier closed" do
     Thread.report_on_exception = false
 
-    Object.any_instance.stubs(:sleep)
-
-    SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info).returns("123") # old version
+    SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info).returns("")
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-latest$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
-      .returns("unhealthy").at_least_once # web health check failing
+      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-latest$", "--quiet", raise_on_non_zero_exit: false)
+      .returns("abcdef123456")
+      .twice # web container id
+
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-workers-latest$", "--quiet", raise_on_non_zero_exit: false)
+      .returns("abcdef123456")
+      .twice # worker container id
+
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info).with { |*args| args[0..1] == [ :sh, "-c" ] }.returns("123").at_least_once
+
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-latest$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{.NetworkSettings.IPAddress}}{{range $k, $v := .NetworkSettings.Ports}}{{printf \":%s\" $k}}{{break}}{{end}}'", "|", :sed, "-e", "'s/\\/tcp$//'")
+      .returns("172.1.0.2:80")
+      .at_least_once
+
+    SSHKit::Backend::Abstract.any_instance.stubs(:execute).returns("")
+
+    SSHKit::Backend::Abstract.any_instance.expects(:execute).with(:docker, :exec, "parachute_80_", :parachute, :deploy, "app-web", "--target", "\"172.1.0.2:80\"").raises(SSHKit::Command::Failed, "Deploy failed").at_least_once
 
     stderred do
-      run_command("boot", config: :with_roles, host: nil, allow_execute_error: true).tap do |output|
+      run_command("boot", config: :with_roles, host: nil, allowed_error_message: "Deploy failed").tap do |output|
         assert_match "Waiting for the first healthy web container before booting workers on 1.1.1.3...", output
         assert_match "Waiting for the first healthy web container before booting workers on 1.1.1.4...", output
         assert_match "First web container is unhealthy, not booting workers on 1.1.1.3", output
         assert_match "First web container is unhealthy, not booting workers on 1.1.1.4", output
-        assert_match "Running docker container ls --all --filter name=^app-web-latest$ --quiet | xargs docker stop on 1.1.1.1", output
-        assert_match "Running docker container ls --all --filter name=^app-web-latest$ --quiet | xargs docker stop on 1.1.1.2", output
       end
     end
   ensure
@@ -169,6 +152,17 @@ class CliAppTest < CliTestCase
   end
 
   test "start" do
+    # SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info).returns("")
+
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:sh, "-c", "'docker ps --latest --format '\\''{{.Names}}'\\'' --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --format '\\''{{.Names}}'\\'' --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting'", "|", :head, "-1", "|", "while read line; do echo ${line#app-web-}; done", raise_on_non_zero_exit: false)
+      .returns("123") # current version
+
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-123$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{.NetworkSettings.IPAddress}}{{range $k, $v := .NetworkSettings.Ports}}{{printf \":%s\" $k}}{{break}}{{end}}'", "|", :sed, "-e", "'s/\\/tcp$//'")
+      .returns("172.1.0.2:80")
+      .at_least_once
+
     run_command("start").tap do |output|
       assert_match "docker start app-web-999", output
     end
@@ -333,25 +327,15 @@ class CliAppTest < CliTestCase
   end
 
   private
-    def run_command(*command, config: :with_accessories, host: "1.1.1.1", allow_execute_error: false)
+    def run_command(*command, config: :with_accessories, host: "1.1.1.1", allowed_error_message: nil)
       stdouted do
         Kamal::Cli::App.start([ *command, "-c", "test/fixtures/deploy_#{config}.yml", *([ "--hosts", host ] if host) ])
       rescue SSHKit::Runner::ExecuteError => e
-        raise e unless allow_execute_error
+        raise e unless allowed_error_message && e.message.include?(allowed_error_message)
       end
     end
 
     def stub_running
-      Object.any_instance.stubs(:sleep)
-
       SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info).returns("123") # old version
-
-      SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-        .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-latest$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
-        .returns("running") # health check
-
-      SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-        .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-123$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
-        .returns("unhealthy") # health check
     end
 end

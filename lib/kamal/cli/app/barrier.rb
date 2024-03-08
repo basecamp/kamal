@@ -1,4 +1,4 @@
-class Kamal::Cli::Healthcheck::Barrier
+class Kamal::Cli::App::Barrier
   def initialize
     @ivar = Concurrent::IVar.new
   end
@@ -13,7 +13,7 @@ class Kamal::Cli::Healthcheck::Barrier
 
   def wait
     unless opened?
-      raise Kamal::Cli::Healthcheck::Error.new("Halted at barrier")
+      raise Kamal::Cli::BootError.new("Halted at barrier")
     end
   end
 

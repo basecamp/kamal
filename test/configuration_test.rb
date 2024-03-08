@@ -74,22 +74,22 @@ class ConfigurationTest < ActiveSupport::TestCase
     assert_equal "1.1.1.1", @config_with_roles.primary_host
   end
 
-  test "traefik hosts" do
-    assert_equal [ "1.1.1.1", "1.1.1.2" ], @config_with_roles.traefik_hosts
+  test "proxy hosts" do
+    assert_equal [ "1.1.1.1", "1.1.1.2" ], @config_with_roles.proxy_hosts
 
-    @deploy_with_roles[:servers]["workers"]["traefik"] = true
+    @deploy_with_roles[:servers]["workers"]["proxy"] = true
     config = Kamal::Configuration.new(@deploy_with_roles)
 
-    assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3" ], config.traefik_hosts
+    assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3" ], config.proxy_hosts
   end
 
-  test "filtered traefik hosts" do
-    assert_equal [ "1.1.1.1", "1.1.1.2" ], @config_with_roles.traefik_hosts
+  test "filtered proxy hosts" do
+    assert_equal [ "1.1.1.1", "1.1.1.2" ], @config_with_roles.proxy_hosts
 
-    @deploy_with_roles[:servers]["workers"]["traefik"] = true
+    @deploy_with_roles[:servers]["workers"]["proxy"] = true
     config = Kamal::Configuration.new(@deploy_with_roles)
 
-    assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3" ], config.traefik_hosts
+    assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3" ], config.proxy_hosts
   end
 
   test "version no git repo" do
@@ -152,10 +152,6 @@ class ConfigurationTest < ActiveSupport::TestCase
 
   test "service with version" do
     assert_equal "app-missing", @config.service_with_version
-  end
-
-  test "healthcheck service" do
-    assert_equal "healthcheck-app", @config.healthcheck_service
   end
 
   test "valid config" do
@@ -271,8 +267,7 @@ class ConfigurationTest < ActiveSupport::TestCase
         sshkit: {},
         volume_args: [ "--volume", "/local/path:/container/path" ],
         builder: {},
-        logging: [ "--log-opt", "max-size=\"10m\"" ],
-        healthcheck: { "path"=>"/up", "port"=>3000, "max_attempts" => 7, "cord" => "/tmp/kamal-cord", "log_lines" => 50 } }
+        logging: [ "--log-opt", "max-size=\"10m\"" ] }
 
     assert_equal expected_config, @config.to_h
   end
@@ -330,7 +325,7 @@ class ConfigurationTest < ActiveSupport::TestCase
     assert_equal "alternate_web", config.primary_role.name
     assert_equal "1.1.1.4", config.primary_host
     assert config.role(:alternate_web).primary?
-    assert config.role(:alternate_web).running_traefik?
+    assert config.role(:alternate_web).running_proxy?
   end
 
   test "primary role missing" do

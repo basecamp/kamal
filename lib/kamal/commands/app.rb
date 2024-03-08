@@ -1,5 +1,5 @@
 class Kamal::Commands::App < Kamal::Commands::Base
-  include Assets, Containers, Cord, Execution, Images, Logging
+  include Assets, Containers, Execution, Images, Logging
 
   ACTIVE_DOCKER_STATUSES = [ :running, :restarting ]
 
@@ -20,7 +20,6 @@ class Kamal::Commands::App < Kamal::Commands::Base
       "-e", "KAMAL_CONTAINER_NAME=\"#{container_name}\"",
       "-e", "KAMAL_VERSION=\"#{config.version}\"",
       *role.env_args(host),
-      *role.health_check_args,
       *role.logging_args,
       *config.volume_args,
       *role.asset_volume_args,
@@ -55,6 +54,10 @@ class Kamal::Commands::App < Kamal::Commands::Base
 
   def container_id_for_version(version, only_running: false)
     container_id_for(container_name: container_name(version), only_running: only_running)
+  end
+
+  def container_name(version = nil)
+    [ role.container_prefix, version || config.version ].compact.join("-")
   end
 
   def current_running_version
