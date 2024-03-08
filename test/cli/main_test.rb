@@ -3,7 +3,7 @@ require_relative "cli_test_case"
 class CliMainTest < CliTestCase
   test "setup" do
     invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false }
-    
+
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:server:bootstrap", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:env:push", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:accessory:boot", [ "all" ], invoke_options)
@@ -157,12 +157,12 @@ class CliMainTest < CliTestCase
       refute_match /Running the post-deploy hook.../, output
     end
   end
-  
+
   test "deploy without healthcheck if primary host doesn't have traefik" do
     invoke_options = { "config_file" => "test/fixtures/deploy_workers_only.yml", "version" => "999", "skip_hooks" => false }
 
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:healthcheck:perform", [], invoke_options).never
-    
+
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:registry:login", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:deliver", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:traefik:boot", [], invoke_options)
@@ -417,6 +417,21 @@ class CliMainTest < CliTestCase
     run_command("init", "--bundle").tap do |output|
       assert_match /Config file already exists in config\/deploy.yml \(remove first to create a new one\)/, output
       assert_match /Binstub already exists in bin\/kamal \(remove first to create a new one\)/, output
+    end
+  end
+
+  test "init with destination option" do
+    Pathname.any_instance.expects(:exist?).returns(false).times(5)
+    Pathname.any_instance.stubs(:mkpath)
+    FileUtils.stubs(:mkdir_p)
+    FileUtils.stubs(:cp_r)
+    FileUtils.stubs(:cp)
+
+    run_command("init", "--destination", "staging").tap do |output|
+      assert_match /Created configuration file in config\/deploy.yml/, output
+      assert_match /Created configuration file in config\/deploy.staging.yml/, output
+      assert_match /Created \.env file/, output
+      assert_match /Created \.env.staging file/, output
     end
   end
 
