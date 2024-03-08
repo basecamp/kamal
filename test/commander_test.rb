@@ -83,14 +83,14 @@ class CommanderTest < ActiveSupport::TestCase
   end
 
   test "primary_role" do
-    assert_equal "web", @kamal.primary_role
+    assert_equal "web", @kamal.primary_role.name
     @kamal.specific_roles = "workers"
-    assert_equal "workers", @kamal.primary_role
+    assert_equal "workers", @kamal.primary_role.name
   end
 
   test "roles_on" do
-    assert_equal [ "web" ], @kamal.roles_on("1.1.1.1")
-    assert_equal [ "workers" ], @kamal.roles_on("1.1.1.3")
+    assert_equal [ "web" ], @kamal.roles_on("1.1.1.1").map(&:name)
+    assert_equal [ "workers" ], @kamal.roles_on("1.1.1.3").map(&:name)
   end
 
   test "default group strategy" do
@@ -120,7 +120,7 @@ class CommanderTest < ActiveSupport::TestCase
 
     @kamal.specific_roles = [ "web_*" ]
     assert_equal [ "web_chicago", "web_tokyo" ], @kamal.roles.map(&:name)
-    assert_equal "web_tokyo", @kamal.primary_role
+    assert_equal "web_tokyo", @kamal.primary_role.name
     assert_equal "1.1.1.3", @kamal.primary_host
   end
 
