@@ -6,7 +6,7 @@ require "erb"
 require "net/ssh/proxy/jump"
 
 class Kamal::Configuration
-  delegate :service, :image, :servers, :labels, :registry, :stop_wait_time, :hooks_path, :logging, to: :raw_config, allow_nil: true
+  delegate :service, :image, :port, :servers, :labels, :registry, :stop_wait_time, :hooks_path, :logging, to: :raw_config, allow_nil: true
   delegate :argumentize, :optionize, to: Kamal::Utils
 
   attr_reader :destination, :raw_config
@@ -107,16 +107,16 @@ class Kamal::Configuration
     raw_config.allow_empty_roles
   end
 
-  def traefik_roles
-    roles.select(&:running_traefik?)
+  def proxy_roles
+    roles.select(&:running_proxy?)
   end
 
-  def traefik_role_names
-    traefik_roles.flat_map(&:name)
+  def proxy_role_names
+    proxy_roles.flat_map(&:name)
   end
 
-  def traefik_hosts
-    traefik_roles.flat_map(&:hosts).uniq
+  def proxy_hosts
+    proxy_roles.flat_map(&:hosts).uniq
   end
 
   def repository
@@ -174,8 +174,8 @@ class Kamal::Configuration
     Kamal::Configuration::Builder.new(config: self)
   end
 
-  def traefik
-    raw_config.traefik || {}
+  def proxy
+    Kamal::Configuration::Proxy.new(config: self)
   end
 
   def ssh
@@ -186,14 +186,6 @@ class Kamal::Configuration
     Kamal::Configuration::Sshkit.new(config: self)
   end
 
-
-  def healthcheck
-    { "path" => "/up", "port" => 3000, "max_attempts" => 7, "cord" => "/tmp/kamal-cord", "log_lines" => 50 }.merge(raw_config.healthcheck || {})
-  end
-
-  def healthcheck_service
-    [ "healthcheck", service, destination ].compact.join("-")
-  end
 
   def readiness_delay
     raw_config.readiness_delay || 7
@@ -264,8 +256,7 @@ class Kamal::Configuration
       sshkit: sshkit.to_h,
       builder: builder.to_h,
       accessories: raw_config.accessories,
-      logging: logging_args,
-      healthcheck: healthcheck
+      logging: logging_args
     }.compact
   end
 

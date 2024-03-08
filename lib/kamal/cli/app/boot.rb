@@ -1,7 +1,7 @@
 class Kamal::Cli::App::Boot
   attr_reader :host, :role, :version, :barrier, :sshkit
   delegate :execute, :capture_with_info, :capture_with_pretty_json, :info, :error, to: :sshkit
-  delegate :uses_cord?, :assets?, :running_traefik?, to: :role
+  delegate :assets?, :running_proxy?, to: :role
 
   def initialize(host, role, sshkit, version, barrier)
     @host = host
@@ -45,11 +45,13 @@ class Kamal::Cli::App::Boot
 
     def start_new_version
       audit "Booted app version #{version}"
-
-      execute *app.tie_cord(role.cord_host_file) if uses_cord?
       hostname = "#{host.to_s[0...51].gsub(/\.+$/, '')}-#{SecureRandom.hex(6)}"
       execute *app.run(hostname: hostname)
-      Kamal::Cli::Healthcheck::Poller.wait_for_healthy(pause_after_ready: true) { capture_with_info(*app.status(version: version)) }
+      if running_proxy?
+        endpoint = capture_with_info(*app.container_endpoint(version: version)).strip
+        raise Kamal::Cli::BootError, "Failed to get endpoint for #{role} on #{host}, did the container boot?" if endpoint.empty?
+        execute *KAMAL.proxy.deploy(role.container_prefix, target: endpoint)
+      end
     end
 
     def stop_new_version
@@ -57,16 +59,7 @@ class Kamal::Cli::App::Boot
     end
 
     def stop_old_version(version)
-      if uses_cord?
-        cord = capture_with_info(*app.cord(version: version), raise_on_non_zero_exit: false).strip
-        if cord.present?
-          execute *app.cut_cord(cord)
-          Kamal::Cli::Healthcheck::Poller.wait_for_unhealthy(pause_after_ready: true) { capture_with_info(*app.status(version: version)) }
-        end
-      end
-
       execute *app.stop(version: version), raise_on_non_zero_exit: false
-
       execute *app.clean_up_assets if assets?
     end
 
@@ -80,7 +73,7 @@ class Kamal::Cli::App::Boot
       info "Waiting for the first healthy #{KAMAL.primary_role} container before booting #{role} on #{host}..."
       barrier.wait
       info "First #{KAMAL.primary_role} container is healthy, booting #{role} on #{host}..."
-    rescue Kamal::Cli::Healthcheck::Error
+    rescue Kamal::Cli::BootError
       info "First #{KAMAL.primary_role} container is unhealthy, not booting #{role} on #{host}"
       raise
     end
@@ -89,7 +82,6 @@ class Kamal::Cli::App::Boot
       if barrier.close
         info "First #{KAMAL.primary_role} container is unhealthy on #{host}, not booting other roles"
         error capture_with_info(*app.logs(version: version))
-        error capture_with_info(*app.container_health_log(version: version))
       end
     end
 

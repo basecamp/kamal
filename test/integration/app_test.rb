@@ -1,8 +1,10 @@
 require_relative "integration_test"
 
-class AppTest < IntegrationTest
+class IntegrationAppTest < IntegrationTest
   test "stop, start, boot, logs, images, containers, exec, remove" do
     kamal :envify
+
+    kamal :setup
 
     kamal :deploy
 
@@ -10,7 +12,7 @@ class AppTest < IntegrationTest
 
     kamal :app, :stop
 
-    assert_app_is_down
+    assert_app_is_down response_code: "504"
 
     kamal :app, :start
 
@@ -24,7 +26,7 @@ class AppTest < IntegrationTest
     logs = kamal :app, :logs, capture: true
     assert_match /App Host: vm1/, logs
     assert_match /App Host: vm2/, logs
-    assert_match /GET \/ HTTP\/1.1/, logs
+    assert_match /GET \/up HTTP\/1.1/, logs
 
     images = kamal :app, :images, capture: true
     assert_match /App Host: vm1/, images
@@ -50,6 +52,6 @@ class AppTest < IntegrationTest
 
     kamal :app, :remove
 
-    assert_app_is_down
+    assert_app_is_down response_code: "504"
   end
 end

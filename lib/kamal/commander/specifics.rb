@@ -18,8 +18,8 @@ class Kamal::Commander::Specifics
     roles.select { |role| role.hosts.include?(host.to_s) }
   end
 
-  def traefik_hosts
-    config.traefik_hosts & specified_hosts
+  def proxy_hosts
+    config.proxy_hosts & specified_hosts
   end
 
   def accessory_hosts

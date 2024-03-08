@@ -14,13 +14,13 @@ class CommandsAppTest < ActiveSupport::TestCase
 
   test "run" do
     assert_equal \
-      "docker run --detach --restart unless-stopped --name app-web-999 -e KAMAL_CONTAINER_NAME=\"app-web-999\" -e KAMAL_VERSION=\"999\" --env-file .kamal/env/roles/app-web.env --health-cmd \"(curl -f http://localhost:3000/up || exit 1) && (stat /tmp/kamal-cord/cord > /dev/null || exit 1)\" --health-interval \"1s\" --volume $(pwd)/.kamal/cords/app-web-12345678901234567890123456789012:/tmp/kamal-cord --log-opt max-size=\"10m\" --label service=\"app\" --label role=\"web\" --label destination --label traefik.http.services.app-web.loadbalancer.server.scheme=\"http\" --label traefik.http.routers.app-web.rule=\"PathPrefix(\\`/\\`)\" --label traefik.http.routers.app-web.priority=\"2\" --label traefik.http.middlewares.app-web-retry.retry.attempts=\"5\" --label traefik.http.middlewares.app-web-retry.retry.initialinterval=\"500ms\" --label traefik.http.routers.app-web.middlewares=\"app-web-retry@docker\" dhh/app:999",
+      "docker run --detach --restart unless-stopped --name app-web-999 -e KAMAL_CONTAINER_NAME=\"app-web-999\" -e KAMAL_VERSION=\"999\" --env-file .kamal/env/roles/app-web.env --log-opt max-size=\"10m\" --label service=\"app\" --label role=\"web\" --label destination dhh/app:999",
       new_command.run.join(" ")
   end
 
   test "run with hostname" do
     assert_equal \
-      "docker run --detach --restart unless-stopped --name app-web-999 --hostname myhost -e KAMAL_CONTAINER_NAME=\"app-web-999\" -e KAMAL_VERSION=\"999\" --env-file .kamal/env/roles/app-web.env --health-cmd \"(curl -f http://localhost:3000/up || exit 1) && (stat /tmp/kamal-cord/cord > /dev/null || exit 1)\" --health-interval \"1s\" --volume $(pwd)/.kamal/cords/app-web-12345678901234567890123456789012:/tmp/kamal-cord --log-opt max-size=\"10m\" --label service=\"app\" --label role=\"web\" --label destination --label traefik.http.services.app-web.loadbalancer.server.scheme=\"http\" --label traefik.http.routers.app-web.rule=\"PathPrefix(\\`/\\`)\" --label traefik.http.routers.app-web.priority=\"2\" --label traefik.http.middlewares.app-web-retry.retry.attempts=\"5\" --label traefik.http.middlewares.app-web-retry.retry.initialinterval=\"500ms\" --label traefik.http.routers.app-web.middlewares=\"app-web-retry@docker\" dhh/app:999",
+      "docker run --detach --restart unless-stopped --name app-web-999 --hostname myhost -e KAMAL_CONTAINER_NAME=\"app-web-999\" -e KAMAL_VERSION=\"999\" --env-file .kamal/env/roles/app-web.env --log-opt max-size=\"10m\" --label service=\"app\" --label role=\"web\" --label destination dhh/app:999",
       new_command.run(hostname: "myhost").join(" ")
   end
 
@@ -28,31 +28,7 @@ class CommandsAppTest < ActiveSupport::TestCase
     @config[:volumes] = [ "/local/path:/container/path" ]
 
     assert_equal \
-      "docker run --detach --restart unless-stopped --name app-web-999 -e KAMAL_CONTAINER_NAME=\"app-web-999\" -e KAMAL_VERSION=\"999\" --env-file .kamal/env/roles/app-web.env --health-cmd \"(curl -f http://localhost:3000/up || exit 1) && (stat /tmp/kamal-cord/cord > /dev/null || exit 1)\" --health-interval \"1s\" --volume $(pwd)/.kamal/cords/app-web-12345678901234567890123456789012:/tmp/kamal-cord --log-opt max-size=\"10m\" --volume /local/path:/container/path --label service=\"app\" --label role=\"web\" --label destination --label traefik.http.services.app-web.loadbalancer.server.scheme=\"http\" --label traefik.http.routers.app-web.rule=\"PathPrefix(\\`/\\`)\" --label traefik.http.routers.app-web.priority=\"2\" --label traefik.http.middlewares.app-web-retry.retry.attempts=\"5\" --label traefik.http.middlewares.app-web-retry.retry.initialinterval=\"500ms\" --label traefik.http.routers.app-web.middlewares=\"app-web-retry@docker\" dhh/app:999",
-      new_command.run.join(" ")
-  end
-
-  test "run with custom healthcheck path" do
-    @config[:healthcheck] = { "path" => "/healthz" }
-
-    assert_equal \
-      "docker run --detach --restart unless-stopped --name app-web-999 -e KAMAL_CONTAINER_NAME=\"app-web-999\" -e KAMAL_VERSION=\"999\" --env-file .kamal/env/roles/app-web.env --health-cmd \"(curl -f http://localhost:3000/healthz || exit 1) && (stat /tmp/kamal-cord/cord > /dev/null || exit 1)\" --health-interval \"1s\" --volume $(pwd)/.kamal/cords/app-web-12345678901234567890123456789012:/tmp/kamal-cord --log-opt max-size=\"10m\" --label service=\"app\" --label role=\"web\" --label destination --label traefik.http.services.app-web.loadbalancer.server.scheme=\"http\" --label traefik.http.routers.app-web.rule=\"PathPrefix(\\`/\\`)\" --label traefik.http.routers.app-web.priority=\"2\" --label traefik.http.middlewares.app-web-retry.retry.attempts=\"5\" --label traefik.http.middlewares.app-web-retry.retry.initialinterval=\"500ms\" --label traefik.http.routers.app-web.middlewares=\"app-web-retry@docker\" dhh/app:999",
-      new_command.run.join(" ")
-  end
-
-  test "run with custom healthcheck command" do
-    @config[:healthcheck] = { "cmd" => "/bin/up" }
-
-    assert_equal \
-      "docker run --detach --restart unless-stopped --name app-web-999 -e KAMAL_CONTAINER_NAME=\"app-web-999\" -e KAMAL_VERSION=\"999\" --env-file .kamal/env/roles/app-web.env --health-cmd \"(/bin/up) && (stat /tmp/kamal-cord/cord > /dev/null || exit 1)\" --health-interval \"1s\" --volume $(pwd)/.kamal/cords/app-web-12345678901234567890123456789012:/tmp/kamal-cord --log-opt max-size=\"10m\" --label service=\"app\" --label role=\"web\" --label destination --label traefik.http.services.app-web.loadbalancer.server.scheme=\"http\" --label traefik.http.routers.app-web.rule=\"PathPrefix(\\`/\\`)\" --label traefik.http.routers.app-web.priority=\"2\" --label traefik.http.middlewares.app-web-retry.retry.attempts=\"5\" --label traefik.http.middlewares.app-web-retry.retry.initialinterval=\"500ms\" --label traefik.http.routers.app-web.middlewares=\"app-web-retry@docker\" dhh/app:999",
-      new_command.run.join(" ")
-  end
-
-  test "run with role-specific healthcheck options" do
-    @config[:servers] = { "web" => { "hosts" => [ "1.1.1.1" ], "healthcheck" => { "cmd" => "/bin/healthy" } } }
-
-    assert_equal \
-      "docker run --detach --restart unless-stopped --name app-web-999 -e KAMAL_CONTAINER_NAME=\"app-web-999\" -e KAMAL_VERSION=\"999\" --env-file .kamal/env/roles/app-web.env --health-cmd \"(/bin/healthy) && (stat /tmp/kamal-cord/cord > /dev/null || exit 1)\" --health-interval \"1s\" --volume $(pwd)/.kamal/cords/app-web-12345678901234567890123456789012:/tmp/kamal-cord --log-opt max-size=\"10m\" --label service=\"app\" --label role=\"web\" --label destination --label traefik.http.services.app-web.loadbalancer.server.scheme=\"http\" --label traefik.http.routers.app-web.rule=\"PathPrefix(\\`/\\`)\" --label traefik.http.routers.app-web.priority=\"2\" --label traefik.http.middlewares.app-web-retry.retry.attempts=\"5\" --label traefik.http.middlewares.app-web-retry.retry.initialinterval=\"500ms\" --label traefik.http.routers.app-web.middlewares=\"app-web-retry@docker\" dhh/app:999",
+      "docker run --detach --restart unless-stopped --name app-web-999 -e KAMAL_CONTAINER_NAME=\"app-web-999\" -e KAMAL_VERSION=\"999\" --env-file .kamal/env/roles/app-web.env --log-opt max-size=\"10m\" --volume /local/path:/container/path --label service=\"app\" --label role=\"web\" --label destination dhh/app:999",
       new_command.run.join(" ")
   end
 
@@ -67,7 +43,7 @@ class CommandsAppTest < ActiveSupport::TestCase
     @config[:logging] = { "driver" => "local", "options" => { "max-size" => "100m", "max-file" => "3" } }
 
     assert_equal \
-      "docker run --detach --restart unless-stopped --name app-web-999 -e KAMAL_CONTAINER_NAME=\"app-web-999\" -e KAMAL_VERSION=\"999\" --env-file .kamal/env/roles/app-web.env --health-cmd \"(curl -f http://localhost:3000/up || exit 1) && (stat /tmp/kamal-cord/cord > /dev/null || exit 1)\" --health-interval \"1s\" --volume $(pwd)/.kamal/cords/app-web-12345678901234567890123456789012:/tmp/kamal-cord --log-driver \"local\" --log-opt max-size=\"100m\" --log-opt max-file=\"3\" --label service=\"app\" --label role=\"web\" --label destination --label traefik.http.services.app-web.loadbalancer.server.scheme=\"http\" --label traefik.http.routers.app-web.rule=\"PathPrefix(\\`/\\`)\" --label traefik.http.routers.app-web.priority=\"2\" --label traefik.http.middlewares.app-web-retry.retry.attempts=\"5\" --label traefik.http.middlewares.app-web-retry.retry.initialinterval=\"500ms\" --label traefik.http.routers.app-web.middlewares=\"app-web-retry@docker\" dhh/app:999",
+      "docker run --detach --restart unless-stopped --name app-web-999 -e KAMAL_CONTAINER_NAME=\"app-web-999\" -e KAMAL_VERSION=\"999\" --env-file .kamal/env/roles/app-web.env --log-driver \"local\" --log-opt max-size=\"100m\" --log-opt max-file=\"3\" --label service=\"app\" --label role=\"web\" --label destination dhh/app:999",
       new_command.run.join(" ")
   end
 
@@ -76,7 +52,7 @@ class CommandsAppTest < ActiveSupport::TestCase
     @config[:servers] = { "web" => { "hosts" => [ "1.1.1.1" ], "logging" => { "driver" => "local", "options" => { "max-size" => "100m" } } } }
 
     assert_equal \
-      "docker run --detach --restart unless-stopped --name app-web-999 -e KAMAL_CONTAINER_NAME=\"app-web-999\" -e KAMAL_VERSION=\"999\" --env-file .kamal/env/roles/app-web.env --health-cmd \"(curl -f http://localhost:3000/up || exit 1) && (stat /tmp/kamal-cord/cord > /dev/null || exit 1)\" --health-interval \"1s\" --volume $(pwd)/.kamal/cords/app-web-12345678901234567890123456789012:/tmp/kamal-cord --log-driver \"local\" --log-opt max-size=\"100m\" --log-opt max-file=\"3\" --label service=\"app\" --label role=\"web\" --label destination --label traefik.http.services.app-web.loadbalancer.server.scheme=\"http\" --label traefik.http.routers.app-web.rule=\"PathPrefix(\\`/\\`)\" --label traefik.http.routers.app-web.priority=\"2\" --label traefik.http.middlewares.app-web-retry.retry.attempts=\"5\" --label traefik.http.middlewares.app-web-retry.retry.initialinterval=\"500ms\" --label traefik.http.routers.app-web.middlewares=\"app-web-retry@docker\" dhh/app:999",
+      "docker run --detach --restart unless-stopped --name app-web-999 -e KAMAL_CONTAINER_NAME=\"app-web-999\" -e KAMAL_VERSION=\"999\" --env-file .kamal/env/roles/app-web.env --log-driver \"local\" --log-opt max-size=\"100m\" --log-opt max-file=\"3\" --label service=\"app\" --label role=\"web\" --label destination dhh/app:999",
       new_command.run.join(" ")
   end
 
@@ -85,7 +61,7 @@ class CommandsAppTest < ActiveSupport::TestCase
     @config[:env]["tags"] = { "tag1" => { "ENV1" => "value1" } }
 
     assert_equal \
-      "docker run --detach --restart unless-stopped --name app-web-999 -e KAMAL_CONTAINER_NAME=\"app-web-999\" -e KAMAL_VERSION=\"999\" --env-file .kamal/env/roles/app-web.env --env ENV1=\"value1\" --health-cmd \"(curl -f http://localhost:3000/up || exit 1) && (stat /tmp/kamal-cord/cord > /dev/null || exit 1)\" --health-interval \"1s\" --volume $(pwd)/.kamal/cords/app-web-12345678901234567890123456789012:/tmp/kamal-cord --log-opt max-size=\"10m\" --label service=\"app\" --label role=\"web\" --label destination --label traefik.http.services.app-web.loadbalancer.server.scheme=\"http\" --label traefik.http.routers.app-web.rule=\"PathPrefix(\\`/\\`)\" --label traefik.http.routers.app-web.priority=\"2\" --label traefik.http.middlewares.app-web-retry.retry.attempts=\"5\" --label traefik.http.middlewares.app-web-retry.retry.initialinterval=\"500ms\" --label traefik.http.routers.app-web.middlewares=\"app-web-retry@docker\" dhh/app:999",
+      "docker run --detach --restart unless-stopped --name app-web-999 -e KAMAL_CONTAINER_NAME=\"app-web-999\" -e KAMAL_VERSION=\"999\" --env-file .kamal/env/roles/app-web.env --env ENV1=\"value1\" --log-opt max-size=\"10m\" --label service=\"app\" --label role=\"web\" --label destination dhh/app:999",
       new_command.run.join(" ")
   end
 
@@ -396,20 +372,6 @@ class CommandsAppTest < ActiveSupport::TestCase
 
   test "remove_env_file" do
     assert_equal "rm -f .kamal/env/roles/app-web.env", new_command.remove_env_file.join(" ")
-  end
-
-  test "cord" do
-    assert_equal "docker inspect -f '{{ range .Mounts }}{{printf \"%s %s\\n\" .Source .Destination}}{{ end }}' app-web-123 | awk '$2 == \"/tmp/kamal-cord\" {print $1}'", new_command.cord(version: 123).join(" ")
-  end
-
-  test "tie cord" do
-    assert_equal "mkdir -p . ; touch cordfile", new_command.tie_cord("cordfile").join(" ")
-    assert_equal "mkdir -p corddir ; touch corddir/cordfile", new_command.tie_cord("corddir/cordfile").join(" ")
-    assert_equal "mkdir -p /corddir ; touch /corddir/cordfile", new_command.tie_cord("/corddir/cordfile").join(" ")
-  end
-
-  test "cut cord" do
-    assert_equal "rm -r corddir", new_command.cut_cord("corddir").join(" ")
   end
 
   test "extract assets" do

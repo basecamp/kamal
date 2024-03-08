@@ -44,10 +44,10 @@ class IntegrationTest < ActiveSupport::TestCase
       deployer_exec(:kamal, *commands, **options)
     end
 
-    def assert_app_is_down
+    def assert_app_is_down(response_code: "503")
       response = app_response
-      debug_response_code(response, "502")
-      assert_equal "502", response.code
+      debug_response_code(response, response_code)
+      assert_equal response_code, response.code
     end
 
     def assert_app_is_up(version: nil)
@@ -101,8 +101,8 @@ class IntegrationTest < ActiveSupport::TestCase
     def assert_200(response)
       code = response.code
       if code != "200"
-        puts "Got response code #{code}, here are the traefik logs:"
-        kamal :traefik, :logs
+        puts "Got response code #{code}, here are the proxy logs:"
+        kamal :proxy, :logs
         puts "And here are the load balancer logs"
         docker_compose :logs, :load_balancer
         puts "Tried to get the response code again and got #{app_response.code}"
@@ -129,10 +129,10 @@ class IntegrationTest < ActiveSupport::TestCase
     def debug_response_code(app_response, expected_code)
       code = app_response.code
       if code != expected_code
-        puts "Got response code #{code}, here are the traefik logs:"
-        kamal :traefik, :logs
+        puts "Got response code #{code}, here are the proxy logs:"
+        kamal :proxy, :logs, raise_on_error: false
         puts "And here are the load balancer logs"
-        docker_compose :logs, :load_balancer
+        docker_compose :logs, :load_balancer, raise_on_error: false
         puts "Tried to get the response code again and got #{app_response.code}"
       end
     end
