@@ -1,5 +1,5 @@
 class Kamal::Commands::App < Kamal::Commands::Base
-  include Assets, Containers, Cord, Execution, Images, Logging
+  include Assets, Containers, Execution, Images, Logging
 
   ACTIVE_DOCKER_STATUSES = [ :running, :restarting ]
 
@@ -41,6 +41,10 @@ class Kamal::Commands::App < Kamal::Commands::Base
     pipe \
       version ? container_id_for_version(version) : current_running_container_id,
       xargs(config.stop_wait_time ? docker(:stop, "-t", config.stop_wait_time) : docker(:stop))
+  end
+
+  def internal_ip(version: nil)
+    docker :inspect, "--format '{{ .NetworkSettings.IPAddress }}'", container_name(version)
   end
 
   def info

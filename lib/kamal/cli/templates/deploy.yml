@@ -63,12 +63,6 @@ registry:
 #     directories:
 #       - data:/data
 
-# Configure custom arguments for Traefik. Be sure to reboot traefik when you modify it.
-# traefik:
-#   args:
-#     accesslog: true
-#     accesslog.format: json
-
 # Configure a custom healthcheck (default is /up on port 3000)
 # healthcheck:
 #   path: /healthz

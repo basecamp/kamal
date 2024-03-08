@@ -42,7 +42,7 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
   end
 
   test "special label args for web" do
-    assert_equal [ "--label", "service=\"app\"", "--label", "role=\"web\"", "--label", "destination", "--label", "traefik.http.services.app-web.loadbalancer.server.scheme=\"http\"", "--label", "traefik.http.routers.app-web.rule=\"PathPrefix(\\`/\\`)\"", "--label", "traefik.http.routers.app-web.priority=\"2\"", "--label", "traefik.http.middlewares.app-web-retry.retry.attempts=\"5\"", "--label", "traefik.http.middlewares.app-web-retry.retry.initialinterval=\"500ms\"", "--label", "traefik.http.routers.app-web.middlewares=\"app-web-retry@docker\"" ], @config.role(:web).label_args
+    assert_equal [ "--label", "service=\"app\"", "--label", "role=\"web\"", "--label", "destination" ], @config.role(:web).label_args
   end
 
   test "custom labels" do
@@ -54,19 +54,6 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
     @deploy_with_roles[:labels] = { "my.custom.label" => "50" }
     @deploy_with_roles[:servers]["workers"]["labels"] = { "my.custom.label" => "70" }
     assert_equal "70", @config_with_roles.role(:workers).labels["my.custom.label"]
-  end
-
-  test "overwriting default traefik label" do
-    @deploy[:labels] = { "traefik.http.routers.app-web.rule" => "\"Host(\\`example.com\\`) || (Host(\\`example.org\\`) && Path(\\`/traefik\\`))\"" }
-    assert_equal "\"Host(\\`example.com\\`) || (Host(\\`example.org\\`) && Path(\\`/traefik\\`))\"", @config.role(:web).labels["traefik.http.routers.app-web.rule"]
-  end
-
-  test "default traefik label on non-web role" do
-    config = Kamal::Configuration.new(@deploy_with_roles.tap { |c|
-      c[:servers]["beta"] = { "traefik" => "true", "hosts" => [ "1.1.1.5" ] }
-    })
-
-    assert_equal [ "--label", "service=\"app\"", "--label", "role=\"beta\"", "--label", "destination", "--label", "traefik.http.services.app-beta.loadbalancer.server.scheme=\"http\"", "--label", "traefik.http.routers.app-beta.rule=\"PathPrefix(\\`/\\`)\"", "--label", "traefik.http.routers.app-beta.priority=\"2\"", "--label", "traefik.http.middlewares.app-beta-retry.retry.attempts=\"5\"", "--label", "traefik.http.middlewares.app-beta-retry.retry.initialinterval=\"500ms\"", "--label", "traefik.http.routers.app-beta.middlewares=\"app-beta-retry@docker\"" ], config.role(:beta).label_args
   end
 
   test "env overwritten by role" do
@@ -199,26 +186,6 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
 
   test "env secrets_file" do
     assert_equal ".kamal/env/roles/app-workers.env", @config_with_roles.role(:workers).env.secrets_file
-  end
-
-  test "uses cord" do
-    assert @config_with_roles.role(:web).uses_cord?
-    assert_not @config_with_roles.role(:workers).uses_cord?
-  end
-
-  test "cord host file" do
-    assert_match %r{.kamal/cords/app-web-[0-9a-f]{32}/cord}, @config_with_roles.role(:web).cord_host_file
-  end
-
-  test "cord volume" do
-    assert_equal "/tmp/kamal-cord", @config_with_roles.role(:web).cord_volume.container_path
-    assert_match %r{.kamal/cords/app-web-[0-9a-f]{32}}, @config_with_roles.role(:web).cord_volume.host_path
-    assert_equal "--volume", @config_with_roles.role(:web).cord_volume.docker_args[0]
-    assert_match %r{\$\(pwd\)/.kamal/cords/app-web-[0-9a-f]{32}:/tmp/kamal-cord}, @config_with_roles.role(:web).cord_volume.docker_args[1]
-  end
-
-  test "cord container file" do
-    assert_equal "/tmp/kamal-cord/cord", @config_with_roles.role(:web).cord_container_file
   end
 
   test "asset path and volume args" do

@@ -21,11 +21,8 @@ builder:
     COMMIT_SHA: <%= `git rev-parse HEAD` %>
 healthcheck:
   cmd: wget -qO- http://localhost > /dev/null || exit 1
-traefik:
-  args:
-    accesslog: true
-    accesslog.format: json
-  image: registry:4443/traefik:v2.10
+proxy:
+  image: registry:4443/dmcbreen/mproxy:latest
 accessories:
   busybox:
     service: custom-busybox
@@ -33,4 +30,4 @@ accessories:
     cmd: sh -c 'echo "Starting busybox..."; trap exit term; while true; do sleep 1; done'
     roles:
       - web
-stop_wait_time: 1
+stop_wait_time: 5

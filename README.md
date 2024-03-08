@@ -1,6 +1,6 @@
 # Kamal: Deploy web apps anywhere
 
-From bare metal to cloud VMs, deploy web apps anywhere with zero downtime. Kamal has the dynamic reverse-proxy Traefik hold requests while a new app container is started and the old one is stopped. Works seamlessly across multiple hosts, using SSHKit to execute commands. Originally built for Rails apps, Kamal will work with any type of web app that can be containerized with Docker.
+From bare metal to cloud VMs, deploy web apps anywhere with zero downtime. Kamal uses mproxy for zero-downtime deployments. Works seamlessly across multiple hosts, using SSHKit to execute commands. Originally built for Rails apps, Kamal will work with any type of web app that can be containerized with Docker.
 
 ➡️ See [kamal-deploy.org](https://kamal-deploy.org) for documentation on [installation](https://kamal-deploy.org/docs/installation), [configuration](https://kamal-deploy.org/docs/configuration), and [commands](https://kamal-deploy.org/docs/commands).
 

@@ -19,7 +19,7 @@ push_image_to_registry_4443() {
 
 install_kamal
 push_image_to_registry_4443 nginx 1-alpine-slim
-push_image_to_registry_4443 traefik v2.10
+push_image_to_registry_4443 dmcbreen/mproxy latest
 push_image_to_registry_4443 busybox 1.36.0
 
 # .ssh is on a shared volume that persists between runs. Clean it up as the

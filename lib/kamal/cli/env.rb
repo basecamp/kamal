@@ -13,11 +13,6 @@ class Kamal::Cli::Env < Kamal::Cli::Base
         end
       end
 
-      on(KAMAL.traefik_hosts) do
-        execute *KAMAL.traefik.make_env_directory
-        upload! KAMAL.traefik.env.secrets_io, KAMAL.traefik.env.secrets_file, mode: 400
-      end
-
       on(KAMAL.accessory_hosts) do
         KAMAL.accessories_on(host).each do |accessory|
           accessory_config = KAMAL.config.accessory(accessory)
@@ -37,10 +32,6 @@ class Kamal::Cli::Env < Kamal::Cli::Base
         KAMAL.roles_on(host).each do |role|
           execute *KAMAL.app(role: role).remove_env_file
         end
-      end
-
-      on(KAMAL.traefik_hosts) do
-        execute *KAMAL.traefik.remove_env_file
       end
 
       on(KAMAL.accessory_hosts) do

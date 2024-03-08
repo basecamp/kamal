@@ -76,8 +76,8 @@ class Kamal::Commander
     roles.select { |role| role.hosts.include?(host.to_s) }
   end
 
-  def traefik_hosts
-    specific_hosts || config.traefik_hosts
+  def proxy_hosts
+    specific_hosts || config.proxy_hosts
   end
 
   def accessory_hosts
@@ -137,8 +137,8 @@ class Kamal::Commander
     @server ||= Kamal::Commands::Server.new(config)
   end
 
-  def traefik
-    @traefik ||= Kamal::Commands::Traefik.new(config)
+  def proxy
+    @proxy ||= Kamal::Commands::Proxy.new(config)
   end
 
 

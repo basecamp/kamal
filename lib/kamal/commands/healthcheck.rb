@@ -9,7 +9,7 @@ class Kamal::Commands::Healthcheck < Kamal::Commands::Base
       "--label", "service=#{config.healthcheck_service}",
       "-e", "KAMAL_CONTAINER_NAME=\"#{config.healthcheck_service}\"",
       *primary.env_args,
-      *primary.health_check_args(cord: false),
+      *primary.health_check_args,
       *config.volume_args,
       *primary.option_args,
       config.absolute_image,

@@ -10,7 +10,7 @@ tokyo_hosts: &tokyo_hosts
 web_common: &web_common
   env:
     ROLE: "web"
-  traefik: true
+  proxy: true
 
 # actual config
 service: app
