@@ -10,9 +10,9 @@ module Kamal::Commands::App::Execution
     docker :run,
       ("-it" if interactive),
       "--rm",
-      *role_config&.env_args,
+      *role&.env_args,
       *config.volume_args,
-      *role_config&.option_args,
+      *role&.option_args,
       config.absolute_image,
       *command
   end

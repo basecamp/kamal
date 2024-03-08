@@ -400,6 +400,7 @@ class CommandsAppTest < ActiveSupport::TestCase
 
   private
     def new_command(role: "web", **additional_config)
-      Kamal::Commands::App.new(Kamal::Configuration.new(@config.merge(additional_config), destination: @destination, version: "999"), role: role)
+      config = Kamal::Configuration.new(@config.merge(additional_config), destination: @destination, version: "999")
+      Kamal::Commands::App.new(config, role: config.role(role))
     end
 end

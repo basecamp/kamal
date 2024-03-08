@@ -3,9 +3,10 @@ class Kamal::Configuration::Role
   delegate :argumentize, :optionize, to: Kamal::Utils
 
   attr_accessor :name
+  alias to_s name
 
   def initialize(name, config:)
-   @name, @config = name.inquiry, config
+    @name, @config = name.inquiry, config
   end
 
   def primary_host
@@ -113,7 +114,7 @@ class Kamal::Configuration::Role
   end
 
   def primary?
-    @config.primary_role == name
+    self == @config.primary_role
   end
 
 
