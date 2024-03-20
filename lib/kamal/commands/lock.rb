@@ -5,14 +5,14 @@ require "base64"
 class Kamal::Commands::Lock < Kamal::Commands::Base
   def acquire(message, version)
     combine \
-      [:mkdir, lock_dir],
+      [ :mkdir, lock_dir ],
       write_lock_details(message, version)
   end
 
   def release
     combine \
-      [:rm, lock_details_file],
-      [:rm, "-r", lock_dir]
+      [ :rm, lock_details_file ],
+      [ :rm, "-r", lock_dir ]
   end
 
   def status
@@ -24,19 +24,19 @@ class Kamal::Commands::Lock < Kamal::Commands::Base
   private
     def write_lock_details(message, version)
       write \
-        [:echo, "\"#{Base64.encode64(lock_details(message, version))}\""],
+        [ :echo, "\"#{Base64.encode64(lock_details(message, version))}\"" ],
         lock_details_file
     end
 
     def read_lock_details
       pipe \
-        [:cat, lock_details_file],
-        [:base64, "-d"]
+        [ :cat, lock_details_file ],
+        [ :base64, "-d" ]
     end
 
     def stat_lock_dir
       write \
-        [:stat, lock_dir],
+        [ :stat, lock_dir ],
         "/dev/null"
     end
 
@@ -45,7 +45,7 @@ class Kamal::Commands::Lock < Kamal::Commands::Base
     end
 
     def lock_details_file
-      [lock_dir, :details].join("/")
+      [ lock_dir, :details ].join("/")
     end
 
     def lock_details(message, version)

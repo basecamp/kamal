@@ -103,7 +103,7 @@ class Kamal::Commands::Accessory < Kamal::Commands::Base
   end
 
   def remove_env_file
-    [:rm, "-f", accessory_config.host_env_file_path]
+    [ :rm, "-f", accessory_config.host_env_file_path ]
   end
 
   private

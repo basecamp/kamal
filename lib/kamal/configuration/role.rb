@@ -67,7 +67,7 @@ class Kamal::Configuration::Role
   end
 
   def host_env_file_path
-    File.join host_env_directory, "#{[config.service, name, config.destination].compact.join("-")}.env"
+    File.join host_env_directory, "#{[ config.service, name, config.destination ].compact.join("-")}.env"
   end
 
   def env_args
@@ -123,13 +123,13 @@ class Kamal::Configuration::Role
   end
 
   def cord_host_directory
-    File.join config.run_directory_as_docker_volume, "cords", [container_prefix, config.run_id].join("-")
+    File.join config.run_directory_as_docker_volume, "cords", [ container_prefix, config.run_id ].join("-")
   end
 
   def cord_volume
     if (cord = health_check_options["cord"])
       @cord_volume ||= Kamal::Configuration::Volume.new \
-        host_path: File.join(config.run_directory, "cords", [container_prefix, config.run_id].join("-")),
+        host_path: File.join(config.run_directory, "cords", [ container_prefix, config.run_id ].join("-")),
         container_path: cord
     end
   end
@@ -229,7 +229,7 @@ class Kamal::Configuration::Role
 
     def specializations
       if config.servers.is_a?(Array) || config.servers[name].is_a?(Array)
-        { }
+        {}
       else
         config.servers[name].except("hosts")
       end

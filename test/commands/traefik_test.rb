@@ -37,7 +37,7 @@ class CommandsTraefikTest < ActiveSupport::TestCase
       "docker run --name traefik --detach --restart unless-stopped --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock --env-file .kamal/env/traefik/traefik.env --log-opt max-size=\"10m\" --label traefik.http.routers.catchall.entryPoints=\"http\" --label traefik.http.routers.catchall.rule=\"PathPrefix(\\`/\\`)\" --label traefik.http.routers.catchall.service=\"unavailable\" --label traefik.http.routers.catchall.priority=\"1\" --label traefik.http.services.unavailable.loadbalancer.server.port=\"0\" #{@image} --providers.docker --log.level=\"DEBUG\" --accesslog.format=\"json\" --api.insecure --metrics.prometheus.buckets=\"0.1,0.3,1.2,5.0\"",
       new_command.run.join(" ")
 
-    @config[:traefik]["options"] = {"publish" => %w[9000:9000 9001:9001]}
+    @config[:traefik]["options"] = { "publish" => %w[9000:9000 9001:9001] }
     assert_equal \
       "docker run --name traefik --detach --restart unless-stopped --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock --env-file .kamal/env/traefik/traefik.env --log-opt max-size=\"10m\" --label traefik.http.routers.catchall.entryPoints=\"http\" --label traefik.http.routers.catchall.rule=\"PathPrefix(\\`/\\`)\" --label traefik.http.routers.catchall.service=\"unavailable\" --label traefik.http.routers.catchall.priority=\"1\" --label traefik.http.services.unavailable.loadbalancer.server.port=\"0\" --publish \"9000:9000\" --publish \"9001:9001\" #{@image} --providers.docker --log.level=\"DEBUG\" --accesslog.format=\"json\" --api.insecure --metrics.prometheus.buckets=\"0.1,0.3,1.2,5.0\"",
       new_command.run.join(" ")
@@ -48,7 +48,7 @@ class CommandsTraefikTest < ActiveSupport::TestCase
       "docker run --name traefik --detach --restart unless-stopped --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock --env-file .kamal/env/traefik/traefik.env --log-opt max-size=\"10m\" --label traefik.http.routers.catchall.entryPoints=\"http\" --label traefik.http.routers.catchall.rule=\"PathPrefix(\\`/\\`)\" --label traefik.http.routers.catchall.service=\"unavailable\" --label traefik.http.routers.catchall.priority=\"1\" --label traefik.http.services.unavailable.loadbalancer.server.port=\"0\" #{@image} --providers.docker --log.level=\"DEBUG\" --accesslog.format=\"json\" --api.insecure --metrics.prometheus.buckets=\"0.1,0.3,1.2,5.0\"",
       new_command.run.join(" ")
 
-    @config[:traefik]["options"] = {"volume" => %w[./letsencrypt/acme.json:/letsencrypt/acme.json] }
+    @config[:traefik]["options"] = { "volume" => %w[./letsencrypt/acme.json:/letsencrypt/acme.json] }
     assert_equal \
       "docker run --name traefik --detach --restart unless-stopped --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock --env-file .kamal/env/traefik/traefik.env --log-opt max-size=\"10m\" --label traefik.http.routers.catchall.entryPoints=\"http\" --label traefik.http.routers.catchall.rule=\"PathPrefix(\\`/\\`)\" --label traefik.http.routers.catchall.service=\"unavailable\" --label traefik.http.routers.catchall.priority=\"1\" --label traefik.http.services.unavailable.loadbalancer.server.port=\"0\" --volume \"./letsencrypt/acme.json:/letsencrypt/acme.json\" #{@image} --providers.docker --log.level=\"DEBUG\" --accesslog.format=\"json\" --api.insecure --metrics.prometheus.buckets=\"0.1,0.3,1.2,5.0\"",
       new_command.run.join(" ")
@@ -59,7 +59,7 @@ class CommandsTraefikTest < ActiveSupport::TestCase
       "docker run --name traefik --detach --restart unless-stopped --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock --env-file .kamal/env/traefik/traefik.env --log-opt max-size=\"10m\" --label traefik.http.routers.catchall.entryPoints=\"http\" --label traefik.http.routers.catchall.rule=\"PathPrefix(\\`/\\`)\" --label traefik.http.routers.catchall.service=\"unavailable\" --label traefik.http.routers.catchall.priority=\"1\" --label traefik.http.services.unavailable.loadbalancer.server.port=\"0\" #{@image} --providers.docker --log.level=\"DEBUG\" --accesslog.format=\"json\" --api.insecure --metrics.prometheus.buckets=\"0.1,0.3,1.2,5.0\"",
       new_command.run.join(" ")
 
-    @config[:traefik]["options"] = {"volume" => %w[./letsencrypt/acme.json:/letsencrypt/acme.json], "publish" => %w[8080:8080], "memory" => "512m"}
+    @config[:traefik]["options"] = { "volume" => %w[./letsencrypt/acme.json:/letsencrypt/acme.json], "publish" => %w[8080:8080], "memory" => "512m" }
     assert_equal \
       "docker run --name traefik --detach --restart unless-stopped --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock --env-file .kamal/env/traefik/traefik.env --log-opt max-size=\"10m\" --label traefik.http.routers.catchall.entryPoints=\"http\" --label traefik.http.routers.catchall.rule=\"PathPrefix(\\`/\\`)\" --label traefik.http.routers.catchall.service=\"unavailable\" --label traefik.http.routers.catchall.priority=\"1\" --label traefik.http.services.unavailable.loadbalancer.server.port=\"0\" --volume \"./letsencrypt/acme.json:/letsencrypt/acme.json\" --publish \"8080:8080\" --memory \"512m\" #{@image} --providers.docker --log.level=\"DEBUG\" --accesslog.format=\"json\" --api.insecure --metrics.prometheus.buckets=\"0.1,0.3,1.2,5.0\"",
       new_command.run.join(" ")
@@ -138,7 +138,7 @@ class CommandsTraefikTest < ActiveSupport::TestCase
   test "traefik logs since 2h" do
     assert_equal \
       "docker logs traefik  --since 2h --timestamps 2>&1",
-      new_command.logs(since: '2h').join(" ")
+      new_command.logs(since: "2h").join(" ")
   end
 
   test "traefik logs last 10 lines" do
@@ -150,7 +150,7 @@ class CommandsTraefikTest < ActiveSupport::TestCase
   test "traefik logs with grep hello!" do
     assert_equal \
       "docker logs traefik --timestamps 2>&1 | grep 'hello!'",
-      new_command.logs(grep: 'hello!').join(" ")
+      new_command.logs(grep: "hello!").join(" ")
   end
 
   test "traefik remove container" do
@@ -174,7 +174,7 @@ class CommandsTraefikTest < ActiveSupport::TestCase
   test "traefik follow logs with grep hello!" do
     assert_equal \
       "ssh -t root@1.1.1.1 -p 22 'docker logs traefik --timestamps --tail 10 --follow 2>&1 | grep \"hello!\"'",
-      new_command.follow_logs(host: @config[:servers].first, grep: 'hello!')
+      new_command.follow_logs(host: @config[:servers].first, grep: "hello!")
   end
 
   test "env_file" do

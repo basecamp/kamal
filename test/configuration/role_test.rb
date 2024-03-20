@@ -90,7 +90,7 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
   end
 
   test "env args" do
-    assert_equal ["--env-file", ".kamal/env/roles/app-workers.env"], @config_with_roles.role(:workers).env_args
+    assert_equal [ "--env-file", ".kamal/env/roles/app-workers.env" ], @config_with_roles.role(:workers).env_args
   end
 
   test "env secret overwritten by role" do
@@ -188,8 +188,8 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
 
     @deploy_with_roles[:servers]["workers"]["env"] = {
       "clear" => {
-        "REDIS_URL" => "redis://c/d",
-      },
+        "REDIS_URL" => "redis://c/d"
+      }
     }
 
     ENV["REDIS_PASSWORD"] = "secret456"
@@ -214,7 +214,7 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
 
   test "uses cord" do
     assert @config_with_roles.role(:web).uses_cord?
-    assert !@config_with_roles.role(:workers).uses_cord?
+    assert_not @config_with_roles.role(:workers).uses_cord?
   end
 
   test "cord host file" do
@@ -238,28 +238,28 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
     assert_nil @config_with_roles.role(:workers).asset_volume_args
     assert_nil @config_with_roles.role(:web).asset_path
     assert_nil @config_with_roles.role(:workers).asset_path
-    assert !@config_with_roles.role(:web).assets?
-    assert !@config_with_roles.role(:workers).assets?
+    assert_not @config_with_roles.role(:web).assets?
+    assert_not @config_with_roles.role(:workers).assets?
 
     config_with_assets = Kamal::Configuration.new(@deploy_with_roles.dup.tap { |c|
       c[:asset_path] = "foo"
     })
     assert_equal "foo", config_with_assets.role(:web).asset_path
     assert_equal "foo", config_with_assets.role(:workers).asset_path
-    assert_equal ["--volume", "$(pwd)/.kamal/assets/volumes/app-web-12345:foo"], config_with_assets.role(:web).asset_volume_args
+    assert_equal [ "--volume", "$(pwd)/.kamal/assets/volumes/app-web-12345:foo" ], config_with_assets.role(:web).asset_volume_args
     assert_nil config_with_assets.role(:workers).asset_volume_args
     assert config_with_assets.role(:web).assets?
-    assert !config_with_assets.role(:workers).assets?
+    assert_not config_with_assets.role(:workers).assets?
 
     config_with_assets = Kamal::Configuration.new(@deploy_with_roles.dup.tap { |c|
       c[:servers]["web"] = { "hosts" => [ "1.1.1.1", "1.1.1.2" ], "asset_path" => "bar" }
     })
     assert_equal "bar", config_with_assets.role(:web).asset_path
     assert_nil config_with_assets.role(:workers).asset_path
-    assert_equal ["--volume", "$(pwd)/.kamal/assets/volumes/app-web-12345:bar"], config_with_assets.role(:web).asset_volume_args
+    assert_equal [ "--volume", "$(pwd)/.kamal/assets/volumes/app-web-12345:bar" ], config_with_assets.role(:web).asset_volume_args
     assert_nil config_with_assets.role(:workers).asset_volume_args
     assert config_with_assets.role(:web).assets?
-    assert !config_with_assets.role(:workers).assets?
+    assert_not config_with_assets.role(:workers).assets?
 
   ensure
     ENV.delete("VERSION")

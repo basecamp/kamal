@@ -1,3 +1,13 @@
+GIT
+  remote: https://github.com/basecamp/house-style.git
+  revision: a9ca7e4ab80b72c1a10053c50efefe8cd275e3b8
+  specs:
+    rubocop-37signals (1.0.0)
+      rubocop
+      rubocop-minitest
+      rubocop-performance
+      rubocop-rails
+
 PATH
   remote: .
   specs:
@@ -42,6 +52,7 @@ GEM
       minitest (>= 5.1)
       mutex_m
       tzinfo (~> 2.0)
+    ast (2.4.2)
     base64 (0.2.0)
     bcrypt_pbkdf (1.1.0)
     bigdecimal (3.1.5)
@@ -63,6 +74,8 @@ GEM
     irb (1.11.0)
       rdoc
       reline (>= 0.3.8)
+    json (2.7.1)
+    language_server-protocol (3.17.0.3)
     loofah (2.22.0)
       crass (~> 1.0.2)
       nokogiri (>= 1.12.0)
@@ -79,6 +92,10 @@ GEM
       racc (~> 1.4)
     nokogiri (1.16.0-x86_64-linux)
       racc (~> 1.4)
+    parallel (1.24.0)
+    parser (3.3.0.5)
+      ast (~> 2.4.1)
+      racc
     psych (5.1.2)
       stringio
     racc (1.7.3)
@@ -105,11 +122,39 @@ GEM
       rake (>= 12.2)
       thor (~> 1.0, >= 1.2.2)
       zeitwerk (~> 2.6)
+    rainbow (3.1.1)
     rake (13.1.0)
     rdoc (6.6.2)
       psych (>= 4.0.0)
+    regexp_parser (2.9.0)
     reline (0.4.2)
       io-console (~> 0.5)
+    rexml (3.2.6)
+    rubocop (1.61.0)
+      json (~> 2.3)
+      language_server-protocol (>= 3.17.0)
+      parallel (~> 1.10)
+      parser (>= 3.3.0.2)
+      rainbow (>= 2.2.2, < 4.0)
+      regexp_parser (>= 1.8, < 3.0)
+      rexml (>= 3.2.5, < 4.0)
+      rubocop-ast (>= 1.30.0, < 2.0)
+      ruby-progressbar (~> 1.7)
+      unicode-display_width (>= 2.4.0, < 3.0)
+    rubocop-ast (1.31.1)
+      parser (>= 3.3.0.4)
+    rubocop-minitest (0.34.5)
+      rubocop (>= 1.39, < 2.0)
+      rubocop-ast (>= 1.30.0, < 2.0)
+    rubocop-performance (1.20.2)
+      rubocop (>= 1.48.1, < 2.0)
+      rubocop-ast (>= 1.30.0, < 2.0)
+    rubocop-rails (2.24.0)
+      activesupport (>= 4.2.0)
+      rack (>= 1.1)
+      rubocop (>= 1.33.0, < 2.0)
+      rubocop-ast (>= 1.31.1, < 2.0)
+    ruby-progressbar (1.13.0)
     ruby2_keywords (0.0.5)
     sshkit (1.21.7)
       mutex_m
@@ -119,6 +164,7 @@ GEM
     thor (1.3.0)
     tzinfo (2.0.6)
       concurrent-ruby (~> 1.0)
+    unicode-display_width (2.5.0)
     webrick (1.8.1)
     zeitwerk (2.6.12)
 
@@ -132,6 +178,7 @@ DEPENDENCIES
   kamal!
   mocha
   railties
+  rubocop-37signals!
 
 BUNDLED WITH
    2.4.3

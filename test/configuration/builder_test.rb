@@ -124,9 +124,9 @@ class ConfigurationBuilderTest < ActiveSupport::TestCase
   end
 
   test "setting secrets" do
-    @deploy_with_builder_option[:builder] = { "secrets" => ["GITHUB_TOKEN"] }
+    @deploy_with_builder_option[:builder] = { "secrets" => [ "GITHUB_TOKEN" ] }
 
-    assert_equal ["GITHUB_TOKEN"], @config_with_builder_option.builder.secrets
+    assert_equal [ "GITHUB_TOKEN" ], @config_with_builder_option.builder.secrets
   end
 
   test "dockerfile" do
@@ -154,8 +154,8 @@ class ConfigurationBuilderTest < ActiveSupport::TestCase
   end
 
   test "setting ssh params" do
-    @deploy_with_builder_option[:builder] = { "ssh" => 'default=$SSH_AUTH_SOCK' }
+    @deploy_with_builder_option[:builder] = { "ssh" => "default=$SSH_AUTH_SOCK" }
 
-    assert_equal 'default=$SSH_AUTH_SOCK', @config_with_builder_option.builder.ssh
+    assert_equal "default=$SSH_AUTH_SOCK", @config_with_builder_option.builder.ssh
   end
 end

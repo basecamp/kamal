@@ -7,7 +7,7 @@ class ConfigurationSshkitTest < ActiveSupport::TestCase
       registry: { "username" => "dhh", "password" => "secret" },
       env: { "REDIS_URL" => "redis://x/y" },
       servers: [ "1.1.1.1", "1.1.1.2" ],
-      volumes: ["/local/path:/container/path"]
+      volumes: [ "/local/path:/container/path" ]
     }
 
     @config = Kamal::Configuration.new(@deploy)

@@ -3,7 +3,7 @@ require_relative "cli_test_case"
 class CliMainTest < CliTestCase
   test "setup" do
     invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false }
-    
+
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:server:bootstrap", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:env:push", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:accessory:boot", [ "all" ], invoke_options)
@@ -102,7 +102,7 @@ class CliMainTest < CliTestCase
       .with { |*args| args == [ :mkdir, "-p", ".kamal" ] }
 
     SSHKit::Backend::Abstract.any_instance.stubs(:execute)
-      .with { |*arg| arg[0..1] == [:mkdir, ".kamal/lock-app"] }
+      .with { |*arg| arg[0..1] == [ :mkdir, ".kamal/lock-app" ] }
       .raises(RuntimeError, "mkdir: cannot create directory ‘kamal_lock-app’: File exists")
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_debug)
@@ -120,7 +120,7 @@ class CliMainTest < CliTestCase
       .with { |*args| args == [ :mkdir, "-p", ".kamal" ] }
 
     SSHKit::Backend::Abstract.any_instance.stubs(:execute)
-      .with { |*arg| arg[0..1] == [:mkdir, ".kamal/lock-app"] }
+      .with { |*arg| arg[0..1] == [ :mkdir, ".kamal/lock-app" ] }
       .raises(SocketError, "getaddrinfo: nodename nor servname provided, or not known")
 
     assert_raises(SSHKit::Runner::ExecuteError) do
@@ -135,11 +135,11 @@ class CliMainTest < CliTestCase
       .with("kamal:cli:registry:login", [], invoke_options)
       .raises(RuntimeError)
 
-    assert !KAMAL.holding_lock?
+    assert_not KAMAL.holding_lock?
     assert_raises(RuntimeError) do
       stderred { run_command("deploy") }
     end
-    assert !KAMAL.holding_lock?
+    assert_not KAMAL.holding_lock?
   end
 
   test "deploy with skipped hooks" do
@@ -154,15 +154,15 @@ class CliMainTest < CliTestCase
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:prune:all", [], invoke_options)
 
     run_command("deploy", "--skip_hooks") do
-      refute_match /Running the post-deploy hook.../, output
+      assert_no_match /Running the post-deploy hook.../, output
     end
   end
-  
+
   test "deploy without healthcheck if primary host doesn't have traefik" do
     invoke_options = { "config_file" => "test/fixtures/deploy_workers_only.yml", "version" => "999", "skip_hooks" => false }
 
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:healthcheck:perform", [], invoke_options).never
-    
+
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:registry:login", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:deliver", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:traefik:boot", [], invoke_options)
@@ -252,7 +252,7 @@ class CliMainTest < CliTestCase
     end
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :inspect, "-f '{{ range .Mounts }}{{printf \"%s %s\\n\" .Source .Destination}}{{ end }}'", "app-web-version-to-rollback", "|", :awk, "'$2 == \"/tmp/kamal-cord\" {print $1}'", :raise_on_non_zero_exit => false)
+      .with(:docker, :inspect, "-f '{{ range .Mounts }}{{printf \"%s %s\\n\" .Source .Destination}}{{ end }}'", "app-web-version-to-rollback", "|", :awk, "'$2 == \"/tmp/kamal-cord\" {print $1}'", raise_on_non_zero_exit: false)
       .returns("corddirectory").at_least_once # health check
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
@@ -311,8 +311,8 @@ class CliMainTest < CliTestCase
     run_command("config", config_file: "deploy_simple").tap do |output|
       config = YAML.load(output)
 
-      assert_equal ["web"], config[:roles]
-      assert_equal ["1.1.1.1", "1.1.1.2"], config[:hosts]
+      assert_equal [ "web" ], config[:roles]
+      assert_equal [ "1.1.1.1", "1.1.1.2" ], config[:hosts]
       assert_equal "999", config[:version]
       assert_equal "dhh/app", config[:repository]
       assert_equal "dhh/app:999", config[:absolute_image]
@@ -324,8 +324,8 @@ class CliMainTest < CliTestCase
     run_command("config", config_file: "deploy_with_roles").tap do |output|
       config = YAML.load(output)
 
-      assert_equal ["web", "workers"], config[:roles]
-      assert_equal ["1.1.1.1", "1.1.1.2", "1.1.1.3", "1.1.1.4"], config[:hosts]
+      assert_equal [ "web", "workers" ], config[:roles]
+      assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3", "1.1.1.4" ], config[:hosts]
       assert_equal "999", config[:version]
       assert_equal "registry.digitalocean.com/dhh/app", config[:repository]
       assert_equal "registry.digitalocean.com/dhh/app:999", config[:absolute_image]
@@ -337,8 +337,8 @@ class CliMainTest < CliTestCase
     run_command("config", config_file: "deploy_primary_web_role_override").tap do |output|
       config = YAML.load(output)
 
-      assert_equal ["web_chicago", "web_tokyo"], config[:roles]
-      assert_equal ["1.1.1.1", "1.1.1.2", "1.1.1.3", "1.1.1.4"], config[:hosts]
+      assert_equal [ "web_chicago", "web_tokyo" ], config[:roles]
+      assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3", "1.1.1.4" ], config[:hosts]
       assert_equal "1.1.1.3", config[:primary_host]
     end
   end
@@ -347,8 +347,8 @@ class CliMainTest < CliTestCase
     run_command("config", "-d", "world", config_file: "deploy_for_dest").tap do |output|
       config = YAML.load(output)
 
-      assert_equal ["web"], config[:roles]
-      assert_equal ["1.1.1.1", "1.1.1.2"], config[:hosts]
+      assert_equal [ "web" ], config[:roles]
+      assert_equal [ "1.1.1.1", "1.1.1.2" ], config[:hosts]
       assert_equal "999", config[:version]
       assert_equal "registry.digitalocean.com/dhh/app", config[:repository]
       assert_equal "registry.digitalocean.com/dhh/app:999", config[:absolute_image]
@@ -360,8 +360,8 @@ class CliMainTest < CliTestCase
     run_command("config", config_file: "deploy_with_aliases").tap do |output|
       config = YAML.load(output)
 
-      assert_equal ["web", "web_tokyo", "workers", "workers_tokyo"], config[:roles]
-      assert_equal ["1.1.1.1", "1.1.1.2", "1.1.1.3", "1.1.1.4"], config[:hosts]
+      assert_equal [ "web", "web_tokyo", "workers", "workers_tokyo" ], config[:roles]
+      assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3", "1.1.1.4" ], config[:hosts]
       assert_equal "999", config[:version]
       assert_equal "registry.digitalocean.com/dhh/app", config[:repository]
       assert_equal "registry.digitalocean.com/dhh/app:999", config[:absolute_image]
@@ -487,6 +487,6 @@ class CliMainTest < CliTestCase
 
   private
     def run_command(*command, config_file: "deploy_simple")
-      stdouted { Kamal::Cli::Main.start([*command, "-c", "test/fixtures/#{config_file}.yml"]) }
+      stdouted { Kamal::Cli::Main.start([ *command, "-c", "test/fixtures/#{config_file}.yml" ]) }
     end
 end

@@ -4,7 +4,7 @@ module Kamal::Commands::App::Assets
 
     combine \
       make_directory(role.asset_extracted_path),
-      [*docker(:stop, "-t 1", asset_container, "2> /dev/null"), "|| true"],
+      [ *docker(:stop, "-t 1", asset_container, "2> /dev/null"), "|| true" ],
       docker(:run, "--name", asset_container, "--detach", "--rm", config.latest_image, "sleep 1000000"),
       docker(:cp, "-L", "#{asset_container}:#{role.asset_path}/.", role.asset_extracted_path),
       docker(:stop, "-t 1", asset_container),
@@ -17,7 +17,7 @@ module Kamal::Commands::App::Assets
       old_extracted_path, old_volume_path = role.asset_extracted_path(old_version), role.asset_volume(old_version).host_path
     end
 
-    commands = [make_directory(new_volume_path), copy_contents(new_extracted_path, new_volume_path)]
+    commands = [ make_directory(new_volume_path), copy_contents(new_extracted_path, new_volume_path) ]
 
     if old_version.present?
       commands << copy_contents(new_extracted_path, old_volume_path, continue_on_error: true)
@@ -46,6 +46,6 @@ module Kamal::Commands::App::Assets
     end
 
     def copy_contents(source, destination, continue_on_error: false)
-      [ :cp, "-rnT", "#{source}", destination, *("|| true" if continue_on_error)]
+      [ :cp, "-rnT", "#{source}", destination, *("|| true" if continue_on_error) ]
     end
 end

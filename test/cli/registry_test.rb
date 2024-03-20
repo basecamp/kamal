@@ -16,6 +16,6 @@ class CliRegistryTest < CliTestCase
 
   private
     def run_command(*command)
-      stdouted { Kamal::Cli::Registry.start([*command, "-c", "test/fixtures/deploy_with_accessories.yml"]) }
+      stdouted { Kamal::Cli::Registry.start([ *command, "-c", "test/fixtures/deploy_with_accessories.yml" ]) }
     end
 end

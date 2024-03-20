@@ -9,7 +9,7 @@ module Kamal::Utils
       if value.present?
         attr = "#{key}=#{escape_shell_value(value)}"
         attr = self.sensitive(attr, redaction: "#{key}=[REDACTED]") if sensitive
-        [ argument, attr]
+        [ argument, attr ]
       else
         [ argument, key ]
       end
@@ -29,7 +29,7 @@ module Kamal::Utils
 
   # Flattens a one-to-many structure into an array of two-element arrays each containing a key-value pair
   def flatten_args(args)
-    args.flat_map { |key, value| value.try(:map) { |entry| [key, entry] } || [ [ key, value ] ] }
+    args.flat_map { |key, value| value.try(:map) { |entry| [ key, entry ] } || [ [ key, value ] ] }
   end
 
   # Marks sensitive values for redaction in logs and human-visible output.
@@ -66,7 +66,7 @@ module Kamal::Utils
     Array(filters).select do |filter|
       matches += Array(items).select do |item|
         # Only allow * for a wildcard
-        pattern = Regexp.escape(filter).gsub('\*', '.*')
+        pattern = Regexp.escape(filter).gsub('\*', ".*")
         # items are roles or hosts
         (item.respond_to?(:name) ? item.name : item).match(/^#{pattern}$/)
       end

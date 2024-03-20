@@ -25,7 +25,7 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
     pipe \
       docker(:inspect, "-f", "'{{ .Config.Labels.service }}'", config.absolute_image),
       any(
-        [:grep, "-x", config.service],
+        [ :grep, "-x", config.service ],
         "(echo \"Image #{config.absolute_image} is missing the 'service' label\" && exit 1)"
       )
   end
@@ -38,8 +38,8 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
 
     def build_cache
       if cache_to && cache_from
-        ["--cache-to", cache_to,
-          "--cache-from", cache_from]
+        [ "--cache-to", cache_to,
+          "--cache-from", cache_from ]
       end
     end
 

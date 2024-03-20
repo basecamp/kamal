@@ -33,6 +33,6 @@ class CliPruneTest < CliTestCase
 
   private
     def run_command(*command)
-      stdouted { Kamal::Cli::Prune.start([*command, "-c", "test/fixtures/deploy_with_accessories.yml"]) }
+      stdouted { Kamal::Cli::Prune.start([ *command, "-c", "test/fixtures/deploy_with_accessories.yml" ]) }
     end
 end
