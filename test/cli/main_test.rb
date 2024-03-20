@@ -254,9 +254,6 @@ class CliMainTest < CliTestCase
         .returns("version-to-rollback\n").at_least_once
     end
 
-    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :inspect, "--format '{{ .NetworkSettings.IPAddress }}'", "app-web-123", raise_on_non_zero_exit: false)
-      .returns("running").at_least_once # find IP
 
     Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
     hook_variables = { version: 123, service_version: "app@123", hosts: "1.1.1.1,1.1.1.2,1.1.1.3,1.1.1.4", command: "rollback" }
@@ -281,9 +278,6 @@ class CliMainTest < CliTestCase
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
       .with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=web", "--filter", "status=running", "--filter", "status=restarting", "--latest", "--format", "\"{{.Names}}\"", "|", "while read line; do echo ${line#app-web-}; done", raise_on_non_zero_exit: false)
       .returns("").at_least_once
-    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :inspect, "--format '{{ .NetworkSettings.IPAddress }}'", "app-web-123", raise_on_non_zero_exit: false)
-      .returns("running").at_least_once # find IP
 
     run_command("rollback", "123").tap do |output|
       assert_match "docker run --detach --restart unless-stopped --name app-web-123", output

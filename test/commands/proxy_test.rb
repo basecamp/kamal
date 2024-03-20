@@ -15,13 +15,13 @@ class CommandsProxyTest < ActiveSupport::TestCase
 
   test "run" do
     assert_equal \
-      "docker run --name mproxy --detach --restart unless-stopped --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock --log-opt max-size=\"10m\" #{Kamal::Commands::Proxy::DEFAULT_IMAGE}",
+      "docker run --name mproxy --detach --restart unless-stopped --network kamal --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock --log-opt max-size=\"10m\" #{Kamal::Commands::Proxy::DEFAULT_IMAGE}",
       new_command.run.join(" ")
   end
 
   test "run with ports configured" do
     assert_equal \
-      "docker run --name mproxy --detach --restart unless-stopped --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock --log-opt max-size=\"10m\" #{Kamal::Commands::Proxy::DEFAULT_IMAGE}",
+      "docker run --name mproxy --detach --restart unless-stopped --network kamal --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock --log-opt max-size=\"10m\" #{Kamal::Commands::Proxy::DEFAULT_IMAGE}",
       new_command.run.join(" ")
   end
 
@@ -29,7 +29,7 @@ class CommandsProxyTest < ActiveSupport::TestCase
     @config.delete(:proxy)
 
     assert_equal \
-      "docker run --name mproxy --detach --restart unless-stopped --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock --log-opt max-size=\"10m\" #{Kamal::Commands::Proxy::DEFAULT_IMAGE}",
+      "docker run --name mproxy --detach --restart unless-stopped --network kamal --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock --log-opt max-size=\"10m\" #{Kamal::Commands::Proxy::DEFAULT_IMAGE}",
       new_command.run.join(" ")
   end
 
@@ -37,7 +37,7 @@ class CommandsProxyTest < ActiveSupport::TestCase
     @config[:logging] = { "driver" => "local", "options" => { "max-size" => "100m", "max-file" => "3" } }
 
     assert_equal \
-      "docker run --name mproxy --detach --restart unless-stopped --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock --log-driver \"local\" --log-opt max-size=\"100m\" --log-opt max-file=\"3\" #{Kamal::Commands::Proxy::DEFAULT_IMAGE}",
+      "docker run --name mproxy --detach --restart unless-stopped --network kamal --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock --log-driver \"local\" --log-opt max-size=\"100m\" --log-opt max-file=\"3\" #{Kamal::Commands::Proxy::DEFAULT_IMAGE}",
       new_command.run.join(" ")
   end
 

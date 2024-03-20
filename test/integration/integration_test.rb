@@ -46,8 +46,8 @@ class IntegrationTest < ActiveSupport::TestCase
 
     def assert_app_is_down(response_code: "503")
       response = app_response
-      debug_response_code(response, "503")
-      assert_equal "503", response.code
+      debug_response_code(response, response_code)
+      assert_equal response_code, response.code
     end
 
     def assert_app_is_up(version: nil)

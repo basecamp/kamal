@@ -10,6 +10,7 @@ class Kamal::Commands::Proxy < Kamal::Commands::Base
       "--name", container_name,
       "--detach",
       "--restart", "unless-stopped",
+      "--network kamal",
       *publish_args,
       "--volume", "/var/run/docker.sock:/var/run/docker.sock",
       *config.logging_args,

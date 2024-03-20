@@ -2,6 +2,7 @@ require_relative "integration_test"
 
 class IntegrationProxyTest < IntegrationTest
   test "boot, reboot, stop, start, restart, logs, remove" do
+    kamal :server, :bootstrap
     kamal :envify
 
     kamal :proxy, :boot

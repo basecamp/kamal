@@ -15,6 +15,7 @@ class Kamal::Commands::App < Kamal::Commands::Base
       "--detach",
       "--restart unless-stopped",
       "--name", container_name,
+      "--network kamal",
       *([ "--hostname", hostname ] if hostname),
       "-e", "KAMAL_CONTAINER_NAME=\"#{container_name}\"",
       "-e", "KAMAL_VERSION=\"#{config.version}\"",
@@ -43,10 +44,6 @@ class Kamal::Commands::App < Kamal::Commands::Base
       xargs(config.stop_wait_time ? docker(:stop, "-t", config.stop_wait_time) : docker(:stop))
   end
 
-  def internal_ip(version: nil)
-    docker :inspect, "--format '{{ .NetworkSettings.IPAddress }}'", container_name(version)
-  end
-
   def info
     docker :ps, *filter_args
   end
@@ -58,6 +55,10 @@ class Kamal::Commands::App < Kamal::Commands::Base
 
   def container_id_for_version(version, only_running: false)
     container_id_for(container_name: container_name(version), only_running: only_running)
+  end
+
+  def container_name(version = nil)
+    [ role.container_prefix, version || config.version ].compact.join("-")
   end
 
   def current_running_version
@@ -81,10 +82,6 @@ class Kamal::Commands::App < Kamal::Commands::Base
 
 
   private
-    def container_name(version = nil)
-      [ role.container_prefix, version || config.version ].compact.join("-")
-    end
-
     def filter_args(statuses: nil)
       argumentize "--filter", filters(statuses: statuses)
     end

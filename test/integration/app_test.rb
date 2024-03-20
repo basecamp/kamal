@@ -4,13 +4,15 @@ class IntegrationAppTest < IntegrationTest
   test "stop, start, boot, logs, images, containers, exec, remove" do
     kamal :envify
 
+    kamal :setup
+
     kamal :deploy
 
     assert_app_is_up
 
     kamal :app, :stop
 
-    assert_app_is_down
+    assert_app_is_down response_code: "502"
 
     kamal :app, :start
 
@@ -50,6 +52,6 @@ class IntegrationAppTest < IntegrationTest
 
     kamal :app, :remove
 
-    assert_app_is_down
+    assert_app_is_down response_code: "502"
   end
 end

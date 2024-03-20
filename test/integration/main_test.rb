@@ -2,6 +2,7 @@ require_relative "integration_test"
 
 class IntegrationMainTest < IntegrationTest
   test "envify, deploy, redeploy, rollback, details and audit" do
+    kamal :server, :bootstrap
     kamal :envify
     assert_local_env_file "SECRET_TOKEN=1234"
     assert_remote_env_file "SECRET_TOKEN=1234"

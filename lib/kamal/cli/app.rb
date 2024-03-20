@@ -41,8 +41,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
 
           if role.running_proxy?
             version = capture_with_info(*app.current_running_version, raise_on_non_zero_exit: false).strip
-            ip = capture_with_info(*app.internal_ip(version: version), raise_on_non_zero_exit: false).strip
-            execute *KAMAL.proxy.deploy(ip)
+            execute *KAMAL.proxy.deploy(app.container_name(version))
           end
         end
       end
@@ -60,12 +59,12 @@ class Kamal::Cli::App < Kamal::Cli::Base
           version = capture_with_info(*app.current_running_version, raise_on_non_zero_exit: false).strip
 
           execute *KAMAL.auditor.record("Stopped app", role: role), verbosity: :debug
-          execute *app.stop, raise_on_non_zero_exit: false
 
           if role.running_proxy?
-            ip = capture_with_info(*app.internal_ip(version: version), raise_on_non_zero_exit: false).strip
-            execute *KAMAL.proxy.remove(ip), raise_on_non_zero_exit: false
+            execute *KAMAL.proxy.remove(app.container_name(version)), raise_on_non_zero_exit: false
           end
+
+          execute *app.stop, raise_on_non_zero_exit: false
         end
       end
     end

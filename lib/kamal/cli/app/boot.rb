@@ -48,8 +48,7 @@ class Kamal::Cli::App::Boot
       audit "Booted app version #{version}"
       execute *app.run(hostname: "#{host}-#{SecureRandom.hex(6)}")
       if running_proxy?
-        ip = capture_with_info(*app.internal_ip(version: version), raise_on_non_zero_exit: false).strip
-        execute *KAMAL.proxy.deploy(ip)
+        execute *KAMAL.proxy.deploy(app.container_name(version))
       end
     end
 

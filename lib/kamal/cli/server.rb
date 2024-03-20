@@ -14,6 +14,14 @@ class Kamal::Cli::Server < Kamal::Cli::Base
       end
 
       execute(*KAMAL.server.ensure_run_directory)
+
+      begin
+        execute(*KAMAL.docker.create_kamal_network)
+      rescue SSHKit::Command::Failed => e
+        if e.message !~ /network with name kamal already exists/
+          raise
+        end
+      end
     end
 
     if missing.any?

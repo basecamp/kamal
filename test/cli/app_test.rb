@@ -5,7 +5,7 @@ class CliAppTest < CliTestCase
     stub_running
     run_command("boot").tap do |output|
       assert_match "docker tag dhh/app:latest dhh/app:latest", output
-      assert_match /docker run --detach --restart unless-stopped --name app-web-latest --hostname 1.1.1.1-[0-9a-f]{12} /, output
+      assert_match /docker run --detach --restart unless-stopped --name app-web-latest --network kamal --hostname 1.1.1.1-[0-9a-f]{12} /, output
       assert_match "docker container ls --all --filter name=^app-web-123$ --quiet | xargs docker stop", output
     end
   end
@@ -18,17 +18,13 @@ class CliAppTest < CliTestCase
       .returns("12345678") # running version
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :inspect, "--format '{{ .NetworkSettings.IPAddress }}'", "app-web-latest", raise_on_non_zero_exit: false)
-      .returns("running") # find IP
-
-    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
       .with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=web", "--filter", "status=running", "--filter", "status=restarting", "--latest", "--format", "\"{{.Names}}\"", "|", "while read line; do echo ${line#app-web-}; done", raise_on_non_zero_exit: false)
       .returns("123") # old version
 
     run_command("boot").tap do |output|
       assert_match /Renaming container .* to .* as already deployed on 1.1.1.1/, output # Rename
       assert_match /docker rename app-web-latest app-web-latest_replaced_[0-9a-f]{16}/, output
-      assert_match /docker run --detach --restart unless-stopped --name app-web-latest --hostname 1.1.1.1-[0-9a-f]{12} /, output
+      assert_match /docker run --detach --restart unless-stopped --name app-web-latest --network kamal --hostname 1.1.1.1-[0-9a-f]{12} /, output
       assert_match "docker container ls --all --filter name=^app-web-123$ --quiet | xargs docker stop", output
     end
   ensure
@@ -62,10 +58,6 @@ class CliAppTest < CliTestCase
       .returns("12345678") # running version
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :inspect, "--format '{{ .NetworkSettings.IPAddress }}'", "app-web-latest", raise_on_non_zero_exit: false)
-      .returns("running") # find IP
-
-    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
       .with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=web", "--filter", "status=running", "--filter", "status=restarting", "--latest", "--format", "\"{{.Names}}\"", "|", "while read line; do echo ${line#app-web-}; done", raise_on_non_zero_exit: false)
       .returns("123").twice # old version
 
@@ -73,7 +65,7 @@ class CliAppTest < CliTestCase
       assert_match "docker tag dhh/app:latest dhh/app:latest", output
       assert_match "/usr/bin/env mkdir -p .kamal/assets/volumes/app-web-latest ; cp -rnT .kamal/assets/extracted/app-web-latest .kamal/assets/volumes/app-web-latest ; cp -rnT .kamal/assets/extracted/app-web-latest .kamal/assets/volumes/app-web-123 || true ; cp -rnT .kamal/assets/extracted/app-web-123 .kamal/assets/volumes/app-web-latest || true", output
       assert_match "/usr/bin/env mkdir -p .kamal/assets/extracted/app-web-latest && docker stop -t 1 app-web-assets 2> /dev/null || true && docker run --name app-web-assets --detach --rm dhh/app:latest sleep 1000000 && docker cp -L app-web-assets:/public/assets/. .kamal/assets/extracted/app-web-latest && docker stop -t 1 app-web-assets", output
-      assert_match /docker run --detach --restart unless-stopped --name app-web-latest --hostname 1.1.1.1-[0-9a-f]{12} /, output
+      assert_match /docker run --detach --restart unless-stopped --name app-web-latest --network kamal --hostname 1.1.1.1-[0-9a-f]{12} /, output
       assert_match "docker container ls --all --filter name=^app-web-123$ --quiet | xargs docker stop", output
       assert_match "/usr/bin/env find .kamal/assets/extracted -maxdepth 1 -name 'app-web-*' ! -name app-web-latest -exec rm -rf \"{}\" + ; find .kamal/assets/volumes -maxdepth 1 -name 'app-web-*' ! -name app-web-latest -exec rm -rf \"{}\" +", output
     end
