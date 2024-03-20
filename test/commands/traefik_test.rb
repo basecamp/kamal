@@ -177,14 +177,10 @@ class CommandsTraefikTest < ActiveSupport::TestCase
       new_command.follow_logs(host: @config[:servers].first, grep: "hello!")
   end
 
-  test "env_file" do
+  test "secrets io" do
     @config[:traefik]["env"] = { "secret" => %w[EXAMPLE_API_KEY] }
 
-    assert_equal "EXAMPLE_API_KEY=456\n", new_command.env_file.to_s
-  end
-
-  test "host_env_file_path" do
-    assert_equal ".kamal/env/traefik/traefik.env", new_command.host_env_file_path
+    assert_equal "EXAMPLE_API_KEY=456\n", new_command.env.secrets_io.string
   end
 
   test "make_env_directory" do

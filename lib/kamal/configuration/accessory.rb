@@ -42,23 +42,13 @@ class Kamal::Configuration::Accessory
   end
 
   def env
-    specifics["env"] || {}
-  end
-
-  def env_file
-    Kamal::EnvFile.new(env)
-  end
-
-  def host_env_directory
-    File.join config.host_env_directory, "accessories"
-  end
-
-  def host_env_file_path
-    File.join host_env_directory, "#{service_name}.env"
+    Kamal::Configuration::Env.from_config \
+      config: specifics.fetch("env", {}),
+      secrets_file: File.join(config.host_env_directory, "accessories", "#{service_name}.env")
   end
 
   def env_args
-    argumentize "--env-file", host_env_file_path
+    env.args
   end
 
   def files
@@ -111,10 +101,10 @@ class Kamal::Configuration::Accessory
     end
 
     def with_clear_env_loaded
-      (env["clear"] || env).each { |k, v| ENV[k] = v }
+      env.clear.each { |k, v| ENV[k] = v }
       yield
     ensure
-      (env["clear"] || env).each { |k, v| ENV.delete(k) }
+      env.clear.each { |k, v| ENV.delete(k) }
     end
 
     def read_dynamic_file(local_file)

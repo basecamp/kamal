@@ -6,7 +6,7 @@ require "erb"
 require "net/ssh/proxy/jump"
 
 class Kamal::Configuration
-  delegate :service, :image, :servers, :env, :labels, :registry, :stop_wait_time, :hooks_path, :logging, to: :raw_config, allow_nil: true
+  delegate :service, :image, :servers, :labels, :registry, :stop_wait_time, :hooks_path, :logging, to: :raw_config, allow_nil: true
   delegate :argumentize, :optionize, to: Kamal::Utils
 
   attr_reader :destination, :raw_config
@@ -216,12 +216,17 @@ class Kamal::Configuration
     raw_config.hooks_path || ".kamal/hooks"
   end
 
+  def asset_path
+    raw_config.asset_path
+  end
+
+
   def host_env_directory
     "#{run_directory}/env"
   end
 
-  def asset_path
-    raw_config.asset_path
+  def env
+    raw_config.env || {}
   end
 
 
