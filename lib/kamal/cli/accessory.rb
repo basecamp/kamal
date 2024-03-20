@@ -177,7 +177,7 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
       if name == "all"
         KAMAL.accessory_names.each { |accessory_name| remove(accessory_name) }
       else
-        if options[:confirmed] || ask("This will remove all containers, images and data directories for #{name}. Are you sure?", limited_to: %w[ y N ], default: "N") == "y"
+        confirming "This will remove all containers, images and data directories for #{name}. Are you sure?" do
           with_accessory(name) do
             stop(name)
             remove_container(name)
