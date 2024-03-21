@@ -50,8 +50,19 @@ services:
     volumes:
       - shared:/shared
 
+  vm3:
+    privileged: true
+    build:
+      context: docker/vm
+    volumes:
+      - shared:/shared
+
   load_balancer:
     build:
       context: docker/load_balancer
     ports:
       - "12345:80"
+    depends_on:
+      - vm1
+      - vm2
+      - vm3

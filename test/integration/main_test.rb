@@ -42,6 +42,22 @@ class MainTest < IntegrationTest
     assert_no_remote_env_file
   end
 
+  test "app with roles" do
+    @app = "app_with_roles"
+
+    kamal :envify
+
+    version = latest_app_version
+
+    assert_app_is_down
+
+    kamal :deploy
+
+    assert_app_is_up version: version
+    assert_hooks_ran "pre-connect", "pre-build", "pre-deploy", "post-deploy"
+    assert_container_running host: :vm3, name: "app-workers-#{version}"
+  end
+
   test "config" do
     config = YAML.load(kamal(:config, capture: true))
     version = latest_app_version
@@ -114,5 +130,9 @@ class MainTest < IntegrationTest
     def assert_images_and_containers
       assert vm1_image_ids.any?
       assert vm1_container_ids.any?
+    end
+
+    def assert_container_running(host:, name:)
+      assert docker_compose("exec #{host} docker ps --filter=name=#{name} -q", capture: true).strip.present?
     end
 end

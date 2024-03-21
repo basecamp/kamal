@@ -1,0 +1,8 @@
+#!/bin/sh
+
+echo "About to lock..."
+if [ "$KAMAL_HOSTS" != "vm1,vm2,vm3" ]; then
+  echo "Expected hosts to be 'vm1,vm2,vm3', got $KAMAL_HOSTS"
+  exit 1
+fi
+mkdir -p /tmp/${TEST_ID} && touch /tmp/${TEST_ID}/pre-connect

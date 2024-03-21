@@ -1,0 +1,37 @@
+service: app
+image: app
+servers:
+  web:
+    hosts:
+      - vm1
+      - vm2
+  workers:
+    hosts:
+      - vm3
+    cmd: sleep infinity
+
+asset_path: /usr/share/nginx/html/versions
+
+registry:
+  server: registry:4443
+  username: root
+  password: root
+builder:
+  multiarch: false
+  args:
+    COMMIT_SHA: <%= `git rev-parse HEAD` %>
+healthcheck:
+  cmd: wget -qO- http://localhost > /dev/null || exit 1
+traefik:
+  args:
+    accesslog: true
+    accesslog.format: json
+  image: registry:4443/traefik:v2.10
+accessories:
+  busybox:
+    service: custom-busybox
+    image: registry:4443/busybox:1.36.0
+    cmd: sh -c 'echo "Starting busybox..."; trap exit term; while true; do sleep 1; done'
+    roles:
+      - web
+stop_wait_time: 1
