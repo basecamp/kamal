@@ -50,6 +50,13 @@ services:
     volumes:
       - shared:/shared
 
+  vm3:
+    privileged: true
+    build:
+      context: docker/vm
+    volumes:
+      - shared:/shared
+
   load_balancer:
     build:
       context: docker/load_balancer

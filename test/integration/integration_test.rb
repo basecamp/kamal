@@ -7,6 +7,7 @@ class IntegrationTest < ActiveSupport::TestCase
     docker_compose "up --build -d"
     wait_for_healthy
     setup_deployer
+    @app = "app"
   end
 
   teardown do
@@ -34,8 +35,9 @@ class IntegrationTest < ActiveSupport::TestCase
       result
     end
 
-    def deployer_exec(*commands, **options)
-      docker_compose("exec deployer #{commands.join(" ")}", **options)
+    def deployer_exec(*commands, workdir: nil, **options)
+      workdir ||= "/#{@app}"
+      docker_compose("exec --workdir #{workdir} deployer #{commands.join(" ")}", **options)
     end
 
     def kamal(*commands, **options)
@@ -72,7 +74,7 @@ class IntegrationTest < ActiveSupport::TestCase
     end
 
     def update_app_rev
-      deployer_exec "./update_app_rev.sh"
+      deployer_exec "./update_app_rev.sh #{@app}", workdir: "/"
       latest_app_version
     end
 
@@ -115,7 +117,7 @@ class IntegrationTest < ActiveSupport::TestCase
     end
 
     def setup_deployer
-      deployer_exec("./setup.sh") unless $DEPLOYER_SETUP
+      deployer_exec("./setup.sh", workdir: "/") unless $DEPLOYER_SETUP
       $DEPLOYER_SETUP = true
     end
 
