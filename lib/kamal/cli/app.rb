@@ -40,7 +40,9 @@ class Kamal::Cli::App < Kamal::Cli::Base
 
               execute *auditor.record("Booted app version #{version}"), verbosity: :debug
 
-              execute *app.run(hostname: "#{host}-#{SecureRandom.hex(6)}")
+              hostname = "#{host}-#{SecureRandom.hex(6)}"
+
+              execute *app.run(hostname: (hostname[-64..-1] || hostname).gsub(/^-+/, ''))
 
               Kamal::Cli::Healthcheck::Poller.wait_for_healthy(pause_after_ready: true) { capture_with_info(*app.status(version: version)) }
 
