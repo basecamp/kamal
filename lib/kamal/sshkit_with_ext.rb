@@ -103,3 +103,34 @@ class SSHKit::Backend::Netssh
 
   prepend LimitConcurrentStartsInstance
 end
+
+require "thread"
+
+module SSHKit
+  module Runner
+    class ParallelCompleteAll < Abstract
+      def execute
+        threads = hosts.map do |host|
+          Thread.new(host) do |h|
+            begin
+              backend(h, &block).run
+            rescue ::StandardError => e
+              e2 = SSHKit::Runner::ExecuteError.new e
+              raise e2, "Exception while executing #{host.user ? "as #{host.user}@" : "on host "}#{host}: #{e.message}"
+            end
+          end
+        end
+
+        exception = nil
+        threads.each do |t|
+          begin
+            t.join
+          rescue SSHKit::Runner::ExecuteError => e
+            exception ||= e
+          end
+        end
+        raise exception if exception
+      end
+    end
+  end
+end
