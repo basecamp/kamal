@@ -188,7 +188,7 @@ class Kamal::Configuration
 
 
   def healthcheck
-    { "path" => "/up", "port" => 3000, "max_attempts" => 7, "exposed_port" => 3999, "cord" => "/tmp/kamal-cord", "log_lines" => 50 }.merge(raw_config.healthcheck || {})
+    { "path" => "/up", "port" => 3000, "max_attempts" => 7, "cord" => "/tmp/kamal-cord", "log_lines" => 50 }.merge(raw_config.healthcheck || {})
   end
 
   def healthcheck_service

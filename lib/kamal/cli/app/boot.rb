@@ -1,12 +1,13 @@
 class Kamal::Cli::App::Boot
-  attr_reader :host, :role, :version, :sshkit
+  attr_reader :host, :role, :version, :barrier, :sshkit
   delegate :execute, :capture_with_info, :info, to: :sshkit
-  delegate :uses_cord?, :assets?, to: :role
+  delegate :uses_cord?, :assets?, :running_traefik?, to: :role
 
-  def initialize(host, role, version, sshkit)
+  def initialize(host, role, sshkit, version, barrier)
     @host = host
     @role = role
     @version = version
+    @barrier = barrier
     @sshkit = sshkit
   end
 
@@ -46,10 +47,18 @@ class Kamal::Cli::App::Boot
 
     def start_new_version
       audit "Booted app version #{version}"
+
       execute *app.tie_cord(role.cord_host_file) if uses_cord?
       hostname = "#{host.to_s[0...51].gsub(/\.+$/, '')}-#{SecureRandom.hex(6)}"
       execute *app.run(hostname: hostname)
       Kamal::Cli::Healthcheck::Poller.wait_for_healthy(pause_after_ready: true) { capture_with_info(*app.status(version: version)) }
+
+      reach_barrier
+    rescue => e
+      close_barrier if barrier_role?
+      execute *app.stop(version: version), raise_on_non_zero_exit: false
+
+      raise
     end
 
     def stop_old_version(version)
@@ -64,5 +73,46 @@ class Kamal::Cli::App::Boot
       execute *app.stop(version: version), raise_on_non_zero_exit: false
 
       execute *app.clean_up_assets if assets?
+    end
+
+    def reach_barrier
+      if barrier
+        if barrier_role?
+          if barrier.open
+            info "Opened barrier (#{host})"
+          end
+        else
+          wait_for_barrier
+        end
+      end
+    end
+
+    def wait_for_barrier
+      info "Waiting at web barrier (#{host})..."
+      barrier.wait
+      info "Barrier opened (#{host})"
+    rescue Kamal::Cli::Healthcheck::Error
+      info "Barrier closed, shutting down new container... (#{host})"
+      raise
+    end
+
+    def close_barrier
+      barrier&.close
+    end
+
+    def barrier_role?
+      role == KAMAL.primary_role
+    end
+
+    def app
+      @app ||= KAMAL.app(role: role)
+    end
+
+    def auditor
+      @auditor = KAMAL.auditor(role: role)
+    end
+
+    def audit(message)
+      execute *auditor.record(message), verbosity: :debug
     end
 end

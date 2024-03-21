@@ -99,6 +99,11 @@ class CommanderTest < ActiveSupport::TestCase
     assert_equal [ "workers" ], @kamal.roles_on("1.1.1.3").map(&:name)
   end
 
+  test "roles_on web comes first" do
+    configure_with(:deploy_with_two_roles_one_host)
+    assert_equal [ "web", "workers" ], @kamal.roles_on("1.1.1.1").map(&:name)
+  end
+
   test "default group strategy" do
     assert_empty @kamal.boot_strategy
   end

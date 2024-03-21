@@ -56,6 +56,12 @@ class MainTest < IntegrationTest
     assert_app_is_up version: version
     assert_hooks_ran "pre-connect", "pre-build", "pre-deploy", "post-deploy"
     assert_container_running host: :vm3, name: "app-workers-#{version}"
+
+    second_version = update_app_rev
+
+    kamal :redeploy
+    assert_app_is_up version: second_version
+    assert_container_running host: :vm3, name: "app-workers-#{second_version}"
   end
 
   test "config" do
@@ -73,7 +79,7 @@ class MainTest < IntegrationTest
     assert_equal({ user: "root", port: 22, keepalive: true, keepalive_interval: 30, log_level: :fatal }, config[:ssh_options])
     assert_equal({ "multiarch" => false, "args" => { "COMMIT_SHA" => version } }, config[:builder])
     assert_equal [ "--log-opt", "max-size=\"10m\"" ], config[:logging]
-    assert_equal({ "path" => "/up", "port" => 3000, "max_attempts" => 7, "exposed_port" => 3999, "cord"=>"/tmp/kamal-cord", "log_lines" => 50, "cmd"=>"wget -qO- http://localhost > /dev/null || exit 1" }, config[:healthcheck])
+    assert_equal({ "path" => "/up", "port" => 3000, "max_attempts" => 3, "cord"=>"/tmp/kamal-cord", "log_lines" => 50, "cmd"=>"wget -qO- http://localhost > /dev/null || exit 1" }, config[:healthcheck])
   end
 
   test "setup and remove" do
@@ -156,9 +162,5 @@ class MainTest < IntegrationTest
     def assert_images_and_containers
       assert vm1_image_ids.any?
       assert vm1_container_ids.any?
-    end
-
-    def assert_container_running(host:, name:)
-      assert docker_compose("exec #{host} docker ps --filter=name=#{name} -q", capture: true).strip.present?
     end
 end
