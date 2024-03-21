@@ -62,3 +62,7 @@ services:
       context: docker/load_balancer
     ports:
       - "12345:80"
+    depends_on:
+      - vm1
+      - vm2
+      - vm3
