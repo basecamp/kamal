@@ -13,7 +13,7 @@ class Kamal::Cli::Traefik < Kamal::Cli::Base
   option :rolling, type: :boolean, default: false, desc: "Reboot traefik on hosts in sequence, rather than in parallel"
   option :confirmed, aliases: "-y", type: :boolean, default: false, desc: "Proceed without confirmation question"
   def reboot
-    confirming "Reboot Traefik on hosts? (stop container, remove container, start new container). This will cause a brief outage." do
+    confirming "This will cause a brief outage on each host. Are you sure?" do
       mutating do
         host_groups = options[:rolling] ? KAMAL.traefik_hosts : [ KAMAL.traefik_hosts ]
         host_groups.each do |hosts|
