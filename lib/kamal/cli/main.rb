@@ -197,7 +197,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
   option :confirmed, aliases: "-y", type: :boolean, default: false, desc: "Proceed without confirmation question"
   def remove
     mutating do
-      if options[:confirmed] || ask("This will remove all containers and images. Are you sure?", limited_to: %w[ y N ], default: "N") == "y"
+      confirming "This will remove all containers and images. Are you sure?" do
         invoke "kamal:cli:traefik:remove", [], options.without(:confirmed)
         invoke "kamal:cli:app:remove", [], options.without(:confirmed)
         invoke "kamal:cli:accessory:remove", [ "all" ], options

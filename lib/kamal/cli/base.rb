@@ -103,6 +103,16 @@ module Kamal::Cli
         release_lock
       end
 
+      def confirming(question)
+        return yield if options[:confirmed]
+
+        if ask(question, limited_to: %w[ y N ], default: "N") == "y"
+          yield
+        else
+          say "Aborted", :red
+        end
+      end
+
       def acquire_lock
         raise_if_locked do
           say "Acquiring the deploy lock...", :magenta

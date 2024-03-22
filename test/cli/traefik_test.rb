@@ -11,7 +11,7 @@ class CliTraefikTest < CliTestCase
   test "reboot" do
     Kamal::Commands::Registry.any_instance.expects(:login).twice
 
-    run_command("reboot").tap do |output|
+    run_command("reboot", "-y").tap do |output|
       assert_match "docker container stop traefik", output
       assert_match "docker container prune --force --filter label=org.opencontainers.image.title=Traefik", output
       assert_match "docker run --name traefik --detach --restart unless-stopped --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock --env-file .kamal/env/traefik/traefik.env --log-opt max-size=\"10m\" --label traefik.http.routers.catchall.entryPoints=\"http\" --label traefik.http.routers.catchall.rule=\"PathPrefix(\\`/\\`)\" --label traefik.http.routers.catchall.service=\"unavailable\" --label traefik.http.routers.catchall.priority=\"1\" --label traefik.http.services.unavailable.loadbalancer.server.port=\"0\" #{Kamal::Commands::Traefik::DEFAULT_IMAGE} --providers.docker --log.level=\"DEBUG\"", output
@@ -21,7 +21,7 @@ class CliTraefikTest < CliTestCase
   test "reboot --rolling" do
     Object.any_instance.stubs(:sleep)
 
-    run_command("reboot", "--rolling").tap do |output|
+    run_command("reboot", "--rolling", "-y").tap do |output|
       assert_match "Running docker container prune --force --filter label=org.opencontainers.image.title=Traefik on 1.1.1.1", output
     end
   end
