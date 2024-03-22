@@ -7,56 +7,19 @@ class Kamal::Cli::App < Kamal::Cli::Base
         using_version(version_or_latest) do |version|
           say "Start container with version #{version} using a #{KAMAL.config.readiness_delay}s readiness delay (or reboot if already running)...", :magenta
 
+          # Assets are prepared in a separate step to ensure they are on all hosts before booting
           on(KAMAL.hosts) do
             execute *KAMAL.auditor.record("Tagging #{KAMAL.config.absolute_image} as the latest image"), verbosity: :debug
             execute *KAMAL.app.tag_current_image_as_latest
 
             KAMAL.roles_on(host).each do |role|
-              app = KAMAL.app(role: role)
-
-              if role.assets?
-                execute *app.extract_assets
-                old_version = capture_with_info(*app.current_running_version, raise_on_non_zero_exit: false).strip
-                execute *app.sync_asset_volumes(old_version: old_version)
-              end
+              Kamal::Cli::App::PrepareAssets.new(host, role, self).run
             end
           end
 
           on(KAMAL.hosts, **KAMAL.boot_strategy) do |host|
             KAMAL.roles_on(host).each do |role|
-              app = KAMAL.app(role: role)
-              auditor = KAMAL.auditor(role: role)
-
-              if capture_with_info(*app.container_id_for_version(version), raise_on_non_zero_exit: false).present?
-                tmp_version = "#{version}_replaced_#{SecureRandom.hex(8)}"
-                info "Renaming container #{version} to #{tmp_version} as already deployed on #{host}"
-                execute *auditor.record("Renaming container #{version} to #{tmp_version}"), verbosity: :debug
-                execute *app.rename_container(version: version, new_version: tmp_version)
-              end
-
-              old_version = capture_with_info(*app.current_running_version, raise_on_non_zero_exit: false).strip
-
-              execute *app.tie_cord(role.cord_host_file) if role.uses_cord?
-
-              execute *auditor.record("Booted app version #{version}"), verbosity: :debug
-
-              execute *app.run(hostname: "#{host}-#{SecureRandom.hex(6)}")
-
-              Kamal::Cli::Healthcheck::Poller.wait_for_healthy(pause_after_ready: true) { capture_with_info(*app.status(version: version)) }
-
-              if old_version.present?
-                if role.uses_cord?
-                  cord = capture_with_info(*app.cord(version: old_version), raise_on_non_zero_exit: false).strip
-                  if cord.present?
-                    execute *app.cut_cord(cord)
-                    Kamal::Cli::Healthcheck::Poller.wait_for_unhealthy(pause_after_ready: true) { capture_with_info(*app.status(version: old_version)) }
-                  end
-                end
-
-                execute *app.stop(version: old_version), raise_on_non_zero_exit: false
-
-                execute *app.clean_up_assets if role.assets?
-              end
+              Kamal::Cli::App::Boot.new(host, role, version, self).run
             end
           end
         end
