@@ -1,1 +1,2 @@
-inherit_gem: { rubocop-37signals: rubocop.yml }
+inherit_gem:
+  rubocop-rails-omakase: rubocop.yml
