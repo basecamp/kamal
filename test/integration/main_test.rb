@@ -15,6 +15,7 @@ class MainTest < IntegrationTest
     assert_app_is_up version: first_version
     assert_hooks_ran "pre-connect", "pre-build", "pre-deploy", "post-deploy"
     assert_env :CLEAR_TOKEN, "4321", version: first_version
+    assert_env :HOST_TOKEN, "abcd", version: first_version
     assert_env :SECRET_TOKEN, "1234", version: first_version
 
     second_version = update_app_rev
