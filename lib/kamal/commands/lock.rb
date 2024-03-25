@@ -41,7 +41,9 @@ class Kamal::Commands::Lock < Kamal::Commands::Base
     end
 
     def lock_dir
-      "#{config.run_directory}/lock-#{config.service}"
+      dir_name = [ config.service, config.destination ].compact.join("-")
+
+      "#{config.run_directory}/lock-#{dir_name}"
     end
 
     def lock_details_file
