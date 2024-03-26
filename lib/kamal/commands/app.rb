@@ -85,10 +85,6 @@ class Kamal::Commands::App < Kamal::Commands::Base
       argumentize "--filter", filters(statuses: statuses)
     end
 
-    def service_role_dest
-      [ config.service, role, config.destination ].compact.join("-")
-    end
-
     def filters(statuses: nil)
       [ "label=service=#{config.service}" ].tap do |filters|
         filters << "label=destination=#{config.destination}" if config.destination
