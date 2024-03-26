@@ -51,27 +51,11 @@ class Kamal::Configuration::Role
 
 
   def env
-    if config.env && config.env["secret"]
-      merged_env_with_secrets
-    else
-      merged_env
-    end
-  end
-
-  def env_file
-    Kamal::EnvFile.new(env)
-  end
-
-  def host_env_directory
-    File.join config.host_env_directory, "roles"
-  end
-
-  def host_env_file_path
-    File.join host_env_directory, "#{[ config.service, name, config.destination ].compact.join("-")}.env"
+    @env ||= base_env.merge(specialized_env)
   end
 
   def env_args
-    argumentize "--env-file", host_env_file_path
+    env.args
   end
 
   def asset_volume_args
@@ -217,7 +201,7 @@ class Kamal::Configuration::Role
     end
 
     def traefik_service
-      [ config.service, name, config.destination ].compact.join("-")
+      container_prefix
     end
 
     def custom_labels
@@ -236,24 +220,14 @@ class Kamal::Configuration::Role
     end
 
     def specialized_env
-      specializations["env"] || {}
-    end
-
-    def merged_env
-      config.env&.merge(specialized_env) || {}
+      Kamal::Configuration::Env.from_config config: specializations.fetch("env", {})
     end
 
     # Secrets are stored in an array, which won't merge by default, so have to do it by hand.
-    def merged_env_with_secrets
-      merged_env.tap do |new_env|
-        new_env["secret"] = Array(config.env["secret"]) + Array(specialized_env["secret"])
-
-        # If there's no secret/clear split, everything is clear
-        clear_app_env  = config.env["secret"] ? Array(config.env["clear"]) : Array(config.env["clear"] || config.env)
-        clear_role_env = specialized_env["secret"] ? Array(specialized_env["clear"]) : Array(specialized_env["clear"] || specialized_env)
-
-        new_env["clear"] = clear_app_env.to_h.merge(clear_role_env.to_h)
-      end
+    def base_env
+      Kamal::Configuration::Env.from_config \
+        config: config.env,
+        secrets_file: File.join(config.host_env_directory, "roles", "#{container_prefix}.env")
     end
 
     def http_health_check(port:, path:)

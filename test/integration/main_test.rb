@@ -4,7 +4,7 @@ class MainTest < IntegrationTest
   test "envify, deploy, redeploy, rollback, details and audit" do
     kamal :envify
     assert_local_env_file "SECRET_TOKEN=1234"
-    assert_remote_env_file "SECRET_TOKEN=1234\nCLEAR_TOKEN=4321"
+    assert_remote_env_file "SECRET_TOKEN=1234"
     remove_local_env_file
 
     first_version = latest_app_version
@@ -14,6 +14,9 @@ class MainTest < IntegrationTest
     kamal :deploy
     assert_app_is_up version: first_version
     assert_hooks_ran "pre-connect", "pre-build", "pre-deploy", "post-deploy"
+    assert_env :CLEAR_TOKEN, "4321", version: first_version
+    assert_env :HOST_TOKEN, "abcd", version: first_version
+    assert_env :SECRET_TOKEN, "1234", version: first_version
 
     second_version = update_app_rev
 
@@ -92,6 +95,10 @@ class MainTest < IntegrationTest
   private
     def assert_local_env_file(contents)
       assert_equal contents, deployer_exec("cat .env", capture: true)
+    end
+
+    def assert_env(key, value, version:)
+      assert_equal "#{key}=#{value}", docker_compose("exec vm1 docker exec app-web-#{version} env | grep #{key}", capture: true)
     end
 
     def remove_local_env_file

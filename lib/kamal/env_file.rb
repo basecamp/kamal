@@ -6,18 +6,8 @@ class Kamal::EnvFile
 
   def to_s
     env_file = StringIO.new.tap do |contents|
-      if (secrets = @env["secret"]).present?
-        @env.fetch("secret", @env)&.each do |key|
-          contents << docker_env_file_line(key, ENV.fetch(key))
-        end
-
-        @env["clear"]&.each do |key, value|
-          contents << docker_env_file_line(key, value)
-        end
-      else
-        @env.fetch("clear", @env)&.each do |key, value|
-          contents << docker_env_file_line(key, value)
-        end
+      @env.each do |key, value|
+        contents << docker_env_file_line(key, value)
       end
     end.string
 

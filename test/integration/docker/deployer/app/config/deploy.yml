@@ -5,7 +5,8 @@ servers:
   - vm2
 env:
   clear:
-    CLEAR_TOKEN: '4321'
+    CLEAR_TOKEN: 4321
+    HOST_TOKEN: "${HOST_TOKEN}"
   secret:
     - SECRET_TOKEN
 asset_path: /usr/share/nginx/html/versions

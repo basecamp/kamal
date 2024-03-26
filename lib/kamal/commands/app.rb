@@ -68,11 +68,11 @@ class Kamal::Commands::App < Kamal::Commands::Base
 
 
   def make_env_directory
-    make_directory role.host_env_directory
+    make_directory role.env.secrets_directory
   end
 
   def remove_env_file
-    [ :rm, "-f", role.host_env_file_path ]
+    [ :rm, "-f", role.env.secrets_file ]
   end
 
 

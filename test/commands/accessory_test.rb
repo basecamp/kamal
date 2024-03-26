@@ -50,11 +50,11 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
 
   test "run" do
     assert_equal \
-      "docker run --name app-mysql --detach --restart unless-stopped --log-opt max-size=\"10m\" --publish 3306:3306 --env-file .kamal/env/accessories/app-mysql.env --label service=\"app-mysql\" private.registry/mysql:8.0",
+      "docker run --name app-mysql --detach --restart unless-stopped --log-opt max-size=\"10m\" --publish 3306:3306 --env-file .kamal/env/accessories/app-mysql.env --env MYSQL_ROOT_HOST=\"%\" --label service=\"app-mysql\" private.registry/mysql:8.0",
       new_command(:mysql).run.join(" ")
 
     assert_equal \
-      "docker run --name app-redis --detach --restart unless-stopped --log-opt max-size=\"10m\" --publish 6379:6379 --env-file .kamal/env/accessories/app-redis.env --volume /var/lib/redis:/data --label service=\"app-redis\" --label cache=\"true\" redis:latest",
+      "docker run --name app-redis --detach --restart unless-stopped --log-opt max-size=\"10m\" --publish 6379:6379 --env-file .kamal/env/accessories/app-redis.env --env SOMETHING=\"else\" --volume /var/lib/redis:/data --label service=\"app-redis\" --label cache=\"true\" redis:latest",
       new_command(:redis).run.join(" ")
 
     assert_equal \
@@ -91,7 +91,7 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
 
   test "execute in new container" do
     assert_equal \
-      "docker run --rm --env-file .kamal/env/accessories/app-mysql.env private.registry/mysql:8.0 mysql -u root",
+      "docker run --rm --env-file .kamal/env/accessories/app-mysql.env --env MYSQL_ROOT_HOST=\"%\" private.registry/mysql:8.0 mysql -u root",
       new_command(:mysql).execute_in_new_container("mysql", "-u", "root").join(" ")
   end
 
@@ -103,7 +103,7 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
 
   test "execute in new container over ssh" do
     new_command(:mysql).stub(:run_over_ssh, ->(cmd) { cmd.join(" ") }) do
-      assert_match %r{docker run -it --rm --env-file .kamal/env/accessories/app-mysql.env private.registry/mysql:8.0 mysql -u root},
+      assert_match %r{docker run -it --rm --env-file .kamal/env/accessories/app-mysql.env --env MYSQL_ROOT_HOST=\"%\" private.registry/mysql:8.0 mysql -u root},
         new_command(:mysql).execute_in_new_container_over_ssh("mysql", "-u", "root")
     end
   end

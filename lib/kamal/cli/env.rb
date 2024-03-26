@@ -9,20 +9,20 @@ class Kamal::Cli::Env < Kamal::Cli::Base
 
         KAMAL.roles_on(host).each do |role|
           execute *KAMAL.app(role: role).make_env_directory
-          upload! StringIO.new(role.env_file), role.host_env_file_path, mode: 400
+          upload! role.env.secrets_io, role.env.secrets_file, mode: 400
         end
       end
 
       on(KAMAL.traefik_hosts) do
         execute *KAMAL.traefik.make_env_directory
-        upload! StringIO.new(KAMAL.traefik.env_file), KAMAL.traefik.host_env_file_path, mode: 400
+        upload! KAMAL.traefik.env.secrets_io, KAMAL.traefik.env.secrets_file, mode: 400
       end
 
       on(KAMAL.accessory_hosts) do
         KAMAL.accessories_on(host).each do |accessory|
           accessory_config = KAMAL.config.accessory(accessory)
           execute *KAMAL.accessory(accessory).make_env_directory
-          upload! StringIO.new(accessory_config.env_file), accessory_config.host_env_file_path, mode: 400
+          upload! accessory_config.env.secrets_io, accessory_config.env.secrets_file, mode: 400
         end
       end
     end
