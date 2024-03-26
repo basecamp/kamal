@@ -1,4 +1,16 @@
 class Kamal::Cli::Server < Kamal::Cli::Base
+  desc "exec", "Run a command on the server"
+  def exec(cmd)
+    hosts = KAMAL.hosts | KAMAL.accessory_hosts
+
+    say "Running '#{cmd}' on #{hosts.join(', ')}...", :magenta
+
+    on(hosts) do |host|
+      execute *KAMAL.auditor.record("Executed cmd '#{cmd}' on #{host}"), verbosity: :debug
+      puts_by_host host, capture_with_info(cmd)
+    end
+  end
+
   desc "bootstrap", "Set up Docker to run Kamal apps"
   def bootstrap
     missing = []

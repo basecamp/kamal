@@ -1,6 +1,20 @@
 require_relative "cli_test_case"
 
 class CliServerTest < CliTestCase
+  test "running a command with exec" do
+    SSHKit::Backend::Abstract.any_instance.stubs(:capture)
+    .with("date", verbosity: 1)
+    .returns("Today")
+
+    hosts = "1.1.1.1".."1.1.1.4"
+    run_command("exec", "date").tap do |output|
+      hosts.map do |host|
+        assert_match "Running 'date' on #{hosts.to_a.join(', ')}...", output
+        assert_match "App Host: #{host}\nToday", output
+      end
+    end
+  end
+
   test "bootstrap already installed" do
     SSHKit::Backend::Abstract.any_instance.expects(:execute).with(:docker, "-v", raise_on_non_zero_exit: false).returns(true).at_least_once
     SSHKit::Backend::Abstract.any_instance.expects(:execute).with(:mkdir, "-p", ".kamal").returns("").at_least_once
