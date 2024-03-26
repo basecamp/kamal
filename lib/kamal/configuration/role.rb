@@ -2,11 +2,11 @@ class Kamal::Configuration::Role
   CORD_FILE = "cord"
   delegate :argumentize, :optionize, to: Kamal::Utils
 
-  attr_accessor :name
+  attr_reader :name
   alias to_s name
 
-  def initialize(name, config:)
-    @name, @config = name.inquiry, config
+  def initialize(name, config:, specializations:, primary:)
+    @name, @config, @specializations, @primary = name.inquiry, config, specializations, primary
   end
 
   def primary_host
@@ -98,7 +98,7 @@ class Kamal::Configuration::Role
   end
 
   def primary?
-    self == @config.primary_role
+    @primary
   end
 
 
@@ -163,8 +163,14 @@ class Kamal::Configuration::Role
     File.join config.run_directory, "assets", "volumes", container_name(version)
   end
 
+  def previous_roles
+    previous_role_names.map do |role_name|
+      Kamal::Configuration::Role.new(role_name, config: config, specializations: specializations, primary: primary?)
+    end
+  end
+
   private
-    attr_accessor :config
+    attr_reader :config, :specializations
 
     def extract_hosts_from_config
       if config.servers.is_a?(Array)
@@ -207,14 +213,6 @@ class Kamal::Configuration::Role
       end
     end
 
-    def specializations
-      if config.servers.is_a?(Array) || config.servers[name].is_a?(Array)
-        {}
-      else
-        config.servers[name].except("hosts")
-      end
-    end
-
     def specialized_env
       Kamal::Configuration::Env.from_config config: specializations.fetch("env", {})
     end
@@ -236,5 +234,9 @@ class Kamal::Configuration::Role
         options = config.healthcheck.merge(options) if running_traefik?
         options
       end
+    end
+
+    def previous_role_names
+      specializations.fetch("previously", [])
     end
 end

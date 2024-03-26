@@ -92,6 +92,33 @@ class MainTest < IntegrationTest
     assert_no_images_or_containers
   end
 
+  test "rename roles" do
+    @app = "app_with_roles"
+
+    kamal :envify
+    kamal :deploy
+
+    first_version = latest_app_version
+
+    assert_container_running host: :vm1, name: "app-web-#{first_version}"
+    assert_container_running host: :vm2, name: "app-web-#{first_version}"
+    assert_container_running host: :vm3, name: "app-workers-#{first_version}"
+
+    rename_roles
+
+    kamal :envify
+    kamal :deploy
+
+    second_version = latest_app_version
+
+    assert_container_running host: :vm1, name: "app-app-#{second_version}"
+    assert_container_running host: :vm2, name: "app-app-#{second_version}"
+    assert_container_running host: :vm3, name: "app-jobs-#{second_version}"
+    assert_container_not_running host: :vm1, name: "app-web-#{first_version}"
+    assert_container_not_running host: :vm2, name: "app-web-#{first_version}"
+    assert_container_not_running host: :vm3, name: "app-workers-#{first_version}"
+  end
+
   private
     def assert_local_env_file(contents)
       assert_equal contents, deployer_exec("cat .env", capture: true)
@@ -139,7 +166,7 @@ class MainTest < IntegrationTest
       assert vm1_container_ids.any?
     end
 
-    def assert_container_running(host:, name:)
-      assert docker_compose("exec #{host} docker ps --filter=name=#{name} -q", capture: true).strip.present?
+    def rename_roles
+      deployer_exec "./rename_roles.sh #{@app}", workdir: "/"
     end
 end

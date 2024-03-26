@@ -3,7 +3,7 @@ class Kamal::Commands::App < Kamal::Commands::Base
 
   ACTIVE_DOCKER_STATUSES = [ :running, :restarting ]
 
-  attr_reader :role, :role
+  attr_reader :role
 
   def initialize(config, role: nil)
     super(config)

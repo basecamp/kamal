@@ -11,12 +11,12 @@ class Kamal::Cli::App::Boot
   end
 
   def run
-    old_version = old_version_renamed_if_clashing
+    old_version, old_app = old_version_renamed_if_clashing
 
     start_new_version
 
     if old_version
-      stop_old_version(old_version)
+      stop_old_version(old_version, old_app)
     end
   end
 
@@ -41,7 +41,13 @@ class Kamal::Cli::App::Boot
         execute *app.rename_container(version: version, new_version: renamed_version)
       end
 
-      capture_with_info(*app.current_running_version, raise_on_non_zero_exit: false).strip.presence
+      [ role, *role.previous_roles ].each do |old_role|
+        old_app = KAMAL.app(role: old_role)
+        old_version = capture_with_info(*old_app.current_running_version, raise_on_non_zero_exit: false).strip.presence
+        return [ old_version, old_app ] if old_version
+      end
+
+      nil
     end
 
     def start_new_version
@@ -51,7 +57,7 @@ class Kamal::Cli::App::Boot
       Kamal::Cli::Healthcheck::Poller.wait_for_healthy(pause_after_ready: true) { capture_with_info(*app.status(version: version)) }
     end
 
-    def stop_old_version(version)
+    def stop_old_version(version, app)
       if uses_cord?
         cord = capture_with_info(*app.cord(version: version), raise_on_non_zero_exit: false).strip
         if cord.present?

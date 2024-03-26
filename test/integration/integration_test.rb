@@ -131,4 +131,16 @@ class IntegrationTest < ActiveSupport::TestCase
         puts "Tried to get the response code again and got #{app_response.code}"
       end
     end
+
+    def assert_container_running(host:, name:)
+      assert container_running?(host: host, name: name)
+    end
+
+    def assert_container_not_running(host:, name:)
+      assert_not container_running?(host: host, name: name)
+    end
+
+    def container_running?(host:, name:)
+      docker_compose("exec #{host} docker ps --filter=name=#{name} | tail -n+2", capture: true).strip.present?
+    end
 end

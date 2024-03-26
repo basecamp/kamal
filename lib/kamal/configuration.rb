@@ -71,7 +71,9 @@ class Kamal::Configuration
 
 
   def roles
-    @roles ||= role_names.collect { |role_name| Role.new(role_name, config: self) }
+    @roles ||= role_names.collect do |role_name|
+      Role.new(role_name, config: self, specializations: role_specializations(role_name), primary: role_name == primary_role_name)
+    end
   end
 
   def role(name)
@@ -323,6 +325,14 @@ class Kamal::Configuration
 
     def role_names
       raw_config.servers.is_a?(Array) ? [ "web" ] : raw_config.servers.keys.sort
+    end
+
+    def role_specializations(name)
+      if servers.is_a?(Array) || servers[name].is_a?(Array)
+        {}
+      else
+        servers[name].except("hosts")
+      end
     end
 
     def git_version
