@@ -79,6 +79,10 @@ class CliAccessoryTest < CliTestCase
     assert_match "docker ps --filter label=service=app-mysql", run_command("details", "mysql")
   end
 
+  test "details with non-existent accessory" do
+    assert_equal "No accessory by the name of 'hello' (options: mysql and redis)", stderred { run_command("details", "hello") }
+  end
+
   test "details with all" do
     run_command("details", "all").tap do |output|
       assert_match "docker ps --filter label=service=app-mysql", output
