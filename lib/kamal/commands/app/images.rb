@@ -7,7 +7,7 @@ module Kamal::Commands::App::Images
     docker :image, :prune, "--all", "--force", *filter_args
   end
 
-  def tag_current_image_as_latest
+  def tag_latest_image
     docker :tag, config.absolute_image, config.latest_image
   end
 end

@@ -9,9 +9,6 @@ class Kamal::Cli::App < Kamal::Cli::Base
 
           # Assets are prepared in a separate step to ensure they are on all hosts before booting
           on(KAMAL.hosts) do
-            execute *KAMAL.auditor.record("Tagging #{KAMAL.config.absolute_image} as the latest image"), verbosity: :debug
-            execute *KAMAL.app.tag_current_image_as_latest
-
             KAMAL.roles_on(host).each do |role|
               Kamal::Cli::App::PrepareAssets.new(host, role, self).run
             end
@@ -21,6 +18,9 @@ class Kamal::Cli::App < Kamal::Cli::Base
             KAMAL.roles_on(host).each do |role|
               Kamal::Cli::App::Boot.new(host, role, version, self).run
             end
+
+            execute *KAMAL.auditor.record("Tagging #{KAMAL.config.absolute_image} as the latest image"), verbosity: :debug
+            execute *KAMAL.app.tag_latest_image
           end
         end
       end

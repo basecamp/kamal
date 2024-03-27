@@ -339,12 +339,6 @@ class CommandsAppTest < ActiveSupport::TestCase
       new_command.remove_images.join(" ")
   end
 
-  test "tag_current_image_as_latest" do
-    assert_equal \
-      "docker tag dhh/app:999 dhh/app:latest",
-      new_command.tag_current_image_as_latest.join(" ")
-  end
-
   test "make_env_directory" do
     assert_equal "mkdir -p .kamal/env/roles", new_command.make_env_directory.join(" ")
   end
@@ -371,7 +365,7 @@ class CommandsAppTest < ActiveSupport::TestCase
     assert_equal [
       :mkdir, "-p", ".kamal/assets/extracted/app-web-999", "&&",
       :docker, :stop, "-t 1", "app-web-assets", "2> /dev/null", "|| true", "&&",
-      :docker, :run, "--name", "app-web-assets", "--detach", "--rm", "dhh/app:latest", "sleep 1000000", "&&",
+      :docker, :run, "--name", "app-web-assets", "--detach", "--rm", "dhh/app:999", "sleep 1000000", "&&",
       :docker, :cp, "-L", "app-web-assets:/public/assets/.", ".kamal/assets/extracted/app-web-999", "&&",
       :docker, :stop, "-t 1", "app-web-assets"
     ], new_command(asset_path: "/public/assets").extract_assets
