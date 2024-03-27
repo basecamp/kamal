@@ -84,9 +84,7 @@ module Kamal::Cli
 
         run_hook "pre-connect"
 
-        ensure_run_directory
-
-        ensure_locks_directory
+        ensure_run_and_locks_directory
 
         acquire_lock
 
@@ -188,13 +186,11 @@ module Kamal::Cli
         instance_variable_get("@_invocations").first
       end
 
-      def ensure_run_directory
+      def ensure_run_and_locks_directory
         on(KAMAL.hosts) do
           execute(*KAMAL.server.ensure_run_directory)
         end
-      end
 
-      def ensure_locks_directory
         on(KAMAL.primary_host) do
           execute(*KAMAL.lock.ensure_locks_directory)
         end
