@@ -10,19 +10,19 @@ class CommandsLockTest < ActiveSupport::TestCase
 
   test "status" do
     assert_equal \
-      "stat .kamal/lock-app-production > /dev/null && cat .kamal/lock-app-production/details | base64 -d",
+      "stat .kamal/locks/app-production > /dev/null && cat .kamal/locks/app-production/details | base64 -d",
       new_command.status.join(" ")
   end
 
   test "acquire" do
     assert_match \
-      %r{mkdir \.kamal/lock-app-production && echo ".*" > \.kamal/lock-app-production/details}m,
+      %r{mkdir \.kamal/locks/app-production && echo ".*" > \.kamal/locks/app-production/details}m,
       new_command.acquire("Hello", "123").join(" ")
   end
 
   test "release" do
     assert_match \
-      "rm .kamal/lock-app-production/details && rm -r .kamal/lock-app-production",
+      "rm .kamal/locks/app-production/details && rm -r .kamal/locks/app-production",
       new_command.release.join(" ")
   end
 

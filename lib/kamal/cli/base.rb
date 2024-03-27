@@ -86,6 +86,8 @@ module Kamal::Cli
 
         ensure_run_directory
 
+        ensure_locks_directory
+
         acquire_lock
 
         begin
@@ -189,6 +191,12 @@ module Kamal::Cli
       def ensure_run_directory
         on(KAMAL.hosts) do
           execute(*KAMAL.server.ensure_run_directory)
+        end
+      end
+
+      def ensure_locks_directory
+        on(KAMAL.primary_host) do
+          execute(*KAMAL.lock.ensure_locks_directory)
         end
       end
   end

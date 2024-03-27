@@ -102,11 +102,14 @@ class CliMainTest < CliTestCase
       .with { |*args| args == [ :mkdir, "-p", ".kamal" ] }
 
     SSHKit::Backend::Abstract.any_instance.stubs(:execute)
-      .with { |*arg| arg[0..1] == [ :mkdir, ".kamal/lock-app" ] }
-      .raises(RuntimeError, "mkdir: cannot create directory ‘kamal_lock-app’: File exists")
+      .with { |*args| args == [ :mkdir, "-p", ".kamal/locks" ] }
+
+    SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+      .with { |*arg| arg[0..1] == [ :mkdir, ".kamal/locks/app" ] }
+      .raises(RuntimeError, "mkdir: cannot create directory ‘kamal/locks/app’: File exists")
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_debug)
-      .with(:stat, ".kamal/lock-app", ">", "/dev/null", "&&", :cat, ".kamal/lock-app/details", "|", :base64, "-d")
+      .with(:stat, ".kamal/locks/app", ">", "/dev/null", "&&", :cat, ".kamal/locks/app/details", "|", :base64, "-d")
 
     assert_raises(Kamal::Cli::LockError) do
       run_command("deploy")
@@ -120,7 +123,10 @@ class CliMainTest < CliTestCase
       .with { |*args| args == [ :mkdir, "-p", ".kamal" ] }
 
     SSHKit::Backend::Abstract.any_instance.stubs(:execute)
-      .with { |*arg| arg[0..1] == [ :mkdir, ".kamal/lock-app" ] }
+      .with { |*args| args == [ :mkdir, "-p", ".kamal/locks" ] }
+
+    SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+      .with { |*arg| arg[0..1] == [ :mkdir, ".kamal/locks/app" ] }
       .raises(SocketError, "getaddrinfo: nodename nor servname provided, or not known")
 
     assert_raises(SSHKit::Runner::ExecuteError) do
