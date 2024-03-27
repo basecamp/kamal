@@ -140,16 +140,33 @@ class Kamal::Cli::Main < Kamal::Cli::Base
     require "fileutils"
 
     if (deploy_file = Pathname.new(File.expand_path("config/deploy.yml"))).exist?
-      puts "Config file already exists in config/deploy.yml (remove first to create a new one)"
+      say("Config file already exists in config/deploy.yml".tap do |msg|
+        msg << " (remove first to create a new one)" unless options[:destination]
+      end)
     else
       FileUtils.mkdir_p deploy_file.dirname
       FileUtils.cp_r Pathname.new(File.expand_path("templates/deploy.yml", __dir__)), deploy_file
-      puts "Created configuration file in config/deploy.yml"
+      say "Created configuration file in config/deploy.yml"
     end
 
     unless (deploy_file = Pathname.new(File.expand_path(".env"))).exist?
       FileUtils.cp_r Pathname.new(File.expand_path("templates/template.env", __dir__)), deploy_file
-      puts "Created .env file"
+      say "Created .env file"
+    end
+
+    if options[:destination]
+      if (deploy_destination_file = Pathname.new(File.expand_path("config/deploy.#{options[:destination]}.yml"))).exist?
+        say "Config file already exists in config/deploy.#{options[:destination]}.yml (remove first to create a new one)"
+      else
+        FileUtils.mkdir_p deploy_destination_file.dirname
+        FileUtils.cp_r Pathname.new(File.expand_path("templates/deploy.yml", __dir__)), deploy_destination_file
+        say "Created configuration file in config/deploy.#{options[:destination]}.yml"
+      end
+
+      unless (deploy_destination_file = Pathname.new(File.expand_path(".env.#{options[:destination]}"))).exist?
+        FileUtils.cp_r Pathname.new(File.expand_path("templates/template.env", __dir__)), deploy_destination_file
+        say "Created .env.#{options[:destination]} file"
+      end
     end
 
     unless (hooks_dir = Pathname.new(File.expand_path(".kamal/hooks"))).exist?
@@ -157,19 +174,19 @@ class Kamal::Cli::Main < Kamal::Cli::Base
       Pathname.new(File.expand_path("templates/sample_hooks", __dir__)).each_child do |sample_hook|
         FileUtils.cp sample_hook, hooks_dir, preserve: true
       end
-      puts "Created sample hooks in .kamal/hooks"
+      say "Created sample hooks in .kamal/hooks"
     end
 
     if options[:bundle]
       if (binstub = Pathname.new(File.expand_path("bin/kamal"))).exist?
-        puts "Binstub already exists in bin/kamal (remove first to create a new one)"
+        say "Binstub already exists in bin/kamal (remove first to create a new one)"
       else
-        puts "Adding Kamal to Gemfile and bundle..."
+        say "Adding Kamal to Gemfile and bundle..."
         run_locally do
           execute :bundle, :add, :kamal
           execute :bundle, :binstubs, :kamal
         end
-        puts "Created binstub file in bin/kamal"
+        say "Created binstub file in bin/kamal"
       end
     end
   end
