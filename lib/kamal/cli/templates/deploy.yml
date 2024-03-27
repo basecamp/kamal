@@ -63,7 +63,7 @@ registry:
 #     directories:
 #       - data:/data
 
-# Configure custom arguments for Traefik
+# Configure custom arguments for Traefik. Be sure to reboot traefik when you modify it.
 # traefik:
 #   args:
 #     accesslog: true
