@@ -130,6 +130,16 @@ class ConfigurationTest < ActiveSupport::TestCase
     assert_equal "ghcr.io/dhh/app:missing", config.absolute_image
   end
 
+  test "latest image" do
+    assert_equal "dhh/app:latest", @config.latest_image
+  end
+
+  test "latest image with destination" do
+    dest_config_file = Pathname.new(File.expand_path("fixtures/deploy_for_dest.yml", __dir__))
+    config = Kamal::Configuration.create_from config_file: dest_config_file, destination: "world"
+    assert_equal "registry.digitalocean.com/dhh/app:latest-world", config.latest_image
+  end
+
   test "service with version" do
     assert_equal "app-missing", @config.service_with_version
   end
