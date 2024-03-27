@@ -38,11 +38,11 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
   end
 
   test "label args" do
-    assert_equal [ "--label", "service=\"app\"", "--label", "role=\"workers\"" ], @config_with_roles.role(:workers).label_args
+    assert_equal [ "--label", "service=\"app\"", "--label", "role=\"workers\"", "--label", "destination" ], @config_with_roles.role(:workers).label_args
   end
 
   test "special label args for web" do
-    assert_equal [ "--label", "service=\"app\"", "--label", "role=\"web\"", "--label", "traefik.http.services.app-web.loadbalancer.server.scheme=\"http\"", "--label", "traefik.http.routers.app-web.rule=\"PathPrefix(\\`/\\`)\"", "--label", "traefik.http.routers.app-web.priority=\"2\"", "--label", "traefik.http.middlewares.app-web-retry.retry.attempts=\"5\"", "--label", "traefik.http.middlewares.app-web-retry.retry.initialinterval=\"500ms\"", "--label", "traefik.http.routers.app-web.middlewares=\"app-web-retry@docker\"" ], @config.role(:web).label_args
+    assert_equal [ "--label", "service=\"app\"", "--label", "role=\"web\"", "--label", "destination", "--label", "traefik.http.services.app-web.loadbalancer.server.scheme=\"http\"", "--label", "traefik.http.routers.app-web.rule=\"PathPrefix(\\`/\\`)\"", "--label", "traefik.http.routers.app-web.priority=\"2\"", "--label", "traefik.http.middlewares.app-web-retry.retry.attempts=\"5\"", "--label", "traefik.http.middlewares.app-web-retry.retry.initialinterval=\"500ms\"", "--label", "traefik.http.routers.app-web.middlewares=\"app-web-retry@docker\"" ], @config.role(:web).label_args
   end
 
   test "custom labels" do
@@ -66,7 +66,7 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
       c[:servers]["beta"] = { "traefik" => "true", "hosts" => [ "1.1.1.5" ] }
     })
 
-    assert_equal [ "--label", "service=\"app\"", "--label", "role=\"beta\"", "--label", "traefik.http.services.app-beta.loadbalancer.server.scheme=\"http\"", "--label", "traefik.http.routers.app-beta.rule=\"PathPrefix(\\`/\\`)\"", "--label", "traefik.http.routers.app-beta.priority=\"2\"", "--label", "traefik.http.middlewares.app-beta-retry.retry.attempts=\"5\"", "--label", "traefik.http.middlewares.app-beta-retry.retry.initialinterval=\"500ms\"", "--label", "traefik.http.routers.app-beta.middlewares=\"app-beta-retry@docker\"" ], config.role(:beta).label_args
+    assert_equal [ "--label", "service=\"app\"", "--label", "role=\"beta\"", "--label", "destination", "--label", "traefik.http.services.app-beta.loadbalancer.server.scheme=\"http\"", "--label", "traefik.http.routers.app-beta.rule=\"PathPrefix(\\`/\\`)\"", "--label", "traefik.http.routers.app-beta.priority=\"2\"", "--label", "traefik.http.middlewares.app-beta-retry.retry.attempts=\"5\"", "--label", "traefik.http.middlewares.app-beta-retry.retry.initialinterval=\"500ms\"", "--label", "traefik.http.routers.app-beta.middlewares=\"app-beta-retry@docker\"" ], config.role(:beta).label_args
   end
 
   test "env overwritten by role" do

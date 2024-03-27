@@ -176,11 +176,7 @@ class Kamal::Configuration::Role
     end
 
     def default_labels
-      if config.destination
-        { "service" => config.service, "role" => name, "destination" => config.destination }
-      else
-        { "service" => config.service, "role" => name }
-      end
+      { "service" => config.service, "role" => name, "destination" => config.destination }
     end
 
     def traefik_labels
