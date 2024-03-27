@@ -40,7 +40,7 @@ class Kamal::Configuration::Builder
   end
 
   def context
-    @options["context"] || "."
+    @options["context"] || (git_archive? ? "-" : ".")
   end
 
   def local_arch
@@ -83,6 +83,10 @@ class Kamal::Configuration::Builder
 
   def ssh
     @options["ssh"]
+  end
+
+  def git_archive?
+    Kamal::Git.used? && @options["context"].nil?
   end
 
   private

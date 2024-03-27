@@ -3,7 +3,7 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
   class BuilderError < StandardError; end
 
   delegate :argumentize, to: Kamal::Utils
-  delegate :args, :secrets, :dockerfile, :local_arch, :local_host, :remote_arch, :remote_host, :cache_from, :cache_to, :ssh, to: :builder_config
+  delegate :args, :secrets, :dockerfile, :local_arch, :local_host, :remote_arch, :remote_host, :cache_from, :cache_to, :ssh, :git_archive?, to: :builder_config
 
   def clean
     docker :image, :rm, "--force", config.absolute_image
@@ -11,6 +11,16 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
 
   def pull
     docker :pull, config.absolute_image
+  end
+
+  def push
+    if git_archive?
+      pipe \
+        git(:archive, "--format=tar", :HEAD),
+        build_and_push
+    else
+      build_and_push
+    end
   end
 
   def build_options

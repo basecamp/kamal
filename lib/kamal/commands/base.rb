@@ -78,6 +78,10 @@ module Kamal::Commands
         args.compact.unshift :docker
       end
 
+      def git(*args)
+        args.compact.unshift :git
+      end
+
       def tags(**details)
         Kamal::Tags.from_config(config, **details)
       end

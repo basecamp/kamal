@@ -9,7 +9,7 @@ class CommandsBuilderTest < ActiveSupport::TestCase
     builder = new_builder_command(builder: { "cache" => { "type" => "gha" } })
     assert_equal "multiarch", builder.name
     assert_equal \
-      "docker buildx build --push --platform linux/amd64,linux/arm64 --builder kamal-app-multiarch -t dhh/app:123 -t dhh/app:latest --cache-to type=gha --cache-from type=gha --label service=\"app\" --file Dockerfile .",
+      "git archive --format=tar HEAD | docker buildx build --push --platform linux/amd64,linux/arm64 --builder kamal-app-multiarch -t dhh/app:123 -t dhh/app:latest --cache-to type=gha --cache-from type=gha --label service=\"app\" --file Dockerfile -",
       builder.push.join(" ")
   end
 
@@ -17,7 +17,7 @@ class CommandsBuilderTest < ActiveSupport::TestCase
     builder = new_builder_command(builder: { "multiarch" => false })
     assert_equal "native", builder.name
     assert_equal \
-      "docker build -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile . && docker push dhh/app:123 && docker push dhh/app:latest",
+      "git archive --format=tar HEAD | docker build -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile - && docker push dhh/app:123 && docker push dhh/app:latest",
       builder.push.join(" ")
   end
 
@@ -25,7 +25,7 @@ class CommandsBuilderTest < ActiveSupport::TestCase
     builder = new_builder_command(builder: { "multiarch" => false, "cache" => { "type" => "gha" } })
     assert_equal "native/cached", builder.name
     assert_equal \
-      "docker buildx build --push -t dhh/app:123 -t dhh/app:latest --cache-to type=gha --cache-from type=gha --label service=\"app\" --file Dockerfile .",
+      "git archive --format=tar HEAD | docker buildx build --push -t dhh/app:123 -t dhh/app:latest --cache-to type=gha --cache-from type=gha --label service=\"app\" --file Dockerfile -",
       builder.push.join(" ")
   end
 
@@ -33,7 +33,7 @@ class CommandsBuilderTest < ActiveSupport::TestCase
     builder = new_builder_command(builder: { "local" => {}, "remote" => {}, "cache" => { "type" => "gha" } })
     assert_equal "multiarch/remote", builder.name
     assert_equal \
-      "docker buildx build --push --platform linux/amd64,linux/arm64 --builder kamal-app-multiarch-remote -t dhh/app:123 -t dhh/app:latest --cache-to type=gha --cache-from type=gha --label service=\"app\" --file Dockerfile .",
+      "git archive --format=tar HEAD | docker buildx build --push --platform linux/amd64,linux/arm64 --builder kamal-app-multiarch-remote -t dhh/app:123 -t dhh/app:latest --cache-to type=gha --cache-from type=gha --label service=\"app\" --file Dockerfile -",
       builder.push.join(" ")
   end
 
@@ -41,7 +41,7 @@ class CommandsBuilderTest < ActiveSupport::TestCase
     builder = new_builder_command(builder: { "local" => { "arch" => "amd64" } })
     assert_equal "multiarch", builder.name
     assert_equal \
-      "docker buildx build --push --platform linux/amd64 --builder kamal-app-multiarch -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile .",
+      "git archive --format=tar HEAD | docker buildx build --push --platform linux/amd64 --builder kamal-app-multiarch -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile -",
       builder.push.join(" ")
   end
 
@@ -49,7 +49,7 @@ class CommandsBuilderTest < ActiveSupport::TestCase
     builder = new_builder_command(builder: { "remote" => { "arch" => "amd64" }, "cache" => { "type" => "gha" } })
     assert_equal "native/remote", builder.name
     assert_equal \
-      "docker buildx build --push --platform linux/amd64 --builder kamal-app-native-remote -t dhh/app:123 -t dhh/app:latest --cache-to type=gha --cache-from type=gha --label service=\"app\" --file Dockerfile .",
+      "git archive --format=tar HEAD | docker buildx build --push --platform linux/amd64 --builder kamal-app-native-remote -t dhh/app:123 -t dhh/app:latest --cache-to type=gha --cache-from type=gha --label service=\"app\" --file Dockerfile -",
       builder.push.join(" ")
   end
 
@@ -93,21 +93,21 @@ class CommandsBuilderTest < ActiveSupport::TestCase
   test "native push with build args" do
     builder = new_builder_command(builder: { "multiarch" => false, "args" => { "a" => 1, "b" => 2 } })
     assert_equal \
-      "docker build -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --build-arg a=\"1\" --build-arg b=\"2\" --file Dockerfile . && docker push dhh/app:123 && docker push dhh/app:latest",
+      "git archive --format=tar HEAD | docker build -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --build-arg a=\"1\" --build-arg b=\"2\" --file Dockerfile - && docker push dhh/app:123 && docker push dhh/app:latest",
       builder.push.join(" ")
   end
 
   test "multiarch push with build args" do
     builder = new_builder_command(builder: { "args" => { "a" => 1, "b" => 2 } })
     assert_equal \
-      "docker buildx build --push --platform linux/amd64,linux/arm64 --builder kamal-app-multiarch -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --build-arg a=\"1\" --build-arg b=\"2\" --file Dockerfile .",
+      "git archive --format=tar HEAD | docker buildx build --push --platform linux/amd64,linux/arm64 --builder kamal-app-multiarch -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --build-arg a=\"1\" --build-arg b=\"2\" --file Dockerfile -",
       builder.push.join(" ")
   end
 
   test "native push with build secrets" do
     builder = new_builder_command(builder: { "multiarch" => false, "secrets" => [ "a", "b" ] })
     assert_equal \
-      "docker build -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --secret id=\"a\" --secret id=\"b\" --file Dockerfile . && docker push dhh/app:123 && docker push dhh/app:latest",
+      "git archive --format=tar HEAD | docker build -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --secret id=\"a\" --secret id=\"b\" --file Dockerfile - && docker push dhh/app:123 && docker push dhh/app:latest",
       builder.push.join(" ")
   end
 
@@ -121,6 +121,34 @@ class CommandsBuilderTest < ActiveSupport::TestCase
 
   test "validate image" do
     assert_equal "docker inspect -f '{{ .Config.Labels.service }}' dhh/app:123 | grep -x app || (echo \"Image dhh/app:123 is missing the 'service' label\" && exit 1)", new_builder_command.validate_image.join(" ")
+  end
+
+  test "multiarch context build" do
+    builder = new_builder_command(builder: { "context" => "./foo" })
+    assert_equal \
+      "docker buildx build --push --platform linux/amd64,linux/arm64 --builder kamal-app-multiarch -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile ./foo",
+      builder.push.join(" ")
+  end
+
+  test "native context build" do
+    builder = new_builder_command(builder: { "multiarch" => false, "context" => "./foo" })
+    assert_equal \
+      "docker build -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile ./foo && docker push dhh/app:123 && docker push dhh/app:latest",
+      builder.push.join(" ")
+  end
+
+  test "cached context build" do
+    builder = new_builder_command(builder: { "multiarch" => false, "context" => "./foo", "cache" => { "type" => "gha" } })
+    assert_equal \
+      "docker buildx build --push -t dhh/app:123 -t dhh/app:latest --cache-to type=gha --cache-from type=gha --label service=\"app\" --file Dockerfile ./foo",
+      builder.push.join(" ")
+  end
+
+  test "remote context build" do
+    builder = new_builder_command(builder: { "remote" => { "arch" => "amd64" }, "context" => "./foo" })
+    assert_equal \
+      "docker buildx build --push --platform linux/amd64 --builder kamal-app-native-remote -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile ./foo",
+      builder.push.join(" ")
   end
 
   private

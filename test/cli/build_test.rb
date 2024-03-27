@@ -15,7 +15,7 @@ class CliBuildTest < CliTestCase
     run_command("push").tap do |output|
       assert_hook_ran "pre-build", output, **hook_variables
       assert_match /docker --version && docker buildx version/, output
-      assert_match /docker buildx build --push --platform linux\/amd64,linux\/arm64 --builder kamal-app-multiarch -t dhh\/app:999 -t dhh\/app:latest --label service="app" --file Dockerfile \. as .*@localhost/, output
+      assert_match /git archive -tar HEAD | docker buildx build --push --platform linux\/amd64,linux\/arm64 --builder kamal-app-multiarch -t dhh\/app:999 -t dhh\/app:latest --label service="app" --file Dockerfile - as .*@localhost/, output
     end
   end
 
@@ -25,7 +25,10 @@ class CliBuildTest < CliTestCase
       .with(:docker, "--version", "&&", :docker, :buildx, "version")
 
     SSHKit::Backend::Abstract.any_instance.stubs(:execute)
-      .with { |*args| args[0..1] == [ :docker, :buildx ] }
+      .with(:docker, :buildx, :create, "--use", "--name", "kamal-app-multiarch")
+
+    SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+      .with { |*args| p args[0..6]; args[0..6] == [ :git, :archive, "--format=tar", :HEAD, "|", :docker, :buildx ] }
       .raises(SSHKit::Command::Failed.new("no builder"))
       .then
       .returns(true)

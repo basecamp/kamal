@@ -103,7 +103,17 @@ class ConfigurationTest < ActiveSupport::TestCase
 
     Kamal::Git.expects(:revision).returns("git-version")
     Kamal::Git.expects(:uncommitted_changes).returns("M   file\n")
-    assert_match /^git-version_uncommitted_[0-9a-f]{16}$/, @config.version
+    assert_equal "git-version", @config.version
+  end
+
+  test "version from uncommitted context" do
+    ENV.delete("VERSION")
+
+    config = Kamal::Configuration.new(@deploy.tap { |c| c[:builder] = { "context" => "." } })
+
+    Kamal::Git.expects(:revision).returns("git-version")
+    Kamal::Git.expects(:uncommitted_changes).returns("M   file\n")
+    assert_match /^git-version_uncommitted_[0-9a-f]{16}$/, config.version
   end
 
   test "version from env" do
