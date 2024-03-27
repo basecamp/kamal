@@ -9,6 +9,10 @@ class Kamal::EnvFile
       @env.each do |key, value|
         contents << docker_env_file_line(key, value)
       end
+
+      @env["host"]&.each do |key|
+        contents << docker_host_env_file_line(key)
+      end
     end.string
 
     # Ensure the file has some contents to avoid the SSHKIT empty file warning
@@ -20,6 +24,10 @@ class Kamal::EnvFile
   private
     def docker_env_file_line(key, value)
       "#{key}=#{escape_docker_env_file_value(value)}\n"
+    end
+
+    def docker_host_env_file_line(key)
+      "#{key.to_s}\n"
     end
 
     # Escape a value to make it safe to dump in a docker file.
