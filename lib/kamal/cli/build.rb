@@ -115,7 +115,7 @@ class Kamal::Cli::Build < Kamal::Cli::Base
       remote_uri = URI.parse(remote_host)
       if remote_uri.scheme == "ssh"
         options = { user: remote_uri.user, port: remote_uri.port }.compact
-        on(remote_uri.host, options) do
+        on(remote_host.gsub('ssh://', ''), options) do
           execute "true"
         end
       end
