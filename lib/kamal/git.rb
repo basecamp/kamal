@@ -10,7 +10,7 @@ module Kamal::Git
   end
 
   def revision
-    `git rev-parse HEAD`.strip
+    `git describe --always`.strip
   end
 
   def uncommitted_changes
