@@ -22,6 +22,7 @@ builder:
     COMMIT_SHA: <%= `git rev-parse HEAD` %>
 healthcheck:
   cmd: wget -qO- http://localhost > /dev/null || exit 1
+  max_attempts: 3
 traefik:
   args:
     accesslog: true
@@ -35,3 +36,4 @@ accessories:
     roles:
       - web
 stop_wait_time: 1
+readiness_delay: 0

@@ -61,9 +61,9 @@ class Kamal::Commander
   end
 
   def roles
-    (specific_roles || config.roles).select do |role|
-      ((specific_hosts || config.all_hosts) & role.hosts).any?
-    end
+    (specific_roles || config.roles) \
+      .select { |role| ((specific_hosts || config.all_hosts) & role.hosts).any? }
+      .sort_by { |role| role.running_traefik? ? 0 : 1 }
   end
 
   def hosts
@@ -178,6 +178,7 @@ class Kamal::Commander
         sshkit.max_concurrent_starts = config.sshkit.max_concurrent_starts
         sshkit.ssh_options = config.ssh.options
       end
+      SSHKit.config.default_runner = SSHKit::Runner::ParallelCompleteAll
       SSHKit.config.command_map[:docker] = "docker" # No need to use /usr/bin/env, just clogs up the logs
       SSHKit.config.output_verbosity = verbosity
     end

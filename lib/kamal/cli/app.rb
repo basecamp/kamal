@@ -10,16 +10,18 @@ class Kamal::Cli::App < Kamal::Cli::Base
           # Assets are prepared in a separate step to ensure they are on all hosts before booting
           on(KAMAL.hosts) do
             execute *KAMAL.auditor.record("Tagging #{KAMAL.config.absolute_image} as the latest image"), verbosity: :debug
-            execute *KAMAL.app.tag_current_image_as_latest
 
             KAMAL.roles_on(host).each do |role|
               Kamal::Cli::App::PrepareAssets.new(host, role, self).run
             end
           end
 
+          web_barrier = Kamal::Cli::Healthcheck::Barrier.new if web_and_non_web_roles?
+
           on(KAMAL.hosts, **KAMAL.boot_strategy) do |host|
+            # Ensure web roles are booted first to allow the web barrier to be opened
             KAMAL.roles_on(host).each do |role|
-              Kamal::Cli::App::Boot.new(host, role, version, self).run
+              Kamal::Cli::App::Boot.new(host, role, version, web_barrier, self).run
             end
           end
         end
@@ -285,5 +287,9 @@ class Kamal::Cli::App < Kamal::Cli::Base
 
     def version_or_latest
       options[:version] || "latest"
+    end
+
+    def web_and_non_web_roles?
+      KAMAL.roles.any?(&:running_traefik?) && !KAMAL.roles.all?(&:running_traefik?)
     end
 end

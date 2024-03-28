@@ -1,0 +1,15 @@
+service: app
+image: dhh/app
+servers:
+  workers:
+    hosts:
+      - 1.1.1.1
+  web:
+    hosts:
+      - 1.1.1.1
+env:
+  REDIS_URL: redis://x/y
+registry:
+  server: registry.digitalocean.com
+  username: user
+  password: pw
