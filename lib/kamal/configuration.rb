@@ -222,7 +222,7 @@ class Kamal::Configuration
 
 
   def host_env_directory
-    "#{run_directory}/env"
+    File.join(run_directory, "env")
   end
 
   def env
