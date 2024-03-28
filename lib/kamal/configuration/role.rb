@@ -16,6 +16,10 @@ class Kamal::Configuration::Role
     @hosts ||= extract_hosts_from_config
   end
 
+  def port
+    specializations["port"] || config.port || "3000"
+  end
+
   def cmd
     specializations["cmd"]
   end

@@ -6,7 +6,7 @@ require "erb"
 require "net/ssh/proxy/jump"
 
 class Kamal::Configuration
-  delegate :service, :image, :servers, :labels, :registry, :stop_wait_time, :hooks_path, :logging, to: :raw_config, allow_nil: true
+  delegate :service, :image, :port, :servers, :labels, :registry, :stop_wait_time, :hooks_path, :logging, to: :raw_config, allow_nil: true
   delegate :argumentize, :optionize, to: Kamal::Utils
 
   attr_reader :destination, :raw_config

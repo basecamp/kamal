@@ -9,6 +9,7 @@ servers:
     hosts:
       - vm3
     cmd: sleep infinity
+port: 80
 
 asset_path: /usr/share/nginx/html/versions
 

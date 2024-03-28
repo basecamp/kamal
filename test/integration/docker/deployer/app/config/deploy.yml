@@ -3,6 +3,7 @@ image: app
 servers:
   - vm1
   - vm2
+port: 80
 env:
   clear:
     CLEAR_TOKEN: 4321

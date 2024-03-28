@@ -48,7 +48,7 @@ class Kamal::Cli::App::Boot
       audit "Booted app version #{version}"
       execute *app.run(hostname: "#{host}-#{SecureRandom.hex(6)}")
       if running_proxy?
-        execute *KAMAL.proxy.deploy(app.container_name(version))
+        execute *KAMAL.proxy.deploy("#{app.container_name(version)}:#{role.port}")
       end
     end
 
