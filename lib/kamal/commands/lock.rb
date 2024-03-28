@@ -21,6 +21,10 @@ class Kamal::Commands::Lock < Kamal::Commands::Base
       read_lock_details
   end
 
+  def ensure_locks_directory
+    [ :mkdir, "-p", locks_dir ]
+  end
+
   private
     def write_lock_details(message, version)
       write \
@@ -40,12 +44,18 @@ class Kamal::Commands::Lock < Kamal::Commands::Base
         "/dev/null"
     end
 
+    def locks_dir
+      File.join(config.run_directory, "locks")
+    end
+
     def lock_dir
-      "#{config.run_directory}/lock-#{config.service}"
+      dir_name = [ config.service, config.destination ].compact.join("-")
+
+      File.join(locks_dir, dir_name)
     end
 
     def lock_details_file
-      [ lock_dir, :details ].join("/")
+      File.join(lock_dir, "details")
     end
 
     def lock_details(message, version)
