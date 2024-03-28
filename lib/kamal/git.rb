@@ -9,6 +9,10 @@ module Kamal::Git
     `git config user.name`.strip
   end
 
+  def email
+    `git config user.email`.strip
+  end
+
   def revision
     `git rev-parse HEAD`.strip
   end
