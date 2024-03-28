@@ -8,13 +8,13 @@ class IntegrationProxyTest < IntegrationTest
     kamal :proxy, :boot
     assert_proxy_running
 
-    output = kamal :proxy, :reboot, capture: true
+    output = kamal :proxy, :reboot, "-y", capture: true
     assert_proxy_running
     assert_hooks_ran "pre-proxy-reboot", "post-proxy-reboot"
     assert_match /Rebooting proxy on vm1,vm2.../, output
     assert_match /Rebooted proxy on vm1,vm2/, output
 
-    output = kamal :proxy, :reboot, :"--rolling", capture: true
+    output = kamal :proxy, :reboot, "--rolling", "-y", capture: true
     assert_proxy_running
     assert_hooks_ran "pre-proxy-reboot", "post-proxy-reboot"
     assert_match /Rebooting proxy on vm1.../, output
@@ -43,7 +43,7 @@ class IntegrationProxyTest < IntegrationTest
     assert_proxy_running
 
     logs = kamal :proxy, :logs, capture: true
-    assert_match %r["level":"INFO","msg":"Server started","http":80,"https":443], logs
+    assert_match %r{"level":"INFO","msg":"Server started","http":80,"https":443}, logs
 
     kamal :proxy, :remove
     assert_proxy_not_running
@@ -53,11 +53,11 @@ class IntegrationProxyTest < IntegrationTest
 
   private
     def assert_proxy_running
-      assert_match %r[registry:4443/dmcbreen/mproxy:latest   "mproxy run"], proxy_details
+      assert_match %r{registry:4443/dmcbreen/mproxy:latest   "mproxy run"}, proxy_details
     end
 
     def assert_proxy_not_running
-      refute_match %r[registry:4443/dmcbreen/mproxy:latest   "mproxy run"], proxy_details
+      assert_no_match %r{registry:4443/dmcbreen/mproxy:latest   "mproxy run"}, proxy_details
     end
 
     def proxy_details

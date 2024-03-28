@@ -49,11 +49,12 @@ class IntegrationMainTest < IntegrationTest
   test "app with roles" do
     @app = "app_with_roles"
 
+    kamal :server, :bootstrap
     kamal :envify
 
     version = latest_app_version
 
-    assert_app_is_down
+    assert_app_is_down response_code: "502"
 
     kamal :deploy
 

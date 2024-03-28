@@ -22,11 +22,8 @@ builder:
     COMMIT_SHA: <%= `git rev-parse HEAD` %>
 healthcheck:
   cmd: wget -qO- http://localhost > /dev/null || exit 1
-traefik:
-  args:
-    accesslog: true
-    accesslog.format: json
-  image: registry:4443/traefik:v2.10
+proxy:
+  image: registry:4443/dmcbreen/mproxy:latest
 accessories:
   busybox:
     service: custom-busybox

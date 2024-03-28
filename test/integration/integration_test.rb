@@ -125,9 +125,9 @@ class IntegrationTest < ActiveSupport::TestCase
       code = app_response.code
       if code != expected_code
         puts "Got response code #{code}, here are the proxy logs:"
-        kamal :proxy, :logs
+        kamal :proxy, :logs, raise_on_error: false
         puts "And here are the load balancer logs"
-        docker_compose :logs, :load_balancer
+        docker_compose :logs, :load_balancer, raise_on_error: false
         puts "Tried to get the response code again and got #{app_response.code}"
       end
     end

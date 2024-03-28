@@ -15,7 +15,7 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
   def reboot
     confirming "This will cause a brief outage on each host. Are you sure?" do
       mutating do
-        host_groups = options[:rolling] ? KAMAL.proxy_hosts : [KAMAL.proxy_hosts]
+        host_groups = options[:rolling] ? KAMAL.proxy_hosts : [ KAMAL.proxy_hosts ]
         host_groups.each do |hosts|
           host_list = Array(hosts).join(",")
           run_hook "pre-proxy-reboot", hosts: host_list

@@ -11,7 +11,7 @@ class CliProxyTest < CliTestCase
   test "reboot" do
     Kamal::Commands::Registry.any_instance.expects(:login).twice
 
-    run_command("reboot").tap do |output|
+    run_command("reboot", "-y").tap do |output|
       assert_match "docker container stop mproxy", output
       assert_match "docker container prune --force --filter label=org.opencontainers.image.title=mproxy", output
       assert_match "docker run --name mproxy --detach --restart unless-stopped --network kamal --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock --log-opt max-size=\"10m\" #{Kamal::Commands::Proxy::DEFAULT_IMAGE}", output
@@ -21,7 +21,7 @@ class CliProxyTest < CliTestCase
   test "reboot --rolling" do
     Object.any_instance.stubs(:sleep)
 
-    run_command("reboot", "--rolling").tap do |output|
+    run_command("reboot", "--rolling", "-y").tap do |output|
       assert_match "Running docker container prune --force --filter label=org.opencontainers.image.title=mproxy on 1.1.1.1", output
     end
   end
@@ -91,6 +91,6 @@ class CliProxyTest < CliTestCase
 
   private
     def run_command(*command)
-      stdouted { Kamal::Cli::Proxy.start([*command, "-c", "test/fixtures/deploy_with_accessories.yml"]) }
+      stdouted { Kamal::Cli::Proxy.start([ *command, "-c", "test/fixtures/deploy_with_accessories.yml" ]) }
     end
 end

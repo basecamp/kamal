@@ -3,7 +3,7 @@ require "test_helper"
 class CommandsProxyTest < ActiveSupport::TestCase
   setup do
     @config = {
-      service: "app", image: "dhh/app", registry: { "username" => "dhh", "password" => "secret" }, servers: [ "1.1.1.1" ],
+      service: "app", image: "dhh/app", registry: { "username" => "dhh", "password" => "secret" }, servers: [ "1.1.1.1" ]
     }
 
     ENV["EXAMPLE_API_KEY"] = "456"
@@ -68,7 +68,7 @@ class CommandsProxyTest < ActiveSupport::TestCase
   test "proxy logs since 2h" do
     assert_equal \
       "docker logs mproxy  --since 2h --timestamps 2>&1",
-      new_command.logs(since: '2h').join(" ")
+      new_command.logs(since: "2h").join(" ")
   end
 
   test "proxy logs last 10 lines" do
@@ -80,7 +80,7 @@ class CommandsProxyTest < ActiveSupport::TestCase
   test "proxy logs with grep hello!" do
     assert_equal \
       "docker logs mproxy --timestamps 2>&1 | grep 'hello!'",
-      new_command.logs(grep: 'hello!').join(" ")
+      new_command.logs(grep: "hello!").join(" ")
   end
 
   test "proxy remove container" do
@@ -104,7 +104,7 @@ class CommandsProxyTest < ActiveSupport::TestCase
   test "proxy follow logs with grep hello!" do
     assert_equal \
       "ssh -t root@1.1.1.1 -p 22 'docker logs mproxy --timestamps --tail 10 --follow 2>&1 | grep \"hello!\"'",
-      new_command.follow_logs(host: @config[:servers].first, grep: 'hello!')
+      new_command.follow_logs(host: @config[:servers].first, grep: "hello!")
   end
 
   private
