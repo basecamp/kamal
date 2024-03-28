@@ -13,31 +13,29 @@ class Kamal::Cli::Build < Kamal::Cli::Base
 
   desc "push", "Build and push app image to registry"
   def push
-    mutating do
-      cli = self
+    cli = self
 
-      verify_local_dependencies
-      run_hook "pre-build"
+    verify_local_dependencies
+    run_hook "pre-build"
 
-      if (uncommitted_changes = Kamal::Git.uncommitted_changes).present?
-        say "The following paths have uncommitted changes:\n #{uncommitted_changes}", :yellow
-      end
+    if (uncommitted_changes = Kamal::Git.uncommitted_changes).present?
+      say "The following paths have uncommitted changes:\n #{uncommitted_changes}", :yellow
+    end
 
-      run_locally do
-        begin
-          KAMAL.with_verbosity(:debug) do
-            execute *KAMAL.builder.push
+    run_locally do
+      begin
+        KAMAL.with_verbosity(:debug) do
+          execute *KAMAL.builder.push
+        end
+      rescue SSHKit::Command::Failed => e
+        if e.message =~ /(no builder)|(no such file or directory)/
+          error "Missing compatible builder, so creating a new one first"
+
+          if cli.create
+            KAMAL.with_verbosity(:debug) { execute *KAMAL.builder.push }
           end
-        rescue SSHKit::Command::Failed => e
-          if e.message =~ /(no builder)|(no such file or directory)/
-            error "Missing compatible builder, so creating a new one first"
-
-            if cli.create
-              KAMAL.with_verbosity(:debug) { execute *KAMAL.builder.push }
-            end
-          else
-            raise
-          end
+        else
+          raise
         end
       end
     end
