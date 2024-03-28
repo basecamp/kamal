@@ -71,7 +71,7 @@ module Kamal::Commands
       end
 
       def shell(command)
-        [ :sh, "-c", "'#{command.flatten.join(" ").gsub("'", "'\\''")}'" ]
+        [ :sh, "-c", "'#{command.flatten.join(" ").gsub("'", "'\\\\''")}'" ]
       end
 
       def docker(*args)
