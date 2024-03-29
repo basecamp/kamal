@@ -339,6 +339,19 @@ class CommandsAppTest < ActiveSupport::TestCase
       new_command.remove_images.join(" ")
   end
 
+  test "tag_latest_image" do
+    assert_equal \
+      "docker tag dhh/app:999 dhh/app:latest",
+      new_command.tag_latest_image.join(" ")
+  end
+
+  test "tag_latest_image with destination" do
+    @destination = "staging"
+    assert_equal \
+      "docker tag dhh/app:999 dhh/app:latest-staging",
+      new_command.tag_latest_image.join(" ")
+  end
+
   test "make_env_directory" do
     assert_equal "mkdir -p .kamal/env/roles", new_command.make_env_directory.join(" ")
   end
