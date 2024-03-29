@@ -21,7 +21,7 @@ class Kamal::Commands::Auditor < Kamal::Commands::Base
     def audit_log_file
       file = [ config.service, config.destination, "audit.log" ].compact.join("-")
 
-      "#{config.run_directory}/#{file}"
+      File.join(config.run_directory, file)
     end
 
     def audit_tags(**details)

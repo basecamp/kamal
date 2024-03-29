@@ -134,7 +134,7 @@ class Kamal::Configuration::Accessory
     end
 
     def expand_host_path(host_path)
-      absolute_path?(host_path) ? host_path : "#{service_data_directory}/#{host_path}"
+      absolute_path?(host_path) ? host_path : File.join(service_data_directory, host_path)
     end
 
     def absolute_path?(path)

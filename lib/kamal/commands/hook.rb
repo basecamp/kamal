@@ -9,6 +9,6 @@ class Kamal::Commands::Hook < Kamal::Commands::Base
 
   private
     def hook_file(hook)
-      "#{config.hooks_path}/#{hook}"
+      File.join(config.hooks_path, hook)
     end
 end
