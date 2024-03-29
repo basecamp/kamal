@@ -284,6 +284,6 @@ class Kamal::Cli::App < Kamal::Cli::Base
     end
 
     def version_or_latest
-      options[:version] || "latest"
+      options[:version] || KAMAL.config.latest_tag
     end
 end

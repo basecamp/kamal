@@ -50,7 +50,7 @@ class Kamal::Commands::App < Kamal::Commands::Base
 
   def current_running_container_id
     pipe \
-      [ shell(chain(latest_image_container_id, latest_container_id)) ],
+      shell(chain(latest_image_container_id, latest_container_id)),
       [ :head, "-1" ]
   end
 
@@ -60,7 +60,7 @@ class Kamal::Commands::App < Kamal::Commands::Base
 
   def current_running_version
     pipe \
-      [ shell(chain(latest_image_container_name, latest_container_name)) ],
+      shell(chain(latest_image_container_name, latest_container_name)),
       [ :head, "-1" ],
       extract_version_from_name
   end
