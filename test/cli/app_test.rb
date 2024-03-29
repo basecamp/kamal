@@ -107,7 +107,11 @@ class CliAppTest < CliTestCase
   test "stale_containers" do
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
       .with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=web", "--format", "\"{{.Names}}\"", "|", "while read line; do echo ${line#app-web-}; done", raise_on_non_zero_exit: false)
-      .returns("12345678\n87654321")
+      .returns("12345678\n87654321\n")
+
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:sh, "-c", "'docker ps --latest --format '\\''{{.Names}}'\\'' --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --format '\\''{{.Names}}'\\'' --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting'", "|", :head, "-1", "|", "while read line; do echo ${line#app-web-}; done", raise_on_non_zero_exit: false)
+      .returns("12345678\n")
 
     run_command("stale_containers").tap do |output|
       assert_match /Detected stale container for role web with version 87654321/, output
@@ -117,7 +121,11 @@ class CliAppTest < CliTestCase
   test "stop stale_containers" do
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
       .with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=web", "--format", "\"{{.Names}}\"", "|", "while read line; do echo ${line#app-web-}; done", raise_on_non_zero_exit: false)
-      .returns("12345678\n87654321")
+      .returns("12345678\n87654321\n")
+
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:sh, "-c", "'docker ps --latest --format '\\''{{.Names}}'\\'' --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --format '\\''{{.Names}}'\\'' --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting'", "|", :head, "-1", "|", "while read line; do echo ${line#app-web-}; done", raise_on_non_zero_exit: false)
+      .returns("12345678\n")
 
     run_command("stale_containers", "--stop").tap do |output|
       assert_match /Stopping stale container for role web with version 87654321/, output

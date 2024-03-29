@@ -136,7 +136,10 @@ class Kamal::Cli::App < Kamal::Cli::Base
         roles = KAMAL.roles_on(host)
 
         roles.each do |role|
-          cli.send(:stale_versions, host: host, role: role).each do |version|
+          versions = capture_with_info(*KAMAL.app(role: role).list_versions, raise_on_non_zero_exit: false).split("\n")
+          versions -= [ capture_with_info(*KAMAL.app(role: role).current_running_version, raise_on_non_zero_exit: false).strip ]
+
+          versions.each do |version|
             if stop
               puts_by_host host, "Stopping stale container for role #{role} with version #{version}"
               execute *KAMAL.app(role: role).stop(version: version), raise_on_non_zero_exit: false
@@ -270,17 +273,6 @@ class Kamal::Cli::App < Kamal::Cli::Base
         version = capture_with_info(*KAMAL.app(role: role).current_running_version).strip
       end
       version.presence
-    end
-
-    def stale_versions(host:, role:)
-      versions = nil
-      on(host) do
-        versions = \
-          capture_with_info(*KAMAL.app(role: role).list_versions, raise_on_non_zero_exit: false)
-          .split("\n")
-          .drop(1)
-      end
-      versions
     end
 
     def version_or_latest
