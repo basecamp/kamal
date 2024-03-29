@@ -18,7 +18,9 @@ class Kamal::Cli::App < Kamal::Cli::Base
             KAMAL.roles_on(host).each do |role|
               Kamal::Cli::App::Boot.new(host, role, version, self).run
             end
+          end
 
+          on(KAMAL.hosts) do |host|
             execute *KAMAL.auditor.record("Tagging #{KAMAL.config.absolute_image} as the latest image"), verbosity: :debug
             execute *KAMAL.app.tag_latest_image
           end
