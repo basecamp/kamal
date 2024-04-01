@@ -174,36 +174,48 @@ class CommandsAppTest < ActiveSupport::TestCase
   test "execute in new container" do
     assert_equal \
       "docker run --rm --env-file .kamal/env/roles/app-web.env dhh/app:999 bin/rails db:setup",
-      new_command.execute_in_new_container("bin/rails", "db:setup").join(" ")
+      new_command.execute_in_new_container("bin/rails", "db:setup", env: {}).join(" ")
+  end
+
+  test "execute in new container with env" do
+    assert_equal \
+      "docker run --rm --env-file .kamal/env/roles/app-web.env --env foo=\"bar\" dhh/app:999 bin/rails db:setup",
+      new_command.execute_in_new_container("bin/rails", "db:setup", env: { "foo" => "bar" }).join(" ")
   end
 
   test "execute in new container with custom options" do
     @config[:servers] = { "web" => { "hosts" => [ "1.1.1.1" ], "options" => { "mount" => "somewhere", "cap-add" => true } } }
     assert_equal \
       "docker run --rm --env-file .kamal/env/roles/app-web.env --mount \"somewhere\" --cap-add dhh/app:999 bin/rails db:setup",
-      new_command.execute_in_new_container("bin/rails", "db:setup").join(" ")
+      new_command.execute_in_new_container("bin/rails", "db:setup", env: {}).join(" ")
   end
 
   test "execute in existing container" do
     assert_equal \
       "docker exec app-web-999 bin/rails db:setup",
-      new_command.execute_in_existing_container("bin/rails", "db:setup").join(" ")
+      new_command.execute_in_existing_container("bin/rails", "db:setup", env: {}).join(" ")
+  end
+
+  test "execute in existing container with env" do
+    assert_equal \
+      "docker exec --env foo=\"bar\" app-web-999 bin/rails db:setup",
+      new_command.execute_in_existing_container("bin/rails", "db:setup", env: { "foo" => "bar" }).join(" ")
   end
 
   test "execute in new container over ssh" do
     assert_match %r{docker run -it --rm --env-file .kamal/env/roles/app-web.env dhh/app:999 bin/rails c},
-      new_command.execute_in_new_container_over_ssh("bin/rails", "c", host: "app-1")
+      new_command.execute_in_new_container_over_ssh("bin/rails", "c", host: "app-1", env: {})
   end
 
   test "execute in new container with custom options over ssh" do
     @config[:servers] = { "web" => { "hosts" => [ "1.1.1.1" ], "options" => { "mount" => "somewhere", "cap-add" => true } } }
     assert_match %r{docker run -it --rm --env-file .kamal/env/roles/app-web.env --mount \"somewhere\" --cap-add dhh/app:999 bin/rails c},
-      new_command.execute_in_new_container_over_ssh("bin/rails", "c", host: "app-1")
+      new_command.execute_in_new_container_over_ssh("bin/rails", "c", host: "app-1", env: {})
   end
 
   test "execute in existing container over ssh" do
     assert_match %r{docker exec -it app-web-999 bin/rails c},
-      new_command.execute_in_existing_container_over_ssh("bin/rails", "c", host: "app-1")
+      new_command.execute_in_existing_container_over_ssh("bin/rails", "c", host: "app-1", env: {})
   end
 
   test "run over ssh" do
