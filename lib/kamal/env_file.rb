@@ -1,4 +1,6 @@
 # Encode an env hash as a string where secret values have been looked up and all values escaped for Docker.
+require "shellwords"
+
 class Kamal::EnvFile
   def initialize(env)
     @env = env
@@ -26,6 +28,6 @@ class Kamal::EnvFile
     def escape_docker_env_file_value(value)
       # Doublequotes are treated literally in docker env files
       # so remove leading and trailing ones and unescape any others
-      value.to_s.dump[1..-2].gsub(/\\"/, "\"")
+      Shellwords.escape(value.to_s)
     end
 end
