@@ -1,10 +1,25 @@
 name: CI
-on: 
+on:
   push:
     branches:
       - main
   pull_request:
 jobs:
+  rubocop:
+    name: RuboCop
+    runs-on: ubuntu-latest
+    env:
+      BUNDLE_ONLY: rubocop
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup Ruby and install gems
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 3.3.0
+          bundler-cache: true
+      - name: Run Rubocop
+        run: bundle exec rubocop --parallel
   tests:
     strategy:
       matrix:
@@ -12,17 +27,29 @@ jobs:
           - "2.7"
           - "3.1"
           - "3.2"
+          - "3.3"
         gemfile:
           - Gemfile
+          - gemfiles/ruby_2.7.gemfile
           - gemfiles/rails_edge.gemfile
-        continue-on-error: [false]
+        exclude:
+          - ruby-version: "2.7"
+            gemfile: Gemfile
+          - ruby-version: "2.7"
+            gemfile: gemfiles/rails_edge.gemfile
+          - ruby-version: "3.1"
+            gemfile: gemfiles/ruby_2.7.gemfile
+          - ruby-version: "3.2"
+            gemfile: gemfiles/ruby_2.7.gemfile
+          - ruby-version: "3.3"
+            gemfile: gemfiles/ruby_2.7.gemfile
     name: ${{ format('Tests (Ruby {0})', matrix.ruby-version) }}
     runs-on: ubuntu-latest
-    continue-on-error: ${{ matrix.continue-on-error }}
+    continue-on-error: true
     env:
       BUNDLE_GEMFILE: ${{ github.workspace }}/${{ matrix.gemfile }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Install Ruby
         uses: ruby/setup-ruby@v1

@@ -65,8 +65,18 @@ class CliHealthcheckTest < CliTestCase
     assert_match "container not ready (unhealthy)", exception.message
   end
 
+  test "raises an exception if primary does not have traefik" do
+    SSHKit::Backend::Abstract.any_instance.expects(:execute).never
+
+    exception = assert_raises do
+      run_command("perform", config_file: "test/fixtures/deploy_workers_only.yml")
+    end
+
+    assert_equal "The primary host is not configured to run Traefik", exception.message
+  end
+
   private
-    def run_command(*command)
-      stdouted { Kamal::Cli::Healthcheck.start([*command, "-c", "test/fixtures/deploy_with_accessories.yml"]) }
+    def run_command(*command, config_file: "test/fixtures/deploy_with_accessories.yml")
+      stdouted { Kamal::Cli::Healthcheck.start([ *command, "-c", config_file ]) }
     end
 end

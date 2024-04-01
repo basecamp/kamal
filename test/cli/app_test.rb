@@ -27,7 +27,7 @@ class CliAppTest < CliTestCase
       .returns("123") # old version
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :inspect, "-f '{{ range .Mounts }}{{printf \"%s %s\\n\" .Source .Destination}}{{ end }}'", "app-web-123", "|", :awk, "'$2 == \"/tmp/kamal-cord\" {print $1}'", :raise_on_non_zero_exit => false)
+      .with(:docker, :inspect, "-f '{{ range .Mounts }}{{printf \"%s %s\\n\" .Source .Destination}}{{ end }}'", "app-web-123", "|", :awk, "'$2 == \"/tmp/kamal-cord\" {print $1}'", raise_on_non_zero_exit: false)
       .returns("cordfile") # old version
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
@@ -45,7 +45,7 @@ class CliAppTest < CliTestCase
   end
 
   test "boot uses group strategy when specified" do
-    Kamal::Cli::App.any_instance.stubs(:on).with("1.1.1.1").twice # acquire & release lock
+    Kamal::Cli::App.any_instance.stubs(:on).with("1.1.1.1").times(3) # ensure locks dir, acquire & release lock
     Kamal::Cli::App.any_instance.stubs(:on).with([ "1.1.1.1" ]) # tag container
 
     # Strategy is used when booting the containers
@@ -57,7 +57,7 @@ class CliAppTest < CliTestCase
   test "boot errors leave lock in place" do
     Kamal::Cli::App.any_instance.expects(:using_version).raises(RuntimeError)
 
-    assert !KAMAL.holding_lock?
+    assert_not KAMAL.holding_lock?
     assert_raises(RuntimeError) do
       stderred { run_command("boot") }
     end
@@ -79,7 +79,7 @@ class CliAppTest < CliTestCase
       .returns("123").twice # old version
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :inspect, "-f '{{ range .Mounts }}{{printf \"%s %s\\n\" .Source .Destination}}{{ end }}'", "app-web-123", "|", :awk, "'$2 == \"/tmp/kamal-cord\" {print $1}'", :raise_on_non_zero_exit => false)
+      .with(:docker, :inspect, "-f '{{ range .Mounts }}{{printf \"%s %s\\n\" .Source .Destination}}{{ end }}'", "app-web-123", "|", :awk, "'$2 == \"/tmp/kamal-cord\" {print $1}'", raise_on_non_zero_exit: false)
       .returns("") # old version
 
     run_command("boot", config: :with_assets).tap do |output|
@@ -159,7 +159,7 @@ class CliAppTest < CliTestCase
 
   test "exec" do
     run_command("exec", "ruby -v").tap do |output|
-      assert_match "docker run --rm dhh/app:latest ruby -v", output
+      assert_match "docker run --rm --env-file .kamal/env/roles/app-web.env dhh/app:latest ruby -v", output
     end
   end
 
@@ -172,7 +172,7 @@ class CliAppTest < CliTestCase
 
   test "exec interactive" do
     SSHKit::Backend::Abstract.any_instance.expects(:exec)
-      .with("ssh -t root@1.1.1.1 'docker run -it --rm --env-file .kamal/env/roles/app-web.env dhh/app:latest ruby -v'")
+      .with("ssh -t root@1.1.1.1 -p 22 'docker run -it --rm --env-file .kamal/env/roles/app-web.env dhh/app:latest ruby -v'")
     run_command("exec", "-i", "ruby -v").tap do |output|
       assert_match "Get most recent version available as an image...", output
       assert_match "Launching interactive command with version latest via SSH from new container on 1.1.1.1...", output
@@ -181,7 +181,7 @@ class CliAppTest < CliTestCase
 
   test "exec interactive with reuse" do
     SSHKit::Backend::Abstract.any_instance.expects(:exec)
-      .with("ssh -t root@1.1.1.1 'docker exec -it app-web-999 ruby -v'")
+      .with("ssh -t root@1.1.1.1 -p 22 'docker exec -it app-web-999 ruby -v'")
     run_command("exec", "-i", "--reuse", "ruby -v").tap do |output|
       assert_match "Get current version of running container...", output
       assert_match "Running docker ps --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --latest --format \"{{.Names}}\" | while read line; do echo ${line#app-web-}; done on 1.1.1.1", output
@@ -210,7 +210,7 @@ class CliAppTest < CliTestCase
 
   test "logs with follow" do
     SSHKit::Backend::Abstract.any_instance.stubs(:exec)
-      .with("ssh -t root@1.1.1.1 'docker ps --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --latest | xargs docker logs --timestamps --tail 10 --follow 2>&1'")
+      .with("ssh -t root@1.1.1.1 -p 22 'docker ps --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --latest | xargs docker logs --timestamps --tail 10 --follow 2>&1'")
 
     assert_match "docker ps --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --latest | xargs docker logs --timestamps --tail 10 --follow 2>&1", run_command("logs", "--follow")
   end
@@ -223,14 +223,14 @@ class CliAppTest < CliTestCase
 
 
   test "version through main" do
-    stdouted { Kamal::Cli::Main.start(["app", "version", "-c", "test/fixtures/deploy_with_accessories.yml", "--hosts", "1.1.1.1"]) }.tap do |output|
+    stdouted { Kamal::Cli::Main.start([ "app", "version", "-c", "test/fixtures/deploy_with_accessories.yml", "--hosts", "1.1.1.1" ]) }.tap do |output|
       assert_match "docker ps --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --latest --format \"{{.Names}}\" | while read line; do echo ${line#app-web-}; done", output
     end
   end
 
   private
     def run_command(*command, config: :with_accessories)
-      stdouted { Kamal::Cli::App.start([*command, "-c", "test/fixtures/deploy_#{config}.yml", "--hosts", "1.1.1.1"]) }
+      stdouted { Kamal::Cli::App.start([ *command, "-c", "test/fixtures/deploy_#{config}.yml", "--hosts", "1.1.1.1" ]) }
     end
 
     def stub_running

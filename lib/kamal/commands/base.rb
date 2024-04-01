@@ -18,7 +18,7 @@ module Kamal::Commands
         elsif config.ssh.proxy && config.ssh.proxy.is_a?(Net::SSH::Proxy::Command)
           cmd << " -o ProxyCommand='#{config.ssh.proxy.command_line_template}'"
         end
-        cmd << " -t #{config.ssh.user}@#{host} '#{command.join(" ")}'"
+        cmd << " -t #{config.ssh.user}@#{host} -p #{config.ssh.port} '#{command.join(" ")}'"
       end
     end
 
@@ -62,12 +62,24 @@ module Kamal::Commands
         combine *commands, by: ">"
       end
 
+      def any(*commands)
+        combine *commands, by: "||"
+      end
+
       def xargs(command)
         [ :xargs, command ].flatten
       end
 
+      def shell(command)
+        [ :sh, "-c", "'#{command.flatten.join(" ").gsub("'", "'\\''")}'" ]
+      end
+
       def docker(*args)
         args.compact.unshift :docker
+      end
+
+      def git(*args)
+        args.compact.unshift :git
       end
 
       def tags(**details)

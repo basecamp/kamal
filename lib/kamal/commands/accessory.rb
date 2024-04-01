@@ -99,11 +99,11 @@ class Kamal::Commands::Accessory < Kamal::Commands::Base
   end
 
   def make_env_directory
-    make_directory accessory_config.host_env_directory
+    make_directory accessory_config.env.secrets_directory
   end
 
   def remove_env_file
-    [:rm, "-f", accessory_config.host_env_file_path]
+    [ :rm, "-f", accessory_config.env.secrets_file ]
   end
 
   private

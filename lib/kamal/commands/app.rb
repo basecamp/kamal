@@ -3,12 +3,11 @@ class Kamal::Commands::App < Kamal::Commands::Base
 
   ACTIVE_DOCKER_STATUSES = [ :running, :restarting ]
 
-  attr_reader :role, :role_config
+  attr_reader :role, :role
 
   def initialize(config, role: nil)
     super(config)
     @role = role
-    @role_config = config.role(self.role)
   end
 
   def run(hostname: nil)
@@ -16,17 +15,18 @@ class Kamal::Commands::App < Kamal::Commands::Base
       "--detach",
       "--restart unless-stopped",
       "--name", container_name,
-      *(["--hostname", hostname] if hostname),
+      *([ "--hostname", hostname ] if hostname),
       "-e", "KAMAL_CONTAINER_NAME=\"#{container_name}\"",
-      *role_config.env_args,
-      *role_config.health_check_args,
-      *config.logging_args,
+      "-e", "KAMAL_VERSION=\"#{config.version}\"",
+      *role.env_args,
+      *role.health_check_args,
+      *role.logging_args,
       *config.volume_args,
-      *role_config.asset_volume_args,
-      *role_config.label_args,
-      *role_config.option_args,
+      *role.asset_volume_args,
+      *role.label_args,
+      *role.option_args,
       config.absolute_image,
-      role_config.cmd
+      role.cmd
   end
 
   def start
@@ -63,30 +63,26 @@ class Kamal::Commands::App < Kamal::Commands::Base
   def list_versions(*docker_args, statuses: nil)
     pipe \
       docker(:ps, *filter_args(statuses: statuses), *docker_args, "--format", '"{{.Names}}"'),
-      %(while read line; do echo ${line##{role_config.container_prefix}-}; done) # Extract SHA from "service-role-dest-SHA"
+      %(while read line; do echo ${line##{role.container_prefix}-}; done) # Extract SHA from "service-role-dest-SHA"
   end
 
 
   def make_env_directory
-    make_directory role_config.host_env_directory
+    make_directory role.env.secrets_directory
   end
 
   def remove_env_file
-    [ :rm, "-f", role_config.host_env_file_path ]
+    [ :rm, "-f", role.env.secrets_file ]
   end
 
 
   private
     def container_name(version = nil)
-      [ role_config.container_prefix, version || config.version ].compact.join("-")
+      [ role.container_prefix, version || config.version ].compact.join("-")
     end
 
     def filter_args(statuses: nil)
       argumentize "--filter", filters(statuses: statuses)
-    end
-
-    def service_role_dest
-      [ config.service, role, config.destination ].compact.join("-")
     end
 
     def filters(statuses: nil)

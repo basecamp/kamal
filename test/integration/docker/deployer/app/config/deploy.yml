@@ -5,7 +5,8 @@ servers:
   - vm2
 env:
   clear:
-    CLEAR_TOKEN: '4321'
+    CLEAR_TOKEN: 4321
+    HOST_TOKEN: "${HOST_TOKEN}"
   secret:
     - SECRET_TOKEN
 asset_path: /usr/share/nginx/html/versions
@@ -24,9 +25,10 @@ traefik:
   args:
     accesslog: true
     accesslog.format: json
-  image: registry:4443/traefik:v2.9
+  image: registry:4443/traefik:v2.10
 accessories:
   busybox:
+    service: custom-busybox
     image: registry:4443/busybox:1.36.0
     cmd: sh -c 'echo "Starting busybox..."; trap exit term; while true; do sleep 1; done'
     roles:

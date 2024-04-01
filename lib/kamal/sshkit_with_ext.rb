@@ -1,5 +1,6 @@
 require "sshkit"
 require "sshkit/dsl"
+require "net/scp"
 require "active_support/core_ext/hash/deep_merge"
 require "json"
 

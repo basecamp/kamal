@@ -3,7 +3,7 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
   class BuilderError < StandardError; end
 
   delegate :argumentize, to: Kamal::Utils
-  delegate :args, :secrets, :dockerfile, :local_arch, :local_host, :remote_arch, :remote_host, :cache_from, :cache_to, to: :builder_config
+  delegate :args, :secrets, :dockerfile, :local_arch, :local_host, :remote_arch, :remote_host, :cache_from, :cache_to, :ssh, :git_archive?, to: :builder_config
 
   def clean
     docker :image, :rm, "--force", config.absolute_image
@@ -13,8 +13,18 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
     docker :pull, config.absolute_image
   end
 
+  def push
+    if git_archive?
+      pipe \
+        git(:archive, "--format=tar", :HEAD),
+        build_and_push
+    else
+      build_and_push
+    end
+  end
+
   def build_options
-    [ *build_tags, *build_cache, *build_labels, *build_args, *build_secrets, *build_dockerfile ]
+    [ *build_tags, *build_cache, *build_labels, *build_args, *build_secrets, *build_dockerfile, *build_ssh ]
   end
 
   def build_context
@@ -24,7 +34,10 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
   def validate_image
     pipe \
       docker(:inspect, "-f", "'{{ .Config.Labels.service }}'", config.absolute_image),
-      [:grep, "-x", config.service, "||", "(echo \"Image #{config.absolute_image} is missing the `service` label\" && exit 1)"]
+      any(
+        [ :grep, "-x", config.service ],
+        "(echo \"Image #{config.absolute_image} is missing the 'service' label\" && exit 1)"
+      )
   end
 
 
@@ -35,8 +48,8 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
 
     def build_cache
       if cache_to && cache_from
-        ["--cache-to", cache_to,
-          "--cache-from", cache_from]
+        [ "--cache-to", cache_to,
+          "--cache-from", cache_from ]
       end
     end
 
@@ -58,6 +71,10 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
       else
         raise BuilderError, "Missing #{dockerfile}"
       end
+    end
+
+    def build_ssh
+      argumentize "--ssh", ssh if ssh.present?
     end
 
     def builder_config

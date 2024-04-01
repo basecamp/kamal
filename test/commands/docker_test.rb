@@ -9,7 +9,7 @@ class CommandsDockerTest < ActiveSupport::TestCase
   end
 
   test "install" do
-    assert_equal "curl -fsSL https://get.docker.com | sh", @docker.install.join(" ")
+    assert_equal "sh -c 'curl -fsSL https://get.docker.com || wget -O - https://get.docker.com || echo \"exit 1\"' | sh", @docker.install.join(" ")
   end
 
   test "installed?" do
@@ -21,6 +21,6 @@ class CommandsDockerTest < ActiveSupport::TestCase
   end
 
   test "superuser?" do
-    assert_equal '[ "${EUID:-$(id -u)}" -eq 0 ]', @docker.superuser?.join(" ")
+    assert_equal '[ "${EUID:-$(id -u)}" -eq 0 ] || command -v sudo >/dev/null || command -v su >/dev/null', @docker.superuser?.join(" ")
   end
 end

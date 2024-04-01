@@ -8,7 +8,7 @@ class Kamal::Configuration::Boot
     limit = @options["limit"]
 
     if limit.to_s.end_with?("%")
-      @host_count * limit.to_i / 100
+      [ @host_count * limit.to_i / 100, 1 ].max
     else
       limit
     end

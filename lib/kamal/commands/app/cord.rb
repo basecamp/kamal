@@ -2,7 +2,7 @@ module Kamal::Commands::App::Cord
   def cord(version:)
     pipe \
       docker(:inspect, "-f '{{ range .Mounts }}{{printf \"%s %s\\n\" .Source .Destination}}{{ end }}'", container_name(version)),
-      [:awk, "'$2 == \"#{role_config.cord_volume.container_path}\" {print $1}'"]
+      [ :awk, "'$2 == \"#{role.cord_volume.container_path}\" {print $1}'" ]
   end
 
   def tie_cord(cord)
@@ -12,11 +12,11 @@ module Kamal::Commands::App::Cord
   def cut_cord(cord)
     remove_directory(cord)
   end
-  
-  private    
+
+  private
     def create_empty_file(file)
       chain \
         make_directory_for(file),
-        [:touch, file]
+        [ :touch, file ]
     end
 end

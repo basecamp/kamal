@@ -11,14 +11,23 @@ class Kamal::Cli::Traefik < Kamal::Cli::Base
 
   desc "reboot", "Reboot Traefik on servers (stop container, remove container, start new container)"
   option :rolling, type: :boolean, default: false, desc: "Reboot traefik on hosts in sequence, rather than in parallel"
+  option :confirmed, aliases: "-y", type: :boolean, default: false, desc: "Proceed without confirmation question"
   def reboot
-    mutating do
-      on(KAMAL.traefik_hosts, in: options[:rolling] ? :sequence : :parallel) do
-        execute *KAMAL.auditor.record("Rebooted traefik"), verbosity: :debug
-        execute *KAMAL.registry.login
-        execute *KAMAL.traefik.stop
-        execute *KAMAL.traefik.remove_container
-        execute *KAMAL.traefik.run
+    confirming "This will cause a brief outage on each host. Are you sure?" do
+      mutating do
+        host_groups = options[:rolling] ? KAMAL.traefik_hosts : [ KAMAL.traefik_hosts ]
+        host_groups.each do |hosts|
+          host_list = Array(hosts).join(",")
+          run_hook "pre-traefik-reboot", hosts: host_list
+          on(hosts) do
+            execute *KAMAL.auditor.record("Rebooted traefik"), verbosity: :debug
+            execute *KAMAL.registry.login
+            execute *KAMAL.traefik.stop, raise_on_non_zero_exit: false
+            execute *KAMAL.traefik.remove_container
+            execute *KAMAL.traefik.run
+          end
+          run_hook "post-traefik-reboot", hosts: host_list
+        end
       end
     end
   end
@@ -38,7 +47,7 @@ class Kamal::Cli::Traefik < Kamal::Cli::Base
     mutating do
       on(KAMAL.traefik_hosts) do
         execute *KAMAL.auditor.record("Stopped traefik"), verbosity: :debug
-        execute *KAMAL.traefik.stop
+        execute *KAMAL.traefik.stop, raise_on_non_zero_exit: false
       end
     end
   end

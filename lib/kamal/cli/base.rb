@@ -14,8 +14,8 @@ module Kamal::Cli
     class_option :version, desc: "Run commands against a specific app version"
 
     class_option :primary, type: :boolean, aliases: "-p", desc: "Run commands only on primary host instead of all"
-    class_option :hosts, aliases: "-h", desc: "Run commands on these hosts instead of all (separate by comma)"
-    class_option :roles, aliases: "-r", desc: "Run commands on these roles instead of all (separate by comma)"
+    class_option :hosts, aliases: "-h", desc: "Run commands on these hosts instead of all (separate by comma, supports wildcards with *)"
+    class_option :roles, aliases: "-r", desc: "Run commands on these roles instead of all (separate by comma, supports wildcards with *)"
 
     class_option :config_file, aliases: "-c", default: "config/deploy.yml", desc: "Path to config file"
     class_option :destination, aliases: "-d", desc: "Specify destination to be used for config file (staging -> deploy.staging.yml)"
@@ -24,6 +24,7 @@ module Kamal::Cli
 
     def initialize(*)
       super
+      @original_env = ENV.to_h.dup
       load_envs
       initialize_commander(options_with_subcommand_class_options)
     end
@@ -35,6 +36,12 @@ module Kamal::Cli
         else
           Dotenv.load(".env")
         end
+      end
+
+      def reload_envs
+        ENV.clear
+        ENV.update(@original_env)
+        load_envs
       end
 
       def options_with_subcommand_class_options
@@ -66,7 +73,7 @@ module Kamal::Cli
       def print_runtime
         started_at = Time.now
         yield
-        return Time.now - started_at
+        Time.now - started_at
       ensure
         runtime = Time.now - started_at
         puts "  Finished all in #{sprintf("%.1f seconds", runtime)}"
@@ -75,11 +82,9 @@ module Kamal::Cli
       def mutating
         return yield if KAMAL.holding_lock?
 
-        KAMAL.config.ensure_env_available
-
         run_hook "pre-connect"
 
-        ensure_run_directory
+        ensure_run_and_locks_directory
 
         acquire_lock
 
@@ -96,6 +101,16 @@ module Kamal::Cli
         end
 
         release_lock
+      end
+
+      def confirming(question)
+        return yield if options[:confirmed]
+
+        if ask(question, limited_to: %w[ y N ], default: "N") == "y"
+          yield
+        else
+          say "Aborted", :red
+        end
       end
 
       def acquire_lock
@@ -118,8 +133,9 @@ module Kamal::Cli
         yield
       rescue SSHKit::Runner::ExecuteError => e
         if e.message =~ /cannot create directory/
+          say "Deploy lock already in place!", :red
           on(KAMAL.primary_host) { puts capture_with_debug(*KAMAL.lock.status) }
-          raise LockError, "Deploy lock found"
+          raise LockError, "Deploy lock found. Run 'kamal lock help' for more information"
         else
           raise e
         end
@@ -170,10 +186,14 @@ module Kamal::Cli
         instance_variable_get("@_invocations").first
       end
 
-      def ensure_run_directory
+      def ensure_run_and_locks_directory
         on(KAMAL.hosts) do
           execute(*KAMAL.server.ensure_run_directory)
         end
+
+        on(KAMAL.primary_host) do
+          execute(*KAMAL.lock.ensure_locks_directory)
+        end
       end
-    end
+  end
 end

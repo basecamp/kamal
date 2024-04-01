@@ -15,7 +15,7 @@ class CliBuildTest < CliTestCase
     run_command("push").tap do |output|
       assert_hook_ran "pre-build", output, **hook_variables
       assert_match /docker --version && docker buildx version/, output
-      assert_match /docker buildx build --push --platform linux\/amd64,linux\/arm64 --builder kamal-app-multiarch -t dhh\/app:999 -t dhh\/app:latest --label service="app" --file Dockerfile \. as .*@localhost/, output
+      assert_match /git archive -tar HEAD | docker buildx build --push --platform linux\/amd64,linux\/arm64 --builder kamal-app-multiarch -t dhh\/app:999 -t dhh\/app:latest --label service="app" --file Dockerfile - as .*@localhost/, output
     end
   end
 
@@ -25,7 +25,10 @@ class CliBuildTest < CliTestCase
       .with(:docker, "--version", "&&", :docker, :buildx, "version")
 
     SSHKit::Backend::Abstract.any_instance.stubs(:execute)
-      .with { |*args| args[0..1] == [:docker, :buildx] }
+      .with(:docker, :buildx, :create, "--use", "--name", "kamal-app-multiarch")
+
+    SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+      .with { |*args| p args[0..6]; args[0..6] == [ :git, :archive, "--format=tar", :HEAD, "|", :docker, :buildx ] }
       .raises(SSHKit::Command::Failed.new("no builder"))
       .then
       .returns(true)
@@ -50,14 +53,14 @@ class CliBuildTest < CliTestCase
 
     assert_raises(Kamal::Cli::HookError) { run_command("push") }
 
-    assert @executions.none? { |args| args[0..2] == [:docker, :buildx, :build] }
+    assert @executions.none? { |args| args[0..2] == [ :docker, :buildx, :build ] }
   end
 
   test "pull" do
     run_command("pull").tap do |output|
       assert_match /docker image rm --force dhh\/app:999/, output
       assert_match /docker pull dhh\/app:999/, output
-      assert_match "docker inspect -f '{{ .Config.Labels.service }}' dhh/app:999 | grep -x app || (echo \"Image dhh/app:999 is missing the `service` label\" && exit 1)", output
+      assert_match "docker inspect -f '{{ .Config.Labels.service }}' dhh/app:999 | grep -x app || (echo \"Image dhh/app:999 is missing the 'service' label\" && exit 1)", output
     end
   end
 
@@ -105,13 +108,13 @@ class CliBuildTest < CliTestCase
 
   private
     def run_command(*command, fixture: :with_accessories)
-      stdouted { Kamal::Cli::Build.start([*command, "-c", "test/fixtures/deploy_#{fixture}.yml"]) }
+      stdouted { Kamal::Cli::Build.start([ *command, "-c", "test/fixtures/deploy_#{fixture}.yml" ]) }
     end
 
     def stub_dependency_checks
       SSHKit::Backend::Abstract.any_instance.stubs(:execute)
         .with(:docker, "--version", "&&", :docker, :buildx, "version")
       SSHKit::Backend::Abstract.any_instance.stubs(:execute)
-        .with { |*args| args[0..1] == [:docker, :buildx] }
+        .with { |*args| args[0..1] == [ :docker, :buildx ] }
     end
 end

@@ -10,8 +10,7 @@ class AppTest < IntegrationTest
 
     kamal :app, :stop
 
-    # traefik is up and returns 404s when it can't match a route
-    assert_app_not_found
+    assert_app_is_down
 
     kamal :app, :start
 
@@ -51,7 +50,6 @@ class AppTest < IntegrationTest
 
     kamal :app, :remove
 
-    # traefik is up and returns 404s when it can't match a route
-    assert_app_not_found
+    assert_app_is_down
   end
 end

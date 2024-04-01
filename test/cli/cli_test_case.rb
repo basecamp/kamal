@@ -21,7 +21,7 @@ class CliTestCase < ActiveSupport::TestCase
       Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
 
       SSHKit::Backend::Abstract.any_instance.stubs(:execute)
-        .with { |*args| @executions << args; args != [".kamal/hooks/#{hook}"] }
+        .with { |*args| @executions << args; args != [ ".kamal/hooks/#{hook}" ] }
       SSHKit::Backend::Abstract.any_instance.stubs(:execute)
         .with { |*args| args.first == ".kamal/hooks/#{hook}" }
         .raises(SSHKit::Command::Failed.new("failed"))
@@ -31,9 +31,11 @@ class CliTestCase < ActiveSupport::TestCase
       SSHKit::Backend::Abstract.any_instance.stubs(:execute)
         .with { |*args| args == [ :mkdir, "-p", ".kamal" ] }
       SSHKit::Backend::Abstract.any_instance.stubs(:execute)
-        .with { |arg1, arg2| arg1 == :mkdir && arg2 == ".kamal/lock-app" }
+        .with { |arg1, arg2, arg3| arg1 == :mkdir && arg2 == "-p" && arg3 == ".kamal/locks" }
       SSHKit::Backend::Abstract.any_instance.stubs(:execute)
-        .with { |arg1, arg2| arg1 == :rm && arg2 == ".kamal/lock-app/details" }
+        .with { |arg1, arg2| arg1 == :mkdir && arg2 == ".kamal/locks/app" }
+      SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+        .with { |arg1, arg2| arg1 == :rm && arg2 == ".kamal/locks/app/details" }
     end
 
     def assert_hook_ran(hook, output, version:, service_version:, hosts:, command:, subcommand: nil, runtime: nil)

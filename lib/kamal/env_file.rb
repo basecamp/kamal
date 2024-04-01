@@ -3,21 +3,11 @@ class Kamal::EnvFile
   def initialize(env)
     @env = env
   end
-  
+
   def to_s
     env_file = StringIO.new.tap do |contents|
-      if (secrets = @env["secret"]).present?
-        @env.fetch("secret", @env)&.each do |key|
-          contents << docker_env_file_line(key, ENV.fetch(key))
-        end
-
-        @env["clear"]&.each do |key, value|
-          contents << docker_env_file_line(key, value)
-        end
-      else
-        @env.fetch("clear", @env)&.each do |key, value|
-          contents << docker_env_file_line(key, value)
-        end
+      @env.each do |key, value|
+        contents << docker_env_file_line(key, value)
       end
     end.string
 
@@ -26,10 +16,10 @@ class Kamal::EnvFile
   end
 
   alias to_str to_s
-  
+
   private
     def docker_env_file_line(key, value)
-      "#{key.to_s}=#{escape_docker_env_file_value(value)}\n"
+      "#{key}=#{escape_docker_env_file_value(value)}\n"
     end
 
     # Escape a value to make it safe to dump in a docker file.

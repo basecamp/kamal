@@ -10,7 +10,7 @@ class ConfigurationTest < ActiveSupport::TestCase
       registry: { "username" => "dhh", "password" => "secret" },
       env: { "REDIS_URL" => "redis://x/y" },
       servers: [ "1.1.1.1", "1.1.1.2" ],
-      volumes: ["/local/path:/container/path"]
+      volumes: [ "/local/path:/container/path" ]
     }
 
     @config = Kamal::Configuration.new(@deploy)
@@ -42,6 +42,16 @@ class ConfigurationTest < ActiveSupport::TestCase
     end
   end
 
+  test "service name valid" do
+    assert Kamal::Configuration.new(@deploy.tap { _1[:service] = "hey-app1_primary" }).valid?
+  end
+
+  test "service name invalid" do
+    assert_raise(ArgumentError) do
+      Kamal::Configuration.new @deploy.tap { _1[:service] = "app.com" }
+    end
+  end
+
   test "roles" do
     assert_equal %w[ web ], @config.roles.collect(&:name)
     assert_equal %w[ web workers ], @config_with_roles.roles.collect(&:name)
@@ -54,13 +64,13 @@ class ConfigurationTest < ActiveSupport::TestCase
   end
 
   test "all hosts" do
-    assert_equal [ "1.1.1.1", "1.1.1.2"], @config.all_hosts
+    assert_equal [ "1.1.1.1", "1.1.1.2" ], @config.all_hosts
     assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3" ], @config_with_roles.all_hosts
   end
 
-  test "primary web host" do
-    assert_equal "1.1.1.1", @config.primary_web_host
-    assert_equal "1.1.1.1", @config_with_roles.primary_web_host
+  test "primary host" do
+    assert_equal "1.1.1.1", @config.primary_host
+    assert_equal "1.1.1.1", @config_with_roles.primary_host
   end
 
   test "traefik hosts" do
@@ -76,7 +86,7 @@ class ConfigurationTest < ActiveSupport::TestCase
     ENV.delete("VERSION")
 
     Kamal::Git.expects(:used?).returns(nil)
-    error = assert_raises(RuntimeError) { @config.version}
+    error = assert_raises(RuntimeError) { @config.version }
     assert_match /no git repository found/, error.message
   end
 
@@ -93,7 +103,17 @@ class ConfigurationTest < ActiveSupport::TestCase
 
     Kamal::Git.expects(:revision).returns("git-version")
     Kamal::Git.expects(:uncommitted_changes).returns("M   file\n")
-    assert_match /^git-version_uncommitted_[0-9a-f]{16}$/, @config.version
+    assert_equal "git-version", @config.version
+  end
+
+  test "version from uncommitted context" do
+    ENV.delete("VERSION")
+
+    config = Kamal::Configuration.new(@deploy.tap { |c| c[:builder] = { "context" => "." } })
+
+    Kamal::Git.expects(:revision).returns("git-version")
+    Kamal::Git.expects(:uncommitted_changes).returns("M   file\n")
+    assert_match /^git-version_uncommitted_[0-9a-f]{16}$/, config.version
   end
 
   test "version from env" do
@@ -126,14 +146,6 @@ class ConfigurationTest < ActiveSupport::TestCase
 
   test "healthcheck service" do
     assert_equal "healthcheck-app", @config.healthcheck_service
-  end
-
-  test "env with missing secret" do
-    assert_raises(KeyError) do
-      config = Kamal::Configuration.new(@deploy.tap { |c| c.merge!({
-        env: { "secret" => [ "PASSWORD" ] }
-      }) }).ensure_env_available
-    end
   end
 
   test "valid config" do
@@ -173,22 +185,32 @@ class ConfigurationTest < ActiveSupport::TestCase
     end
   end
 
+  test "allow_empty_roles" do
+    assert_silent do
+      Kamal::Configuration.new @deploy.merge(servers: { "web" => %w[ web ], "workers" => { "hosts" => %w[ ] } }, allow_empty_roles: true)
+    end
+
+    assert_raises(ArgumentError) do
+      Kamal::Configuration.new @deploy.merge(servers: { "web" => %w[], "workers" => { "hosts" => %w[] } }, allow_empty_roles: true)
+    end
+  end
+
   test "volume_args" do
-    assert_equal ["--volume", "/local/path:/container/path"], @config.volume_args
+    assert_equal [ "--volume", "/local/path:/container/path" ], @config.volume_args
   end
 
   test "logging args default" do
-    assert_equal ["--log-opt", "max-size=\"10m\""], @config.logging_args
+    assert_equal [ "--log-opt", "max-size=\"10m\"" ], @config.logging_args
   end
 
   test "logging args with configured options" do
     config = Kamal::Configuration.new(@deploy.tap { |c| c.merge!(logging: { "options" => { "max-size" => "100m", "max-file" => 5 } }) })
-    assert_equal ["--log-opt", "max-size=\"100m\"", "--log-opt", "max-file=\"5\""], @config.logging_args
+    assert_equal [ "--log-opt", "max-size=\"100m\"", "--log-opt", "max-file=\"5\"" ], @config.logging_args
   end
 
   test "logging args with configured driver and options" do
     config = Kamal::Configuration.new(@deploy.tap { |c| c.merge!(logging: { "driver" => "local", "options" => { "max-size" => "100m", "max-file" => 5 } }) })
-    assert_equal ["--log-driver", "\"local\"", "--log-opt", "max-size=\"100m\"", "--log-opt", "max-file=\"5\""], @config.logging_args
+    assert_equal [ "--log-driver", "\"local\"", "--log-opt", "max-size=\"100m\"", "--log-opt", "max-file=\"5\"" ], @config.logging_args
   end
 
   test "erb evaluation of yml config" do
@@ -228,19 +250,19 @@ class ConfigurationTest < ActiveSupport::TestCase
 
   test "to_h" do
     expected_config = \
-      { :roles=>["web"],
-        :hosts=>["1.1.1.1", "1.1.1.2"],
-        :primary_host=>"1.1.1.1",
-        :version=>"missing",
-        :repository=>"dhh/app",
-        :absolute_image=>"dhh/app:missing",
-        :service_with_version=>"app-missing",
-        :ssh_options=>{ :user=>"root", log_level: :fatal, keepalive: true, keepalive_interval: 30 },
-        :sshkit=>{},
-        :volume_args=>["--volume", "/local/path:/container/path"],
-        :builder=>{},
-        :logging=>["--log-opt", "max-size=\"10m\""],
-        :healthcheck=>{ "path"=>"/up", "port"=>3000, "max_attempts" => 7, "exposed_port" => 3999, "cord" => "/tmp/kamal-cord", "log_lines" => 50 }}
+      { roles: [ "web" ],
+        hosts: [ "1.1.1.1", "1.1.1.2" ],
+        primary_host: "1.1.1.1",
+        version: "missing",
+        repository: "dhh/app",
+        absolute_image: "dhh/app:missing",
+        service_with_version: "app-missing",
+        ssh_options: { user: "root", port: 22, log_level: :fatal, keepalive: true, keepalive_interval: 30 },
+        sshkit: {},
+        volume_args: [ "--volume", "/local/path:/container/path" ],
+        builder: {},
+        logging: [ "--log-opt", "max-size=\"10m\"" ],
+        healthcheck: { "path"=>"/up", "port"=>3000, "max_attempts" => 7, "exposed_port" => 3999, "cord" => "/tmp/kamal-cord", "log_lines" => 50 } }
 
     assert_equal expected_config, @config.to_h
   end
@@ -285,5 +307,34 @@ class ConfigurationTest < ActiveSupport::TestCase
   test "asset path" do
     assert_nil @config.asset_path
     assert_equal "foo", Kamal::Configuration.new(@deploy.merge!(asset_path: "foo")).asset_path
+  end
+
+  test "primary role" do
+    assert_equal "web", @config.primary_role.name
+
+    config = Kamal::Configuration.new(@deploy_with_roles.deep_merge({
+      servers: { "alternate_web" => { "hosts" => [ "1.1.1.4", "1.1.1.5" ] } },
+      primary_role: "alternate_web" }))
+
+
+    assert_equal "alternate_web", config.primary_role.name
+    assert_equal "1.1.1.4", config.primary_host
+    assert config.role(:alternate_web).primary?
+    assert config.role(:alternate_web).running_traefik?
+  end
+
+  test "primary role missing" do
+    error = assert_raises(ArgumentError) do
+      Kamal::Configuration.new(@deploy.merge(primary_role: "bar"))
+    end
+    assert_match /bar isn't defined/, error.message
+  end
+
+  test "retain_containers" do
+    assert_equal 5, @config.retain_containers
+    config = Kamal::Configuration.new(@deploy_with_roles.merge(retain_containers: 2))
+    assert_equal 2, config.retain_containers
+
+    assert_raises(ArgumentError) { Kamal::Configuration.new(@deploy_with_roles.merge(retain_containers: 0)) }
   end
 end

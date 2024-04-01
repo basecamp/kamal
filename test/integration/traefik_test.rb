@@ -7,8 +7,19 @@ class TraefikTest < IntegrationTest
     kamal :traefik, :boot
     assert_traefik_running
 
-    kamal :traefik, :reboot
+    output = kamal :traefik, :reboot, "-y", capture: true
     assert_traefik_running
+    assert_hooks_ran "pre-traefik-reboot", "post-traefik-reboot"
+    assert_match /Rebooting Traefik on vm1,vm2.../, output
+    assert_match /Rebooted Traefik on vm1,vm2/, output
+
+    output = kamal :traefik, :reboot, :"--rolling", "-y", capture: true
+    assert_traefik_running
+    assert_hooks_ran "pre-traefik-reboot", "post-traefik-reboot"
+    assert_match /Rebooting Traefik on vm1.../, output
+    assert_match /Rebooted Traefik on vm1/, output
+    assert_match /Rebooting Traefik on vm2.../, output
+    assert_match /Rebooted Traefik on vm2/, output
 
     kamal :traefik, :boot
     assert_traefik_running
@@ -41,11 +52,11 @@ class TraefikTest < IntegrationTest
 
   private
     def assert_traefik_running
-      assert_match /traefik:v2.9   "\/entrypoint.sh/, traefik_details
+      assert_match /traefik:v2.10   "\/entrypoint.sh/, traefik_details
     end
 
     def assert_traefik_not_running
-      refute_match /traefik:v2.9   "\/entrypoint.sh/, traefik_details
+      assert_no_match /traefik:v2.10   "\/entrypoint.sh/, traefik_details
     end
 
     def traefik_details

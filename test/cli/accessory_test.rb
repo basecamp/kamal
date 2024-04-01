@@ -7,7 +7,7 @@ class CliAccessoryTest < CliTestCase
 
     run_command("boot", "mysql").tap do |output|
       assert_match /docker login.*on 1.1.1.3/, output
-      assert_match "docker run --name app-mysql --detach --restart unless-stopped --log-opt max-size=\"10m\" --publish 3306:3306 --env-file .kamal/env/accessories/app-mysql.env --volume $PWD/app-mysql/etc/mysql/my.cnf:/etc/mysql/my.cnf --volume $PWD/app-mysql/data:/var/lib/mysql --label service=\"app-mysql\" mysql:5.7 on 1.1.1.3", output
+      assert_match "docker run --name app-mysql --detach --restart unless-stopped --log-opt max-size=\"10m\" --publish 3306:3306 --env-file .kamal/env/accessories/app-mysql.env --env MYSQL_ROOT_HOST=\"%\" --volume $PWD/app-mysql/etc/mysql/my.cnf:/etc/mysql/my.cnf --volume $PWD/app-mysql/data:/var/lib/mysql --label service=\"app-mysql\" mysql:5.7 on 1.1.1.3", output
     end
   end
 
@@ -21,7 +21,7 @@ class CliAccessoryTest < CliTestCase
       assert_match /docker login.*on 1.1.1.3/, output
       assert_match /docker login.*on 1.1.1.1/, output
       assert_match /docker login.*on 1.1.1.2/, output
-      assert_match "docker run --name app-mysql --detach --restart unless-stopped --log-opt max-size=\"10m\" --publish 3306:3306 --env-file .kamal/env/accessories/app-mysql.env --volume $PWD/app-mysql/etc/mysql/my.cnf:/etc/mysql/my.cnf --volume $PWD/app-mysql/data:/var/lib/mysql --label service=\"app-mysql\" mysql:5.7 on 1.1.1.3", output
+      assert_match "docker run --name app-mysql --detach --restart unless-stopped --log-opt max-size=\"10m\" --publish 3306:3306 --env-file .kamal/env/accessories/app-mysql.env --env MYSQL_ROOT_HOST=\"%\" --volume $PWD/app-mysql/etc/mysql/my.cnf:/etc/mysql/my.cnf --volume $PWD/app-mysql/data:/var/lib/mysql --label service=\"app-mysql\" mysql:5.7 on 1.1.1.3", output
       assert_match "docker run --name app-redis --detach --restart unless-stopped --log-opt max-size=\"10m\" --publish 6379:6379 --env-file .kamal/env/accessories/app-redis.env --volume $PWD/app-redis/data:/data --label service=\"app-redis\" redis:latest on 1.1.1.1", output
       assert_match "docker run --name app-redis --detach --restart unless-stopped --log-opt max-size=\"10m\" --publish 6379:6379 --env-file .kamal/env/accessories/app-redis.env --volume $PWD/app-redis/data:/data --label service=\"app-redis\" redis:latest on 1.1.1.2", output
     end
@@ -48,6 +48,18 @@ class CliAccessoryTest < CliTestCase
     run_command("reboot", "mysql")
   end
 
+  test "reboot all" do
+    Kamal::Commands::Registry.any_instance.expects(:login).times(3)
+    Kamal::Cli::Accessory.any_instance.expects(:stop).with("mysql")
+    Kamal::Cli::Accessory.any_instance.expects(:remove_container).with("mysql")
+    Kamal::Cli::Accessory.any_instance.expects(:boot).with("mysql", login: false)
+    Kamal::Cli::Accessory.any_instance.expects(:stop).with("redis")
+    Kamal::Cli::Accessory.any_instance.expects(:remove_container).with("redis")
+    Kamal::Cli::Accessory.any_instance.expects(:boot).with("redis", login: false)
+
+    run_command("reboot", "all")
+  end
+
   test "start" do
     assert_match "docker container start app-mysql", run_command("start", "mysql")
   end
@@ -65,6 +77,10 @@ class CliAccessoryTest < CliTestCase
 
   test "details" do
     assert_match "docker ps --filter label=service=app-mysql", run_command("details", "mysql")
+  end
+
+  test "details with non-existent accessory" do
+    assert_equal "No accessory by the name of 'hello' (options: mysql and redis)", stderred { run_command("details", "hello") }
   end
 
   test "details with all" do
@@ -97,7 +113,7 @@ class CliAccessoryTest < CliTestCase
 
   test "logs with follow" do
     SSHKit::Backend::Abstract.any_instance.stubs(:exec)
-      .with("ssh -t root@1.1.1.3 'docker logs app-mysql --timestamps --tail 10 --follow 2>&1'")
+      .with("ssh -t root@1.1.1.3 -p 22 'docker logs app-mysql --timestamps --tail 10 --follow 2>&1'")
 
     assert_match "docker logs app-mysql --timestamps --tail 10 --follow 2>&1", run_command("logs", "mysql", "--follow")
   end
@@ -136,8 +152,32 @@ class CliAccessoryTest < CliTestCase
     assert_match "rm -rf app-mysql", run_command("remove_service_directory", "mysql")
   end
 
+  test "hosts param respected" do
+    Kamal::Cli::Accessory.any_instance.expects(:directories).with("redis")
+    Kamal::Cli::Accessory.any_instance.expects(:upload).with("redis")
+
+    run_command("boot", "redis", "--hosts", "1.1.1.1").tap do |output|
+      assert_match /docker login.*on 1.1.1.1/, output
+      assert_no_match /docker login.*on 1.1.1.2/, output
+      assert_match "docker run --name app-redis --detach --restart unless-stopped --log-opt max-size=\"10m\" --publish 6379:6379 --env-file .kamal/env/accessories/app-redis.env --volume $PWD/app-redis/data:/data --label service=\"app-redis\" redis:latest on 1.1.1.1", output
+      assert_no_match "docker run --name app-redis --detach --restart unless-stopped --log-opt max-size=\"10m\" --publish 6379:6379 --env-file .kamal/env/accessories/app-redis.env --volume $PWD/app-redis/data:/data --label service=\"app-redis\" redis:latest on 1.1.1.2", output
+    end
+  end
+
+  test "hosts param intersected with configuration" do
+    Kamal::Cli::Accessory.any_instance.expects(:directories).with("redis")
+    Kamal::Cli::Accessory.any_instance.expects(:upload).with("redis")
+
+    run_command("boot", "redis", "--hosts", "1.1.1.1,1.1.1.3").tap do |output|
+      assert_match /docker login.*on 1.1.1.1/, output
+      assert_no_match /docker login.*on 1.1.1.3/, output
+      assert_match "docker run --name app-redis --detach --restart unless-stopped --log-opt max-size=\"10m\" --publish 6379:6379 --env-file .kamal/env/accessories/app-redis.env --volume $PWD/app-redis/data:/data --label service=\"app-redis\" redis:latest on 1.1.1.1", output
+      assert_no_match "docker run --name app-redis --detach --restart unless-stopped --log-opt max-size=\"10m\" --publish 6379:6379 --env-file .kamal/env/accessories/app-redis.env --volume $PWD/app-redis/data:/data --label service=\"app-redis\" redis:latest on 1.1.1.3", output
+    end
+  end
+
   private
     def run_command(*command)
-      stdouted { Kamal::Cli::Accessory.start([*command, "-c", "test/fixtures/deploy_with_accessories.yml"]) }
+      stdouted { Kamal::Cli::Accessory.start([ *command, "-c", "test/fixtures/deploy_with_accessories.yml" ]) }
     end
 end

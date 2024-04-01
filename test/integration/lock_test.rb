@@ -10,7 +10,7 @@ class LockTest < IntegrationTest
     assert_match /Locked by: Deployer at .*\nVersion: #{latest_app_version}\nMessage: Integration Tests/m, status
 
     error = kamal :deploy, capture: true, raise_on_error: false
-    assert_match /Deploy lock found/m, error
+    assert_match /Deploy lock found. Run 'kamal lock help' for more information/m, error
 
     kamal :lock, :release
 

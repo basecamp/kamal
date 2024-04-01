@@ -1,7 +1,6 @@
 class Kamal::Commands::Healthcheck < Kamal::Commands::Base
-
   def run
-    web = config.role(:web)
+    primary = config.role(config.primary_role)
 
     docker :run,
       "--detach",
@@ -9,12 +8,12 @@ class Kamal::Commands::Healthcheck < Kamal::Commands::Base
       "--publish", "#{exposed_port}:#{config.healthcheck["port"]}",
       "--label", "service=#{config.healthcheck_service}",
       "-e", "KAMAL_CONTAINER_NAME=\"#{config.healthcheck_service}\"",
-      *web.env_args,
-      *web.health_check_args(cord: false),
+      *primary.env_args,
+      *primary.health_check_args(cord: false),
       *config.volume_args,
-      *web.option_args,
+      *primary.option_args,
       config.absolute_image,
-      web.cmd
+      primary.cmd
   end
 
   def status

@@ -8,7 +8,7 @@ class Kamal::Configuration::Accessory
   end
 
   def service_name
-    "#{config.service}-#{name}"
+    specifics["service"] || "#{config.service}-#{name}"
   end
 
   def image
@@ -16,7 +16,7 @@ class Kamal::Configuration::Accessory
   end
 
   def hosts
-    if (specifics.keys & ["host", "hosts", "roles"]).size != 1
+    if (specifics.keys & [ "host", "hosts", "roles" ]).size != 1
       raise ArgumentError, "Specify one of `host`, `hosts` or `roles` for accessory `#{name}`"
     end
 
@@ -42,23 +42,13 @@ class Kamal::Configuration::Accessory
   end
 
   def env
-    specifics["env"] || {}
-  end
-
-  def env_file
-    Kamal::EnvFile.new(env)
-  end
-
-  def host_env_directory
-    File.join config.host_env_directory, "accessories"
-  end
-
-  def host_env_file_path
-    File.join host_env_directory, "#{service_name}.env"
+    Kamal::Configuration::Env.from_config \
+      config: specifics.fetch("env", {}),
+      secrets_file: File.join(config.host_env_directory, "accessories", "#{service_name}.env")
   end
 
   def env_args
-    argumentize "--env-file", host_env_file_path
+    env.args
   end
 
   def files
@@ -70,8 +60,8 @@ class Kamal::Configuration::Accessory
 
   def directories
     specifics["directories"]&.to_h do |host_to_container_mapping|
-      host_relative_path, container_path = host_to_container_mapping.split(":")
-      [ expand_host_path(host_relative_path), container_path ]
+      host_path, container_path = host_to_container_mapping.split(":")
+      [ expand_host_path(host_path), container_path ]
     end || {}
   end
 
@@ -111,10 +101,10 @@ class Kamal::Configuration::Accessory
     end
 
     def with_clear_env_loaded
-      (env["clear"] || env).each { |k, v| ENV[k] = v }
+      env.clear.each { |k, v| ENV[k] = v }
       yield
     ensure
-      (env["clear"] || env).each { |k, v| ENV.delete(k) }
+      env.clear.each { |k, v| ENV.delete(k) }
     end
 
     def read_dynamic_file(local_file)
@@ -138,13 +128,17 @@ class Kamal::Configuration::Accessory
 
     def remote_directories_as_volumes
       specifics["directories"]&.collect do |host_to_container_mapping|
-        host_relative_path, container_path = host_to_container_mapping.split(":")
-        [ expand_host_path(host_relative_path), container_path ].join(":")
+        host_path, container_path = host_to_container_mapping.split(":")
+        [ expand_host_path(host_path), container_path ].join(":")
       end || []
     end
 
-    def expand_host_path(host_relative_path)
-      "#{service_data_directory}/#{host_relative_path}"
+    def expand_host_path(host_path)
+      absolute_path?(host_path) ? host_path : File.join(service_data_directory, host_path)
+    end
+
+    def absolute_path?(path)
+      Pathname.new(path).absolute?
     end
 
     def service_data_directory
@@ -155,7 +149,7 @@ class Kamal::Configuration::Accessory
       if specifics.key?("host")
         host = specifics["host"]
         if host
-          [host]
+          [ host ]
         else
           raise ArgumentError, "Missing host for accessory `#{name}`"
         end

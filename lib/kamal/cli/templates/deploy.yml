@@ -63,7 +63,7 @@ registry:
 #     directories:
 #       - data:/data
 
-# Configure custom arguments for Traefik
+# Configure custom arguments for Traefik. Be sure to reboot traefik when you modify it.
 # traefik:
 #   args:
 #     accesslog: true
@@ -77,9 +77,25 @@ registry:
 # Bridge fingerprinted assets, like JS and CSS, between versions to avoid
 # hitting 404 on in-flight requests. Combines all files from new and old
 # version inside the asset_path.
+#
+# If your app is using the Sprockets gem, ensure it sets `config.assets.manifest`.
+# See https://github.com/basecamp/kamal/issues/626 for details
+#
 # asset_path: /rails/public/assets
 
 # Configure rolling deploys by setting a wait time between batches of restarts.
 # boot:
 #   limit: 10 # Can also specify as a percentage of total hosts, such as "25%"
 #   wait: 2
+
+# Configure the role used to determine the primary_host. This host takes
+# deploy locks, runs health checks during the deploy, and follow logs, etc.
+#
+# Caution: there's no support for role renaming yet, so be careful to cleanup
+#          the previous role on the deployed hosts.
+# primary_role: web
+
+# Controls if we abort when see a role with no hosts. Disabling this may be
+# useful for more complex deploy configurations.
+#
+# allow_empty_roles: false

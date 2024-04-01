@@ -24,19 +24,36 @@ class Kamal::Commander
   attr_reader :specific_roles, :specific_hosts
 
   def specific_primary!
-    self.specific_hosts = [ config.primary_web_host ]
+    self.specific_hosts = [ config.primary_host ]
   end
 
   def specific_roles=(role_names)
-    @specific_roles = config.roles.select { |r| role_names.include?(r.name) } if role_names.present?
+    if role_names.present?
+      @specific_roles = Kamal::Utils.filter_specific_items(role_names, config.roles)
+
+      if @specific_roles.empty?
+        raise ArgumentError, "No --roles match for #{role_names.join(',')}"
+      end
+
+      @specific_roles
+    end
   end
 
   def specific_hosts=(hosts)
-    @specific_hosts = config.all_hosts & hosts if hosts.present?
+    if hosts.present?
+      @specific_hosts = Kamal::Utils.filter_specific_items(hosts, config.all_hosts)
+
+      if @specific_hosts.empty?
+        raise ArgumentError, "No --hosts match for #{hosts.join(',')}"
+      end
+
+      @specific_hosts
+    end
   end
 
   def primary_host
-    specific_hosts&.first || specific_roles&.first&.primary_host || config.primary_web_host
+    # Given a list of specific roles, make an effort to match up with the primary_role
+    specific_hosts&.first || specific_roles&.detect { |role| role == config.primary_role }&.primary_host || specific_roles&.first&.primary_host || config.primary_host
   end
 
   def primary_role
@@ -56,7 +73,7 @@ class Kamal::Commander
   end
 
   def roles_on(host)
-    roles.select { |role| role.hosts.include?(host.to_s) }.map(&:name)
+    roles.select { |role| role.hosts.include?(host.to_s) }
   end
 
   def traefik_hosts

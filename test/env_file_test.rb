@@ -1,7 +1,7 @@
 require "test_helper"
 
 class EnvFileTest < ActiveSupport::TestCase
-  test "env file simple" do
+  test "to_s" do
     env = {
       "foo" => "bar",
       "baz" => "haz"
@@ -11,80 +11,27 @@ class EnvFileTest < ActiveSupport::TestCase
       Kamal::EnvFile.new(env).to_s
   end
 
-  test "env file clear" do
-    env = {
-      "clear" => {
-        "foo" => "bar",
-        "baz" => "haz"
-      }
-    }
-
-    assert_equal "foo=bar\nbaz=haz\n", \
-      Kamal::EnvFile.new(env).to_s
-  end
-
-  test "env file empty" do
+  test "to_s empty" do
     assert_equal "\n", Kamal::EnvFile.new({}).to_s
   end
 
-  test "env file secret" do
-    ENV["PASSWORD"] = "hello"
+  test "to_s escaped newline" do
     env = {
-      "secret" => [ "PASSWORD" ]
+      "foo" => "hello\\nthere"
     }
 
-    assert_equal "PASSWORD=hello\n", \
+    assert_equal "foo=hello\\\\nthere\n", \
       Kamal::EnvFile.new(env).to_s
   ensure
     ENV.delete "PASSWORD"
   end
 
-  test "env file secret escaped newline" do
-    ENV["PASSWORD"] = "hello\\nthere"
+  test "to_s newline" do
     env = {
-      "secret" => [ "PASSWORD" ]
+      "foo" => "hello\nthere"
     }
 
-    assert_equal "PASSWORD=hello\\\\nthere\n", \
-      Kamal::EnvFile.new(env).to_s
-  ensure
-    ENV.delete "PASSWORD"
-  end
-
-  test "env file secret newline" do
-    ENV["PASSWORD"] = "hello\nthere"
-    env = {
-      "secret" => [ "PASSWORD" ]
-    }
-
-    assert_equal "PASSWORD=hello\\nthere\n", \
-      Kamal::EnvFile.new(env).to_s
-  ensure
-    ENV.delete "PASSWORD"
-  end
-
-  test "env file missing secret" do
-    env = {
-      "secret" => [ "PASSWORD" ]
-    }
-
-    assert_raises(KeyError) { Kamal::EnvFile.new(env).to_s }
-
-  ensure
-    ENV.delete "PASSWORD"
-  end
-
-  test "env file secret and clear" do
-    ENV["PASSWORD"] = "hello"
-    env = {
-      "secret" => [ "PASSWORD" ],
-      "clear" => {
-        "foo" => "bar",
-        "baz" => "haz"
-      }
-    }
-
-    assert_equal "PASSWORD=hello\nfoo=bar\nbaz=haz\n", \
+    assert_equal "foo=hello\\nthere\n", \
       Kamal::EnvFile.new(env).to_s
   ensure
     ENV.delete "PASSWORD"

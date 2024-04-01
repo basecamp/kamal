@@ -7,11 +7,12 @@ class IntegrationTest < ActiveSupport::TestCase
     docker_compose "up --build -d"
     wait_for_healthy
     setup_deployer
+    @app = "app"
   end
 
   teardown do
     unless passed?
-      [:deployer, :vm1, :vm2, :shared, :load_balancer, :registry].each do |container|
+      [ :deployer, :vm1, :vm2, :shared, :load_balancer, :registry ].each do |container|
         puts
         puts "Logs for #{container}:"
         docker_compose :logs, container
@@ -34,8 +35,9 @@ class IntegrationTest < ActiveSupport::TestCase
       result
     end
 
-    def deployer_exec(*commands, **options)
-      docker_compose("exec deployer #{commands.join(" ")}", **options)
+    def deployer_exec(*commands, workdir: nil, **options)
+      workdir ||= "/#{@app}"
+      docker_compose("exec --workdir #{workdir} deployer #{commands.join(" ")}", **options)
     end
 
     def kamal(*commands, **options)
@@ -55,12 +57,6 @@ class IntegrationTest < ActiveSupport::TestCase
       assert_app_version(version, response) if version
     end
 
-    def assert_app_not_found
-      response = app_response
-      debug_response_code(response, "404")
-      assert_equal "404", response.code
-    end
-
     def wait_for_app_to_be_up(timeout: 20, up_count: 3)
       timeout_at = Time.now + timeout
       up_times = 0
@@ -78,7 +74,7 @@ class IntegrationTest < ActiveSupport::TestCase
     end
 
     def update_app_rev
-      deployer_exec "./update_app_rev.sh"
+      deployer_exec "./update_app_rev.sh #{@app}", workdir: "/"
       latest_app_version
     end
 
@@ -109,7 +105,7 @@ class IntegrationTest < ActiveSupport::TestCase
       assert_equal "200", code
     end
 
-    def wait_for_healthy(timeout: 20)
+    def wait_for_healthy(timeout: 30)
       timeout_at = Time.now + timeout
       while docker_compose("ps -a | tail -n +2 | grep -v '(healthy)' | wc -l", capture: true) != "0"
         if timeout_at < Time.now
@@ -121,7 +117,7 @@ class IntegrationTest < ActiveSupport::TestCase
     end
 
     def setup_deployer
-      deployer_exec("./setup.sh") unless $DEPLOYER_SETUP
+      deployer_exec("./setup.sh", workdir: "/") unless $DEPLOYER_SETUP
       $DEPLOYER_SETUP = true
     end
 

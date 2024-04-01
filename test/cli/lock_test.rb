@@ -3,7 +3,7 @@ require_relative "cli_test_case"
 class CliLockTest < CliTestCase
   test "status" do
     run_command("status").tap do |output|
-      assert_match "Running /usr/bin/env stat .kamal/lock-app > /dev/null && cat .kamal/lock-app/details | base64 -d on 1.1.1.1", output
+      assert_match "Running /usr/bin/env stat .kamal/locks/app > /dev/null && cat .kamal/locks/app/details | base64 -d on 1.1.1.1", output
     end
   end
 
@@ -15,6 +15,6 @@ class CliLockTest < CliTestCase
 
   private
     def run_command(*command)
-      stdouted { Kamal::Cli::Lock.start([*command, "-v", "-c", "test/fixtures/deploy_with_accessories.yml"]) }
+      stdouted { Kamal::Cli::Lock.start([ *command, "-v", "-c", "test/fixtures/deploy_with_accessories.yml" ]) }
     end
 end

@@ -7,7 +7,7 @@ class ConfigurationSshTest < ActiveSupport::TestCase
       registry: { "username" => "dhh", "password" => "secret" },
       env: { "REDIS_URL" => "redis://x/y" },
       servers: [ "1.1.1.1", "1.1.1.2" ],
-      volumes: ["/local/path:/container/path"]
+      volumes: [ "/local/path:/container/path" ]
     }
 
     @config = Kamal::Configuration.new(@deploy)
@@ -22,6 +22,9 @@ class ConfigurationSshTest < ActiveSupport::TestCase
 
     config = Kamal::Configuration.new(@deploy.tap { |c| c.merge!(ssh: { "log_level" => "debug" }) })
     assert_equal 0, config.ssh.options[:logger].level
+
+    config = Kamal::Configuration.new(@deploy.tap { |c| c.merge!(ssh: { "port" => 2222 }) })
+    assert_equal 2222, config.ssh.options[:port]
   end
 
   test "ssh options with proxy host" do

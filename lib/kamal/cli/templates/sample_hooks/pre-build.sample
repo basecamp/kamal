@@ -32,7 +32,7 @@ fi
 current_branch=$(git branch --show-current)
 
 if [ -z "$current_branch" ]; then
-  echo "No git remote set, aborting..." >&2
+  echo "Not on a git branch, aborting..." >&2
   exit 1
 fi
 

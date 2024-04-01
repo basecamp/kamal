@@ -17,7 +17,9 @@ class Kamal::Cli::Server < Kamal::Cli::Base
     end
 
     if missing.any?
-      raise "Docker is not installed on #{missing.join(", ")} and can't be automatically installed without having root access and the `curl` command available. Install Docker manually: https://docs.docker.com/engine/install/"
+      raise "Docker is not installed on #{missing.join(", ")} and can't be automatically installed without having root access and either `wget` or `curl`. Install Docker manually: https://docs.docker.com/engine/install/"
     end
+
+    run_hook "docker-setup"
   end
 end

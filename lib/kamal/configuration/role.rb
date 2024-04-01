@@ -3,9 +3,10 @@ class Kamal::Configuration::Role
   delegate :argumentize, :optionize, to: Kamal::Utils
 
   attr_accessor :name
+  alias to_s name
 
   def initialize(name, config:)
-   @name, @config = name.inquiry, config
+    @name, @config = name.inquiry, config
   end
 
   def primary_host
@@ -36,29 +37,25 @@ class Kamal::Configuration::Role
     argumentize "--label", labels
   end
 
+  def logging_args
+    args = config.logging || {}
+    args.deep_merge!(specializations["logging"]) if specializations["logging"].present?
 
-  def env
-    if config.env && config.env["secret"]
-      merged_env_with_secrets
+    if args.any?
+      optionize({ "log-driver" => args["driver"] }.compact) +
+        argumentize("--log-opt", args["options"])
     else
-      merged_env
+      config.logging_args
     end
   end
 
-  def env_file
-    Kamal::EnvFile.new(env)
-  end
 
-  def host_env_directory
-    File.join config.host_env_directory, "roles"
-  end
-
-  def host_env_file_path
-    File.join host_env_directory, "#{[config.service, name, config.destination].compact.join("-")}.env"
+  def env
+    @env ||= base_env.merge(specialized_env)
   end
 
   def env_args
-    argumentize "--env-file", host_env_file_path
+    env.args
   end
 
   def asset_volume_args
@@ -93,7 +90,15 @@ class Kamal::Configuration::Role
 
 
   def running_traefik?
-    name.web? || specializations["traefik"]
+    if specializations["traefik"].nil?
+      primary?
+    else
+      specializations["traefik"]
+    end
+  end
+
+  def primary?
+    self == @config.primary_role
   end
 
 
@@ -102,13 +107,13 @@ class Kamal::Configuration::Role
   end
 
   def cord_host_directory
-    File.join config.run_directory_as_docker_volume, "cords", [container_prefix, config.run_id].join("-")
+    File.join config.run_directory_as_docker_volume, "cords", [ container_prefix, config.run_id ].join("-")
   end
 
   def cord_volume
     if (cord = health_check_options["cord"])
       @cord_volume ||= Kamal::Configuration::Volume.new \
-        host_path: File.join(config.run_directory, "cords", [container_prefix, config.run_id].join("-")),
+        host_path: File.join(config.run_directory, "cords", [ container_prefix, config.run_id ].join("-")),
         container_path: cord
     end
   end
@@ -171,11 +176,7 @@ class Kamal::Configuration::Role
     end
 
     def default_labels
-      if config.destination
-        { "service" => config.service, "role" => name, "destination" => config.destination }
-      else
-        { "service" => config.service, "role" => name }
-      end
+      { "service" => config.service, "role" => name, "destination" => config.destination }
     end
 
     def traefik_labels
@@ -185,6 +186,7 @@ class Kamal::Configuration::Role
           "traefik.http.services.#{traefik_service}.loadbalancer.server.scheme" => "http",
 
           "traefik.http.routers.#{traefik_service}.rule" => "PathPrefix(`/`)",
+          "traefik.http.routers.#{traefik_service}.priority" => "2",
           "traefik.http.middlewares.#{traefik_service}-retry.retry.attempts" => "5",
           "traefik.http.middlewares.#{traefik_service}-retry.retry.initialinterval" => "500ms",
           "traefik.http.routers.#{traefik_service}.middlewares" => "#{traefik_service}-retry@docker"
@@ -195,7 +197,7 @@ class Kamal::Configuration::Role
     end
 
     def traefik_service
-      [ config.service, name, config.destination ].compact.join("-")
+      container_prefix
     end
 
     def custom_labels
@@ -207,31 +209,21 @@ class Kamal::Configuration::Role
 
     def specializations
       if config.servers.is_a?(Array) || config.servers[name].is_a?(Array)
-        { }
+        {}
       else
         config.servers[name].except("hosts")
       end
     end
 
     def specialized_env
-      specializations["env"] || {}
-    end
-
-    def merged_env
-      config.env&.merge(specialized_env) || {}
+      Kamal::Configuration::Env.from_config config: specializations.fetch("env", {})
     end
 
     # Secrets are stored in an array, which won't merge by default, so have to do it by hand.
-    def merged_env_with_secrets
-      merged_env.tap do |new_env|
-        new_env["secret"] = Array(config.env["secret"]) + Array(specialized_env["secret"])
-
-        # If there's no secret/clear split, everything is clear
-        clear_app_env  = config.env["secret"] ? Array(config.env["clear"]) : Array(config.env["clear"] || config.env)
-        clear_role_env = specialized_env["secret"] ? Array(specialized_env["clear"]) : Array(specialized_env["clear"] || specialized_env)
-
-        new_env["clear"] = (clear_app_env + clear_role_env).uniq
-      end
+    def base_env
+      Kamal::Configuration::Env.from_config \
+        config: config.env,
+        secrets_file: File.join(config.host_env_directory, "roles", "#{container_prefix}.env")
     end
 
     def http_health_check(port:, path:)
