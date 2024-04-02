@@ -12,7 +12,7 @@ class CliBuildTest < CliTestCase
     Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
     hook_variables = { version: 999, service_version: "app@999", hosts: "1.1.1.1,1.1.1.2,1.1.1.3,1.1.1.4", command: "build", subcommand: "push" }
 
-    run_command("push").tap do |output|
+    run_command("push", "--verbose").tap do |output|
       assert_hook_ran "pre-build", output, **hook_variables
       assert_match /docker --version && docker buildx version/, output
       assert_match /git archive -tar HEAD | docker buildx build --push --platform linux\/amd64,linux\/arm64 --builder kamal-app-multiarch -t dhh\/app:999 -t dhh\/app:latest --label service="app" --file Dockerfile - as .*@localhost/, output

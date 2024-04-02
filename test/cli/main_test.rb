@@ -46,7 +46,7 @@ class CliMainTest < CliTestCase
   end
 
   test "deploy" do
-    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false }
+    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false, "verbose" => true }
 
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:registry:login", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:deliver", [], invoke_options)
@@ -59,7 +59,7 @@ class CliMainTest < CliTestCase
     Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
     hook_variables = { version: 999, service_version: "app@999", hosts: "1.1.1.1,1.1.1.2", command: "deploy" }
 
-    run_command("deploy").tap do |output|
+    run_command("deploy", "--verbose").tap do |output|
       assert_hook_ran "pre-connect", output, **hook_variables
       assert_match /Log into image registry/, output
       assert_match /Build and push app image/, output
@@ -194,7 +194,7 @@ class CliMainTest < CliTestCase
   end
 
   test "redeploy" do
-    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false }
+    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false, "verbose" => true }
 
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:deliver", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:healthcheck:perform", [], invoke_options)
@@ -205,7 +205,7 @@ class CliMainTest < CliTestCase
 
     hook_variables = { version: 999, service_version: "app@999", hosts: "1.1.1.1,1.1.1.2", command: "redeploy" }
 
-    run_command("redeploy").tap do |output|
+    run_command("redeploy", "--verbose").tap do |output|
       assert_hook_ran "pre-connect", output, **hook_variables
       assert_match /Build and push app image/, output
       assert_hook_ran "pre-deploy", output, **hook_variables
@@ -268,7 +268,7 @@ class CliMainTest < CliTestCase
     Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
     hook_variables = { version: 123, service_version: "app@123", hosts: "1.1.1.1,1.1.1.2,1.1.1.3,1.1.1.4", command: "rollback" }
 
-    run_command("rollback", "123", config_file: "deploy_with_accessories").tap do |output|
+    run_command("rollback", "--verbose", "123", config_file: "deploy_with_accessories").tap do |output|
       assert_hook_ran "pre-deploy", output, **hook_variables
       assert_match "docker tag dhh/app:123 dhh/app:latest", output
       assert_match "docker run --detach --restart unless-stopped --name app-web-123", output
