@@ -7,13 +7,13 @@ class TraefikTest < IntegrationTest
     kamal :traefik, :boot
     assert_traefik_running
 
-    output = kamal :traefik, :reboot, "-y", capture: true
+    output = kamal :traefik, :reboot, "-y", "--verbose", capture: true
     assert_traefik_running
     assert_hooks_ran "pre-traefik-reboot", "post-traefik-reboot"
     assert_match /Rebooting Traefik on vm1,vm2.../, output
     assert_match /Rebooted Traefik on vm1,vm2/, output
 
-    output = kamal :traefik, :reboot, :"--rolling", "-y", capture: true
+    output = kamal :traefik, :reboot, "--rolling", "-y", "--verbose", capture: true
     assert_traefik_running
     assert_hooks_ran "pre-traefik-reboot", "post-traefik-reboot"
     assert_match /Rebooting Traefik on vm1.../, output
