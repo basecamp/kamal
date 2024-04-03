@@ -68,7 +68,7 @@ class CliMainTest < CliTestCase
       assert_match /Ensure app can pass healthcheck/, output
       assert_match /Detect stale containers/, output
       assert_match /Prune old containers and images/, output
-      assert_hook_ran "post-deploy", output, **hook_variables, runtime: 0
+      assert_hook_ran "post-deploy", output, **hook_variables, runtime: true
     end
   end
 
@@ -211,7 +211,7 @@ class CliMainTest < CliTestCase
       assert_hook_ran "pre-deploy", output, **hook_variables
       assert_match /Running the pre-deploy hook.../, output
       assert_match /Ensure app can pass healthcheck/, output
-      assert_hook_ran "post-deploy", output, **hook_variables, runtime: "0"
+      assert_hook_ran "post-deploy", output, **hook_variables, runtime: true
     end
   end
 
@@ -273,7 +273,7 @@ class CliMainTest < CliTestCase
       assert_match "docker tag dhh/app:123 dhh/app:latest", output
       assert_match "docker run --detach --restart unless-stopped --name app-web-123", output
       assert_match "docker container ls --all --filter name=^app-web-version-to-rollback$ --quiet | xargs docker stop", output, "Should stop the container that was previously running"
-      assert_hook_ran "post-deploy", output, **hook_variables, runtime: "0"
+      assert_hook_ran "post-deploy", output, **hook_variables, runtime: true
     end
   end
 
