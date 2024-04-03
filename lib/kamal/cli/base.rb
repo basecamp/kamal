@@ -158,8 +158,8 @@ module Kamal::Cli
           say "Running the #{hook} hook...", :magenta
           run_locally do
             execute *KAMAL.hook.run(hook, **details, **extra_details)
-          rescue SSHKit::Command::Failed
-            raise HookError.new("Hook `#{hook}` failed")
+          rescue SSHKit::Command::Failed => e
+            raise HookError.new("Hook `#{hook}` failed:\n#{e.message}")
           end
         end
       end
