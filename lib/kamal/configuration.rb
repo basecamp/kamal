@@ -128,7 +128,11 @@ class Kamal::Configuration
   end
 
   def latest_image
-    "#{repository}:latest"
+    "#{repository}:#{latest_tag}"
+  end
+
+  def latest_tag
+    [ "latest", *destination ].join("-")
   end
 
   def service_with_version

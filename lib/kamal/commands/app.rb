@@ -49,7 +49,7 @@ class Kamal::Commands::App < Kamal::Commands::Base
 
 
   def current_running_container_id
-    docker :ps, "--quiet", *filter_args(statuses: ACTIVE_DOCKER_STATUSES), "--latest"
+    current_running_container(format: "--quiet")
   end
 
   def container_id_for_version(version, only_running: false)
@@ -57,13 +57,15 @@ class Kamal::Commands::App < Kamal::Commands::Base
   end
 
   def current_running_version
-    list_versions("--latest", statuses: ACTIVE_DOCKER_STATUSES)
+    pipe \
+      current_running_container(format: "--format '{{.Names}}'"),
+      extract_version_from_name
   end
 
   def list_versions(*docker_args, statuses: nil)
     pipe \
       docker(:ps, *filter_args(statuses: statuses), *docker_args, "--format", '"{{.Names}}"'),
-      %(while read line; do echo ${line##{role.container_prefix}-}; done) # Extract SHA from "service-role-dest-SHA"
+      extract_version_from_name
   end
 
 
@@ -81,8 +83,31 @@ class Kamal::Commands::App < Kamal::Commands::Base
       [ role.container_prefix, version || config.version ].compact.join("-")
     end
 
+    def latest_image_id
+      docker :image, :ls, *argumentize("--filter", "reference=#{config.latest_image}"), "--format", "'{{.ID}}'"
+    end
+
+    def current_running_container(format:)
+      pipe \
+        shell(chain(latest_image_container(format: format), latest_container(format: format))),
+        [ :head, "-1" ]
+    end
+
+    def latest_image_container(format:)
+      latest_container format: format, filters: [ "ancestor=$(#{latest_image_id.join(" ")})" ]
+    end
+
+    def latest_container(format:, filters: nil)
+      docker :ps, "--latest", *format, *filter_args(statuses: ACTIVE_DOCKER_STATUSES), argumentize("--filter", filters)
+    end
+
     def filter_args(statuses: nil)
       argumentize "--filter", filters(statuses: statuses)
+    end
+
+    def extract_version_from_name
+      # Extract SHA from "service-role-dest-SHA"
+      %(while read line; do echo ${line##{role.container_prefix}-}; done)
     end
 
     def filters(statuses: nil)
