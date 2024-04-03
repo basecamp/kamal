@@ -135,11 +135,9 @@ class Kamal::Cli::App < Kamal::Cli::Base
   desc "stale_containers", "Detect app stale containers"
   option :stop, aliases: "-s", type: :boolean, default: false, desc: "Stop the stale containers found"
   def stale_containers
-    mutating do
-      stop = options[:stop]
+    stop = options[:stop]
 
-      cli = self
-
+    mutating(mutates: stop) do
       on(KAMAL.hosts) do |host|
         roles = KAMAL.roles_on(host)
 

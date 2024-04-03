@@ -79,8 +79,8 @@ module Kamal::Cli
         puts "  Finished all in #{sprintf("%.1f seconds", runtime)}"
       end
 
-      def mutating
-        return yield if KAMAL.holding_lock?
+      def mutating(mutates: true)
+        return yield if KAMAL.holding_lock? || !mutates
 
         run_hook "pre-connect"
 
