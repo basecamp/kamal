@@ -91,12 +91,11 @@ module Kamal::Cli
         begin
           yield
         rescue
-          if KAMAL.hold_lock_on_error?
-            error "  \e[31mDeploy lock was not released\e[0m"
-          else
+          begin
             release_lock
+          rescue => e
+            say "Error releasing the deploy lock: #{e.message}", :red
           end
-
           raise
         end
 
@@ -138,16 +137,6 @@ module Kamal::Cli
           raise LockError, "Deploy lock found. Run 'kamal lock help' for more information"
         else
           raise e
-        end
-      end
-
-      def hold_lock_on_error
-        if KAMAL.hold_lock_on_error?
-          yield
-        else
-          KAMAL.hold_lock_on_error = true
-          yield
-          KAMAL.hold_lock_on_error = false
         end
       end
 
