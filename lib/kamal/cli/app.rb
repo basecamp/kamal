@@ -287,8 +287,4 @@ class Kamal::Cli::App < Kamal::Cli::Base
     def version_or_latest
       options[:version] || KAMAL.config.latest_tag
     end
-
-    def web_and_non_web_roles?
-      KAMAL.roles.any?(&:running_traefik?) && !KAMAL.roles.all?(&:running_traefik?)
-    end
 end
