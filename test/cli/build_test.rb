@@ -51,7 +51,8 @@ class CliBuildTest < CliTestCase
   test "push pre-build hook failure" do
     fail_hook("pre-build")
 
-    assert_raises(Kamal::Cli::HookError) { run_command("push") }
+    error = assert_raises(Kamal::Cli::HookError) { run_command("push") }
+    assert_equal "Hook `pre-build` failed:\nfailed", error.message
 
     assert @executions.none? { |args| args[0..2] == [ :docker, :buildx, :build ] }
   end
