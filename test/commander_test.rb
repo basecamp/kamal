@@ -119,9 +119,10 @@ class CommanderTest < ActiveSupport::TestCase
     configure_with(:deploy_primary_web_role_override)
 
     @kamal.specific_roles = [ "web_*" ]
-    assert_equal [ "web_chicago", "web_tokyo" ], @kamal.roles.map(&:name)
+    assert_equal [ "web_tokyo", "web_chicago" ], @kamal.roles.map(&:name)
     assert_equal "web_tokyo", @kamal.primary_role.name
     assert_equal "1.1.1.3", @kamal.primary_host
+    assert_equal [ "1.1.1.3", "1.1.1.4", "1.1.1.1", "1.1.1.2" ], @kamal.hosts
   end
 
   private
