@@ -14,15 +14,16 @@ class Kamal::Cli::App < Kamal::Cli::Base
             end
           end
 
+          #  Primary hosts and roles are returned first, so they can open the barrier
           barrier = Kamal::Cli::Healthcheck::Barrier.new if KAMAL.roles.many?
 
           on(KAMAL.hosts, **KAMAL.boot_strategy) do |host|
-            # Ensure primary role is booted first to allow the web barrier to be opened
             KAMAL.roles_on(host).each do |role|
               Kamal::Cli::App::Boot.new(host, role, self, version, barrier).run
             end
           end
 
+          #  Tag once the app booted on all hosts
           on(KAMAL.hosts) do |host|
             execute *KAMAL.auditor.record("Tagging #{KAMAL.config.absolute_image} as the latest image"), verbosity: :debug
             execute *KAMAL.app.tag_latest_image
