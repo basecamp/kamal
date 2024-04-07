@@ -236,6 +236,26 @@ class CliAppTest < CliTestCase
     end
   end
 
+  test "long hostname" do
+    stub_running
+
+    hostname = "this-hostname-is-really-unacceptably-long-to-be-honest.example.com"
+
+    stdouted { Kamal::Cli::App.start([ "boot", "-c", "test/fixtures/deploy_with_uncommon_hostnames.yml", "--hosts", hostname ]) }.tap do |output|
+      assert_match /docker run --detach --restart unless-stopped --name app-web-latest --hostname this-hostname-is-really-unacceptably-long-to-be-hon-[0-9a-f]{12} /, output
+    end
+  end
+
+  test "hostname is trimmed if will end with a period" do
+    stub_running
+
+    hostname = "this-hostname-with-random-part-is-too-long.example.com"
+
+    stdouted { Kamal::Cli::App.start([ "boot", "-c", "test/fixtures/deploy_with_uncommon_hostnames.yml", "--hosts", hostname ]) }.tap do |output|
+      assert_match /docker run --detach --restart unless-stopped --name app-web-latest --hostname this-hostname-with-random-part-is-too-long.example-[0-9a-f]{12} /, output
+    end
+  end
+
   private
     def run_command(*command, config: :with_accessories)
       stdouted { Kamal::Cli::App.start([ *command, "-c", "test/fixtures/deploy_#{config}.yml", "--hosts", "1.1.1.1" ]) }

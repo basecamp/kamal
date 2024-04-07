@@ -47,7 +47,8 @@ class Kamal::Cli::App::Boot
     def start_new_version
       audit "Booted app version #{version}"
       execute *app.tie_cord(role.cord_host_file) if uses_cord?
-      execute *app.run(hostname: "#{host}-#{SecureRandom.hex(6)}")
+      hostname = "#{host.to_s[0...51].gsub(/\.+$/, '')}-#{SecureRandom.hex(6)}"
+      execute *app.run(hostname: hostname)
       Kamal::Cli::Healthcheck::Poller.wait_for_healthy(pause_after_ready: true) { capture_with_info(*app.status(version: version)) }
     end
 
