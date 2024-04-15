@@ -301,7 +301,7 @@ class Kamal::Configuration
     end
 
     def ensure_valid_service_name
-      raise ArgumentError, "Service name can only include alphanumeric characters, hyphens, and underscores" unless raw_config[:service] =~ /^[a-z0-9_-]+$/
+      raise ArgumentError, "Service name can only include alphanumeric characters, hyphens, and underscores" unless raw_config[:service] =~ /^[a-z0-9_-]+$/i
 
       true
     end
