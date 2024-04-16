@@ -46,7 +46,7 @@ class CliMainTest < CliTestCase
   end
 
   test "deploy" do
-    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false }
+    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false, "verbose" => true }
 
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:registry:login", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:deliver", [], invoke_options)
@@ -59,7 +59,7 @@ class CliMainTest < CliTestCase
     Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
     hook_variables = { version: 999, service_version: "app@999", hosts: "1.1.1.1,1.1.1.2", command: "deploy" }
 
-    run_command("deploy").tap do |output|
+    run_command("deploy", "--verbose").tap do |output|
       assert_hook_ran "pre-connect", output, **hook_variables
       assert_match /Log into image registry/, output
       assert_match /Build and push app image/, output
@@ -68,7 +68,7 @@ class CliMainTest < CliTestCase
       assert_match /Ensure app can pass healthcheck/, output
       assert_match /Detect stale containers/, output
       assert_match /Prune old containers and images/, output
-      assert_hook_ran "post-deploy", output, **hook_variables, runtime: 0
+      assert_hook_ran "post-deploy", output, **hook_variables, runtime: true
     end
   end
 
@@ -194,7 +194,7 @@ class CliMainTest < CliTestCase
   end
 
   test "redeploy" do
-    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false }
+    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false, "verbose" => true }
 
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:deliver", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:healthcheck:perform", [], invoke_options)
@@ -205,13 +205,13 @@ class CliMainTest < CliTestCase
 
     hook_variables = { version: 999, service_version: "app@999", hosts: "1.1.1.1,1.1.1.2", command: "redeploy" }
 
-    run_command("redeploy").tap do |output|
+    run_command("redeploy", "--verbose").tap do |output|
       assert_hook_ran "pre-connect", output, **hook_variables
       assert_match /Build and push app image/, output
       assert_hook_ran "pre-deploy", output, **hook_variables
       assert_match /Running the pre-deploy hook.../, output
       assert_match /Ensure app can pass healthcheck/, output
-      assert_hook_ran "post-deploy", output, **hook_variables, runtime: "0"
+      assert_hook_ran "post-deploy", output, **hook_variables, runtime: true
     end
   end
 
@@ -250,7 +250,7 @@ class CliMainTest < CliTestCase
         .with(:docker, :container, :ls, "--all", "--filter", "name=^app-#{role}-123$", "--quiet")
         .returns("version-to-rollback\n").at_least_once
       SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-        .with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=#{role}", "--filter", "status=running", "--filter", "status=restarting", "--latest", "--format", "\"{{.Names}}\"", "|", "while read line; do echo ${line#app-#{role}-}; done", raise_on_non_zero_exit: false)
+        .with(:sh, "-c", "'docker ps --latest --format '\\''{{.Names}}'\\'' --filter label=service=app --filter label=role=#{role} --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --format '\\''{{.Names}}'\\'' --filter label=service=app --filter label=role=#{role} --filter status=running --filter status=restarting'", "|", :head, "-1", "|", "while read line; do echo ${line#app-#{role}-}; done", raise_on_non_zero_exit: false)
         .returns("version-to-rollback\n").at_least_once
       SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
         .with(:docker, :container, :ls, "--all", "--filter", "name=^app-#{role}-123$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
@@ -268,12 +268,12 @@ class CliMainTest < CliTestCase
     Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
     hook_variables = { version: 123, service_version: "app@123", hosts: "1.1.1.1,1.1.1.2,1.1.1.3,1.1.1.4", command: "rollback" }
 
-    run_command("rollback", "123", config_file: "deploy_with_accessories").tap do |output|
+    run_command("rollback", "--verbose", "123", config_file: "deploy_with_accessories").tap do |output|
       assert_hook_ran "pre-deploy", output, **hook_variables
       assert_match "docker tag dhh/app:123 dhh/app:latest", output
       assert_match "docker run --detach --restart unless-stopped --name app-web-123", output
       assert_match "docker container ls --all --filter name=^app-web-version-to-rollback$ --quiet | xargs docker stop", output, "Should stop the container that was previously running"
-      assert_hook_ran "post-deploy", output, **hook_variables, runtime: "0"
+      assert_hook_ran "post-deploy", output, **hook_variables, runtime: true
     end
   end
 
@@ -286,7 +286,7 @@ class CliMainTest < CliTestCase
       .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-123$", "--quiet", raise_on_non_zero_exit: false)
       .returns("").at_least_once
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=role=web", "--filter", "status=running", "--filter", "status=restarting", "--latest", "--format", "\"{{.Names}}\"", "|", "while read line; do echo ${line#app-web-}; done", raise_on_non_zero_exit: false)
+      .with(:sh, "-c", "'docker ps --latest --format '\\''{{.Names}}'\\'' --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --format '\\''{{.Names}}'\\'' --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting'", "|", :head, "-1", "|", "while read line; do echo ${line#app-web-}; done", raise_on_non_zero_exit: false)
       .returns("").at_least_once
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
       .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-123$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")

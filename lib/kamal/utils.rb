@@ -75,4 +75,8 @@ module Kamal::Utils
 
     matches
   end
+
+  def stable_sort!(elements, &block)
+    elements.sort_by!.with_index { |element, index| [ block.call(element), index ] }
+  end
 end

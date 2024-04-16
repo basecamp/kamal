@@ -95,14 +95,14 @@ class CommandsAppTest < ActiveSupport::TestCase
 
   test "stop" do
     assert_equal \
-      "docker ps --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --latest | xargs docker stop",
+      "sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting' | head -1 | xargs docker stop",
       new_command.stop.join(" ")
   end
 
   test "stop with custom stop wait time" do
     @config[:stop_wait_time] = 30
     assert_equal \
-      "docker ps --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --latest | xargs docker stop -t 30",
+      "sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting' | head -1 | xargs docker stop -t 30",
       new_command.stop.join(" ")
   end
 
@@ -128,45 +128,45 @@ class CommandsAppTest < ActiveSupport::TestCase
 
   test "logs" do
     assert_equal \
-      "docker ps --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --latest | xargs docker logs 2>&1",
+      "sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting' | head -1 | xargs docker logs 2>&1",
       new_command.logs.join(" ")
 
     assert_equal \
-      "docker ps --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --latest | xargs docker logs --since 5m 2>&1",
+      "sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting' | head -1 | xargs docker logs --since 5m 2>&1",
       new_command.logs(since: "5m").join(" ")
 
     assert_equal \
-      "docker ps --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --latest | xargs docker logs --tail 100 2>&1",
+      "sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting' | head -1 | xargs docker logs --tail 100 2>&1",
       new_command.logs(lines: "100").join(" ")
 
     assert_equal \
-      "docker ps --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --latest | xargs docker logs --since 5m --tail 100 2>&1",
+      "sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting' | head -1 | xargs docker logs --since 5m --tail 100 2>&1",
       new_command.logs(since: "5m", lines: "100").join(" ")
 
     assert_equal \
-      "docker ps --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --latest | xargs docker logs 2>&1 | grep 'my-id'",
+      "sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting' | head -1 | xargs docker logs 2>&1 | grep 'my-id'",
       new_command.logs(grep: "my-id").join(" ")
 
     assert_equal \
-      "docker ps --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --latest | xargs docker logs --since 5m 2>&1 | grep 'my-id'",
+      "sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting' | head -1 | xargs docker logs --since 5m 2>&1 | grep 'my-id'",
       new_command.logs(since: "5m", grep: "my-id").join(" ")
   end
 
   test "follow logs" do
-    assert_match \
-      "docker ps --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --latest | xargs docker logs --timestamps --follow 2>&1",
+    assert_equal \
+      "ssh -t root@app-1 -p 22 'sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting' | head -1 | xargs docker logs --timestamps --follow 2>&1'",
       new_command.follow_logs(host: "app-1")
 
-    assert_match \
-      "docker ps --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --latest | xargs docker logs --timestamps --follow 2>&1 | grep \"Completed\"",
+    assert_equal \
+      "ssh -t root@app-1 -p 22 'sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting' | head -1 | xargs docker logs --timestamps --follow 2>&1 | grep \"Completed\"'",
       new_command.follow_logs(host: "app-1", grep: "Completed")
 
-    assert_match \
-      "docker ps --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --latest | xargs docker logs --timestamps --tail 123 --follow 2>&1",
+    assert_equal \
+      "ssh -t root@app-1 -p 22 'sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting' | head -1 | xargs docker logs --timestamps --tail 123 --follow 2>&1'",
       new_command.follow_logs(host: "app-1", lines: 123)
 
-    assert_match \
-      "docker ps --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --latest | xargs docker logs --timestamps --tail 123 --follow 2>&1 | grep \"Completed\"",
+    assert_equal \
+      "ssh -t root@app-1 -p 22 'sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting' | head -1 | xargs docker logs --timestamps --tail 123 --follow 2>&1 | grep \"Completed\"'",
       new_command.follow_logs(host: "app-1", lines: 123, grep: "Completed")
   end
 
@@ -174,36 +174,48 @@ class CommandsAppTest < ActiveSupport::TestCase
   test "execute in new container" do
     assert_equal \
       "docker run --rm --env-file .kamal/env/roles/app-web.env dhh/app:999 bin/rails db:setup",
-      new_command.execute_in_new_container("bin/rails", "db:setup").join(" ")
+      new_command.execute_in_new_container("bin/rails", "db:setup", env: {}).join(" ")
+  end
+
+  test "execute in new container with env" do
+    assert_equal \
+      "docker run --rm --env-file .kamal/env/roles/app-web.env --env foo=\"bar\" dhh/app:999 bin/rails db:setup",
+      new_command.execute_in_new_container("bin/rails", "db:setup", env: { "foo" => "bar" }).join(" ")
   end
 
   test "execute in new container with custom options" do
     @config[:servers] = { "web" => { "hosts" => [ "1.1.1.1" ], "options" => { "mount" => "somewhere", "cap-add" => true } } }
     assert_equal \
       "docker run --rm --env-file .kamal/env/roles/app-web.env --mount \"somewhere\" --cap-add dhh/app:999 bin/rails db:setup",
-      new_command.execute_in_new_container("bin/rails", "db:setup").join(" ")
+      new_command.execute_in_new_container("bin/rails", "db:setup", env: {}).join(" ")
   end
 
   test "execute in existing container" do
     assert_equal \
       "docker exec app-web-999 bin/rails db:setup",
-      new_command.execute_in_existing_container("bin/rails", "db:setup").join(" ")
+      new_command.execute_in_existing_container("bin/rails", "db:setup", env: {}).join(" ")
+  end
+
+  test "execute in existing container with env" do
+    assert_equal \
+      "docker exec --env foo=\"bar\" app-web-999 bin/rails db:setup",
+      new_command.execute_in_existing_container("bin/rails", "db:setup", env: { "foo" => "bar" }).join(" ")
   end
 
   test "execute in new container over ssh" do
     assert_match %r{docker run -it --rm --env-file .kamal/env/roles/app-web.env dhh/app:999 bin/rails c},
-      new_command.execute_in_new_container_over_ssh("bin/rails", "c", host: "app-1")
+      new_command.execute_in_new_container_over_ssh("bin/rails", "c", host: "app-1", env: {})
   end
 
   test "execute in new container with custom options over ssh" do
     @config[:servers] = { "web" => { "hosts" => [ "1.1.1.1" ], "options" => { "mount" => "somewhere", "cap-add" => true } } }
     assert_match %r{docker run -it --rm --env-file .kamal/env/roles/app-web.env --mount \"somewhere\" --cap-add dhh/app:999 bin/rails c},
-      new_command.execute_in_new_container_over_ssh("bin/rails", "c", host: "app-1")
+      new_command.execute_in_new_container_over_ssh("bin/rails", "c", host: "app-1", env: {})
   end
 
   test "execute in existing container over ssh" do
     assert_match %r{docker exec -it app-web-999 bin/rails c},
-      new_command.execute_in_existing_container_over_ssh("bin/rails", "c", host: "app-1")
+      new_command.execute_in_existing_container_over_ssh("bin/rails", "c", host: "app-1", env: {})
   end
 
   test "run over ssh" do
@@ -242,14 +254,14 @@ class CommandsAppTest < ActiveSupport::TestCase
 
   test "current_running_container_id" do
     assert_equal \
-      "docker ps --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --latest",
+    "sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting' | head -1",
       new_command.current_running_container_id.join(" ")
   end
 
   test "current_running_container_id with destination" do
     @destination = "staging"
     assert_equal \
-      "docker ps --quiet --filter label=service=app --filter label=destination=staging --filter label=role=web --filter status=running --filter status=restarting --latest",
+      "sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=destination=staging --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest-staging --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=destination=staging --filter label=role=web --filter status=running --filter status=restarting' | head -1",
       new_command.current_running_container_id.join(" ")
   end
 
@@ -261,7 +273,7 @@ class CommandsAppTest < ActiveSupport::TestCase
 
   test "current_running_version" do
     assert_equal \
-      "docker ps --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --latest --format \"{{.Names}}\" | while read line; do echo ${line#app-web-}; done",
+      "sh -c 'docker ps --latest --format '\\''{{.Names}}'\\'' --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --format '\\''{{.Names}}'\\'' --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting' | head -1 | while read line; do echo ${line#app-web-}; done",
       new_command.current_running_version.join(" ")
   end
 
@@ -339,10 +351,17 @@ class CommandsAppTest < ActiveSupport::TestCase
       new_command.remove_images.join(" ")
   end
 
-  test "tag_current_image_as_latest" do
+  test "tag_latest_image" do
     assert_equal \
       "docker tag dhh/app:999 dhh/app:latest",
-      new_command.tag_current_image_as_latest.join(" ")
+      new_command.tag_latest_image.join(" ")
+  end
+
+  test "tag_latest_image with destination" do
+    @destination = "staging"
+    assert_equal \
+      "docker tag dhh/app:999 dhh/app:latest-staging",
+      new_command.tag_latest_image.join(" ")
   end
 
   test "make_env_directory" do
@@ -371,7 +390,7 @@ class CommandsAppTest < ActiveSupport::TestCase
     assert_equal [
       :mkdir, "-p", ".kamal/assets/extracted/app-web-999", "&&",
       :docker, :stop, "-t 1", "app-web-assets", "2> /dev/null", "|| true", "&&",
-      :docker, :run, "--name", "app-web-assets", "--detach", "--rm", "dhh/app:latest", "sleep 1000000", "&&",
+      :docker, :run, "--name", "app-web-assets", "--detach", "--rm", "dhh/app:999", "sleep 1000000", "&&",
       :docker, :cp, "-L", "app-web-assets:/public/assets/.", ".kamal/assets/extracted/app-web-999", "&&",
       :docker, :stop, "-t 1", "app-web-assets"
     ], new_command(asset_path: "/public/assets").extract_assets
