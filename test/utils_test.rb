@@ -22,7 +22,7 @@ class UtilsTest < ActiveSupport::TestCase
   end
 
   test "optionize reject nil value" do
-    assert_equal [ "--foo", "\"bar\"", "--baz", "\"qux\""], \
+    assert_equal [ "--foo", "\"bar\"", "--baz", "\"qux\"" ], \
       Kamal::Utils.optionize({ foo: "bar", baz: "qux", quux: nil })
   end
 
