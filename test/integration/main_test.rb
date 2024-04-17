@@ -3,8 +3,8 @@ require_relative "integration_test"
 class MainTest < IntegrationTest
   test "envify, deploy, redeploy, rollback, details and audit" do
     kamal :envify
-    assert_local_env_file "SECRET_TOKEN=1234"
-    assert_remote_env_file "SECRET_TOKEN=1234"
+    assert_local_env_file "SECRET_TOKEN='1234 with \"中文\"'"
+    assert_remote_env_file "SECRET_TOKEN=1234 with \"中文\""
     remove_local_env_file
 
     first_version = latest_app_version
@@ -16,7 +16,7 @@ class MainTest < IntegrationTest
     assert_hooks_ran "pre-connect", "pre-build", "pre-deploy", "post-deploy"
     assert_env :CLEAR_TOKEN, "4321", version: first_version
     assert_env :HOST_TOKEN, "abcd", version: first_version
-    assert_env :SECRET_TOKEN, "1234", version: first_version
+    assert_env :SECRET_TOKEN, "1234 with \"中文\"", version: first_version
 
     second_version = update_app_rev
 
