@@ -88,7 +88,7 @@ class Kamal::Configuration
 
 
   def all_hosts
-    roles.flat_map(&:hosts).uniq
+    (roles + accessories).flat_map(&:hosts).uniq
   end
 
   def primary_host

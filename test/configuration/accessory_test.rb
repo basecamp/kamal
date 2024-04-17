@@ -107,6 +107,10 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
     assert_equal "Specify one of `host`, `hosts` or `roles` for accessory `mysql`", exception.message
   end
 
+  test "all hosts" do
+    assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3", "1.1.1.4", "1.1.1.5", "1.1.1.6", "1.1.1.7" ], @config.all_hosts
+  end
+
   test "label args" do
     assert_equal [ "--label", "service=\"app-mysql\"" ], @config.accessory(:mysql).label_args
     assert_equal [ "--label", "service=\"app-redis\"", "--label", "cache=\"true\"" ], @config.accessory(:redis).label_args
