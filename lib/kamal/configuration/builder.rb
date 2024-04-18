@@ -35,6 +35,14 @@ class Kamal::Configuration::Builder
     @options["secrets"] || []
   end
 
+  def tag_uncommitted?
+    @options["tag_uncommitted"] != false
+  end
+
+  def 
+    @options["build_args"] || {}
+  end
+
   def dockerfile
     @options["dockerfile"] || "Dockerfile"
   end

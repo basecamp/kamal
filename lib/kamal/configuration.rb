@@ -328,7 +328,7 @@ class Kamal::Configuration
     def git_version
       @git_version ||=
         if Kamal::Git.used?
-          if Kamal::Git.uncommitted_changes.present? && !builder.git_archive?
+          if Kamal::Git.uncommitted_changes.present? && !builder.git_archive? && builder.tag_uncommitted?
             uncommitted_suffix = "_uncommitted_#{SecureRandom.hex(8)}"
           end
           [ Kamal::Git.revision, uncommitted_suffix ].compact.join
