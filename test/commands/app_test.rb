@@ -154,19 +154,19 @@ class CommandsAppTest < ActiveSupport::TestCase
 
   test "follow logs" do
     assert_equal \
-      "ssh -t root@app-1 -p 22 'sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting' | head -1 | xargs docker logs --timestamps --follow 2>&1'",
+      "ssh -t root@app-1 -p 22 'sh -c '\\''docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''\\'\\'''\\''{{.ID}}'\\''\\'\\'''\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting'\\'' | head -1 | xargs docker logs --timestamps --follow 2>&1'",
       new_command.follow_logs(host: "app-1")
 
     assert_equal \
-      "ssh -t root@app-1 -p 22 'sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting' | head -1 | xargs docker logs --timestamps --follow 2>&1 | grep \"Completed\"'",
+      "ssh -t root@app-1 -p 22 'sh -c '\\''docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''\\'\\'''\\''{{.ID}}'\\''\\'\\'''\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting'\\'' | head -1 | xargs docker logs --timestamps --follow 2>&1 | grep \"Completed\"'",
       new_command.follow_logs(host: "app-1", grep: "Completed")
 
     assert_equal \
-      "ssh -t root@app-1 -p 22 'sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting' | head -1 | xargs docker logs --timestamps --tail 123 --follow 2>&1'",
+      "ssh -t root@app-1 -p 22 'sh -c '\\''docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''\\'\\'''\\''{{.ID}}'\\''\\'\\'''\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting'\\'' | head -1 | xargs docker logs --timestamps --tail 123 --follow 2>&1'",
       new_command.follow_logs(host: "app-1", lines: 123)
 
     assert_equal \
-      "ssh -t root@app-1 -p 22 'sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting' | head -1 | xargs docker logs --timestamps --tail 123 --follow 2>&1 | grep \"Completed\"'",
+      "ssh -t root@app-1 -p 22 'sh -c '\\''docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''\\'\\'''\\''{{.ID}}'\\''\\'\\'''\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting'\\'' | head -1 | xargs docker logs --timestamps --tail 123 --follow 2>&1 | grep \"Completed\"'",
       new_command.follow_logs(host: "app-1", lines: 123, grep: "Completed")
   end
 
