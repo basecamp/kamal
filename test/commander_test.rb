@@ -24,6 +24,9 @@ class CommanderTest < ActiveSupport::TestCase
     @kamal.specific_hosts = [ "*" ]
     assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3", "1.1.1.4" ], @kamal.hosts
 
+    @kamal.specific_hosts = [ "1.1.1.[12]" ]
+    assert_equal [ "1.1.1.1", "1.1.1.2" ], @kamal.hosts
+
     exception = assert_raises(ArgumentError) do
       @kamal.specific_hosts = [ "*miss" ]
     end
@@ -55,6 +58,9 @@ class CommanderTest < ActiveSupport::TestCase
     assert_equal [ "web", "workers" ], @kamal.roles.map(&:name)
 
     @kamal.specific_roles = [ "*" ]
+    assert_equal [ "web", "workers" ], @kamal.roles.map(&:name)
+
+    @kamal.specific_roles = [ "w{eb,orkers}" ]
     assert_equal [ "web", "workers" ], @kamal.roles.map(&:name)
 
     exception = assert_raises(ArgumentError) do
