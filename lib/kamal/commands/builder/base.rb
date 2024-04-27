@@ -3,7 +3,7 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
   class BuilderError < StandardError; end
 
   delegate :argumentize, to: Kamal::Utils
-  delegate :args, :secrets, :dockerfile, :local_arch, :local_host, :remote_arch, :remote_host, :cache_from, :cache_to, :ssh, :git_archive?, to: :builder_config
+  delegate :args, :secrets, :dockerfile, :target, :local_arch, :local_host, :remote_arch, :remote_host, :cache_from, :cache_to, :ssh, :git_archive?, to: :builder_config
 
   def clean
     docker :image, :rm, "--force", config.absolute_image
@@ -24,7 +24,7 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
   end
 
   def build_options
-    [ *build_tags, *build_cache, *build_labels, *build_args, *build_secrets, *build_dockerfile, *build_ssh ]
+    [ *build_tags, *build_cache, *build_labels, *build_args, *build_secrets, *build_dockerfile, *build_target, *build_ssh ]
   end
 
   def build_context
@@ -71,6 +71,10 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
       else
         raise BuilderError, "Missing #{dockerfile}"
       end
+    end
+
+    def build_target
+      argumentize "--target", target if target.present?
     end
 
     def build_ssh
