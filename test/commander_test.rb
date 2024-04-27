@@ -131,6 +131,20 @@ class CommanderTest < ActiveSupport::TestCase
     assert_equal [ "1.1.1.3", "1.1.1.4", "1.1.1.1", "1.1.1.2" ], @kamal.hosts
   end
 
+  test "traefik hosts should observe filtered roles" do
+    configure_with(:deploy_with_aliases)
+
+    @kamal.specific_roles = [ "web_tokyo" ]
+    assert_equal [ "1.1.1.3", "1.1.1.4" ], @kamal.traefik_hosts
+  end
+
+  test "traefik hosts should observe filtered hosts" do
+    configure_with(:deploy_with_aliases)
+
+    @kamal.specific_hosts = [ "1.1.1.4" ]
+    assert_equal [ "1.1.1.4" ], @kamal.traefik_hosts
+  end
+
   private
     def configure_with(variant)
       @kamal = Kamal::Commander.new.tap do |kamal|

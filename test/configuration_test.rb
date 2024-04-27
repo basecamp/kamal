@@ -83,6 +83,15 @@ class ConfigurationTest < ActiveSupport::TestCase
     assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3" ], config.traefik_hosts
   end
 
+  test "filtered traefik hosts" do
+    assert_equal [ "1.1.1.1", "1.1.1.2" ], @config_with_roles.traefik_hosts
+
+    @deploy_with_roles[:servers]["workers"]["traefik"] = true
+    config = Kamal::Configuration.new(@deploy_with_roles)
+
+    assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3" ], config.traefik_hosts
+  end
+
   test "version no git repo" do
     ENV.delete("VERSION")
 
