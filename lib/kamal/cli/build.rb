@@ -30,7 +30,7 @@ class Kamal::Cli::Build < Kamal::Cli::Base
           end
         rescue SSHKit::Command::Failed => e
           if e.message =~ /(no builder)|(no such file or directory)/
-            error "Missing compatible builder, so creating a new one first"
+            warn "Missing compatible builder, so creating a new one first"
 
             if cli.create
               KAMAL.with_verbosity(:debug) { execute *KAMAL.builder.push }
