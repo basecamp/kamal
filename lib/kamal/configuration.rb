@@ -233,6 +233,14 @@ class Kamal::Configuration
     raw_config.env || {}
   end
 
+  def env_tags
+    raw_config.env_tags.collect { |name, config| Kamal::Configuration::Env::Tag.new(name, config: config) }
+  end
+
+  def env_tag(name)
+    env_tags.detect { |t| t.name == name.to_s }
+  end
+
 
   def valid?
     ensure_destination_if_required && ensure_required_keys_present && ensure_valid_kamal_version && ensure_retain_containers_valid && ensure_valid_service_name

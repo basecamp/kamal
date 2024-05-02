@@ -65,8 +65,8 @@ class Kamal::Commander
   end
 
 
-  def app(role: nil)
-    Kamal::Commands::App.new(config, role: role)
+  def app(role: nil, host: nil)
+    Kamal::Commands::App.new(config, role: role, host: host)
   end
 
   def accessory(name)

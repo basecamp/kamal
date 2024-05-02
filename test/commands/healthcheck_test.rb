@@ -46,6 +46,15 @@ class CommandsHealthcheckTest < ActiveSupport::TestCase
       new_command.run.join(" ")
   end
 
+  test "run with tags" do
+    @config[:servers] = [ { "1.1.1.1" => "tag1" } ]
+    @config[:env_tags] = { "tag1" => { "ENV1" => "value1" } }
+
+    assert_equal \
+      "docker run --detach --name healthcheck-app-123 --publish 3999:3000 --label service=healthcheck-app -e KAMAL_CONTAINER_NAME=\"healthcheck-app\" --env-file .kamal/env/roles/app-web.env --env ENV1=\"value1\" --health-cmd \"curl -f http://localhost:3000/up || exit 1\" --health-interval \"1s\" dhh/app:123",
+      new_command.run.join(" ")
+  end
+
   test "status" do
     assert_equal \
       "docker container ls --all --filter name=^healthcheck-app-123$ --quiet | xargs docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'",

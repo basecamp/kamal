@@ -3,8 +3,7 @@ require_relative "integration_test"
 class MainTest < IntegrationTest
   test "envify, deploy, redeploy, rollback, details and audit" do
     kamal :envify
-    assert_local_env_file "SECRET_TOKEN='1234 with \"中文\"'"
-    assert_remote_env_file "SECRET_TOKEN=1234 with \"中文\""
+    assert_env_files
     remove_local_env_file
 
     first_version = latest_app_version
@@ -14,9 +13,7 @@ class MainTest < IntegrationTest
     kamal :deploy
     assert_app_is_up version: first_version
     assert_hooks_ran "pre-connect", "pre-build", "pre-deploy", "post-deploy"
-    assert_env :CLEAR_TOKEN, "4321", version: first_version
-    assert_env :HOST_TOKEN, "abcd", version: first_version
-    assert_env :SECRET_TOKEN, "1234 with \"中文\"", version: first_version
+    assert_envs version: first_version
 
     second_version = update_app_rev
 
@@ -97,16 +94,38 @@ class MainTest < IntegrationTest
       assert_equal contents, deployer_exec("cat .env", capture: true)
     end
 
-    def assert_env(key, value, version:)
-      assert_equal "#{key}=#{value}", docker_compose("exec vm1 docker exec app-web-#{version} env | grep #{key}", capture: true)
+    def assert_envs(version:)
+      assert_env :CLEAR_TOKEN, "4321", version: version, vm: :vm1
+      assert_env :HOST_TOKEN, "abcd", version: version, vm: :vm1
+      assert_env :SECRET_TOKEN, "1234 with \"中文\"", version: version, vm: :vm1
+      assert_no_env :CLEAR_TAG, version: version, vm: :vm1
+      assert_no_env :SECRET_TAG, version: version, vm: :vm11
+      assert_env :CLEAR_TAG, "tagged", version: version, vm: :vm2
+      assert_env :SECRET_TAG, "TAGME", version: version, vm: :vm2
+    end
+
+    def assert_env(key, value, vm:, version:)
+      assert_equal "#{key}=#{value}", docker_compose("exec #{vm} docker exec app-web-#{version} env | grep #{key}", capture: true)
+    end
+
+    def assert_no_env(key, vm:, version:)
+      assert_raises(RuntimeError, /exit 1/) do
+        docker_compose("exec #{vm} docker exec app-web-#{version} env | grep #{key}", capture: true)
+      end
+    end
+
+    def assert_env_files
+      assert_local_env_file "SECRET_TOKEN='1234 with \"中文\"'\nSECRET_TAG='TAGME'"
+      assert_remote_env_file "SECRET_TOKEN=1234 with \"中文\"", vm: :vm1
+      assert_remote_env_file "SECRET_TOKEN=1234 with \"中文\"\nSECRET_TAG=TAGME", vm: :vm2
     end
 
     def remove_local_env_file
       deployer_exec("rm .env")
     end
 
-    def assert_remote_env_file(contents)
-      assert_equal contents, docker_compose("exec vm1 cat /root/.kamal/env/roles/app-web.env", capture: true)
+    def assert_remote_env_file(contents, vm:)
+      assert_equal contents, docker_compose("exec #{vm} cat /root/.kamal/env/roles/app-web.env", capture: true)
     end
 
     def assert_no_remote_env_file

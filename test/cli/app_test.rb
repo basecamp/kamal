@@ -92,6 +92,32 @@ class CliAppTest < CliTestCase
     end
   end
 
+  test "boot with host tags" do
+    Object.any_instance.stubs(:sleep)
+
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+    .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-latest$", "--quiet", raise_on_non_zero_exit: false)
+    .returns("12345678") # running version
+
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-latest$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
+      .returns("running") # health check
+
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:sh, "-c", "'docker ps --latest --format '\\''{{.Names}}'\\'' --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --format '\\''{{.Names}}'\\'' --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting'", "|", :head, "-1", "|", "while read line; do echo ${line#app-web-}; done", raise_on_non_zero_exit: false)
+      .returns("123") # old version
+
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :inspect, "-f '{{ range .Mounts }}{{printf \"%s %s\\n\" .Source .Destination}}{{ end }}'", "app-web-123", "|", :awk, "'$2 == \"/tmp/kamal-cord\" {print $1}'", raise_on_non_zero_exit: false)
+      .returns("") # old version
+
+    run_command("boot", config: :with_env_tags).tap do |output|
+      assert_match "docker tag dhh/app:latest dhh/app:latest", output
+      assert_match %r{docker run --detach --restart unless-stopped --name app-web-latest --hostname 1.1.1.1-[0-9a-f]{12} -e KAMAL_CONTAINER_NAME="app-web-latest" -e KAMAL_VERSION="latest" --env-file .kamal/env/roles/app-web.env --env TEST="root" --env EXPERIMENT="disabled" --env SITE="site1"}, output
+      assert_match "docker container ls --all --filter name=^app-web-123$ --quiet | xargs docker stop", output
+    end
+  end
+
   test "start" do
     run_command("start").tap do |output|
       assert_match "docker start app-web-999", output

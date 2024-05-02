@@ -19,6 +19,6 @@ class Kamal::Cli::App::PrepareAssets
 
   private
     def app
-      @app ||= KAMAL.app(role: role)
+      @app ||= KAMAL.app(role: role, host: host)
     end
 end

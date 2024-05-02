@@ -7,6 +7,7 @@ class Kamal::Configuration::Role
 
   def initialize(name, config:)
     @name, @config = name.inquiry, config
+    @tagged_hosts ||= extract_tagged_hosts_from_config
   end
 
   def primary_host
@@ -14,7 +15,11 @@ class Kamal::Configuration::Role
   end
 
   def hosts
-    @hosts ||= extract_hosts_from_config
+    tagged_hosts.keys
+  end
+
+  def env_tags(host)
+    tagged_hosts.fetch(host).collect { |tag| config.env_tag(tag) }
   end
 
   def cmd
@@ -50,12 +55,13 @@ class Kamal::Configuration::Role
   end
 
 
-  def env
-    @env ||= base_env.merge(specialized_env)
+  def env(host)
+    @envs ||= {}
+    @envs[host] ||= [ base_env, specialized_env, *env_tags(host).map(&:env) ].reduce(:merge)
   end
 
-  def env_args
-    env.args
+  def env_args(host)
+    env(host).args
   end
 
   def asset_volume_args
@@ -164,7 +170,24 @@ class Kamal::Configuration::Role
   end
 
   private
-    attr_accessor :config
+    attr_accessor :config, :tagged_hosts
+
+    def extract_tagged_hosts_from_config
+      {}.tap do |tagged_hosts|
+        extract_hosts_from_config.map do |host_config|
+          if host_config.is_a?(Hash)
+            raise ArgumentError, "Multiple hosts found: #{host_config.inspect}" unless host_config.size == 1
+
+            host, tags = host_config.first
+            tagged_hosts[host] = Array(tags)
+          elsif host_config.is_a?(String) || host_config.is_a?(Symbol)
+            tagged_hosts[host_config] = []
+          else
+            raise ArgumentError, "Invalid host config: #{host_config.inspect}"
+          end
+        end
+      end
+    end
 
     def extract_hosts_from_config
       if config.servers.is_a?(Array)
