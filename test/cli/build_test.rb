@@ -34,7 +34,7 @@ class CliBuildTest < CliTestCase
       .returns(true)
 
     run_command("push").tap do |output|
-      assert_match /Missing compatible builder, so creating a new one first/, output
+      assert_match /WARN Missing compatible builder, so creating a new one first/, output
     end
   end
 
