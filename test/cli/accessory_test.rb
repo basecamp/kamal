@@ -76,7 +76,10 @@ class CliAccessoryTest < CliTestCase
   end
 
   test "details" do
-    assert_match "docker ps --filter label=service=app-mysql", run_command("details", "mysql")
+    run_command("details", "mysql").tap do |output|
+      assert_match "docker ps --filter label=service=app-mysql", output
+      assert_match "Accessory mysql Host: 1.1.1.3", output
+    end
   end
 
   test "details with non-existent accessory" do
@@ -85,6 +88,8 @@ class CliAccessoryTest < CliTestCase
 
   test "details with all" do
     run_command("details", "all").tap do |output|
+      assert_match "Accessory mysql Host: 1.1.1.3", output
+      assert_match "Accessory redis Host: 1.1.1.2", output
       assert_match "docker ps --filter label=service=app-mysql", output
       assert_match "docker ps --filter label=service=app-redis", output
     end

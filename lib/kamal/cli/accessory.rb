@@ -107,8 +107,9 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
     if name == "all"
       KAMAL.accessory_names.each { |accessory_name| details(accessory_name) }
     else
+      type = "Accessory #{name}"
       with_accessory(name) do |accessory, hosts|
-        on(hosts) { puts capture_with_info(*accessory.info) }
+        on(hosts) { puts_by_host host, capture_with_info(*accessory.info), type: type }
       end
     end
   end
