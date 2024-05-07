@@ -1,6 +1,6 @@
 class Kamal::Cli::App::Boot
   attr_reader :host, :role, :version, :barrier, :sshkit
-  delegate :execute, :capture_with_info, :info, to: :sshkit
+  delegate :execute, :capture_with_info, :capture_with_pretty_json, :info, :error, to: :sshkit
   delegate :uses_cord?, :assets?, :running_traefik?, to: :role
 
   def initialize(host, role, sshkit, version, barrier)
@@ -55,7 +55,11 @@ class Kamal::Cli::App::Boot
 
       reach_barrier
     rescue => e
-      close_barrier if barrier_role?
+      if barrier_role? && barrier.close
+        info "Deploy failed, so closed barrier (#{host})"
+        error capture_with_info(*app.logs(version: version))
+        error capture_with_info(*app.container_health_log(version: version))
+      end
       execute *app.stop(version: version), raise_on_non_zero_exit: false
 
       raise
@@ -92,12 +96,8 @@ class Kamal::Cli::App::Boot
       barrier.wait
       info "Barrier opened (#{host})"
     rescue Kamal::Cli::Healthcheck::Error
-      info "Barrier closed, shutting down new container... (#{host})"
+      info "Barrier closed, shutting down new container (#{host})..."
       raise
-    end
-
-    def close_barrier
-      barrier&.close
     end
 
     def barrier_role?

@@ -15,10 +15,20 @@ class BrokenDeployTest < IntegrationTest
 
     second_version = break_app
 
-    kamal :deploy, raise_on_error: false
+    output = kamal :deploy, raise_on_error: false, capture: true
 
+    assert_failed_deploy output
     assert_app_is_up version: first_version
     assert_container_running host: :vm3, name: "app-workers-#{first_version}"
     assert_container_not_running host: :vm3, name: "app-workers-#{second_version}"
   end
+
+  private
+    def assert_failed_deploy(output)
+      assert_match "Waiting at web barrier (vm3)...", output
+      assert_match /Deploy failed, so closed barrier \(vm[12]\)/, output
+      assert_match "Barrier closed, shutting down new container (vm3)...", output
+      assert_match "nginx: [emerg] unexpected end of file, expecting \";\" or \"}\" in /etc/nginx/conf.d/default.conf:2", output
+      assert_match 'ERROR {"Status":"unhealthy","FailingStreak":0,"Log":[]}', output
+    end
 end

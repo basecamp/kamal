@@ -1,4 +1,6 @@
 module Kamal::Commands::App::Containers
+  DOCKER_HEALTH_LOG_FORMAT    = "'{{json .State.Health}}'"
+
   def list_containers
     docker :container, :ls, "--all", *filter_args
   end
@@ -19,5 +21,11 @@ module Kamal::Commands::App::Containers
 
   def remove_containers
     docker :container, :prune, "--force", *filter_args
+  end
+
+  def container_health_log(version:)
+    pipe \
+      container_id_for(container_name: container_name(version)),
+      xargs(docker(:inspect, "--format", DOCKER_HEALTH_LOG_FORMAT))
   end
 end

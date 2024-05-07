@@ -1,7 +1,7 @@
 module Kamal::Commands::App::Logging
-  def logs(since: nil, lines: nil, grep: nil)
+  def logs(version: nil, since: nil, lines: nil, grep: nil)
     pipe \
-      current_running_container_id,
+      version ? container_id_for_version(version) : current_running_container_id,
       "xargs docker logs#{" --since #{since}" if since}#{" --tail #{lines}" if lines} 2>&1",
       ("grep '#{grep}'" if grep)
   end

@@ -162,8 +162,8 @@ class CliAppTest < CliTestCase
       run_command("boot", config: :with_roles, host: nil, allow_execute_error: true).tap do |output|
         assert_match "Waiting at web barrier (1.1.1.3)...", output
         assert_match "Waiting at web barrier (1.1.1.4)...", output
-        assert_match "Barrier closed, shutting down new container... (1.1.1.3)", output
-        assert_match "Barrier closed, shutting down new container... (1.1.1.4)", output
+        assert_match "Barrier closed, shutting down new container (1.1.1.3)...", output
+        assert_match "Barrier closed, shutting down new container (1.1.1.4)...", output
         assert_match "Running docker container ls --all --filter name=^app-web-latest$ --quiet | xargs docker stop on 1.1.1.1", output
         assert_match "Running docker container ls --all --filter name=^app-web-latest$ --quiet | xargs docker stop on 1.1.1.2", output
         assert_match "Running docker container ls --all --filter name=^app-workers-latest$ --quiet | xargs docker stop on 1.1.1.3", output
