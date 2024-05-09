@@ -38,7 +38,7 @@ class Kamal::Configuration::Builder
   def dockerfile
     @options["dockerfile"] || "Dockerfile"
   end
-  
+
   def target
     @options["target"]
   end
