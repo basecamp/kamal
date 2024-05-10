@@ -83,6 +83,13 @@ class CommandsBuilderTest < ActiveSupport::TestCase
     end
   end
 
+  test "build target" do
+    builder = new_builder_command(builder: { "target" => "prod" })
+    assert_equal \
+      "-t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile --target prod",
+      builder.target.build_options.join(" ")
+  end
+
   test "build context" do
     builder = new_builder_command(builder: { "context" => ".." })
     assert_equal \

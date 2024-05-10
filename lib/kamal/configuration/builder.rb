@@ -39,6 +39,10 @@ class Kamal::Configuration::Builder
     @options["dockerfile"] || "Dockerfile"
   end
 
+  def target
+    @options["target"]
+  end
+
   def context
     @options["context"] || (git_archive? ? "-" : ".")
   end
