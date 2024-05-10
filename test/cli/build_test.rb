@@ -9,32 +9,84 @@ class CliBuildTest < CliTestCase
   end
 
   test "push" do
+    with_build_directory do
+      Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
+      hook_variables = { version: 999, service_version: "app@999", hosts: "1.1.1.1,1.1.1.2,1.1.1.3,1.1.1.4", command: "build", subcommand: "push" }
+
+      run_command("push", "--verbose").tap do |output|
+        assert_hook_ran "pre-build", output, **hook_variables
+        assert_match /Cloning repo into build directory/, output
+        assert_match /git -C #{Dir.tmpdir}\/kamal-clones\/app-#{pwd_sha} clone #{Dir.pwd}/, output
+        assert_match /docker --version && docker buildx version/, output
+        assert_match /docker buildx build --push --platform linux\/amd64,linux\/arm64 --builder kamal-app-multiarch -t dhh\/app:999 -t dhh\/app:latest --label service="app" --file Dockerfile \. as .*@localhost/, output
+      end
+    end
+  end
+
+  test "push reseting clone" do
+    with_build_directory do
+      stub_setup
+      build_dir = "#{Dir.tmpdir}/kamal-clones/app-#{pwd_sha}/kamal/"
+
+      SSHKit::Backend::Abstract.any_instance.stubs(:execute).with(:docker, "--version", "&&", :docker, :buildx, "version")
+      SSHKit::Backend::Abstract.any_instance.stubs(:execute).with(:docker, :buildx, :create, "--use", "--name", "kamal-app-multiarch")
+
+      SSHKit::Backend::Abstract.any_instance.stubs(:execute).with(:mkdir, "-p", "#{Dir.tmpdir}/kamal-clones/app-#{pwd_sha}")
+      SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+        .with(:git, "-C", "#{Dir.tmpdir}/kamal-clones/app-#{pwd_sha}", :clone, Dir.pwd)
+        .raises(SSHKit::Command::Failed.new("fatal: destination path 'kamal' already exists and is not an empty directory"))
+        .then
+        .returns(true)
+      SSHKit::Backend::Abstract.any_instance.stubs(:execute).with(:git, "-C", build_dir, :remote, "set-url", :origin, Dir.pwd)
+      SSHKit::Backend::Abstract.any_instance.stubs(:execute).with(:git, "-C", build_dir, :fetch, :origin)
+      SSHKit::Backend::Abstract.any_instance.stubs(:execute).with(:git, "-C", build_dir, :reset, "--hard", Kamal::Git.revision)
+      SSHKit::Backend::Abstract.any_instance.stubs(:execute).with(:git, "-C", build_dir, :clean, "-fdx")
+
+      SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+        .with(:docker, :buildx, :build, "--push", "--platform", "linux/amd64,linux/arm64", "--builder", "kamal-app-multiarch", "-t", "dhh/app:999", "-t", "dhh/app:latest", "--label", "service=\"app\"", "--file", "Dockerfile", ".")
+
+      run_command("push", "--verbose").tap do |output|
+        assert_match /Cloning repo into build directory/, output
+        assert_match /Resetting local clone/, output
+      end
+    end
+  end
+
+  test "push without clone" do
     Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
     hook_variables = { version: 999, service_version: "app@999", hosts: "1.1.1.1,1.1.1.2,1.1.1.3,1.1.1.4", command: "build", subcommand: "push" }
 
-    run_command("push", "--verbose").tap do |output|
+    run_command("push", "--verbose", fixture: :without_clone).tap do |output|
+      assert_no_match /Cloning repo into build directory/, output
       assert_hook_ran "pre-build", output, **hook_variables
       assert_match /docker --version && docker buildx version/, output
-      assert_match /git archive -tar HEAD | docker buildx build --push --platform linux\/amd64,linux\/arm64 --builder kamal-app-multiarch -t dhh\/app:999 -t dhh\/app:latest --label service="app" --file Dockerfile - as .*@localhost/, output
+      assert_match /docker buildx build --push --platform linux\/amd64,linux\/arm64 --builder kamal-app-multiarch -t dhh\/app:999 -t dhh\/app:latest --label service="app" --file Dockerfile . as .*@localhost/, output
     end
   end
 
   test "push without builder" do
-    stub_setup
-    SSHKit::Backend::Abstract.any_instance.stubs(:execute)
-      .with(:docker, "--version", "&&", :docker, :buildx, "version")
+    with_build_directory do
+      stub_setup
 
-    SSHKit::Backend::Abstract.any_instance.stubs(:execute)
-      .with(:docker, :buildx, :create, "--use", "--name", "kamal-app-multiarch")
+      SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+        .with(:docker, "--version", "&&", :docker, :buildx, "version")
 
-    SSHKit::Backend::Abstract.any_instance.stubs(:execute)
-      .with { |*args| p args[0..6]; args[0..6] == [ :git, :archive, "--format=tar", :HEAD, "|", :docker, :buildx ] }
-      .raises(SSHKit::Command::Failed.new("no builder"))
-      .then
-      .returns(true)
+      SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+        .with(:docker, :buildx, :create, "--use", "--name", "kamal-app-multiarch")
 
-    run_command("push").tap do |output|
-      assert_match /WARN Missing compatible builder, so creating a new one first/, output
+      SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+        .with { |*args| args[0..1] == [ :docker, :buildx ] }
+        .raises(SSHKit::Command::Failed.new("no builder"))
+        .then
+        .returns(true)
+
+      SSHKit::Backend::Abstract.any_instance.stubs(:execute).with { |*args| args.first.start_with?("git") }
+
+      SSHKit::Backend::Abstract.any_instance.stubs(:execute).with(:mkdir, "-p", "#{Dir.tmpdir}/kamal-clones/app-#{pwd_sha}")
+
+      run_command("push").tap do |output|
+        assert_match /WARN Missing compatible builder, so creating a new one first/, output
+      end
     end
   end
 
@@ -117,5 +169,18 @@ class CliBuildTest < CliTestCase
         .with(:docker, "--version", "&&", :docker, :buildx, "version")
       SSHKit::Backend::Abstract.any_instance.stubs(:execute)
         .with { |*args| args[0..1] == [ :docker, :buildx ] }
+    end
+
+    def with_build_directory
+      build_directory = File.join Dir.tmpdir, "kamal-clones", "app-#{pwd_sha}", "kamal"
+      FileUtils.mkdir_p build_directory
+      FileUtils.touch File.join build_directory, "Dockerfile"
+      yield
+    ensure
+      FileUtils.rm_rf build_directory
+    end
+
+    def pwd_sha
+      Digest::SHA256.hexdigest(Dir.pwd)[0..12]
     end
 end
