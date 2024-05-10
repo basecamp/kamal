@@ -11,7 +11,7 @@ module Kamal::Commands::App::Execution
     docker :run,
       ("-it" if interactive),
       "--rm",
-      *role&.env_args,
+      *role&.env_args(host),
       *argumentize("--env", env),
       *config.volume_args,
       *role&.option_args,
@@ -19,11 +19,11 @@ module Kamal::Commands::App::Execution
       *command
   end
 
-  def execute_in_existing_container_over_ssh(*command, host:, env:)
+  def execute_in_existing_container_over_ssh(*command,  env:)
     run_over_ssh execute_in_existing_container(*command, interactive: true, env: env), host: host
   end
 
-  def execute_in_new_container_over_ssh(*command, host:, env:)
+  def execute_in_new_container_over_ssh(*command, env:)
     run_over_ssh execute_in_new_container(*command, interactive: true, env: env), host: host
   end
 end

@@ -246,7 +246,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
       begin
         on(KAMAL.hosts) do
           KAMAL.roles_on(host).each do |role|
-            container_id = capture_with_info(*KAMAL.app(role: role).container_id_for_version(version))
+            container_id = capture_with_info(*KAMAL.app(role: role, host: host).container_id_for_version(version))
             raise "Container not found" unless container_id.present?
           end
         end

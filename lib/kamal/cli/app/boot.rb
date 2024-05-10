@@ -22,7 +22,7 @@ class Kamal::Cli::App::Boot
 
   private
     def app
-      @app ||= KAMAL.app(role: role)
+      @app ||= KAMAL.app(role: role, host: host)
     end
 
     def auditor

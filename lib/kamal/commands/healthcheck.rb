@@ -8,7 +8,7 @@ class Kamal::Commands::Healthcheck < Kamal::Commands::Base
       "--publish", "#{exposed_port}:#{config.healthcheck["port"]}",
       "--label", "service=#{config.healthcheck_service}",
       "-e", "KAMAL_CONTAINER_NAME=\"#{config.healthcheck_service}\"",
-      *primary.env_args,
+      *primary.env_args(config.primary_host),
       *primary.health_check_args(cord: false),
       *config.volume_args,
       *primary.option_args,

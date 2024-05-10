@@ -2,13 +2,20 @@ service: app
 image: app
 servers:
   - vm1
-  - vm2
+  - vm2: [ tag1, tag2 ]
 env:
   clear:
     CLEAR_TOKEN: 4321
+    CLEAR_TAG: ""
     HOST_TOKEN: "${HOST_TOKEN}"
   secret:
     - SECRET_TOKEN
+env_tags:
+  tag1:
+    CLEAR_TAG: tagged
+  tag2:
+    secret:
+      - SECRET_TAG
 asset_path: /usr/share/nginx/html/versions
 
 registry:
