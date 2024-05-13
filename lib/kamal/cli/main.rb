@@ -9,7 +9,8 @@ class Kamal::Cli::Main < Kamal::Cli::Base
         say "Ensure Docker is installed...", :magenta
         invoke "kamal:cli:server:bootstrap", [], invoke_options
 
-        say "Push env files...", :magenta
+        say "Evaluate and push env files...", :magenta
+        invoke "kamal:envify", [], invoke_options
         invoke "kamal:cli:env:push", [], invoke_options
 
         invoke "kamal:cli:accessory:boot", [ "all" ], invoke_options
