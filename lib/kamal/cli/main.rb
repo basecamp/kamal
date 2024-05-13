@@ -10,7 +10,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
         invoke "kamal:cli:server:bootstrap", [], invoke_options
 
         say "Evaluate and push env files...", :magenta
-        invoke "kamal:envify", [], invoke_options
+        invoke "kamal:cli:main:envify", [], invoke_options
         invoke "kamal:cli:env:push", [], invoke_options
 
         invoke "kamal:cli:accessory:boot", [ "all" ], invoke_options
