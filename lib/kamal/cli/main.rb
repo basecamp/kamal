@@ -186,7 +186,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
       env_path          = ".env"
     end
 
-    if File.exist?(env_template_path)
+    if Pathname.new(File.expand_path(env_template_path)).exist?
       File.write(env_path, ERB.new(File.read(env_template_path), trim_mode: "-").result, perm: 0600)
 
       unless options[:skip_push]

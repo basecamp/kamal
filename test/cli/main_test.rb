@@ -12,7 +12,7 @@ class CliMainTest < CliTestCase
 
     run_command("setup").tap do |output|
       assert_match /Ensure Docker is installed.../, output
-      assert_match /Push env files.../, output
+      assert_match /Evaluate and push env files.../, output
     end
   end
 
@@ -34,7 +34,7 @@ class CliMainTest < CliTestCase
 
     run_command("setup", "--skip_push").tap do |output|
       assert_match /Ensure Docker is installed.../, output
-      assert_match /Push env files.../, output
+      assert_match /Evaluate and push env files.../, output
       # deploy
       assert_match /Acquiring the deploy lock/, output
       assert_match /Log into image registry/, output
@@ -429,6 +429,7 @@ class CliMainTest < CliTestCase
   end
 
   test "envify" do
+    Pathname.any_instance.expects(:exist?).returns(true).times(3)
     File.expects(:read).with(".env.erb").returns("HELLO=<%= 'world' %>")
     File.expects(:write).with(".env", "HELLO=world", perm: 0600)
 
