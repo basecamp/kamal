@@ -444,6 +444,7 @@ class CliMainTest < CliTestCase
       <% end -%>
     EOF
 
+    Pathname.any_instance.expects(:exist?).returns(true).times(3)
     File.expects(:read).with(".env.erb").returns(file.strip)
     File.expects(:write).with(".env", "HELLO=world\nKEY=value\n", perm: 0600)
 
@@ -451,6 +452,7 @@ class CliMainTest < CliTestCase
   end
 
   test "envify with destination" do
+    Pathname.any_instance.expects(:exist?).returns(true).times(4)
     File.expects(:read).with(".env.world.erb").returns("HELLO=<%= 'world' %>")
     File.expects(:write).with(".env.world", "HELLO=world", perm: 0600)
 
@@ -458,6 +460,7 @@ class CliMainTest < CliTestCase
   end
 
   test "envify with skip_push" do
+    Pathname.any_instance.expects(:exist?).returns(true).times(1)
     File.expects(:read).with(".env.erb").returns("HELLO=<%= 'world' %>")
     File.expects(:write).with(".env", "HELLO=world", perm: 0600)
 
