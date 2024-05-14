@@ -186,11 +186,15 @@ class Kamal::Cli::Main < Kamal::Cli::Base
       env_path          = ".env"
     end
 
-    File.write(env_path, ERB.new(File.read(env_template_path), trim_mode: "-").result, perm: 0600)
+    if File.exist?(env_template_path)
+      File.write(env_path, ERB.new(File.read(env_template_path), trim_mode: "-").result, perm: 0600)
 
-    unless options[:skip_push]
-      reload_envs
-      invoke "kamal:cli:env:push", options
+      unless options[:skip_push]
+        reload_envs
+        invoke "kamal:cli:env:push", options
+      end
+    else
+      puts "Skipping envify (no #{env_template_path} exist)"
     end
   end
 
