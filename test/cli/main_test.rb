@@ -5,13 +5,14 @@ class CliMainTest < CliTestCase
     invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false }
 
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:server:bootstrap", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:main:envify", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:env:push", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:accessory:boot", [ "all" ], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:deploy)
 
     run_command("setup").tap do |output|
       assert_match /Ensure Docker is installed.../, output
-      assert_match /Push env files.../, output
+      assert_match /Evaluate and push env files.../, output
     end
   end
 
@@ -20,6 +21,7 @@ class CliMainTest < CliTestCase
 
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:server:bootstrap", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:env:push", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:main:envify", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:accessory:boot", [ "all" ], invoke_options)
     # deploy
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:registry:login", [], invoke_options)
@@ -32,7 +34,7 @@ class CliMainTest < CliTestCase
 
     run_command("setup", "--skip_push").tap do |output|
       assert_match /Ensure Docker is installed.../, output
-      assert_match /Push env files.../, output
+      assert_match /Evaluate and push env files.../, output
       # deploy
       assert_match /Acquiring the deploy lock/, output
       assert_match /Log into image registry/, output
@@ -427,6 +429,7 @@ class CliMainTest < CliTestCase
   end
 
   test "envify" do
+    Pathname.any_instance.expects(:exist?).returns(true).times(3)
     File.expects(:read).with(".env.erb").returns("HELLO=<%= 'world' %>")
     File.expects(:write).with(".env", "HELLO=world", perm: 0600)
 
@@ -441,6 +444,7 @@ class CliMainTest < CliTestCase
       <% end -%>
     EOF
 
+    Pathname.any_instance.expects(:exist?).returns(true).times(3)
     File.expects(:read).with(".env.erb").returns(file.strip)
     File.expects(:write).with(".env", "HELLO=world\nKEY=value\n", perm: 0600)
 
@@ -448,6 +452,7 @@ class CliMainTest < CliTestCase
   end
 
   test "envify with destination" do
+    Pathname.any_instance.expects(:exist?).returns(true).times(4)
     File.expects(:read).with(".env.world.erb").returns("HELLO=<%= 'world' %>")
     File.expects(:write).with(".env.world", "HELLO=world", perm: 0600)
 
@@ -455,6 +460,7 @@ class CliMainTest < CliTestCase
   end
 
   test "envify with skip_push" do
+    Pathname.any_instance.expects(:exist?).returns(true).times(1)
     File.expects(:read).with(".env.erb").returns("HELLO=<%= 'world' %>")
     File.expects(:write).with(".env", "HELLO=world", perm: 0600)
 

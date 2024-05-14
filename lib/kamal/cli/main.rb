@@ -9,7 +9,8 @@ class Kamal::Cli::Main < Kamal::Cli::Base
         say "Ensure Docker is installed...", :magenta
         invoke "kamal:cli:server:bootstrap", [], invoke_options
 
-        say "Push env files...", :magenta
+        say "Evaluate and push env files...", :magenta
+        invoke "kamal:cli:main:envify", [], invoke_options
         invoke "kamal:cli:env:push", [], invoke_options
 
         invoke "kamal:cli:accessory:boot", [ "all" ], invoke_options
@@ -185,11 +186,15 @@ class Kamal::Cli::Main < Kamal::Cli::Base
       env_path          = ".env"
     end
 
-    File.write(env_path, ERB.new(File.read(env_template_path), trim_mode: "-").result, perm: 0600)
+    if Pathname.new(File.expand_path(env_template_path)).exist?
+      File.write(env_path, ERB.new(File.read(env_template_path), trim_mode: "-").result, perm: 0600)
 
-    unless options[:skip_push]
-      reload_envs
-      invoke "kamal:cli:env:push", options
+      unless options[:skip_push]
+        reload_envs
+        invoke "kamal:cli:env:push", options
+      end
+    else
+      puts "Skipping envify (no #{env_template_path} exist)"
     end
   end
 
