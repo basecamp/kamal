@@ -5,11 +5,13 @@ class ConfigurationEnvTagsTest < ActiveSupport::TestCase
     @deploy = {
       service: "app", image: "dhh/app", registry: { "username" => "dhh", "password" => "secret" },
       servers: [ { "1.1.1.1" => "odd" }, { "1.1.1.2" => "even" }, { "1.1.1.3" => [ "odd", "three" ] } ],
-      env: { "REDIS_URL" => "redis://x/y", "THREE" => "false" },
-      env_tags: {
-        "odd" => { "TYPE" => "odd" },
-        "even" => { "TYPE" => "even" },
-        "three" => { "THREE" => "true" }
+      env: {
+        "clear" => { "REDIS_URL" => "redis://x/y", "THREE" => "false" },
+        "tags" => {
+          "odd" => { "TYPE" => "odd" },
+          "even" => { "TYPE" => "even" },
+          "three" => { "THREE" => "true" }
+        }
       }
     }
 
@@ -27,9 +29,11 @@ class ConfigurationEnvTagsTest < ActiveSupport::TestCase
           }
         }
       },
-      env_tags: {
-        "odd" => { "TYPE" => "odd" },
-        "oddjob" => { "TYPE" => "oddjob" }
+      env: {
+        "tags" => {
+          "odd" => { "TYPE" => "odd" },
+          "oddjob" => { "TYPE" => "oddjob" }
+        }
       }
     })
 
@@ -60,9 +64,11 @@ class ConfigurationEnvTagsTest < ActiveSupport::TestCase
     deploy = {
       service: "app", image: "dhh/app", registry: { "username" => "dhh", "password" => "secret" },
       servers: [ { "1.1.1.1" => [ "first", "second" ] } ],
-      env_tags: {
-        "first" => { "TYPE" => "first" },
-        "second" => { "TYPE" => "second" }
+      env: {
+        "tags" => {
+          "first" => { "TYPE" => "first" },
+          "second" => { "TYPE" => "second" }
+        }
       }
     }
 
@@ -76,8 +82,10 @@ class ConfigurationEnvTagsTest < ActiveSupport::TestCase
     deploy = {
       service: "app", image: "dhh/app", registry: { "username" => "dhh", "password" => "secret" },
       servers: [ { "1.1.1.1" => "secrets" } ],
-      env_tags: {
-        "secrets" => { "secret" => [ "PASSWORD" ] }
+      env: {
+        "tags" => {
+          "secrets" => { "secret" => [ "PASSWORD" ] }
+        }
       }
     }
 
@@ -91,8 +99,10 @@ class ConfigurationEnvTagsTest < ActiveSupport::TestCase
     deploy = {
       service: "app", image: "dhh/app", registry: { "username" => "dhh", "password" => "secret" },
       servers: [ { "1.1.1.1" => "clearly" } ],
-      env_tags: {
-        "clearly" => { "clear" => { "FOO" => "bar" } }
+      env: {
+        "tags" => {
+          "clearly" => { "clear" => { "FOO" => "bar" } }
+        }
       }
     }
 

@@ -4,7 +4,7 @@ class Kamal::Configuration::Env
 
   def self.from_config(config:, secrets_file: nil)
     secrets_keys = config.fetch("secret", [])
-    clear = config.fetch("clear", config.key?("secret") ? {} : config)
+    clear = config.fetch("clear", config.key?("secret") || config.key?("tags") ? {} : config)
 
     new clear: clear, secrets_keys: secrets_keys, secrets_file: secrets_file
   end

@@ -82,7 +82,7 @@ class CommandsAppTest < ActiveSupport::TestCase
 
   test "run with tags" do
     @config[:servers] = [ { "1.1.1.1" => "tag1" } ]
-    @config[:env_tags] = { "tag1" => { "ENV1" => "value1" } }
+    @config[:env]["tags"] = { "tag1" => { "ENV1" => "value1" } }
 
     assert_equal \
       "docker run --detach --restart unless-stopped --name app-web-999 -e KAMAL_CONTAINER_NAME=\"app-web-999\" -e KAMAL_VERSION=\"999\" --env-file .kamal/env/roles/app-web.env --env ENV1=\"value1\" --health-cmd \"(curl -f http://localhost:3000/up || exit 1) && (stat /tmp/kamal-cord/cord > /dev/null || exit 1)\" --health-interval \"1s\" --volume $(pwd)/.kamal/cords/app-web-12345678901234567890123456789012:/tmp/kamal-cord --log-opt max-size=\"10m\" --label service=\"app\" --label role=\"web\" --label destination --label traefik.http.services.app-web.loadbalancer.server.scheme=\"http\" --label traefik.http.routers.app-web.rule=\"PathPrefix(\\`/\\`)\" --label traefik.http.routers.app-web.priority=\"2\" --label traefik.http.middlewares.app-web-retry.retry.attempts=\"5\" --label traefik.http.middlewares.app-web-retry.retry.initialinterval=\"500ms\" --label traefik.http.routers.app-web.middlewares=\"app-web-retry@docker\" dhh/app:999",
@@ -194,7 +194,7 @@ class CommandsAppTest < ActiveSupport::TestCase
 
   test "execute in new container with tags" do
     @config[:servers] = [ { "1.1.1.1" => "tag1" } ]
-    @config[:env_tags] = { "tag1" => { "ENV1" => "value1" } }
+    @config[:env]["tags"] = { "tag1" => { "ENV1" => "value1" } }
 
     assert_equal \
       "docker run --rm --env-file .kamal/env/roles/app-web.env --env ENV1=\"value1\" dhh/app:999 bin/rails db:setup",
@@ -227,7 +227,7 @@ class CommandsAppTest < ActiveSupport::TestCase
 
   test "execute in new container over ssh with tags" do
     @config[:servers] = [ { "1.1.1.1" => "tag1" } ]
-    @config[:env_tags] = { "tag1" => { "ENV1" => "value1" } }
+    @config[:env]["tags"] = { "tag1" => { "ENV1" => "value1" } }
 
     assert_equal "ssh -t root@1.1.1.1 -p 22 'docker run -it --rm --env-file .kamal/env/roles/app-web.env --env ENV1=\"value1\" dhh/app:999 bin/rails c'",
       new_command.execute_in_new_container_over_ssh("bin/rails", "c", env: {})
