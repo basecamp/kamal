@@ -10,12 +10,12 @@ env:
     HOST_TOKEN: "${HOST_TOKEN}"
   secret:
     - SECRET_TOKEN
-env_tags:
-  tag1:
-    CLEAR_TAG: tagged
-  tag2:
-    secret:
-      - SECRET_TAG
+  tags:
+    tag1:
+      CLEAR_TAG: tagged
+    tag2:
+      secret:
+        - SECRET_TAG
 asset_path: /usr/share/nginx/html/versions
 
 registry:

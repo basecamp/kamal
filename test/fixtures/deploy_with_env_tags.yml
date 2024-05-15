@@ -15,13 +15,12 @@ env:
   clear:
     TEST: "root"
     EXPERIMENT: "disabled"
-env_tags:
-  site1:
-    SITE: site1
-  site2:
-    SITE: site2
-  experimental:
-    env:
+  tags:
+    site1:
+      SITE: site1
+    site2:
+      SITE: site2
+    experimental:
       EXPERIMENT: "enabled"
 
 registry:
