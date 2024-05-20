@@ -192,8 +192,8 @@ class Kamal::Cli::Main < Kamal::Cli::Base
   desc "remove", "Remove Traefik, app, accessories, and registry session from servers"
   option :confirmed, aliases: "-y", type: :boolean, default: false, desc: "Proceed without confirmation question"
   def remove
-    mutating do
-      confirming "This will remove all containers and images. Are you sure?" do
+    confirming "This will remove all containers and images. Are you sure?" do
+      mutating do
         invoke "kamal:cli:traefik:remove", [], options.without(:confirmed)
         invoke "kamal:cli:app:remove", [], options.without(:confirmed)
         invoke "kamal:cli:accessory:remove", [ "all" ], options
