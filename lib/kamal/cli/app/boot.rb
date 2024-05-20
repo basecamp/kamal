@@ -22,18 +22,6 @@ class Kamal::Cli::App::Boot
   end
 
   private
-    def app
-      @app ||= KAMAL.app(role: role, host: host)
-    end
-
-    def auditor
-      @auditor = KAMAL.auditor(role: role)
-    end
-
-    def audit(message)
-      execute *auditor.record(message), verbosity: :debug
-    end
-
     def old_version_renamed_if_clashing
       if capture_with_info(*app.container_id_for_version(version), raise_on_non_zero_exit: false).present?
         renamed_version = "#{version}_replaced_#{SecureRandom.hex(8)}"
@@ -105,7 +93,7 @@ class Kamal::Cli::App::Boot
     end
 
     def app
-      @app ||= KAMAL.app(role: role)
+      @app ||= KAMAL.app(role: role, host: host)
     end
 
     def auditor
