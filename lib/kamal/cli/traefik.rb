@@ -1,7 +1,7 @@
 class Kamal::Cli::Traefik < Kamal::Cli::Base
   desc "boot", "Boot Traefik on servers"
   def boot
-    mutating do
+    with_lock do
       on(KAMAL.traefik_hosts) do
         execute *KAMAL.registry.login
         execute *KAMAL.traefik.start_or_run
@@ -14,7 +14,7 @@ class Kamal::Cli::Traefik < Kamal::Cli::Base
   option :confirmed, aliases: "-y", type: :boolean, default: false, desc: "Proceed without confirmation question"
   def reboot
     confirming "This will cause a brief outage on each host. Are you sure?" do
-      mutating do
+      with_lock do
         host_groups = options[:rolling] ? KAMAL.traefik_hosts : [ KAMAL.traefik_hosts ]
         host_groups.each do |hosts|
           host_list = Array(hosts).join(",")
@@ -34,7 +34,7 @@ class Kamal::Cli::Traefik < Kamal::Cli::Base
 
   desc "start", "Start existing Traefik container on servers"
   def start
-    mutating do
+    with_lock do
       on(KAMAL.traefik_hosts) do
         execute *KAMAL.auditor.record("Started traefik"), verbosity: :debug
         execute *KAMAL.traefik.start
@@ -44,7 +44,7 @@ class Kamal::Cli::Traefik < Kamal::Cli::Base
 
   desc "stop", "Stop existing Traefik container on servers"
   def stop
-    mutating do
+    with_lock do
       on(KAMAL.traefik_hosts) do
         execute *KAMAL.auditor.record("Stopped traefik"), verbosity: :debug
         execute *KAMAL.traefik.stop, raise_on_non_zero_exit: false
@@ -54,7 +54,7 @@ class Kamal::Cli::Traefik < Kamal::Cli::Base
 
   desc "restart", "Restart existing Traefik container on servers"
   def restart
-    mutating do
+    with_lock do
       stop
       start
     end
@@ -91,7 +91,7 @@ class Kamal::Cli::Traefik < Kamal::Cli::Base
 
   desc "remove", "Remove Traefik container and image from servers"
   def remove
-    mutating do
+    with_lock do
       stop
       remove_container
       remove_image
@@ -100,7 +100,7 @@ class Kamal::Cli::Traefik < Kamal::Cli::Base
 
   desc "remove_container", "Remove Traefik container from servers", hide: true
   def remove_container
-    mutating do
+    with_lock do
       on(KAMAL.traefik_hosts) do
         execute *KAMAL.auditor.record("Removed traefik container"), verbosity: :debug
         execute *KAMAL.traefik.remove_container
@@ -110,7 +110,7 @@ class Kamal::Cli::Traefik < Kamal::Cli::Base
 
   desc "remove_image", "Remove Traefik image from servers", hide: true
   def remove_image
-    mutating do
+    with_lock do
       on(KAMAL.traefik_hosts) do
         execute *KAMAL.auditor.record("Removed traefik image"), verbosity: :debug
         execute *KAMAL.traefik.remove_image

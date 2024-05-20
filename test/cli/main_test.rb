@@ -93,6 +93,9 @@ class CliMainTest < CliTestCase
     Thread.report_on_exception = false
 
     SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+    Dir.stubs(:chdir)
+
+    SSHKit::Backend::Abstract.any_instance.stubs(:execute)
       .with { |*args| args == [ :mkdir, "-p", ".kamal" ] }
 
     SSHKit::Backend::Abstract.any_instance.stubs(:execute)
@@ -112,6 +115,9 @@ class CliMainTest < CliTestCase
 
   test "deploy error when locking" do
     Thread.report_on_exception = false
+
+    SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+    Dir.stubs(:chdir)
 
     SSHKit::Backend::Abstract.any_instance.stubs(:execute)
       .with { |*args| args == [ :mkdir, "-p", ".kamal" ] }

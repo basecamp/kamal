@@ -3,7 +3,7 @@ require "tempfile"
 class Kamal::Cli::Env < Kamal::Cli::Base
   desc "push", "Push the env file to the remote hosts"
   def push
-    mutating do
+    with_lock do
       on(KAMAL.hosts) do
         execute *KAMAL.auditor.record("Pushed env files"), verbosity: :debug
 
@@ -30,7 +30,7 @@ class Kamal::Cli::Env < Kamal::Cli::Base
 
   desc "delete", "Delete the env file from the remote hosts"
   def delete
-    mutating do
+    with_lock do
       on(KAMAL.hosts) do
         execute *KAMAL.auditor.record("Deleted env files"), verbosity: :debug
 

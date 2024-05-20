@@ -1,7 +1,7 @@
 class Kamal::Cli::Prune < Kamal::Cli::Base
   desc "all", "Prune unused images and stopped containers"
   def all
-    mutating do
+    with_lock do
       containers
       images
     end
@@ -9,7 +9,7 @@ class Kamal::Cli::Prune < Kamal::Cli::Base
 
   desc "images", "Prune unused images"
   def images
-    mutating do
+    with_lock do
       on(KAMAL.hosts) do
         execute *KAMAL.auditor.record("Pruned images"), verbosity: :debug
         execute *KAMAL.prune.dangling_images
@@ -24,7 +24,7 @@ class Kamal::Cli::Prune < Kamal::Cli::Base
     retain = options.fetch(:retain, KAMAL.config.retain_containers)
     raise "retain must be at least 1" if retain < 1
 
-    mutating do
+    with_lock do
       on(KAMAL.hosts) do
         execute *KAMAL.auditor.record("Pruned containers"), verbosity: :debug
         execute *KAMAL.prune.app_containers(retain: retain)

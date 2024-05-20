@@ -3,7 +3,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
   option :skip_push, aliases: "-P", type: :boolean, default: false, desc: "Skip image build and push"
   def setup
     print_runtime do
-      mutating do
+      with_lock do
         invoke_options = deploy_options
 
         say "Ensure Docker is installed...", :magenta
@@ -22,22 +22,22 @@ class Kamal::Cli::Main < Kamal::Cli::Base
   option :skip_push, aliases: "-P", type: :boolean, default: false, desc: "Skip image build and push"
   def deploy
     runtime = print_runtime do
-      mutating do
-        invoke_options = deploy_options
+      invoke_options = deploy_options
 
-        say "Log into image registry...", :magenta
-        invoke "kamal:cli:registry:login", [], invoke_options
+      say "Log into image registry...", :magenta
+      invoke "kamal:cli:registry:login", [], invoke_options
 
-        if options[:skip_push]
-          say "Pull app image...", :magenta
-          invoke "kamal:cli:build:pull", [], invoke_options
-        else
-          say "Build and push app image...", :magenta
-          invoke "kamal:cli:build:deliver", [], invoke_options
-        end
+      if options[:skip_push]
+        say "Pull app image...", :magenta
+        invoke "kamal:cli:build:pull", [], invoke_options
+      else
+        say "Build and push app image...", :magenta
+        invoke "kamal:cli:build:deliver", [], invoke_options
+      end
 
-        run_hook "pre-deploy"
+      run_hook "pre-deploy"
 
+      with_lock do
         say "Ensure Traefik is running...", :magenta
         invoke "kamal:cli:traefik:boot", [], invoke_options
 
@@ -58,17 +58,17 @@ class Kamal::Cli::Main < Kamal::Cli::Base
   option :skip_push, aliases: "-P", type: :boolean, default: false, desc: "Skip image build and push"
   def redeploy
     runtime = print_runtime do
-      mutating do
-        invoke_options = deploy_options
+      invoke_options = deploy_options
 
-        if options[:skip_push]
-          say "Pull app image...", :magenta
-          invoke "kamal:cli:build:pull", [], invoke_options
-        else
-          say "Build and push app image...", :magenta
-          invoke "kamal:cli:build:deliver", [], invoke_options
-        end
+      if options[:skip_push]
+        say "Pull app image...", :magenta
+        invoke "kamal:cli:build:pull", [], invoke_options
+      else
+        say "Build and push app image...", :magenta
+        invoke "kamal:cli:build:deliver", [], invoke_options
+      end
 
+      with_lock do
         run_hook "pre-deploy"
 
         say "Detect stale containers...", :magenta
@@ -85,7 +85,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
   def rollback(version)
     rolled_back = false
     runtime = print_runtime do
-      mutating do
+      with_lock do
         invoke_options = deploy_options
 
         KAMAL.config.version = version
@@ -193,7 +193,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
   option :confirmed, aliases: "-y", type: :boolean, default: false, desc: "Proceed without confirmation question"
   def remove
     confirming "This will remove all containers and images. Are you sure?" do
-      mutating do
+      with_lock do
         invoke "kamal:cli:traefik:remove", [], options.without(:confirmed)
         invoke "kamal:cli:app:remove", [], options.without(:confirmed)
         invoke "kamal:cli:accessory:remove", [ "all" ], options

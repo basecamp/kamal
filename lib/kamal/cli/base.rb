@@ -79,27 +79,27 @@ module Kamal::Cli
         puts "  Finished all in #{sprintf("%.1f seconds", runtime)}"
       end
 
-      def mutating(mutates: true)
-        return yield if KAMAL.holding_lock? || !mutates
-
-        run_hook "pre-connect"
-
-        ensure_run_and_locks_directory
-
-        acquire_lock
-
-        begin
+      def with_lock
+        if KAMAL.holding_lock?
           yield
-        rescue
-          begin
-            release_lock
-          rescue => e
-            say "Error releasing the deploy lock: #{e.message}", :red
-          end
-          raise
-        end
+        else
+          ensure_run_and_locks_directory
 
-        release_lock
+          acquire_lock
+
+          begin
+            yield
+          rescue
+            begin
+              release_lock
+            rescue => e
+              say "Error releasing the deploy lock: #{e.message}", :red
+            end
+            raise
+          end
+
+          release_lock
+        end
       end
 
       def confirming(question)
@@ -151,6 +151,15 @@ module Kamal::Cli
             raise HookError.new("Hook `#{hook}` failed:\n#{e.message}")
           end
         end
+      end
+
+      def on(*args, &block)
+        if !KAMAL.connected?
+          run_hook "pre-connect"
+          KAMAL.connected = true
+        end
+
+        super
       end
 
       def command
