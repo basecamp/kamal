@@ -96,7 +96,7 @@ class Kamal::Configuration::Builder
   end
 
   def clone_directory
-    @clone_directory ||= File.join Dir.tmpdir, "kamal-clones", [ @service, @destination, pwd_sha ].compact.join("-")
+    @clone_directory ||= File.join Dir.tmpdir, "kamal-clones", [ @service, pwd_sha ].compact.join("-")
   end
 
   def build_directory
