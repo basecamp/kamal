@@ -3,6 +3,8 @@ class Kamal::Configuration::Builder
     @options = config.raw_config.builder || {}
     @image = config.image
     @server = config.registry["server"]
+    @service = config.service
+    @destination = config.destination
 
     valid?
   end
@@ -44,7 +46,7 @@ class Kamal::Configuration::Builder
   end
 
   def context
-    @options["context"] || (git_archive? ? "-" : ".")
+    @options["context"] || "."
   end
 
   def local_arch
@@ -89,8 +91,21 @@ class Kamal::Configuration::Builder
     @options["ssh"]
   end
 
-  def git_archive?
+  def git_clone?
     Kamal::Git.used? && @options["context"].nil?
+  end
+
+  def clone_directory
+    @clone_directory ||= File.join Dir.tmpdir, "kamal-clones", [ @service, pwd_sha ].compact.join("-")
+  end
+
+  def build_directory
+    @build_directory ||=
+      if git_clone?
+        File.join clone_directory, repo_basename, repo_relative_pwd
+      else
+        "."
+      end
   end
 
   private
@@ -122,5 +137,17 @@ class Kamal::Configuration::Builder
 
     def cache_to_config_for_registry
       [ "type=registry", @options["cache"]&.fetch("options", nil), "ref=#{cache_image_ref}" ].compact.join(",")
+    end
+
+    def repo_basename
+      File.basename(Kamal::Git.root)
+    end
+
+    def repo_relative_pwd
+      Dir.pwd.delete_prefix(Kamal::Git.root)
+    end
+
+    def pwd_sha
+      Digest::SHA256.hexdigest(Dir.pwd)[0..12]
     end
 end

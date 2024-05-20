@@ -19,21 +19,34 @@ class Kamal::Cli::Build < Kamal::Cli::Base
       verify_local_dependencies
       run_hook "pre-build"
 
-      if (uncommitted_changes = Kamal::Git.uncommitted_changes).present?
-        say "The following paths have uncommitted changes:\n #{uncommitted_changes}", :yellow
+      uncommitted_changes = Kamal::Git.uncommitted_changes
+
+      if KAMAL.config.builder.git_clone?
+        if uncommitted_changes.present?
+          say "Building from a local git clone, so ignoring these uncommitted changes:\n #{uncommitted_changes}", :yellow
+        end
+
+        prepare_clone
+      elsif uncommitted_changes.present?
+        say "Building with uncommitted changes:\n #{uncommitted_changes}", :yellow
       end
+
+      # Get the command here to ensure the Dir.chdir doesn't interfere with it
+      push = KAMAL.builder.push
 
       run_locally do
         begin
           KAMAL.with_verbosity(:debug) do
-            execute *KAMAL.builder.push
+            Dir.chdir(KAMAL.config.builder.build_directory) { execute *push }
           end
         rescue SSHKit::Command::Failed => e
           if e.message =~ /(no builder)|(no such file or directory)/
             warn "Missing compatible builder, so creating a new one first"
 
             if cli.create
-              KAMAL.with_verbosity(:debug) { execute *KAMAL.builder.push }
+              KAMAL.with_verbosity(:debug) do
+                Dir.chdir(KAMAL.config.builder.build_directory) { execute *push }
+              end
             end
           else
             raise
@@ -117,6 +130,25 @@ class Kamal::Cli::Build < Kamal::Cli::Base
         options = { user: remote_uri.user, port: remote_uri.port }.compact
         on(remote_uri.host, options) do
           execute "true"
+        end
+      end
+    end
+
+    def prepare_clone
+      run_locally do
+        begin
+          info "Cloning repo into build directory `#{KAMAL.config.builder.build_directory}`..."
+
+          execute *KAMAL.builder.create_clone_directory
+          execute *KAMAL.builder.clone
+        rescue SSHKit::Command::Failed => e
+          if e.message =~ /already exists and is not an empty directory/
+            info "Resetting local clone as `#{KAMAL.config.builder.build_directory}` already exists..."
+
+            KAMAL.builder.clone_reset_steps.each { |step| execute *step }
+          else
+            raise
+          end
         end
       end
     end

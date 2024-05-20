@@ -16,4 +16,8 @@ module Kamal::Git
   def uncommitted_changes
     `git status --porcelain`.strip
   end
+
+  def root
+    `git rev-parse --show-toplevel`.strip
+  end
 end

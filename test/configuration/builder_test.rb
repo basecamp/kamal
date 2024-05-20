@@ -140,7 +140,7 @@ class ConfigurationBuilderTest < ActiveSupport::TestCase
   end
 
   test "context" do
-    assert_equal "-", @config.builder.context
+    assert_equal ".", @config.builder.context
   end
 
   test "setting context" do

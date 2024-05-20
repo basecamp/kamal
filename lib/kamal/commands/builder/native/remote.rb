@@ -17,6 +17,15 @@ class Kamal::Commands::Builder::Native::Remote < Kamal::Commands::Builder::Nativ
       docker(:buildx, :ls)
   end
 
+  def push
+    docker :buildx, :build,
+    "--push",
+    "--platform", platform,
+    "--builder", builder_name,
+    *build_options,
+    build_context
+  end
+
 
   private
     def builder_name
@@ -46,14 +55,5 @@ class Kamal::Commands::Builder::Native::Remote < Kamal::Commands::Builder::Nativ
 
     def remove_buildx
       docker :buildx, :rm, builder_name
-    end
-
-    def build_and_push
-      docker :buildx, :build,
-      "--push",
-      "--platform", platform,
-      "--builder", builder_name,
-      *build_options,
-      build_context
     end
 end
