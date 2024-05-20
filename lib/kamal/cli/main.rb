@@ -35,9 +35,9 @@ class Kamal::Cli::Main < Kamal::Cli::Base
         invoke "kamal:cli:build:deliver", [], invoke_options
       end
 
-      run_hook "pre-deploy"
-
       with_lock do
+        run_hook "pre-deploy"
+
         say "Ensure Traefik is running...", :magenta
         invoke "kamal:cli:traefik:boot", [], invoke_options
 
