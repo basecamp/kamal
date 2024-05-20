@@ -48,8 +48,6 @@ class Kamal::Cli::Build < Kamal::Cli::Base
         else
           raise
         end
-      else
-        raise
       end
     end
   end
