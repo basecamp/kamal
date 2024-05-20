@@ -174,17 +174,12 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
   desc "remove [NAME]", "Remove accessory container, image and data directory from host (use NAME=all to remove all accessories)"
   option :confirmed, aliases: "-y", type: :boolean, default: false, desc: "Proceed without confirmation question"
   def remove(name)
-    mutating do
-      if name == "all"
-        KAMAL.accessory_names.each { |accessory_name| remove(accessory_name) }
-      else
-        confirming "This will remove all containers, images and data directories for #{name}. Are you sure?" do
-          with_accessory(name) do
-            stop(name)
-            remove_container(name)
-            remove_image(name)
-            remove_service_directory(name)
-          end
+    confirming "This will remove all containers, images and data directories for #{name}. Are you sure?" do
+      mutating do
+        if name == "all"
+          KAMAL.accessory_names.each { |accessory_name| remove_accessory(accessory_name) }
+        else
+          remove_accessory(name)
         end
       end
     end
@@ -248,6 +243,15 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
         KAMAL.specific_hosts & accessory.hosts
       else
         accessory.hosts
+      end
+    end
+
+    def remove_accessory(name)
+      with_accessory(name) do
+        stop(name)
+        remove_container(name)
+        remove_image(name)
+        remove_service_directory(name)
       end
     end
 end
