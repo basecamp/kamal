@@ -234,7 +234,11 @@ class Kamal::Configuration
   end
 
   def env_tags
-    raw_config.env["tags"].collect { |name, config| Kamal::Configuration::Env::Tag.new(name, config: config) }
+    @env_tags ||= if (tags = raw_config.env["tags"])
+      tags.collect { |name, config| Kamal::Configuration::Env::Tag.new(name, config: config) }
+    else
+      []
+    end
   end
 
   def env_tag(name)
