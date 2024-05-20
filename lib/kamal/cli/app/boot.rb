@@ -43,8 +43,8 @@ class Kamal::Cli::App::Boot
 
       reach_barrier
     rescue => e
-      if barrier_role? && barrier.close
-        info "Deploy failed, so closed barrier (#{host})"
+      if barrier_role? && barrier&.close
+        info "First #{KAMAL.primary_role} container unhealthy, stopping other roles (#{host})"
         error capture_with_info(*app.logs(version: version))
         error capture_with_info(*app.container_health_log(version: version))
       end
@@ -71,7 +71,7 @@ class Kamal::Cli::App::Boot
       if barrier
         if barrier_role?
           if barrier.open
-            info "Opened barrier (#{host})"
+            info "First #{KAMAL.primary_role} container healthy, continuing other roles (#{host})"
           end
         else
           wait_for_barrier
@@ -80,11 +80,11 @@ class Kamal::Cli::App::Boot
     end
 
     def wait_for_barrier
-      info "Waiting at web barrier (#{host})..."
+      info "Waiting for a healthy #{KAMAL.primary_role} container (#{host})..."
       barrier.wait
-      info "Barrier opened (#{host})"
+      info "First #{KAMAL.primary_role} container is healthy, continuing (#{host})"
     rescue Kamal::Cli::Healthcheck::Error
-      info "Barrier closed, shutting down new container (#{host})..."
+      info "First #{KAMAL.primary_role} container is unhealthy, stopping (#{host})"
       raise
     end
 

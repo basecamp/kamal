@@ -25,9 +25,9 @@ class BrokenDeployTest < IntegrationTest
 
   private
     def assert_failed_deploy(output)
-      assert_match "Waiting at web barrier (vm3)...", output
-      assert_match /Deploy failed, so closed barrier \(vm[12]\)/, output
-      assert_match "Barrier closed, shutting down new container (vm3)...", output
+      assert_match "Waiting for a healthy web container (vm3)...", output
+      assert_match /First #{KAMAL.primary_role} container is unhealthy, stopping \(vm[12]\)/, output
+      assert_match "First #{KAMAL.primary_role} container unhealthy, stopping other roles (vm3)...", output
       assert_match "nginx: [emerg] unexpected end of file, expecting \";\" or \"}\" in /etc/nginx/conf.d/default.conf:2", output
       assert_match 'ERROR {"Status":"unhealthy","FailingStreak":0,"Log":[]}', output
     end
