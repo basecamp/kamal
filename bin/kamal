@@ -7,15 +7,6 @@ require "kamal"
 
 begin
   Kamal::Cli::Main.start(ARGV)
-rescue SSHKit::Runner::MultipleExecuteError => e
-  e.execute_errors.each do |execute_error|
-    puts "  \e[31mERROR (#{execute_error.cause.class}): #{execute_error.message}\e[0m"
-  end
-  if ENV["VERBOSE"]
-    puts "Backtrace for the first error:"
-    puts e.execute_errors.first.cause.backtrace
-  end
-  exit 1
 rescue SSHKit::Runner::ExecuteError => e
   puts "  \e[31mERROR (#{e.cause.class}): #{e.message}\e[0m"
   puts e.cause.backtrace if ENV["VERBOSE"]

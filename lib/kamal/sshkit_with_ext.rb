@@ -104,14 +104,6 @@ class SSHKit::Backend::Netssh
   prepend LimitConcurrentStartsInstance
 end
 
-class SSHKit::Runner::MultipleExecuteError < SSHKit::StandardError
-  attr_reader :execute_errors
-
-  def initialize(execute_errors)
-    @execute_errors = execute_errors
-  end
-end
-
 class SSHKit::Runner::Parallel
   # SSHKit joins the threads in sequence and fails on the first error it encounters, which means that we wait threads
   # before the first failure to complete but not for ones after.
@@ -140,7 +132,7 @@ class SSHKit::Runner::Parallel
       if exceptions.one?
         raise exceptions.first
       elsif exceptions.many?
-        raise SSHKit::Runner::MultipleExecuteError.new(exceptions)
+        raise exceptions.first, [ "Exceptions on #{exceptions.count} hosts:", exceptions.map(&:message) ].join("\n")
       end
     end
   end

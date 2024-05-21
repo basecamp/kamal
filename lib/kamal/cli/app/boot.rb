@@ -14,7 +14,17 @@ class Kamal::Cli::App::Boot
   def run
     old_version = old_version_renamed_if_clashing
 
-    start_new_version
+    wait_at_barrier if queuer?
+
+    begin
+      start_new_version
+    rescue => e
+      close_barrier if gatekeeper?
+      stop_new_version
+      raise
+    end
+
+    release_barrier if gatekeeper?
 
     if old_version
       stop_old_version(old_version)
@@ -34,22 +44,16 @@ class Kamal::Cli::App::Boot
     end
 
     def start_new_version
-      wait_at_barrier if queuer?
-
       audit "Booted app version #{version}"
 
       execute *app.tie_cord(role.cord_host_file) if uses_cord?
       hostname = "#{host.to_s[0...51].gsub(/\.+$/, '')}-#{SecureRandom.hex(6)}"
       execute *app.run(hostname: hostname)
       Kamal::Cli::Healthcheck::Poller.wait_for_healthy(pause_after_ready: true) { capture_with_info(*app.status(version: version)) }
+    end
 
-      release_barrier if gatekeeper?
-    rescue => e
-      close_barrier if gatekeeper?
-
+    def stop_new_version
       execute *app.stop(version: version), raise_on_non_zero_exit: false
-
-      raise
     end
 
     def stop_old_version(version)
@@ -68,22 +72,22 @@ class Kamal::Cli::App::Boot
 
     def release_barrier
       if barrier.open
-        info "First #{KAMAL.primary_role} container healthy, continuing other roles (#{host})"
+        info "First #{KAMAL.primary_role} container is healthy on #{host}, booting other roles"
       end
     end
 
     def wait_at_barrier
-      info "Waiting for a healthy #{KAMAL.primary_role} container (#{host})..."
+      info "Waiting for the first healthy #{KAMAL.primary_role} container before booting #{role} on #{host}..."
       barrier.wait
-      info "First #{KAMAL.primary_role} container is healthy, continuing (#{host})"
+      info "First #{KAMAL.primary_role} container is healthy, booting #{role} on #{host}..."
     rescue Kamal::Cli::Healthcheck::Error
-      info "First #{KAMAL.primary_role} container is unhealthy, stopping (#{host})"
+      info "First #{KAMAL.primary_role} container is unhealthy, not booting #{role} on #{host}"
       raise
     end
 
     def close_barrier
       if barrier.close
-        info "First #{KAMAL.primary_role} container unhealthy, stopping other roles (#{host})"
+        info "First #{KAMAL.primary_role} container is unhealthy on #{host}, not booting other roles"
         error capture_with_info(*app.logs(version: version))
         error capture_with_info(*app.container_health_log(version: version))
       end

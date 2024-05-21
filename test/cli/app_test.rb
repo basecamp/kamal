@@ -136,11 +136,11 @@ class CliAppTest < CliTestCase
       .returns("running").at_least_once # workers health check
 
     run_command("boot", config: :with_roles, host: nil).tap do |output|
-      assert_match "Waiting for a healthy web container (1.1.1.3)...", output
-      assert_match "Waiting for a healthy web container (1.1.1.4)...", output
-      assert_match "First web container is healthy, continuing (1.1.1.3)", output
-      assert_match "First web container is healthy, continuing (1.1.1.4)", output
-    end
+      assert_match "Waiting for the first healthy web container before booting workers on 1.1.1.3...", output
+      assert_match "Waiting for the first healthy web container before booting workers on 1.1.1.4...", output
+      assert_match "First web container is healthy, booting workers on 1.1.1.3", output
+      assert_match "First web container is healthy, booting workers on 1.1.1.4", output
+  end
   end
 
   test "boot with web barrier closed" do
@@ -156,14 +156,12 @@ class CliAppTest < CliTestCase
 
     stderred do
       run_command("boot", config: :with_roles, host: nil, allow_execute_error: true).tap do |output|
-        assert_match "Waiting for a healthy web container (1.1.1.3)...", output
-        assert_match "Waiting for a healthy web container (1.1.1.4)...", output
-        assert_match "First web container is unhealthy, stopping (1.1.1.3)", output
-        assert_match "First web container is unhealthy, stopping (1.1.1.4)", output
+        assert_match "Waiting for the first healthy web container before booting workers on 1.1.1.3...", output
+        assert_match "Waiting for the first healthy web container before booting workers on 1.1.1.4...", output
+        assert_match "First web container is unhealthy, not booting workers on 1.1.1.3", output
+        assert_match "First web container is unhealthy, not booting workers on 1.1.1.4", output
         assert_match "Running docker container ls --all --filter name=^app-web-latest$ --quiet | xargs docker stop on 1.1.1.1", output
         assert_match "Running docker container ls --all --filter name=^app-web-latest$ --quiet | xargs docker stop on 1.1.1.2", output
-        assert_match "Running docker container ls --all --filter name=^app-workers-latest$ --quiet | xargs docker stop on 1.1.1.3", output
-        assert_match "Running docker container ls --all --filter name=^app-workers-latest$ --quiet | xargs docker stop on 1.1.1.4", output
       end
     end
   ensure
