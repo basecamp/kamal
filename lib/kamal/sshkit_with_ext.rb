@@ -104,33 +104,46 @@ class SSHKit::Backend::Netssh
   prepend LimitConcurrentStartsInstance
 end
 
-require "thread"
+class SSHKit::Runner::MultipleExecuteError < SSHKit::StandardError
+  attr_reader :execute_errors
 
-module SSHKit
-  module Runner
-    class ParallelCompleteAll < Abstract
-      def execute
-        threads = hosts.map do |host|
-          Thread.new(host) do |h|
-            begin
-              backend(h, &block).run
-            rescue ::StandardError => e
-              e2 = SSHKit::Runner::ExecuteError.new e
-              raise e2, "Exception while executing #{host.user ? "as #{host.user}@" : "on host "}#{host}: #{e.message}"
-            end
-          end
-        end
+  def initialize(execute_errors)
+    @execute_errors = execute_errors
+  end
+end
 
-        exception = nil
-        threads.each do |t|
-          begin
-            t.join
-          rescue SSHKit::Runner::ExecuteError => e
-            exception ||= e
-          end
+class SSHKit::Runner::Parallel
+  # SSHKit joins the threads in sequence and fails on the first error it encounters, which means that we wait threads
+  # before the first failure to complete but not for ones after.
+  #
+  # We'll patch it to wait for them all to complete, and to record all the threads that errored so we can see when a
+  # problem occurs on multiple hosts.
+  module CompleteAll
+    def execute
+      threads = hosts.map do |host|
+        Thread.new(host) do |h|
+          backend(h, &block).run
+        rescue ::StandardError => e
+          e2 = SSHKit::Runner::ExecuteError.new e
+          raise e2, "Exception while executing #{host.user ? "as #{host.user}@" : "on host "}#{host}: #{e.message}"
         end
-        raise exception if exception
+      end
+
+      exceptions = []
+      threads.each do |t|
+        begin
+          t.join
+        rescue SSHKit::Runner::ExecuteError => e
+          exceptions << e
+        end
+      end
+      if exceptions.one?
+        raise exceptions.first
+      elsif exceptions.many?
+        raise SSHKit::Runner::MultipleExecuteError.new(exceptions)
       end
     end
   end
+
+  prepend CompleteAll
 end
