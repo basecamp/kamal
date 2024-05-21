@@ -41,11 +41,6 @@ class Kamal::Cli::Main < Kamal::Cli::Base
         say "Ensure Traefik is running...", :magenta
         invoke "kamal:cli:traefik:boot", [], invoke_options
 
-        if KAMAL.config.role(KAMAL.config.primary_role).running_traefik?
-          say "Ensure app can pass healthcheck...", :magenta
-          invoke "kamal:cli:healthcheck:perform", [], invoke_options
-        end
-
         say "Detect stale containers...", :magenta
         invoke "kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true)
 
@@ -75,9 +70,6 @@ class Kamal::Cli::Main < Kamal::Cli::Base
         end
 
         run_hook "pre-deploy"
-
-        say "Ensure app can pass healthcheck...", :magenta
-        invoke "kamal:cli:healthcheck:perform", [], invoke_options
 
         say "Detect stale containers...", :magenta
         invoke "kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true)
@@ -227,9 +219,6 @@ class Kamal::Cli::Main < Kamal::Cli::Base
   desc "env", "Manage environment files"
   subcommand "env", Kamal::Cli::Env
 
-  desc "healthcheck", "Healthcheck application"
-  subcommand "healthcheck", Kamal::Cli::Healthcheck
-
   desc "lock", "Manage the deploy lock"
   subcommand "lock", Kamal::Cli::Lock
 
@@ -254,7 +243,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
             raise "Container not found" unless container_id.present?
           end
         end
-      rescue SSHKit::Runner::ExecuteError => e
+      rescue SSHKit::Runner::ExecuteError, SSHKit::Runner::MultipleExecuteError => e
         if e.message =~ /Container not found/
           say "Error looking for container version #{version}: #{e.message}"
           return false

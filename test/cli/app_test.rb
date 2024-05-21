@@ -118,6 +118,56 @@ class CliAppTest < CliTestCase
     end
   end
 
+  test "boot with web barrier opened" do
+    Object.any_instance.stubs(:sleep)
+
+    SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info).returns("123") # old version
+
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-latest$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
+      .returns("running").at_least_once # web health check passing
+
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-123$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
+      .returns("unhealthy").at_least_once # web health check failing
+
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-workers-latest$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
+      .returns("running").at_least_once # workers health check
+
+    run_command("boot", config: :with_roles, host: nil).tap do |output|
+      assert_match "Waiting for the first healthy web container before booting workers on 1.1.1.3...", output
+      assert_match "Waiting for the first healthy web container before booting workers on 1.1.1.4...", output
+      assert_match "First web container is healthy, booting workers on 1.1.1.3", output
+      assert_match "First web container is healthy, booting workers on 1.1.1.4", output
+  end
+  end
+
+  test "boot with web barrier closed" do
+    Thread.report_on_exception = false
+
+    Object.any_instance.stubs(:sleep)
+
+    SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info).returns("123") # old version
+
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-latest$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
+      .returns("unhealthy").at_least_once # web health check failing
+
+    stderred do
+      run_command("boot", config: :with_roles, host: nil, allow_execute_error: true).tap do |output|
+        assert_match "Waiting for the first healthy web container before booting workers on 1.1.1.3...", output
+        assert_match "Waiting for the first healthy web container before booting workers on 1.1.1.4...", output
+        assert_match "First web container is unhealthy, not booting workers on 1.1.1.3", output
+        assert_match "First web container is unhealthy, not booting workers on 1.1.1.4", output
+        assert_match "Running docker container ls --all --filter name=^app-web-latest$ --quiet | xargs docker stop on 1.1.1.1", output
+        assert_match "Running docker container ls --all --filter name=^app-web-latest$ --quiet | xargs docker stop on 1.1.1.2", output
+      end
+    end
+  ensure
+    Thread.report_on_exception = true
+  end
+
   test "start" do
     run_command("start").tap do |output|
       assert_match "docker start app-web-999", output
@@ -283,8 +333,12 @@ class CliAppTest < CliTestCase
   end
 
   private
-    def run_command(*command, config: :with_accessories)
-      stdouted { Kamal::Cli::App.start([ *command, "-c", "test/fixtures/deploy_#{config}.yml", "--hosts", "1.1.1.1" ]) }
+    def run_command(*command, config: :with_accessories, host: "1.1.1.1", allow_execute_error: false)
+      stdouted do
+        Kamal::Cli::App.start([ *command, "-c", "test/fixtures/deploy_#{config}.yml", *([ "--hosts", host ] if host) ])
+      rescue SSHKit::Runner::ExecuteError => e
+        raise e unless allow_execute_error
+      end
     end
 
     def stub_running
