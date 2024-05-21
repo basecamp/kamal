@@ -6,7 +6,6 @@ class CliMainTest < CliTestCase
 
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:server:bootstrap", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:main:envify", [], invoke_options)
-    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:env:push", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:accessory:boot", [ "all" ], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:deploy)
 
@@ -20,7 +19,6 @@ class CliMainTest < CliTestCase
     invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false }
 
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:server:bootstrap", [], invoke_options)
-    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:env:push", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:main:envify", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:accessory:boot", [ "all" ], invoke_options)
     # deploy
