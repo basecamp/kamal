@@ -13,7 +13,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
           end
         end
 
-        # Primary hosts and roles are returned first, so they can open the barrier
+        # Primary hosts and roles are returned first, so they can open the barrier
         barrier = Kamal::Cli::Healthcheck::Barrier.new if KAMAL.roles.many?
 
         on(KAMAL.hosts, **KAMAL.boot_strategy) do |host|
