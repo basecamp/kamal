@@ -1,33 +1,31 @@
 class Kamal::Cli::App < Kamal::Cli::Base
   desc "boot", "Boot app on servers (or reboot app if already running)"
   def boot
-    mutating do
-      hold_lock_on_error do
-        say "Get most recent version available as an image...", :magenta unless options[:version]
-        using_version(version_or_latest) do |version|
-          say "Start container with version #{version} using a #{KAMAL.config.readiness_delay}s readiness delay (or reboot if already running)...", :magenta
+    with_lock do
+      say "Get most recent version available as an image...", :magenta unless options[:version]
+      using_version(version_or_latest) do |version|
+        say "Start container with version #{version} using a #{KAMAL.config.readiness_delay}s readiness delay (or reboot if already running)...", :magenta
 
-          # Assets are prepared in a separate step to ensure they are on all hosts before booting
-          on(KAMAL.hosts) do
-            KAMAL.roles_on(host).each do |role|
-              Kamal::Cli::App::PrepareAssets.new(host, role, self).run
-            end
+        # Assets are prepared in a separate step to ensure they are on all hosts before booting
+        on(KAMAL.hosts) do
+          KAMAL.roles_on(host).each do |role|
+            Kamal::Cli::App::PrepareAssets.new(host, role, self).run
           end
+        end
 
-          #  Primary hosts and roles are returned first, so they can open the barrier
-          barrier = Kamal::Cli::Healthcheck::Barrier.new if KAMAL.roles.many?
+        # Primary hosts and roles are returned first, so they can open the barrier
+        barrier = Kamal::Cli::Healthcheck::Barrier.new if KAMAL.roles.many?
 
-          on(KAMAL.hosts, **KAMAL.boot_strategy) do |host|
-            KAMAL.roles_on(host).each do |role|
-              Kamal::Cli::App::Boot.new(host, role, self, version, barrier).run
-            end
+        on(KAMAL.hosts, **KAMAL.boot_strategy) do |host|
+          KAMAL.roles_on(host).each do |role|
+            Kamal::Cli::App::Boot.new(host, role, self, version, barrier).run
           end
+        end
 
-          #  Tag once the app booted on all hosts
-          on(KAMAL.hosts) do |host|
-            execute *KAMAL.auditor.record("Tagging #{KAMAL.config.absolute_image} as the latest image"), verbosity: :debug
-            execute *KAMAL.app.tag_latest_image
-          end
+        # Tag once the app booted on all hosts
+        on(KAMAL.hosts) do |host|
+          execute *KAMAL.auditor.record("Tagging #{KAMAL.config.absolute_image} as the latest image"), verbosity: :debug
+          execute *KAMAL.app.tag_latest_image
         end
       end
     end
@@ -35,7 +33,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
 
   desc "start", "Start existing app container on servers"
   def start
-    mutating do
+    with_lock do
       on(KAMAL.hosts) do |host|
         roles = KAMAL.roles_on(host)
 
@@ -49,7 +47,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
 
   desc "stop", "Stop app container on servers"
   def stop
-    mutating do
+    with_lock do
       on(KAMAL.hosts) do |host|
         roles = KAMAL.roles_on(host)
 
@@ -135,11 +133,9 @@ class Kamal::Cli::App < Kamal::Cli::Base
   desc "stale_containers", "Detect app stale containers"
   option :stop, aliases: "-s", type: :boolean, default: false, desc: "Stop the stale containers found"
   def stale_containers
-    mutating do
-      stop = options[:stop]
+    stop = options[:stop]
 
-      cli = self
-
+    with_lock_if_stopping do
       on(KAMAL.hosts) do |host|
         roles = KAMAL.roles_on(host)
 
@@ -208,7 +204,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
 
   desc "remove", "Remove app containers and images from servers"
   def remove
-    mutating do
+    with_lock do
       stop
       remove_containers
       remove_images
@@ -217,7 +213,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
 
   desc "remove_container [VERSION]", "Remove app container with given version from servers", hide: true
   def remove_container(version)
-    mutating do
+    with_lock do
       on(KAMAL.hosts) do |host|
         roles = KAMAL.roles_on(host)
 
@@ -231,7 +227,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
 
   desc "remove_containers", "Remove all app containers from servers", hide: true
   def remove_containers
-    mutating do
+    with_lock do
       on(KAMAL.hosts) do |host|
         roles = KAMAL.roles_on(host)
 
@@ -245,7 +241,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
 
   desc "remove_images", "Remove all app images from servers", hide: true
   def remove_images
-    mutating do
+    with_lock do
       on(KAMAL.hosts) do
         execute *KAMAL.auditor.record("Removed all app images"), verbosity: :debug
         execute *KAMAL.app.remove_images
@@ -287,5 +283,13 @@ class Kamal::Cli::App < Kamal::Cli::Base
 
     def version_or_latest
       options[:version] || KAMAL.config.latest_tag
+    end
+
+    def with_lock_if_stopping
+      if options[:stop]
+        with_lock { yield }
+      else
+        yield
+      end
     end
 end

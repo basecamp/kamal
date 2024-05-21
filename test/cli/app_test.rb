@@ -54,14 +54,14 @@ class CliAppTest < CliTestCase
     run_command("boot", config: :with_boot_strategy)
   end
 
-  test "boot errors leave lock in place" do
+  test "boot errors don't leave lock in place" do
     Kamal::Cli::App.any_instance.expects(:using_version).raises(RuntimeError)
 
     assert_not KAMAL.holding_lock?
     assert_raises(RuntimeError) do
       stderred { run_command("boot") }
     end
-    assert KAMAL.holding_lock?
+    assert_not KAMAL.holding_lock?
   end
 
   test "boot with assets" do
