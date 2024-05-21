@@ -34,6 +34,8 @@ class Kamal::Cli::App::Boot
     end
 
     def start_new_version
+      wait_at_barrier if queuer?
+
       audit "Booted app version #{version}"
 
       execute *app.tie_cord(role.cord_host_file) if uses_cord?
@@ -41,13 +43,10 @@ class Kamal::Cli::App::Boot
       execute *app.run(hostname: hostname)
       Kamal::Cli::Healthcheck::Poller.wait_for_healthy(pause_after_ready: true) { capture_with_info(*app.status(version: version)) }
 
-      reach_barrier
+      release_barrier if gatekeeper?
     rescue => e
-      if barrier_role? && barrier&.close
-        info "First #{KAMAL.primary_role} container unhealthy, stopping other roles (#{host})"
-        error capture_with_info(*app.logs(version: version))
-        error capture_with_info(*app.container_health_log(version: version))
-      end
+      close_barrier if gatekeeper?
+
       execute *app.stop(version: version), raise_on_non_zero_exit: false
 
       raise
@@ -67,25 +66,27 @@ class Kamal::Cli::App::Boot
       execute *app.clean_up_assets if assets?
     end
 
-    def reach_barrier
-      if barrier
-        if barrier_role?
-          if barrier.open
-            info "First #{KAMAL.primary_role} container healthy, continuing other roles (#{host})"
-          end
-        else
-          wait_for_barrier
-        end
+    def release_barrier
+      if barrier.open
+        info "First #{KAMAL.primary_role} container healthy, continuing other roles (#{host})"
       end
     end
 
-    def wait_for_barrier
+    def wait_at_barrier
       info "Waiting for a healthy #{KAMAL.primary_role} container (#{host})..."
       barrier.wait
       info "First #{KAMAL.primary_role} container is healthy, continuing (#{host})"
     rescue Kamal::Cli::Healthcheck::Error
       info "First #{KAMAL.primary_role} container is unhealthy, stopping (#{host})"
       raise
+    end
+
+    def close_barrier
+      if barrier.close
+        info "First #{KAMAL.primary_role} container unhealthy, stopping other roles (#{host})"
+        error capture_with_info(*app.logs(version: version))
+        error capture_with_info(*app.container_health_log(version: version))
+      end
     end
 
     def barrier_role?
@@ -102,5 +103,13 @@ class Kamal::Cli::App::Boot
 
     def audit(message)
       execute *auditor.record(message), verbosity: :debug
+    end
+
+    def gatekeeper?
+      barrier && barrier_role?
+    end
+
+    def queuer?
+      barrier && !barrier_role?
     end
 end

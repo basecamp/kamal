@@ -154,10 +154,6 @@ class CliAppTest < CliTestCase
       .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-latest$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
       .returns("unhealthy").at_least_once # web health check failing
 
-    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-workers-latest$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
-      .returns("running").at_least_once # workers health check passing
-
     stderred do
       run_command("boot", config: :with_roles, host: nil, allow_execute_error: true).tap do |output|
         assert_match "Waiting for a healthy web container (1.1.1.3)...", output
