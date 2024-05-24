@@ -150,22 +150,24 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
   option :lines, type: :numeric, aliases: "-n", desc: "Number of log lines to pull from each server"
   option :grep, aliases: "-g", desc: "Show lines with grep match only (use this to fetch specific requests by id)"
   option :follow, aliases: "-f", desc: "Follow logs on primary server (or specific host set by --hosts)"
+  option :context, aliases: "-C", desc: "Show number of lines leading and trailing a grep match (use with --grep)"
   def logs(name)
     with_accessory(name) do |accessory, hosts|
       grep = options[:grep]
+      context = options[:context]
 
       if options[:follow]
         run_locally do
           info "Following logs on #{hosts}..."
-          info accessory.follow_logs(grep: grep)
-          exec accessory.follow_logs(grep: grep)
+          info accessory.follow_logs(grep: grep, context: context)
+          exec accessory.follow_logs(grep: grep, context: context)
         end
       else
         since = options[:since]
         lines = options[:lines].presence || ((since || grep) ? nil : 100) # Default to 100 lines if since or grep isn't set
 
         on(hosts) do
-          puts capture_with_info(*accessory.logs(since: since, lines: lines, grep: grep))
+          puts capture_with_info(*accessory.logs(since: since, lines: lines, grep: grep, context: context))
         end
       end
     end

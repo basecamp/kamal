@@ -46,16 +46,16 @@ class Kamal::Commands::Traefik < Kamal::Commands::Base
     docker :ps, "--filter", "name=^traefik$"
   end
 
-  def logs(since: nil, lines: nil, grep: nil)
+  def logs(since: nil, lines: nil, grep: nil, context: nil)
     pipe \
       docker(:logs, "traefik", (" --since #{since}" if since), (" --tail #{lines}" if lines), "--timestamps", "2>&1"),
-      ("grep '#{grep}'" if grep)
+      ("grep '#{grep}'#{" -C #{context}" if context}" if grep)
   end
 
-  def follow_logs(host:, grep: nil)
+  def follow_logs(host:, grep: nil, context: nil)
     run_over_ssh pipe(
       docker(:logs, "traefik", "--timestamps", "--tail", "10", "--follow", "2>&1"),
-      (%(grep "#{grep}") if grep)
+      (%(grep "#{grep}"#{" -C #{context}" if context}) if grep)
     ).join(" "), host: host
   end
 

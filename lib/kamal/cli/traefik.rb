@@ -70,21 +70,23 @@ class Kamal::Cli::Traefik < Kamal::Cli::Base
   option :lines, type: :numeric, aliases: "-n", desc: "Number of log lines to pull from each server"
   option :grep, aliases: "-g", desc: "Show lines with grep match only (use this to fetch specific requests by id)"
   option :follow, aliases: "-f", desc: "Follow logs on primary server (or specific host set by --hosts)"
+  option :context, aliases: "-C", desc: "Show number of lines leading and trailing a grep match (use with --grep)"
   def logs
     grep = options[:grep]
+    context = options[:context]
 
     if options[:follow]
       run_locally do
         info "Following logs on #{KAMAL.primary_host}..."
-        info KAMAL.traefik.follow_logs(host: KAMAL.primary_host, grep: grep)
-        exec KAMAL.traefik.follow_logs(host: KAMAL.primary_host, grep: grep)
+        info KAMAL.traefik.follow_logs(host: KAMAL.primary_host, grep: grep, context: context)
+        exec KAMAL.traefik.follow_logs(host: KAMAL.primary_host, grep: grep, context: context)
       end
     else
       since = options[:since]
       lines = options[:lines].presence || ((since || grep) ? nil : 100) # Default to 100 lines if since or grep isn't set
 
       on(KAMAL.traefik_hosts) do |host|
-        puts_by_host host, capture(*KAMAL.traefik.logs(since: since, lines: lines, grep: grep)), type: "Traefik"
+        puts_by_host host, capture(*KAMAL.traefik.logs(since: since, lines: lines, grep: grep, context: context)), type: "Traefik"
       end
     end
   end

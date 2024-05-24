@@ -153,6 +153,12 @@ class CommandsTraefikTest < ActiveSupport::TestCase
       new_command.logs(grep: "hello!").join(" ")
   end
 
+  test "traefik logs with grep hello! and context" do
+    assert_equal \
+      "docker logs traefik --timestamps 2>&1 | grep 'hello!' -C 2",
+      new_command.logs(grep: "hello!", context: 2).join(" ")
+  end
+
   test "traefik remove container" do
     assert_equal \
       "docker container prune --force --filter label=org.opencontainers.image.title=Traefik",

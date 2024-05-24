@@ -167,11 +167,14 @@ class Kamal::Cli::App < Kamal::Cli::Base
   option :lines, type: :numeric, aliases: "-n", desc: "Number of lines to show from each server"
   option :grep, aliases: "-g", desc: "Show lines with grep match only (use this to fetch specific requests by id)"
   option :follow, aliases: "-f", desc: "Follow log on primary server (or specific host set by --hosts)"
+  option :context, aliases: "-C", desc: "Show number of lines leading and trailing a grep match (use with --grep)"
   def logs
     # FIXME: Catch when app containers aren't running
 
     grep = options[:grep]
+    context = options[:context]
     since = options[:since]
+
     if options[:follow]
       lines = options[:lines].presence || ((since || grep) ? nil : 10) # Default to 10 lines if since or grep isn't set
 
@@ -182,8 +185,8 @@ class Kamal::Cli::App < Kamal::Cli::Base
         role = KAMAL.roles_on(KAMAL.primary_host).first
 
         app = KAMAL.app(role: role, host: host)
-        info app.follow_logs(host: KAMAL.primary_host, lines: lines, grep: grep)
-        exec app.follow_logs(host: KAMAL.primary_host, lines: lines, grep: grep)
+        info app.follow_logs(host: KAMAL.primary_host, lines: lines, grep: grep, context: context)
+        exec app.follow_logs(host: KAMAL.primary_host, lines: lines, grep: grep, context: context)
       end
     else
       lines = options[:lines].presence || ((since || grep) ? nil : 100) # Default to 100 lines if since or grep isn't set
@@ -193,7 +196,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
 
         roles.each do |role|
           begin
-            puts_by_host host, capture_with_info(*KAMAL.app(role: role, host: host).logs(since: since, lines: lines, grep: grep))
+            puts_by_host host, capture_with_info(*KAMAL.app(role: role, host: host).logs(since: since, lines: lines, grep: grep, context: context))
           rescue SSHKit::Command::Failed
             puts_by_host host, "Nothing found"
           end
