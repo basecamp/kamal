@@ -114,7 +114,6 @@ class CliAccessoryTest < CliTestCase
       .with("ssh -t root@1.1.1.3 'docker logs app-mysql --timestamps --tail 10 2>&1'")
 
     assert_match "docker logs app-mysql  --tail 100 --timestamps 2>&1", run_command("logs", "mysql")
-
   end
 
   test "logs with grep" do
