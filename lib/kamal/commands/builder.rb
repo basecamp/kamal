@@ -2,7 +2,8 @@ require "active_support/core_ext/string/filters"
 
 class Kamal::Commands::Builder < Kamal::Commands::Base
   delegate :create, :remove, :push, :clean, :pull, :info, :validate_image, to: :target
-  delegate :clone_directory, :build_directory, to: :"config.builder"
+
+  include Clone
 
   def name
     target.class.to_s.remove("Kamal::Commands::Builder::").underscore.inquiry
@@ -52,23 +53,6 @@ class Kamal::Commands::Builder < Kamal::Commands::Base
         ensure_local_docker_installed,
         ensure_local_buildx_installed
     end
-  end
-
-  def create_clone_directory
-    make_directory clone_directory
-  end
-
-  def clone
-    git :clone, Kamal::Git.root, path: clone_directory
-  end
-
-  def clone_reset_steps
-    [
-      git(:remote, "set-url", :origin, Kamal::Git.root, path: build_directory),
-      git(:fetch, :origin, path: build_directory),
-      git(:reset, "--hard", Kamal::Git.revision, path: build_directory),
-      git(:clean, "-fdx", path: build_directory)
-    ]
   end
 
   private

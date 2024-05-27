@@ -108,6 +108,14 @@ class CliMainTest < CliTestCase
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_debug)
       .with(:stat, ".kamal/locks/app", ">", "/dev/null", "&&", :cat, ".kamal/locks/app/details", "|", :base64, "-d")
 
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:git, "-C", anything, :"rev-parse", :HEAD)
+      .returns(Kamal::Git.revision)
+
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:git, "-C", anything, :status, "--porcelain")
+      .returns("")
+
     assert_raises(Kamal::Cli::LockError) do
       run_command("deploy")
     end
@@ -128,6 +136,14 @@ class CliMainTest < CliTestCase
     SSHKit::Backend::Abstract.any_instance.stubs(:execute)
       .with { |*arg| arg[0..1] == [ :mkdir, ".kamal/locks/app" ] }
       .raises(SocketError, "getaddrinfo: nodename nor servname provided, or not known")
+
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:git, "-C", anything, :"rev-parse", :HEAD)
+      .returns(Kamal::Git.revision)
+
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:git, "-C", anything, :status, "--porcelain")
+      .returns("")
 
     assert_raises(SSHKit::Runner::ExecuteError) do
       run_command("deploy")
