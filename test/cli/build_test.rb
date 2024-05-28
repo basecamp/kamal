@@ -9,9 +9,17 @@ class CliBuildTest < CliTestCase
   end
 
   test "push" do
-    with_build_directory do
+    with_build_directory do |build_directory|
       Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
       hook_variables = { version: 999, service_version: "app@999", hosts: "1.1.1.1,1.1.1.2,1.1.1.3,1.1.1.4", command: "build", subcommand: "push" }
+
+      SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+        .with(:git, "-C", anything, :"rev-parse", :HEAD)
+        .returns(Kamal::Git.revision)
+
+      SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+        .with(:git, "-C", anything, :status, "--porcelain")
+        .returns("")
 
       run_command("push", "--verbose").tap do |output|
         assert_hook_ran "pre-build", output, **hook_variables
@@ -23,27 +31,32 @@ class CliBuildTest < CliTestCase
     end
   end
 
-  test "push reseting clone" do
-    with_build_directory do
+  test "push resetting clone" do
+    with_build_directory do |build_directory|
       stub_setup
-      build_dir = "#{Dir.tmpdir}/kamal-clones/app-#{pwd_sha}/kamal/"
 
-      SSHKit::Backend::Abstract.any_instance.stubs(:execute).with(:docker, "--version", "&&", :docker, :buildx, "version")
-      SSHKit::Backend::Abstract.any_instance.stubs(:execute).with(:docker, :buildx, :create, "--use", "--name", "kamal-app-multiarch")
+      SSHKit::Backend::Abstract.any_instance.expects(:execute).with(:docker, "--version", "&&", :docker, :buildx, "version")
 
-      SSHKit::Backend::Abstract.any_instance.stubs(:execute).with(:mkdir, "-p", "#{Dir.tmpdir}/kamal-clones/app-#{pwd_sha}")
-      SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+      SSHKit::Backend::Abstract.any_instance.expects(:execute)
         .with(:git, "-C", "#{Dir.tmpdir}/kamal-clones/app-#{pwd_sha}", :clone, Dir.pwd)
         .raises(SSHKit::Command::Failed.new("fatal: destination path 'kamal' already exists and is not an empty directory"))
         .then
         .returns(true)
-      SSHKit::Backend::Abstract.any_instance.stubs(:execute).with(:git, "-C", build_dir, :remote, "set-url", :origin, Dir.pwd)
-      SSHKit::Backend::Abstract.any_instance.stubs(:execute).with(:git, "-C", build_dir, :fetch, :origin)
-      SSHKit::Backend::Abstract.any_instance.stubs(:execute).with(:git, "-C", build_dir, :reset, "--hard", Kamal::Git.revision)
-      SSHKit::Backend::Abstract.any_instance.stubs(:execute).with(:git, "-C", build_dir, :clean, "-fdx")
+      SSHKit::Backend::Abstract.any_instance.expects(:execute).with(:git, "-C", build_directory, :remote, "set-url", :origin, Dir.pwd)
+      SSHKit::Backend::Abstract.any_instance.expects(:execute).with(:git, "-C", build_directory, :fetch, :origin)
+      SSHKit::Backend::Abstract.any_instance.expects(:execute).with(:git, "-C", build_directory, :reset, "--hard", Kamal::Git.revision)
+      SSHKit::Backend::Abstract.any_instance.expects(:execute).with(:git, "-C", build_directory, :clean, "-fdx")
 
-      SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+      SSHKit::Backend::Abstract.any_instance.expects(:execute)
         .with(:docker, :buildx, :build, "--push", "--platform", "linux/amd64,linux/arm64", "--builder", "kamal-app-multiarch", "-t", "dhh/app:999", "-t", "dhh/app:latest", "--label", "service=\"app\"", "--file", "Dockerfile", ".")
+
+      SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+        .with(:git, "-C", anything, :"rev-parse", :HEAD)
+        .returns(Kamal::Git.revision)
+
+      SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+        .with(:git, "-C", anything, :status, "--porcelain")
+        .returns("")
 
       run_command("push", "--verbose").tap do |output|
         assert_match /Cloning repo into build directory/, output
@@ -64,25 +77,65 @@ class CliBuildTest < CliTestCase
     end
   end
 
-  test "push without builder" do
-    with_build_directory do
+  test "push with corrupt clone" do
+    with_build_directory do |build_directory|
       stub_setup
 
-      SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+      SSHKit::Backend::Abstract.any_instance.expects(:execute).with(:docker, "--version", "&&", :docker, :buildx, "version")
+
+      SSHKit::Backend::Abstract.any_instance.expects(:execute)
+        .with(:git, "-C", "#{Dir.tmpdir}/kamal-clones/app-#{pwd_sha}", :clone, Dir.pwd)
+        .raises(SSHKit::Command::Failed.new("fatal: destination path 'kamal' already exists and is not an empty directory"))
+        .then
+        .returns(true)
+        .twice
+
+      SSHKit::Backend::Abstract.any_instance.expects(:execute).with(:git, "-C", build_directory, :remote, "set-url", :origin, Dir.pwd)
+        .raises(SSHKit::Command::Failed.new("fatal: not a git repository"))
+
+      SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+        .with(:git, "-C", anything, :"rev-parse", :HEAD)
+        .returns(Kamal::Git.revision)
+
+      SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+        .with(:git, "-C", anything, :status, "--porcelain")
+        .returns("")
+
+      Dir.stubs(:chdir)
+
+      run_command("push", "--verbose") do |output|
+        assert_match /Cloning repo into build directory `#{build_directory}`\.\.\..*Cloning repo into build directory `#{build_directory}`\.\.\./, output
+        assert_match "Resetting local clone as `#{build_directory}` already exists...", output
+        assert_match "Error preparing clone: Failed to clone repo: fatal: not a git repository, deleting and retrying...", output
+      end
+    end
+  end
+
+  test "push without builder" do
+    with_build_directory do |build_directory|
+      stub_setup
+
+      SSHKit::Backend::Abstract.any_instance.expects(:execute)
         .with(:docker, "--version", "&&", :docker, :buildx, "version")
 
-      SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+      SSHKit::Backend::Abstract.any_instance.expects(:execute)
         .with(:docker, :buildx, :create, "--use", "--name", "kamal-app-multiarch")
 
-      SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+      SSHKit::Backend::Abstract.any_instance.expects(:execute)
         .with { |*args| args[0..1] == [ :docker, :buildx ] }
         .raises(SSHKit::Command::Failed.new("no builder"))
         .then
         .returns(true)
 
-      SSHKit::Backend::Abstract.any_instance.stubs(:execute).with { |*args| args.first.start_with?("git") }
+      SSHKit::Backend::Abstract.any_instance.expects(:execute).with { |*args| args.first.start_with?("git") }
 
-      SSHKit::Backend::Abstract.any_instance.stubs(:execute).with(:mkdir, "-p", "#{Dir.tmpdir}/kamal-clones/app-#{pwd_sha}")
+      SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+        .with(:git, "-C", anything, :"rev-parse", :HEAD)
+        .returns(Kamal::Git.revision)
+
+      SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+        .with(:git, "-C", anything, :status, "--porcelain")
+        .returns("")
 
       run_command("push").tap do |output|
         assert_match /WARN Missing compatible builder, so creating a new one first/, output
@@ -183,7 +236,7 @@ class CliBuildTest < CliTestCase
       build_directory = File.join Dir.tmpdir, "kamal-clones", "app-#{pwd_sha}", "kamal"
       FileUtils.mkdir_p build_directory
       FileUtils.touch File.join build_directory, "Dockerfile"
-      yield
+      yield build_directory + "/"
     ensure
       FileUtils.rm_rf build_directory
     end

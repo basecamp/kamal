@@ -23,7 +23,9 @@ class Kamal::Cli::Build < Kamal::Cli::Base
         say "Building from a local git clone, so ignoring these uncommitted changes:\n #{uncommitted_changes}", :yellow
       end
 
-      prepare_clone
+      run_locally do
+        Clone.new(self).prepare
+      end
     elsif uncommitted_changes.present?
       say "Building with uncommitted changes:\n #{uncommitted_changes}", :yellow
     end
@@ -123,25 +125,6 @@ class Kamal::Cli::Build < Kamal::Cli::Base
         )
         on(host, options) do
           execute "true"
-        end
-      end
-    end
-
-    def prepare_clone
-      run_locally do
-        begin
-          info "Cloning repo into build directory `#{KAMAL.config.builder.build_directory}`..."
-
-          execute *KAMAL.builder.create_clone_directory
-          execute *KAMAL.builder.clone
-        rescue SSHKit::Command::Failed => e
-          if e.message =~ /already exists and is not an empty directory/
-            info "Resetting local clone as `#{KAMAL.config.builder.build_directory}` already exists..."
-
-            KAMAL.builder.clone_reset_steps.each { |step| execute *step }
-          else
-            raise
-          end
         end
       end
     end
