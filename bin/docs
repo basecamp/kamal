@@ -1,0 +1,134 @@
+#!/usr/bin/env ruby
+require "stringio"
+
+def usage
+  puts "Usage: #{$0} <kamal_site_repo>"
+  exit 1
+end
+
+usage if ARGV.size != 1
+
+kamal_site_repo = ARGV[0]
+
+if !File.directory?(kamal_site_repo)
+  puts "Error: #{kamal_site_repo} is not a directory"
+  exit 1
+end
+
+DOCS = {
+  "accessory" => "Accessories",
+  "boot" => "Booting",
+  "builder" => "Builders",
+  "configuration" => "Configuration overview",
+  "env" => "Environment variables",
+  "healthcheck" => "Healthchecks",
+  "logging" => "Logging",
+  "registry" => "Docker Registry",
+  "role" => "Roles",
+  "servers" => "Servers",
+  "ssh" => "SSH",
+  "sshkit" => "SSHKit",
+  "traefik" => "Traefik"
+}
+
+class DocWriter
+  attr_reader :from_file, :to_file, :key, :heading, :body, :output, :in_yaml
+
+  def initialize(from_file, to_dir)
+    @from_file = from_file
+    @key = File.basename(from_file, ".yml")
+    @to_file = File.join(to_dir, "#{linkify(DOCS[key])}.md")
+    @body = File.readlines(from_file)
+    @heading = body.shift.chomp("\n")
+    @output = nil
+  end
+
+  def write
+    puts "Writing #{to_file}"
+    generate_markdown
+    File.write(to_file, output.string)
+  end
+
+  private
+    def generate_markdown
+      @output = StringIO.new
+
+      generate_header
+
+      place = :in_section
+
+      loop do
+        line = body.shift&.chomp("\n")
+        break if line.nil?
+
+        case place
+        when :new_section, :in_section
+          if line.empty?
+            output.puts
+            place = :new_section
+          elsif line =~ /^ *#/
+            generate_line(line, place: place)
+            place = :in_section
+          else
+            output.puts "```yaml"
+            output.print line
+            place = :in_yaml
+          end
+        when :in_yaml
+          if line =~ /^ *#/
+            output.puts "```"
+            generate_line(line, place: :new_section)
+            place = :in_section
+          else
+            output.puts
+            output.print line
+          end
+        end
+      end
+
+      output.puts "\n```" if place == :in_yaml
+    end
+
+    def generate_header
+      output.puts "---"
+      output.puts "title: #{heading[2..-1]}"
+      output.puts "---"
+      output.puts
+      output.puts heading
+      output.puts
+    end
+
+    def generate_line(line, place: :in_section)
+      line = line.gsub(/^ *#\s?/, "")
+
+      if line =~ /(.*)kamal docs ([a-z]*)(.*)/
+        line = "#{$1}[#{DOCS[$2]}](../#{linkify(DOCS[$2])})#{$3}"
+      end
+
+      if line =~ /(.*)https:\/\/kamal-deploy.org([a-z\/-]*)(.*)/
+        line = "#{$1}[#{titlify($2.split("/").last)}](#{$2})#{$3}"
+      end
+
+      if place == :new_section
+        output.puts "## [#{line}](##{linkify(line)})"
+      else
+        output.puts line
+      end
+    end
+
+    def linkify(text)
+      text.downcase.gsub(" ", "-")
+    end
+
+    def titlify(text)
+      text.capitalize.gsub("-", " ")
+    end
+end
+
+from_dir = File.join(File.dirname(__FILE__), "../lib/kamal/configuration/docs")
+to_dir = File.join(kamal_site_repo, "docs/configuration")
+Dir.glob("#{from_dir}/*") do |from_file|
+  key = File.basename(from_file, ".yml")
+
+  DocWriter.new(from_file, to_dir).write
+end

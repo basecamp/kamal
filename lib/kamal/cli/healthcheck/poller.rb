@@ -6,7 +6,7 @@ module Kamal::Cli::Healthcheck::Poller
 
   def wait_for_healthy(pause_after_ready: false, &block)
     attempt = 1
-    max_attempts = KAMAL.config.healthcheck["max_attempts"]
+    max_attempts = KAMAL.config.healthcheck.max_attempts
 
     begin
       case status = block.call
@@ -33,7 +33,7 @@ module Kamal::Cli::Healthcheck::Poller
 
   def wait_for_unhealthy(pause_after_ready: false, &block)
     attempt = 1
-    max_attempts = KAMAL.config.healthcheck["max_attempts"]
+    max_attempts = KAMAL.config.healthcheck.max_attempts
 
     begin
       case status = block.call

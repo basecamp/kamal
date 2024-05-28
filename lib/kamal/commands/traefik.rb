@@ -1,19 +1,6 @@
 class Kamal::Commands::Traefik < Kamal::Commands::Base
   delegate :argumentize, :optionize, to: Kamal::Utils
-
-  DEFAULT_IMAGE = "traefik:v2.10"
-  CONTAINER_PORT = 80
-  DEFAULT_ARGS = {
-    "log.level" => "DEBUG"
-  }
-  DEFAULT_LABELS = {
-    # These ensure we serve a 502 rather than a 404 if no containers are available
-    "traefik.http.routers.catchall.entryPoints" => "http",
-    "traefik.http.routers.catchall.rule" => "PathPrefix(`/`)",
-    "traefik.http.routers.catchall.service" => "unavailable",
-    "traefik.http.routers.catchall.priority" => 1,
-    "traefik.http.services.unavailable.loadbalancer.server.port" => "0"
-  }
+  delegate :port, :publish?, :labels, :env, :image, :options, :args, to: :"config.traefik"
 
   def run
     docker :run, "--name traefik",
@@ -67,16 +54,6 @@ class Kamal::Commands::Traefik < Kamal::Commands::Base
     docker :image, :prune, "--all", "--force", "--filter", "label=org.opencontainers.image.title=Traefik"
   end
 
-  def port
-    "#{host_port}:#{CONTAINER_PORT}"
-  end
-
-  def env
-    Kamal::Configuration::Env.from_config \
-      config: config.traefik.fetch("env", {}),
-      secrets_file: File.join(config.host_env_directory, "traefik", "traefik.env")
-  end
-
   def make_env_directory
     make_directory(env.secrets_directory)
   end
@@ -87,7 +64,7 @@ class Kamal::Commands::Traefik < Kamal::Commands::Base
 
   private
     def publish_args
-      argumentize "--publish", port unless config.traefik["publish"] == false
+      argumentize "--publish", port if publish?
     end
 
     def label_args
@@ -98,27 +75,11 @@ class Kamal::Commands::Traefik < Kamal::Commands::Base
       env.args
     end
 
-    def labels
-      DEFAULT_LABELS.merge(config.traefik["labels"] || {})
-    end
-
-    def image
-      config.traefik.fetch("image") { DEFAULT_IMAGE }
-    end
-
     def docker_options_args
-      optionize(config.traefik["options"] || {})
+      optionize(options)
     end
 
     def cmd_option_args
-      if args = config.traefik["args"]
-        optionize DEFAULT_ARGS.merge(args), with: "="
-      else
-        optionize DEFAULT_ARGS, with: "="
-      end
-    end
-
-    def host_port
-      config.traefik["host_port"] || CONTAINER_PORT
+      optionize args, with: "="
     end
 end

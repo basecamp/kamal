@@ -24,7 +24,7 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
           "host" => "1.1.1.6",
           "port" => "6379:6379",
           "labels" => {
-            "cache" => true
+            "cache" => "true"
           },
           "env" => {
             "SOMETHING" => "else"

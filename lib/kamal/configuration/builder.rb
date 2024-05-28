@@ -1,73 +1,79 @@
 class Kamal::Configuration::Builder
-  def initialize(config:)
-    @options = config.raw_config.builder || {}
-    @image = config.image
-    @server = config.registry["server"]
-    @service = config.service
-    @destination = config.destination
+  include Kamal::Configuration::Validation
 
-    valid?
+  attr_reader :config, :builder_config
+  delegate :image, :service, to: :config
+  delegate :server, to: :"config.registry"
+
+  def initialize(config:)
+    @config = config
+    @builder_config = config.raw_config.builder || {}
+    @image = config.image
+    @server = config.registry.server
+    @service = config.service
+
+    validate! builder_config, with: Kamal::Configuration::Validator::Builder
   end
 
   def to_h
-    @options
+    builder_config
   end
 
   def multiarch?
-    @options["multiarch"] != false
+    builder_config["multiarch"] != false
   end
 
   def local?
-    !!@options["local"]
+    !!builder_config["local"]
   end
 
   def remote?
-    !!@options["remote"]
+    !!builder_config["remote"]
   end
 
   def cached?
-    !!@options["cache"]
+    !!builder_config["cache"]
   end
 
   def args
-    @options["args"] || {}
+    builder_config["args"] || {}
   end
 
   def secrets
-    @options["secrets"] || []
+    builder_config["secrets"] || []
   end
 
   def dockerfile
-    @options["dockerfile"] || "Dockerfile"
+    builder_config["dockerfile"] || "Dockerfile"
   end
 
   def target
-    @options["target"]
+    builder_config["target"]
   end
 
   def context
-    @options["context"] || "."
+    builder_config["context"] || "."
   end
 
   def local_arch
-    @options["local"]["arch"] if local?
+    builder_config["local"]["arch"] if local?
   end
 
   def local_host
-    @options["local"]["host"] if local?
+    builder_config["local"]["host"] if local?
   end
 
   def remote_arch
-    @options["remote"]["arch"] if remote?
+    builder_config["remote"]["arch"] if remote?
   end
 
   def remote_host
-    @options["remote"]["host"] if remote?
+    builder_config["remote"]["host"] if remote?
   end
 
   def cache_from
     if cached?
-      case @options["cache"]["type"]
+      case builder_config["cache"]["type"]
       when "gha"
         cache_from_config_for_gha
       when "registry"
@@ -78,7 +84,7 @@ class Kamal::Configuration::Builder
 
   def cache_to
     if cached?
-      case @options["cache"]["type"]
+      case builder_config["cache"]["type"]
       when "gha"
         cache_to_config_for_gha
       when "registry"
@@ -88,15 +94,15 @@ class Kamal::Configuration::Builder
   end
 
   def ssh
-    @options["ssh"]
+    builder_config["ssh"]
   end
 
   def git_clone?
-    Kamal::Git.used? && @options["context"].nil?
+    Kamal::Git.used? && builder_config["context"].nil?
   end
 
   def clone_directory
-    @clone_directory ||= File.join Dir.tmpdir, "kamal-clones", [ @service, pwd_sha ].compact.join("-")
+    @clone_directory ||= File.join Dir.tmpdir, "kamal-clones", [ service, pwd_sha ].compact.join("-")
   end
 
   def build_directory
@@ -109,18 +115,12 @@ class Kamal::Configuration::Builder
   end
 
   private
-    def valid?
-      if @options["cache"] && @options["cache"]["type"]
-        raise ArgumentError, "Invalid cache type: #{@options["cache"]["type"]}" unless [ "gha", "registry" ].include?(@options["cache"]["type"])
-      end
-    end
-
     def cache_image
-      @options["cache"]&.fetch("image", nil) || "#{@image}-build-cache"
+      builder_config["cache"]&.fetch("image", nil) || "#{image}-build-cache"
     end
 
     def cache_image_ref
-      [ @server, cache_image ].compact.join("/")
+      [ server, cache_image ].compact.join("/")
     end
 
     def cache_from_config_for_gha
@@ -132,11 +132,11 @@ class Kamal::Configuration::Builder
     end
 
     def cache_to_config_for_gha
-      [ "type=gha", @options["cache"]&.fetch("options", nil) ].compact.join(",")
+      [ "type=gha", builder_config["cache"]&.fetch("options", nil) ].compact.join(",")
     end
 
     def cache_to_config_for_registry
-      [ "type=registry", @options["cache"]&.fetch("options", nil), "ref=#{cache_image_ref}" ].compact.join(",")
+      [ "type=registry", builder_config["cache"]&.fetch("options", nil), "ref=#{cache_image_ref}" ].compact.join(",")
     end
 
     def repo_basename
