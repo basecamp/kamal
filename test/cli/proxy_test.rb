@@ -87,6 +87,28 @@ class CliProxyTest < CliTestCase
     end
   end
 
+  test "update" do
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-123$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{.NetworkSettings.IPAddress}}{{range $k, $v := .NetworkSettings.Ports}}{{printf \":%s\" $k}}{{break}}{{end}}'", "|", :sed, "-e", "'s/\\/tcp$//'")
+      .returns("172.1.0.2:80")
+      .at_least_once
+
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with { |*args| args[0..1] == [ :sh, "-c" ] }
+      .returns("123")
+      .at_least_once
+
+    run_command("update", "-y").tap do |output|
+      assert_match "docker container stop traefik", output
+      assert_match "docker container prune --force --filter label=org.opencontainers.image.title=traefik", output
+      assert_match "docker image prune --all --force --filter label=org.opencontainers.image.title=traefik", output
+      assert_match "docker container stop kamal-proxy", output
+      assert_match "docker container prune --force --filter label=org.opencontainers.image.title=kamal-proxy", output
+      assert_match "docker run --name kamal-proxy --detach --restart unless-stopped --publish 80:80 --publish 443:443 --volume /var/run/docker.sock:/var/run/docker.sock --volume kamal-proxy:/root/.config/kamal-proxy --log-opt max-size=\"10m\" #{Kamal::Configuration::Proxy::DEFAULT_IMAGE}", output
+      assert_match "docker exec kamal-proxy kamal-proxy deploy app-web --target \"172.1.0.2:80\"", output
+    end
+  end
+
   private
     def run_command(*command)
       stdouted { Kamal::Cli::Proxy.start([ *command, "-c", "test/fixtures/deploy_with_accessories.yml" ]) }

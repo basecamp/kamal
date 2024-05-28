@@ -26,8 +26,8 @@ class Kamal::Commands::Proxy < Kamal::Commands::Base
     docker :container, :start, container_name
   end
 
-  def stop
-    docker :container, :stop, container_name
+  def stop(name: container_name)
+    docker :container, :stop, name
   end
 
   def start_or_run
@@ -60,12 +60,12 @@ class Kamal::Commands::Proxy < Kamal::Commands::Base
     ).join(" "), host: host
   end
 
-  def remove_container
-    docker :container, :prune, "--force", "--filter", container_filter
+  def remove_container(filter: container_filter)
+    docker :container, :prune, "--force", "--filter", filter
   end
 
-  def remove_image
-    docker :image, :prune, "--all", "--force", "--filter", image_filter
+  def remove_image(filter: image_filter)
+    docker :image, :prune, "--all", "--force", "--filter", filter
   end
 
   private

@@ -60,6 +60,50 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
     end
   end
 
+  desc "update", "Update from Traefik to kamal-proxy, for when moving from Kamal v1 to Kamal v2"
+  option :rolling, type: :boolean, default: false, desc: "Reboot proxy on hosts in sequence, rather than in parallel"
+  option :confirmed, aliases: "-y", type: :boolean, default: false, desc: "Proceed without confirmation question"
+  def update
+    confirming "This will cause a brief outage on each host. Are you sure?" do
+      with_lock do
+        host_groups = options[:rolling] ? KAMAL.proxy_hosts : [ KAMAL.proxy_hosts ]
+        host_groups.each do |hosts|
+          host_list = Array(hosts).join(",")
+          run_hook "pre-proxy-reboot", hosts: host_list
+          on(hosts) do
+            info "Updating proxy from Traefik to kamal-proxy on #{host}..."
+            execute *KAMAL.auditor.record("Updated proxy from Traefik to kamal-proxy"), verbosity: :debug
+            execute *KAMAL.registry.login
+
+            info "Stopping and removing Traefik on #{host}..."
+            execute *KAMAL.proxy.stop(name: "traefik"), raise_on_non_zero_exit: false
+            execute *KAMAL.proxy.remove_container(filter: "label=org.opencontainers.image.title=traefik")
+            execute *KAMAL.proxy.remove_image(filter: "label=org.opencontainers.image.title=traefik")
+
+            info "Stopping and removing kamal-proxy on #{host}, if running..."
+            execute *KAMAL.proxy.stop, raise_on_non_zero_exit: false
+            execute *KAMAL.proxy.remove_container
+
+            info "Starting kamal-proxy on #{host}..."
+            execute *KAMAL.proxy.run
+
+            KAMAL.roles_on(host).select(&:running_proxy?).each do |role|
+              app = KAMAL.app(role: role, host: host)
+
+              version = capture_with_info(*app.current_running_version, raise_on_non_zero_exit: false).strip
+              endpoint = capture_with_info(*app.container_endpoint(version: version)).strip
+              raise Kamal::Cli::BootError, "Failed to get endpoint for #{role} on #{host}, is the app container running?" if endpoint.empty?
+
+              info "Deploying #{endpoint} for role `#{role}` on #{host}..."
+              execute *KAMAL.proxy.deploy(role.container_prefix, target: endpoint)
+            end
+          end
+          run_hook "post-proxy-reboot", hosts: host_list
+        end
+      end
+    end
+  end
+
   desc "details", "Show details about proxy container from servers"
   def details
     on(KAMAL.proxy_hosts) { |host| puts_by_host host, capture_with_info(*KAMAL.proxy.info), type: "Proxy" }
