@@ -19,7 +19,6 @@ module Kamal::Cli
 
     class_option :config_file, aliases: "-c", default: "config/deploy.yml", desc: "Path to config file"
     class_option :destination, aliases: "-d", desc: "Specify destination to be used for config file (staging -> deploy.staging.yml)"
-    class_option :custom_env, desc: "Specify a custom env to be used for upload the total environment (.env.custom_env)"
 
     class_option :skip_hooks, aliases: "-H", type: :boolean, default: false, desc: "Don't run hooks"
 
@@ -35,8 +34,6 @@ module Kamal::Cli
         # TODO: How can we load envs from configs? Is necessary?
         if destination = options[:destination]
           Dotenv.load(".env.#{destination}", ".env")
-        elsif custom_env = options[:custom_env]
-          Dotenv.load(".env.#{custom_env}")
         else
           Dotenv.load(".env")
         end

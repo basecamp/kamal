@@ -175,9 +175,6 @@ class Kamal::Cli::Main < Kamal::Cli::Base
     elsif destination = options[:destination]
       env_template_path = ".env.#{destination}.erb"
       env_path          = ".env.#{destination}"
-    elsif custom_env = options[:custom_env]
-      env_template_path = ".env.#{custom_env}.erb"
-      env_path          = ".env.#{custom_env}"
     else
       env_template_path = ".env.erb"
       env_path          = ".env"
