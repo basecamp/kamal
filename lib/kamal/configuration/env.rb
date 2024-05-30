@@ -5,15 +5,17 @@ class Kamal::Configuration::Env
   def self.from_config(config:, secrets_file: nil, for_node: nil)
     secrets_keys = config.fetch("secret", [])
     clear = config.fetch("clear", config.key?("secret") || config.key?("tags") ? {} : config)
+    env_file = config.fetch("env_file", nil)
 
-    new clear: clear, secrets_keys: secrets_keys, secrets_file: secrets_file, for_node: for_node
+    new clear: clear, secrets_keys: secrets_keys, secrets_file: secrets_file, for_node: for_node, env_file: env_file
   end
 
-  def initialize(clear:, secrets_keys:, secrets_file:, for_node:)
+  def initialize(clear:, secrets_keys:, secrets_file:, for_node:, env_file:)
     @clear = clear
     @secrets_keys = secrets_keys
     @secrets_file = secrets_file
     @for_node = for_node
+    @env_file = env_file
   end
 
   def args
@@ -25,8 +27,10 @@ class Kamal::Configuration::Env
   end
 
   def secrets
-    if @for_node == "ephemeral_node"
-      Dotenv::Environment.new('.env.ephemeral').keys.to_h { |key| [ key, ENV.fetch(key) ] }
+    # TODO: More than one @env_file
+    # TODO: Considerer a merge between env_file and env
+    if @env_file
+      Dotenv::Environment.new(@env_file)
     else
       secrets_keys.to_h { |key| [ key, ENV.fetch(key) ] }
     end
@@ -41,6 +45,7 @@ class Kamal::Configuration::Env
       clear: @clear.merge(other.clear),
       secrets_keys: @secrets_keys | other.secrets_keys,
       for_node: @for_node,
+      env_file: @env_file,
       secrets_file: secrets_file
   end
 end
