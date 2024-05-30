@@ -7,6 +7,6 @@ class Kamal::Configuration::Env::Tag
   end
 
   def env
-    Kamal::Configuration::Env.from_config(config: config, for_node: @name)
+    Kamal::Configuration::Env.from_config(config: config)
   end
 end

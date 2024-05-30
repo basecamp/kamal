@@ -74,7 +74,6 @@ class Kamal::Commands::Traefik < Kamal::Commands::Base
   def env
     Kamal::Configuration::Env.from_config \
       config: config.traefik,
-      for_node: "traefik",
       secrets_file: File.join(config.host_env_directory, "traefik", "traefik.env")
   end
 
