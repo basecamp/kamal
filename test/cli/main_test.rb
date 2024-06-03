@@ -436,6 +436,21 @@ class CliMainTest < CliTestCase
     end
   end
 
+  test "init with destination option" do
+    Pathname.any_instance.expects(:exist?).returns(false).times(5)
+    Pathname.any_instance.stubs(:mkpath)
+    FileUtils.stubs(:mkdir_p)
+    FileUtils.stubs(:cp_r)
+    FileUtils.stubs(:cp)
+
+    run_command("init", "--destination", "staging").tap do |output|
+      assert_match /Created configuration file in config\/deploy.yml/, output
+      assert_match /Created configuration file in config\/deploy.staging.yml/, output
+      assert_match /Created \.env file/, output
+      assert_match /Created \.env.staging file/, output
+    end
+  end
+
   test "envify" do
     Pathname.any_instance.expects(:exist?).returns(true).times(3)
     File.expects(:read).with(".env.erb").returns("HELLO=<%= 'world' %>")
