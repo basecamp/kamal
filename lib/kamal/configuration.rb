@@ -48,19 +48,19 @@ class Kamal::Configuration
     validate! raw_config, example: validation_yml.symbolize_keys, context: ""
 
     # Eager load config to validate it, these are first as they have dependencies later on
-    @servers = Kamal::Configuration::Servers.new(config: self)
-    @registry = Kamal::Configuration::Registry.new(config: self)
+    @servers = Servers.new(config: self)
+    @registry = Registry.new(config: self)
 
-    @accessories = @raw_config.accessories&.keys&.collect { |name| Kamal::Configuration::Accessory.new(name, config: self) } || []
-    @boot = Kamal::Configuration::Boot.new(config: self)
-    @builder = Kamal::Configuration::Builder.new(config: self)
-    @env = Kamal::Configuration::Env.new(config: @raw_config.env || {})
+    @accessories = @raw_config.accessories&.keys&.collect { |name| Accessory.new(name, config: self) } || []
+    @boot = Boot.new(config: self)
+    @builder = Builder.new(config: self)
+    @env = Env.new(config: @raw_config.env || {})
 
-    @healthcheck = Kamal::Configuration::Healthcheck.new(healthcheck_config: @raw_config.healthcheck)
-    @logging = Kamal::Configuration::Logging.new(logging_config: @raw_config.logging)
-    @traefik = Kamal::Configuration::Traefik.new(config: self)
-    @ssh = Kamal::Configuration::Ssh.new(config: self)
-    @sshkit = Kamal::Configuration::Sshkit.new(config: self)
+    @healthcheck = Healthcheck.new(healthcheck_config: @raw_config.healthcheck)
+    @logging = Logging.new(logging_config: @raw_config.logging)
+    @traefik = Traefik.new(config: self)
+    @ssh = Ssh.new(config: self)
+    @sshkit = Sshkit.new(config: self)
 
     ensure_destination_if_required
     ensure_required_keys_present
@@ -221,7 +221,7 @@ class Kamal::Configuration
 
   def env_tags
     @env_tags ||= if (tags = raw_config.env["tags"])
-      tags.collect { |name, config| Kamal::Configuration::Env::Tag.new(name, config: config) }
+      tags.collect { |name, config| Env::Tag.new(name, config: config) }
     else
       []
     end
