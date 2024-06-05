@@ -11,11 +11,11 @@ class Kamal::Commands::Builder < Kamal::Commands::Base
 
   def target
     case
-    when !config.builder.multiarch? && !config.builder.cached?
+    when !config.builder.multiarch? && !config.builder.cached? && !config.builder.remote?
       native
-    when !config.builder.multiarch? && config.builder.cached?
+    when !config.builder.multiarch? && config.builder.cached? && !config.builder.remote?
       native_cached
-    when config.builder.local? && config.builder.remote?
+    when config.builder.multiarch? && config.builder.local? && config.builder.remote?
       multiarch_remote
     when config.builder.remote?
       native_remote
