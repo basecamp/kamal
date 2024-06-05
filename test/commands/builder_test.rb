@@ -158,6 +158,48 @@ class CommandsBuilderTest < ActiveSupport::TestCase
       builder.push.join(" ")
   end
 
+  test "multiarch context hosts" do
+    command = new_builder_command
+    assert_equal "docker buildx inspect kamal-app-multiarch > /dev/null", command.context_hosts.join(" ")
+    assert_equal "", command.config_context_hosts.join(" ")
+  end
+
+  test "native context hosts" do
+    command = new_builder_command(builder: { "multiarch" => false })
+    assert_equal :true, command.context_hosts
+    assert_equal "", command.config_context_hosts.join(" ")
+  end
+
+  test "native cached context hosts" do
+    command = new_builder_command(builder: { "multiarch" => false, "cache" => { "type" => "registry" } })
+    assert_equal "docker buildx inspect kamal-app-native-cached > /dev/null", command.context_hosts.join(" ")
+    assert_equal "", command.config_context_hosts.join(" ")
+  end
+
+  test "native remote context hosts" do
+    command = new_builder_command(builder: { "remote" => { "arch" => "amd64", "host" => "ssh://host" } })
+    assert_equal "docker context inspect kamal-app-native-remote-amd64 --format '{{.Endpoints.docker.Host}}'", command.context_hosts.join(" ")
+    assert_equal [ "ssh://host" ], command.config_context_hosts
+  end
+
+  test "multiarch remote context hosts" do
+    command = new_builder_command(builder: {
+      "remote" => { "arch" => "amd64", "host" => "ssh://host" },
+      "local" => { "arch" => "arm64" }
+    })
+    assert_equal "docker context inspect kamal-app-multiarch-remote-arm64 --format '{{.Endpoints.docker.Host}}' ; docker context inspect kamal-app-multiarch-remote-amd64 --format '{{.Endpoints.docker.Host}}'", command.context_hosts.join(" ")
+    assert_equal [ "ssh://host" ], command.config_context_hosts
+  end
+
+  test "multiarch remote context hosts with local host" do
+    command = new_builder_command(builder: {
+      "remote" => { "arch" => "amd64", "host" => "ssh://host" },
+      "local" => { "arch" => "arm64", "host" => "unix:///var/run/docker.sock" }
+    })
+    assert_equal "docker context inspect kamal-app-multiarch-remote-arm64 --format '{{.Endpoints.docker.Host}}' ; docker context inspect kamal-app-multiarch-remote-amd64 --format '{{.Endpoints.docker.Host}}'", command.context_hosts.join(" ")
+    assert_equal [ "unix:///var/run/docker.sock", "ssh://host" ], command.config_context_hosts
+  end
+
   private
     def new_builder_command(additional_config = {})
       Kamal::Commands::Builder.new(Kamal::Configuration.new(@config.merge(additional_config), version: "123"))

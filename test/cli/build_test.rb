@@ -21,6 +21,10 @@ class CliBuildTest < CliTestCase
         .with(:git, "-C", anything, :status, "--porcelain")
         .returns("")
 
+      SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+        .with(:docker, :buildx, :inspect, "kamal-app-multiarch", "> /dev/null")
+        .returns("")
+
       run_command("push", "--verbose").tap do |output|
         assert_hook_ran "pre-build", output, **hook_variables
         assert_match /Cloning repo into build directory/, output
@@ -121,11 +125,9 @@ class CliBuildTest < CliTestCase
       SSHKit::Backend::Abstract.any_instance.expects(:execute)
         .with(:docker, :buildx, :create, "--use", "--name", "kamal-app-multiarch")
 
-      SSHKit::Backend::Abstract.any_instance.expects(:execute)
-        .with { |*args| args[0..1] == [ :docker, :buildx ] }
+      SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+        .with(:docker, :buildx, :inspect, "kamal-app-multiarch", "> /dev/null")
         .raises(SSHKit::Command::Failed.new("no builder"))
-        .then
-        .returns(true)
 
       SSHKit::Backend::Abstract.any_instance.expects(:execute).with { |*args| args.first.start_with?("git") }
 
@@ -136,6 +138,9 @@ class CliBuildTest < CliTestCase
       SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
         .with(:git, "-C", anything, :status, "--porcelain")
         .returns("")
+
+      SSHKit::Backend::Abstract.any_instance.expects(:execute)
+        .with(:docker, :buildx, :build, "--push", "--platform", "linux/amd64,linux/arm64", "--builder", "kamal-app-multiarch", "-t", "dhh/app:999", "-t", "dhh/app:latest", "--label", "service=\"app\"", "--file", "Dockerfile", ".")
 
       run_command("push").tap do |output|
         assert_match /WARN Missing compatible builder, so creating a new one first/, output

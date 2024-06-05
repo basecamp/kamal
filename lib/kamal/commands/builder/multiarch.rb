@@ -22,6 +22,10 @@ class Kamal::Commands::Builder::Multiarch < Kamal::Commands::Builder::Base
       build_context
   end
 
+  def context_hosts
+    docker :buildx, :inspect, builder_name, "> /dev/null"
+  end
+
   private
     def builder_name
       "kamal-#{config.service}-multiarch"

@@ -35,21 +35,24 @@ class Kamal::Cli::Build < Kamal::Cli::Base
 
     run_locally do
       begin
-        KAMAL.with_verbosity(:debug) do
-          Dir.chdir(KAMAL.config.builder.build_directory) { execute *push }
+        context_hosts = capture_with_info(*KAMAL.builder.context_hosts).split("\n")
+
+        if context_hosts != KAMAL.builder.config_context_hosts
+          warn "Context hosts have changed, so re-creating builder, was: #{context_hosts.join(", ")}], now: #{KAMAL.builder.config_context_hosts.join(", ")}"
+          cli.remove
+          cli.create
         end
       rescue SSHKit::Command::Failed => e
-        if e.message =~ /(no builder)|(no such file or directory)/
-          warn "Missing compatible builder, so creating a new one first"
-
-          if cli.create
-            KAMAL.with_verbosity(:debug) do
-              Dir.chdir(KAMAL.config.builder.build_directory) { execute *push }
-            end
-          end
+        warn "Missing compatible builder, so creating a new one first"
+        if e.message =~ /(context not found|no builder)/
+          cli.create
         else
           raise
         end
+      end
+
+      KAMAL.with_verbosity(:debug) do
+        Dir.chdir(KAMAL.config.builder.build_directory) { execute *push }
       end
     end
   end

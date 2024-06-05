@@ -12,6 +12,16 @@ class Kamal::Commands::Builder::Multiarch::Remote < Kamal::Commands::Builder::Mu
       super
   end
 
+  def context_hosts
+    chain \
+      context_host(builder_name_with_arch(local_arch)),
+      context_host(builder_name_with_arch(remote_arch))
+  end
+
+  def config_context_hosts
+    [ local_host, remote_host ].compact
+  end
+
   private
     def builder_name
       super + "-remote"
