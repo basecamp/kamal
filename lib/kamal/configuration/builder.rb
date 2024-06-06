@@ -59,10 +59,6 @@ class Kamal::Configuration::Builder
     builder_config["local"]["arch"] if local?
   end
 
-  def local_host
-    builder_config["local"]["host"] if local?
-  end
-
   def remote_arch
     builder_config["remote"]["arch"] if remote?
   end
@@ -115,6 +111,26 @@ class Kamal::Configuration::Builder
   end
 
   private
+    def valid?
+      if multiarch?
+        if local?
+          raise ArgumentError, "Invalid builder configuration: local configuration, arch required" unless local_arch
+        end
+
+        if remote?
+          raise ArgumentError, "Invalid builder configuration: remote configuration, arch required" unless remote_arch
+          raise ArgumentError, "Invalid builder configuration: remote configuration, arch required" unless remote_host
+        end
+      else
+        raise ArgumentError, "Invalid builder configuration: multiarch must be enabled for local configuration" if local?
+        raise ArgumentError, "Invalid builder configuration: multiarch must be enabled for remote configuration" if remote?
+      end
+
+      if @options["cache"] && @options["cache"]["type"]
+        raise ArgumentError, "Invalid cache type: #{@options["cache"]["type"]}" unless [ "gha", "registry" ].include?(@options["cache"]["type"])
+      end
+    end
+
     def cache_image
       builder_config["cache"]&.fetch("image", nil) || "#{image}-build-cache"
     end
