@@ -1,8 +1,10 @@
 class Kamal::Commands::Builder::Local < Kamal::Commands::Builder::Base
   def create
+    docker :buildx, :create, "--name", builder_name, "--driver=docker-container"
   end
 
   def remove
+    docker :buildx, :rm, builder_name
   end
 
   def info
@@ -18,6 +20,10 @@ class Kamal::Commands::Builder::Local < Kamal::Commands::Builder::Base
       "--builder", builder_name,
       *build_options,
       build_context
+  end
+
+  def context_hosts
+    docker :buildx, :inspect, builder_name, "> /dev/null"
   end
 
   private
