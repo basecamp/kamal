@@ -5,7 +5,7 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
 
   delegate :argumentize, to: Kamal::Utils
   delegate \
-    :args, :secrets, :dockerfile, :target, :local_arch, :local_host, :remote_arch, :remote_host,
+    :args, :secrets, :dockerfile, :target, :local_arch, :remote_arch, :remote_host,
     :cache_from, :cache_to, :multiarch?, :ssh,
     to: :builder_config
 
