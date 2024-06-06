@@ -17,7 +17,7 @@ class Kamal::Commands::Builder < Kamal::Commands::Base
     when !config.builder.multiarch? && config.builder.cached?
       local
     when config.builder.local? && config.builder.remote?
-      multiarch_remote
+      hybrid
     when config.builder.remote?
       remote
     else
@@ -33,8 +33,8 @@ class Kamal::Commands::Builder < Kamal::Commands::Base
     @local ||= Kamal::Commands::Builder::Local.new(config)
   end
 
-  def multiarch_remote
-    @multiarch_remote ||= Kamal::Commands::Builder::Multiarch::Remote.new(config)
+  def hybrid
+    @hybrid ||= Kamal::Commands::Builder::Hybrid.new(config)
   end
 
 
