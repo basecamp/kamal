@@ -1,6 +1,6 @@
-class Kamal::Commands::Builder::Multiarch < Kamal::Commands::Builder::Base
+class Kamal::Commands::Builder::Local < Kamal::Commands::Builder::Base
   def create
-    docker :buildx, :create, "--use", "--name", builder_name
+    docker :buildx, :create, "--name", builder_name, "--driver=docker-container"
   end
 
   def remove
@@ -16,7 +16,7 @@ class Kamal::Commands::Builder::Multiarch < Kamal::Commands::Builder::Base
   def push
     docker :buildx, :build,
       "--push",
-      "--platform", platform_names,
+      *platform_options,
       "--builder", builder_name,
       *build_options,
       build_context
@@ -28,14 +28,16 @@ class Kamal::Commands::Builder::Multiarch < Kamal::Commands::Builder::Base
 
   private
     def builder_name
-      "kamal-#{config.service}-multiarch"
+      "kamal-local"
     end
 
-    def platform_names
-      if local_arch
-        "linux/#{local_arch}"
-      else
-        "linux/amd64,linux/arm64"
+    def platform_options
+      if multiarch?
+        if local_arch
+          [ "--platform", "linux/#{local_arch}" ]
+        else
+          [ "--platform", "linux/amd64,linux/arm64" ]
+        end
       end
     end
 end
