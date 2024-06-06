@@ -1,13 +1,13 @@
 class Kamal::Commands::Builder::Remote < Kamal::Commands::Builder::Base
   def create
     chain \
-      create_context,
+      create_remote_context,
       create_buildx
   end
 
   def remove
     chain \
-      remove_context,
+      remove_remote_context,
       remove_buildx
   end
 
@@ -19,11 +19,11 @@ class Kamal::Commands::Builder::Remote < Kamal::Commands::Builder::Base
 
   def push
     docker :buildx, :build,
-    "--push",
-    "--platform", platform,
-    "--builder", builder_name,
-    *build_options,
-    build_context
+      "--push",
+      *platform_options,
+      "--builder", builder_name,
+      *build_options,
+      build_context
   end
 
   def context_hosts
@@ -37,18 +37,14 @@ class Kamal::Commands::Builder::Remote < Kamal::Commands::Builder::Base
 
   private
     def builder_name
-      "kamal-remote-#{remote_arch}"
+      "kamal-remote-#{remote_host.gsub(/[^a-z0-9_-]/, "-")}-#{remote_arch}"
     end
 
-    def platform
-      "linux/#{remote_arch}"
-    end
-
-    def create_context
+    def create_remote_context
       docker :context, :create, builder_name, "--description", "'#{builder_name} host'", "--docker", "'host=#{remote_host}'"
     end
 
-    def remove_context
+    def remove_remote_context
       docker :context, :rm, builder_name
     end
 
@@ -58,5 +54,9 @@ class Kamal::Commands::Builder::Remote < Kamal::Commands::Builder::Base
 
     def remove_buildx
       docker :buildx, :rm, builder_name
+    end
+
+    def platform_options
+      [ "--platform", "linux/#{remote_arch}" ]
     end
 end
