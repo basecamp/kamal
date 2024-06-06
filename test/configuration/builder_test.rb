@@ -42,7 +42,7 @@ class ConfigurationBuilderTest < ActiveSupport::TestCase
 
   test "setting both local and remote configs" do
     @deploy_with_builder_option[:builder] = {
-      "local" => { "arch" => "arm64", "host" => "unix:///Users/<%= `whoami`.strip %>/.docker/run/docker.sock" },
+      "local" => { "arch" => "arm64" },
       "remote" => { "arch" => "amd64", "host" => "ssh://root@192.168.0.1" }
     }
 
@@ -53,7 +53,6 @@ class ConfigurationBuilderTest < ActiveSupport::TestCase
     assert_equal "ssh://root@192.168.0.1", config_with_builder_option.builder.remote_host
 
     assert_equal "arm64", config_with_builder_option.builder.local_arch
-    assert_equal "unix:///Users/<%= `whoami`.strip %>/.docker/run/docker.sock", config_with_builder_option.builder.local_host
   end
 
   test "cached?" do
