@@ -7,9 +7,9 @@ class CommandsBuilderTest < ActiveSupport::TestCase
 
   test "target multiarch by default" do
     builder = new_builder_command(builder: { "cache" => { "type" => "gha" } })
-    assert_equal "multiarch", builder.name
+    assert_equal "local", builder.name
     assert_equal \
-      "docker buildx build --push --platform linux/amd64,linux/arm64 --builder kamal-app-multiarch -t dhh/app:123 -t dhh/app:latest --cache-to type=gha --cache-from type=gha --label service=\"app\" --file Dockerfile .",
+      "docker buildx build --push --platform linux/amd64,linux/arm64 --builder kamal-local -t dhh/app:123 -t dhh/app:latest --cache-to type=gha --cache-from type=gha --label service=\"app\" --file Dockerfile .",
       builder.push.join(" ")
   end
 
@@ -23,9 +23,9 @@ class CommandsBuilderTest < ActiveSupport::TestCase
 
   test "target native cached when multiarch is off and cache is set" do
     builder = new_builder_command(builder: { "multiarch" => false, "cache" => { "type" => "gha" } })
-    assert_equal "native/cached", builder.name
+    assert_equal "local", builder.name
     assert_equal \
-      "docker buildx build --push -t dhh/app:123 -t dhh/app:latest --cache-to type=gha --cache-from type=gha --label service=\"app\" --file Dockerfile .",
+      "docker buildx build --push --builder kamal-local -t dhh/app:123 -t dhh/app:latest --cache-to type=gha --cache-from type=gha --label service=\"app\" --file Dockerfile .",
       builder.push.join(" ")
   end
 
@@ -39,9 +39,9 @@ class CommandsBuilderTest < ActiveSupport::TestCase
 
   test "target multiarch local when arch is set" do
     builder = new_builder_command(builder: { "local" => { "arch" => "amd64" } })
-    assert_equal "multiarch", builder.name
+    assert_equal "local", builder.name
     assert_equal \
-      "docker buildx build --push --platform linux/amd64 --builder kamal-app-multiarch -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile .",
+      "docker buildx build --push --platform linux/amd64 --builder kamal-local -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile .",
       builder.push.join(" ")
   end
 
@@ -93,7 +93,7 @@ class CommandsBuilderTest < ActiveSupport::TestCase
   test "build context" do
     builder = new_builder_command(builder: { "context" => ".." })
     assert_equal \
-      "docker buildx build --push --platform linux/amd64,linux/arm64 --builder kamal-app-multiarch -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile ..",
+      "docker buildx build --push --platform linux/amd64,linux/arm64 --builder kamal-local -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile ..",
       builder.push.join(" ")
   end
 
@@ -107,7 +107,7 @@ class CommandsBuilderTest < ActiveSupport::TestCase
   test "multiarch push with build args" do
     builder = new_builder_command(builder: { "args" => { "a" => 1, "b" => 2 } })
     assert_equal \
-      "docker buildx build --push --platform linux/amd64,linux/arm64 --builder kamal-app-multiarch -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --build-arg a=\"1\" --build-arg b=\"2\" --file Dockerfile .",
+      "docker buildx build --push --platform linux/amd64,linux/arm64 --builder kamal-local -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --build-arg a=\"1\" --build-arg b=\"2\" --file Dockerfile .",
       builder.push.join(" ")
   end
 
@@ -133,7 +133,7 @@ class CommandsBuilderTest < ActiveSupport::TestCase
   test "multiarch context build" do
     builder = new_builder_command(builder: { "context" => "./foo" })
     assert_equal \
-      "docker buildx build --push --platform linux/amd64,linux/arm64 --builder kamal-app-multiarch -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile ./foo",
+      "docker buildx build --push --platform linux/amd64,linux/arm64 --builder kamal-local -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile ./foo",
       builder.push.join(" ")
   end
 
@@ -147,7 +147,7 @@ class CommandsBuilderTest < ActiveSupport::TestCase
   test "cached context build" do
     builder = new_builder_command(builder: { "multiarch" => false, "context" => "./foo", "cache" => { "type" => "gha" } })
     assert_equal \
-      "docker buildx build --push -t dhh/app:123 -t dhh/app:latest --cache-to type=gha --cache-from type=gha --label service=\"app\" --file Dockerfile ./foo",
+      "docker buildx build --push --builder kamal-local -t dhh/app:123 -t dhh/app:latest --cache-to type=gha --cache-from type=gha --label service=\"app\" --file Dockerfile ./foo",
       builder.push.join(" ")
   end
 
@@ -160,7 +160,7 @@ class CommandsBuilderTest < ActiveSupport::TestCase
 
   test "multiarch context hosts" do
     command = new_builder_command
-    assert_equal "docker buildx inspect kamal-app-multiarch > /dev/null", command.context_hosts.join(" ")
+    assert_equal "docker buildx inspect kamal-local > /dev/null", command.context_hosts.join(" ")
     assert_equal "", command.config_context_hosts.join(" ")
   end
 
@@ -172,7 +172,7 @@ class CommandsBuilderTest < ActiveSupport::TestCase
 
   test "native cached context hosts" do
     command = new_builder_command(builder: { "multiarch" => false, "cache" => { "type" => "registry" } })
-    assert_equal "docker buildx inspect kamal-app-native-cached > /dev/null", command.context_hosts.join(" ")
+    assert_equal "docker buildx inspect kamal-local > /dev/null", command.context_hosts.join(" ")
     assert_equal "", command.config_context_hosts.join(" ")
   end
 

@@ -1,4 +1,4 @@
-class Kamal::Commands::Builder::Multiarch::Remote < Kamal::Commands::Builder::Multiarch
+class Kamal::Commands::Builder::Multiarch::Remote < Kamal::Commands::Builder::Base
   def create
     combine \
       create_contexts,
@@ -10,6 +10,21 @@ class Kamal::Commands::Builder::Multiarch::Remote < Kamal::Commands::Builder::Mu
     combine \
       remove_contexts,
       super
+  end
+
+  def info
+    combine \
+      docker(:context, :ls),
+      docker(:buildx, :ls)
+  end
+
+  def push
+    docker :buildx, :build,
+      "--push",
+      *platform_options,
+      "--builder", builder_name,
+      *build_options,
+      build_context
   end
 
   def context_hosts
@@ -24,7 +39,7 @@ class Kamal::Commands::Builder::Multiarch::Remote < Kamal::Commands::Builder::Mu
 
   private
     def builder_name
-      super + "-remote"
+      "kamal-#{config.service}-multiarch-remote"
     end
 
     def builder_name_with_arch(arch)
@@ -57,5 +72,13 @@ class Kamal::Commands::Builder::Multiarch::Remote < Kamal::Commands::Builder::Mu
 
     def remove_context(arch)
       docker :context, :rm, builder_name_with_arch(arch)
+    end
+
+    def platform_options
+      if local_arch
+        [ "--platform", "linux/#{local_arch}" ]
+      else
+        [ "--platform", "linux/amd64,linux/arm64" ]
+      end
     end
 end

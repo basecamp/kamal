@@ -122,7 +122,7 @@ class CliMainTest < CliTestCase
       .returns("")
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :buildx, :inspect, "kamal-app-multiarch", "> /dev/null")
+      .with(:docker, :buildx, :inspect, "kamal-local", "> /dev/null")
       .returns("")
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
@@ -160,7 +160,7 @@ class CliMainTest < CliTestCase
       .returns("")
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :buildx, :inspect, "kamal-app-multiarch", "> /dev/null")
+      .with(:docker, :buildx, :inspect, "kamal-local", "> /dev/null")
       .returns("")
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
