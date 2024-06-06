@@ -1,4 +1,4 @@
-class Kamal::Commands::Builder::Native::Remote < Kamal::Commands::Builder::Native
+class Kamal::Commands::Builder::Remote < Kamal::Commands::Builder::Base
   def create
     chain \
       create_context,
@@ -27,7 +27,7 @@ class Kamal::Commands::Builder::Native::Remote < Kamal::Commands::Builder::Nativ
   end
 
   def context_hosts
-    context_host(builder_name_with_arch)
+    context_host(builder_name)
   end
 
   def config_context_hosts
@@ -37,11 +37,7 @@ class Kamal::Commands::Builder::Native::Remote < Kamal::Commands::Builder::Nativ
 
   private
     def builder_name
-      "kamal-#{config.service}-native-remote"
-    end
-
-    def builder_name_with_arch
-      "#{builder_name}-#{remote_arch}"
+      "kamal-remote-#{remote_arch}"
     end
 
     def platform
@@ -49,16 +45,15 @@ class Kamal::Commands::Builder::Native::Remote < Kamal::Commands::Builder::Nativ
     end
 
     def create_context
-      docker :context, :create,
-        builder_name_with_arch, "--description", "'#{builder_name} #{remote_arch} native host'", "--docker", "'host=#{remote_host}'"
+      docker :context, :create, builder_name, "--description", "'#{builder_name} host'", "--docker", "'host=#{remote_host}'"
     end
 
     def remove_context
-      docker :context, :rm, builder_name_with_arch
+      docker :context, :rm, builder_name
     end
 
     def create_buildx
-      docker :buildx, :create, "--name", builder_name, builder_name_with_arch, "--platform", platform
+      docker :buildx, :create, "--name", builder_name, builder_name, "--platform", platform
     end
 
     def remove_buildx

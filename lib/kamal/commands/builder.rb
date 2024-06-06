@@ -19,7 +19,7 @@ class Kamal::Commands::Builder < Kamal::Commands::Base
     when config.builder.local? && config.builder.remote?
       multiarch_remote
     when config.builder.remote?
-      native_remote
+      remote
     else
       local
     end
@@ -29,8 +29,8 @@ class Kamal::Commands::Builder < Kamal::Commands::Base
     @native ||= Kamal::Commands::Builder::Native.new(config)
   end
 
-  def native_remote
-    @native ||= Kamal::Commands::Builder::Native::Remote.new(config)
+  def remote
+    @remote ||= Kamal::Commands::Builder::Remote.new(config)
   end
 
   def local

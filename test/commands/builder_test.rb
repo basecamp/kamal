@@ -47,9 +47,9 @@ class CommandsBuilderTest < ActiveSupport::TestCase
 
   test "target native remote when only remote is set" do
     builder = new_builder_command(builder: { "remote" => { "arch" => "amd64" }, "cache" => { "type" => "gha" } })
-    assert_equal "native/remote", builder.name
+    assert_equal "remote", builder.name
     assert_equal \
-      "docker buildx build --push --platform linux/amd64 --builder kamal-app-native-remote -t dhh/app:123 -t dhh/app:latest --cache-to type=gha --cache-from type=gha --label service=\"app\" --file Dockerfile .",
+      "docker buildx build --push --platform linux/amd64 --builder kamal-remote-amd64 -t dhh/app:123 -t dhh/app:latest --cache-to type=gha --cache-from type=gha --label service=\"app\" --file Dockerfile .",
       builder.push.join(" ")
   end
 
@@ -154,7 +154,7 @@ class CommandsBuilderTest < ActiveSupport::TestCase
   test "remote context build" do
     builder = new_builder_command(builder: { "remote" => { "arch" => "amd64" }, "context" => "./foo" })
     assert_equal \
-      "docker buildx build --push --platform linux/amd64 --builder kamal-app-native-remote -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile ./foo",
+      "docker buildx build --push --platform linux/amd64 --builder kamal-remote-amd64 -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile ./foo",
       builder.push.join(" ")
   end
 
@@ -178,7 +178,7 @@ class CommandsBuilderTest < ActiveSupport::TestCase
 
   test "native remote context hosts" do
     command = new_builder_command(builder: { "remote" => { "arch" => "amd64", "host" => "ssh://host" } })
-    assert_equal "docker context inspect kamal-app-native-remote-amd64 --format '{{.Endpoints.docker.Host}}'", command.context_hosts.join(" ")
+    assert_equal "docker context inspect kamal-remote-amd64 --format '{{.Endpoints.docker.Host}}'", command.context_hosts.join(" ")
     assert_equal [ "ssh://host" ], command.config_context_hosts
   end
 
