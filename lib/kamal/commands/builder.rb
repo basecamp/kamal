@@ -13,7 +13,7 @@ class Kamal::Commands::Builder < Kamal::Commands::Base
   def target
     case
     when !config.builder.multiarch? && !config.builder.cached?
-      native
+      local
     when !config.builder.multiarch? && config.builder.cached?
       local
     when config.builder.local? && config.builder.remote?
@@ -23,10 +23,6 @@ class Kamal::Commands::Builder < Kamal::Commands::Base
     else
       local
     end
-  end
-
-  def native
-    @native ||= Kamal::Commands::Builder::Native.new(config)
   end
 
   def remote

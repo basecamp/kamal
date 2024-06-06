@@ -15,9 +15,9 @@ class CommandsBuilderTest < ActiveSupport::TestCase
 
   test "target native when multiarch is off" do
     builder = new_builder_command(builder: { "multiarch" => false })
-    assert_equal "native", builder.name
+    assert_equal "local", builder.name
     assert_equal \
-      "docker build -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile . && docker push dhh/app:123 && docker push dhh/app:latest",
+      "docker buildx build --push --builder kamal-local -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile .",
       builder.push.join(" ")
   end
 
@@ -100,7 +100,7 @@ class CommandsBuilderTest < ActiveSupport::TestCase
   test "native push with build args" do
     builder = new_builder_command(builder: { "multiarch" => false, "args" => { "a" => 1, "b" => 2 } })
     assert_equal \
-      "docker build -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --build-arg a=\"1\" --build-arg b=\"2\" --file Dockerfile . && docker push dhh/app:123 && docker push dhh/app:latest",
+      "docker buildx build --push --builder kamal-local -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --build-arg a=\"1\" --build-arg b=\"2\" --file Dockerfile .",
       builder.push.join(" ")
   end
 
@@ -114,7 +114,7 @@ class CommandsBuilderTest < ActiveSupport::TestCase
   test "native push with build secrets" do
     builder = new_builder_command(builder: { "multiarch" => false, "secrets" => [ "a", "b" ] })
     assert_equal \
-      "docker build -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --secret id=\"a\" --secret id=\"b\" --file Dockerfile . && docker push dhh/app:123 && docker push dhh/app:latest",
+      "docker buildx build --push --builder kamal-local -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --secret id=\"a\" --secret id=\"b\" --file Dockerfile .",
       builder.push.join(" ")
   end
 
@@ -140,7 +140,7 @@ class CommandsBuilderTest < ActiveSupport::TestCase
   test "native context build" do
     builder = new_builder_command(builder: { "multiarch" => false, "context" => "./foo" })
     assert_equal \
-      "docker build -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile ./foo && docker push dhh/app:123 && docker push dhh/app:latest",
+      "docker buildx build --push --builder kamal-local -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile ./foo",
       builder.push.join(" ")
   end
 
@@ -166,7 +166,7 @@ class CommandsBuilderTest < ActiveSupport::TestCase
 
   test "native context hosts" do
     command = new_builder_command(builder: { "multiarch" => false })
-    assert_equal :true, command.context_hosts
+    assert_equal "docker buildx inspect kamal-local > /dev/null", command.context_hosts.join(" ")
     assert_equal "", command.config_context_hosts.join(" ")
   end
 
