@@ -7,25 +7,6 @@ class Kamal::Commands::Builder::Local < Kamal::Commands::Builder::Base
     docker :buildx, :rm, builder_name
   end
 
-  def info
-    combine \
-      docker(:context, :ls),
-      docker(:buildx, :ls)
-  end
-
-  def push
-    docker :buildx, :build,
-      "--push",
-      *platform_options,
-      "--builder", builder_name,
-      *build_options,
-      build_context
-  end
-
-  def context_hosts
-    docker :buildx, :inspect, builder_name, "> /dev/null"
-  end
-
   private
     def builder_name
       "kamal-local"
