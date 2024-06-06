@@ -2,6 +2,8 @@
 class Kamal::Commands::Builder::Base < Kamal::Commands::Base
   class BuilderError < StandardError; end
 
+  ENDPOINT_DOCKER_HOST_INSPECT = "'{{.Endpoints.docker.Host}}'"
+
   delegate :argumentize, to: Kamal::Utils
   delegate :args, :secrets, :dockerfile, :target, :local_arch, :local_host, :remote_arch, :remote_host, :cache_from, :cache_to, :ssh, to: :builder_config
 
@@ -30,6 +32,13 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
       )
   end
 
+  def context_hosts
+    :true
+  end
+
+  def config_context_hosts
+    []
+  end
 
   private
     def build_tags
@@ -73,5 +82,9 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
 
     def builder_config
       config.builder
+    end
+
+    def context_host(builder_name)
+      docker :context, :inspect, builder_name, "--format", ENDPOINT_DOCKER_HOST_INSPECT
     end
 end

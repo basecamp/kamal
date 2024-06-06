@@ -26,6 +26,14 @@ class Kamal::Commands::Builder::Native::Remote < Kamal::Commands::Builder::Nativ
     build_context
   end
 
+  def context_hosts
+    context_host(builder_name_with_arch)
+  end
+
+  def config_context_hosts
+    [ remote_host ]
+  end
+
 
   private
     def builder_name
