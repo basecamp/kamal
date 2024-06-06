@@ -128,7 +128,7 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
 
     assert_equal \
       "docker logs app-mysql  --since 5m  --tail 100 --timestamps 2>&1 | grep 'thing' -C 2",
-      new_command(:mysql).logs(since: "5m", lines: 100, grep: "thing", context: 2).join(" ")
+      new_command(:mysql).logs(since: "5m", lines: 100, grep: "thing", grep_options: "-C 2").join(" ")
   end
 
   test "follow logs" do

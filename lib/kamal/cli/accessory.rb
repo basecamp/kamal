@@ -149,25 +149,25 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
   option :since, aliases: "-s", desc: "Show logs since timestamp (e.g. 2013-01-02T13:23:37Z) or relative (e.g. 42m for 42 minutes)"
   option :lines, type: :numeric, aliases: "-n", desc: "Number of log lines to pull from each server"
   option :grep, aliases: "-g", desc: "Show lines with grep match only (use this to fetch specific requests by id)"
+  option :grep_options, aliases: "-o", desc: "Additional options supplied to grep"
   option :follow, aliases: "-f", desc: "Follow logs on primary server (or specific host set by --hosts)"
-  option :context, aliases: "-C", desc: "Show number of lines leading and trailing a grep match (use with --grep)"
   def logs(name)
     with_accessory(name) do |accessory, hosts|
       grep = options[:grep]
-      context = options[:context]
+      grep_options = options[:grep_options]
 
       if options[:follow]
         run_locally do
           info "Following logs on #{hosts}..."
-          info accessory.follow_logs(grep: grep, context: context)
-          exec accessory.follow_logs(grep: grep, context: context)
+          info accessory.follow_logs(grep: grep, grep_options: grep_options)
+          exec accessory.follow_logs(grep: grep, grep_options: grep_options)
         end
       else
         since = options[:since]
         lines = options[:lines].presence || ((since || grep) ? nil : 100) # Default to 100 lines if since or grep isn't set
 
         on(hosts) do
-          puts capture_with_info(*accessory.logs(since: since, lines: lines, grep: grep, context: context))
+          puts capture_with_info(*accessory.logs(since: since, lines: lines, grep: grep, grep_options: grep_options))
         end
       end
     end

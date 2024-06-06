@@ -153,10 +153,10 @@ class CommandsTraefikTest < ActiveSupport::TestCase
       new_command.logs(grep: "hello!").join(" ")
   end
 
-  test "traefik logs with grep hello! and context" do
+  test "traefik logs with grep hello! and grep options" do
     assert_equal \
       "docker logs traefik --timestamps 2>&1 | grep 'hello!' -C 2",
-      new_command.logs(grep: "hello!", context: 2).join(" ")
+      new_command.logs(grep: "hello!", grep_options: "-C 2").join(" ")
   end
 
   test "traefik remove container" do
