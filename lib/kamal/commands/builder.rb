@@ -2,6 +2,7 @@ require "active_support/core_ext/string/filters"
 
 class Kamal::Commands::Builder < Kamal::Commands::Base
   delegate :create, :remove, :push, :clean, :pull, :info, :buildx_inspect, :validate_image, :first_mirror, to: :target
+  delegate :multiarch?, :local?, :remote?, to: "config.builder"
 
   include Clone
 
@@ -10,15 +11,12 @@ class Kamal::Commands::Builder < Kamal::Commands::Base
   end
 
   def target
-    case
-    when !config.builder.multiarch? && !config.builder.cached?
-      local
-    when !config.builder.multiarch? && config.builder.cached?
-      local
-    when config.builder.local? && config.builder.remote?
-      hybrid
-    when config.builder.remote?
-      remote
+    if remote?
+      if local?
+        hybrid
+      else
+        remote
+      end
     else
       local
     end
