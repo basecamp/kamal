@@ -26,18 +26,9 @@ class Kamal::Commands::Builder::Remote < Kamal::Commands::Builder::Base
       build_context
   end
 
-  def context_hosts
-    context_host(builder_name)
-  end
-
-  def config_context_hosts
-    [ remote_host ]
-  end
-
-
   private
     def builder_name
-      "kamal-remote-#{remote_host.gsub(/[^a-z0-9_-]/, "-")}-#{remote_arch}"
+      "kamal-remote-#{remote_arch}-#{remote_host.gsub(/[^a-z0-9_-]/, "-")}"
     end
 
     def create_remote_context
@@ -57,6 +48,10 @@ class Kamal::Commands::Builder::Remote < Kamal::Commands::Builder::Base
     end
 
     def platform_options
-      [ "--platform", "linux/#{remote_arch}" ]
+      [ "--platform", platform ]
+    end
+
+    def platform
+      "linux/#{remote_arch}"
     end
 end

@@ -1,4 +1,3 @@
-
 class Kamal::Commands::Builder::Base < Kamal::Commands::Base
   class BuilderError < StandardError; end
 
@@ -14,8 +13,27 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
     docker :image, :rm, "--force", config.absolute_image
   end
 
+  def push
+    docker :buildx, :build,
+      "--push",
+      *platform_options,
+      "--builder", builder_name,
+      *build_options,
+      build_context
+  end
+
   def pull
     docker :pull, config.absolute_image
+  end
+
+  def info
+    combine \
+      docker(:context, :ls),
+      docker(:buildx, :ls)
+  end
+
+  def buildx_inspect
+    docker :buildx, :inspect, builder_name
   end
 
   def build_options
@@ -33,14 +51,6 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
         [ :grep, "-x", config.service ],
         "(echo \"Image #{config.absolute_image} is missing the 'service' label\" && exit 1)"
       )
-  end
-
-  def context_hosts
-    :true
-  end
-
-  def config_context_hosts
-    []
   end
 
   def first_mirror
