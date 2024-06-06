@@ -21,10 +21,6 @@ class CliBuildTest < CliTestCase
         .with(:git, "-C", anything, :status, "--porcelain")
         .returns("")
 
-      SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-        .with(:docker, :buildx, :inspect, "kamal-local", "> /dev/null")
-        .returns("")
-
       run_command("push", "--verbose").tap do |output|
         assert_hook_ran "pre-build", output, **hook_variables
         assert_match /Cloning repo into build directory/, output
@@ -125,8 +121,8 @@ class CliBuildTest < CliTestCase
       SSHKit::Backend::Abstract.any_instance.expects(:execute)
         .with(:docker, :buildx, :create, "--name", "kamal-local", "--driver=docker-container")
 
-      SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-        .with(:docker, :buildx, :inspect, "kamal-local", "> /dev/null")
+      SSHKit::Backend::Abstract.any_instance.expects(:execute)
+        .with(:docker, :buildx, :inspect, "kamal-local")
         .raises(SSHKit::Command::Failed.new("no builder"))
 
       SSHKit::Backend::Abstract.any_instance.expects(:execute).with { |*args| args.first.start_with?("git") }
@@ -213,16 +209,16 @@ class CliBuildTest < CliTestCase
   test "create remote" do
     run_command("create", fixture: :with_remote_builder).tap do |output|
       assert_match "Running /usr/bin/env true on 1.1.1.5", output
-      assert_match "docker context create kamal-remote-amd64 --description 'kamal-remote-amd64 host' --docker 'host=ssh://app@1.1.1.5'", output
-      assert_match "docker buildx create --name kamal-remote-amd64 kamal-remote-amd64 --platform linux/amd64", output
+      assert_match "docker context create kamal-remote-amd64-ssh---app-1-1-1-5 --description 'kamal-remote-amd64-ssh---app-1-1-1-5 host' --docker 'host=ssh://app@1.1.1.5'", output
+      assert_match "docker buildx create --name kamal-remote-amd64-ssh---app-1-1-1-5 kamal-remote-amd64-ssh---app-1-1-1-5 --platform linux/amd64", output
     end
   end
 
   test "create remote with custom ports" do
     run_command("create", fixture: :with_remote_builder_and_custom_ports).tap do |output|
       assert_match "Running /usr/bin/env true on 1.1.1.5", output
-      assert_match "docker context create kamal-remote-amd64 --description 'kamal-remote-amd64 host' --docker 'host=ssh://app@1.1.1.5:2122'", output
-      assert_match "docker buildx create --name kamal-remote-amd64 kamal-remote-amd64 --platform linux/amd64", output
+      assert_match "docker context create kamal-remote-amd64-ssh---app-1-1-1-5-2122 --description 'kamal-remote-amd64-ssh---app-1-1-1-5-2122 host' --docker 'host=ssh://app@1.1.1.5:2122'", output
+      assert_match "docker buildx create --name kamal-remote-amd64-ssh---app-1-1-1-5-2122 kamal-remote-amd64-ssh---app-1-1-1-5-2122 --platform linux/amd64", output
     end
   end
 
