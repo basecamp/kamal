@@ -53,6 +53,14 @@ class CommandsBuilderTest < ActiveSupport::TestCase
       builder.push.join(" ")
   end
 
+  test "target native remote when multiarch is disabled and remote is set" do
+    builder = new_builder_command(builder: { "multiarch" => false, "remote" => { "arch" => "amd64" } })
+    assert_equal "native/remote", builder.name
+    assert_equal \
+      "docker buildx build --push --platform linux/amd64 --builder kamal-app-native-remote -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile .",
+      builder.push.join(" ")
+  end
+
   test "build args" do
     builder = new_builder_command(builder: { "args" => { "a" => 1, "b" => 2 } })
     assert_equal \
