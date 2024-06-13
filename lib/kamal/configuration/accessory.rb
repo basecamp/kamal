@@ -43,7 +43,7 @@ class Kamal::Configuration::Accessory
 
   def env
     Kamal::Configuration::Env.from_config \
-      config: specifics.fetch("env", {}),
+      config: specifics,
       secrets_file: File.join(config.host_env_directory, "accessories", "#{service_name}.env")
   end
 

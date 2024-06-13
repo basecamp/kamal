@@ -172,6 +172,9 @@ class Kamal::Cli::Main < Kamal::Cli::Base
     if destination = options[:destination]
       env_template_path = ".env.#{destination}.erb"
       env_path          = ".env.#{destination}"
+    elsif envify_from_config = KAMAL.config.raw_config["envify"]
+      env_template_path = ".env.#{envify_from_config}.erb"
+      env_path          = ".env.#{envify_from_config}"
     else
       env_template_path = ".env.erb"
       env_path          = ".env"

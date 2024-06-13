@@ -1,18 +1,22 @@
 class Kamal::Configuration::Env
-  attr_reader :secrets_keys, :clear, :secrets_file
+  attr_reader :secrets_keys, :clear, :secrets_file, :env_file
   delegate :argumentize, to: Kamal::Utils
 
   def self.from_config(config:, secrets_file: nil)
-    secrets_keys = config.fetch("secret", [])
-    clear = config.fetch("clear", config.key?("secret") || config.key?("tags") ? {} : config)
+    env_key_config = config.class == Kamal::Configuration ? config.env : config.fetch("env", {})
+    secrets_keys = env_key_config.fetch("secret", [])
+    clear = env_key_config.fetch("clear", env_key_config.key?("secret") || env_key_config.key?("tags") ? {} : env_key_config)
+    # TODO: Support a wide env_file
+    env_file = config.class == Kamal::Configuration ? nil : config.fetch("env_file", nil)
 
-    new clear: clear, secrets_keys: secrets_keys, secrets_file: secrets_file
+    new clear: clear, secrets_keys: secrets_keys, secrets_file: secrets_file, env_file: env_file
   end
 
-  def initialize(clear:, secrets_keys:, secrets_file:)
+  def initialize(clear:, secrets_keys:, secrets_file:, env_file:)
     @clear = clear
     @secrets_keys = secrets_keys
     @secrets_file = secrets_file
+    @env_file = env_file
   end
 
   def args
@@ -24,7 +28,13 @@ class Kamal::Configuration::Env
   end
 
   def secrets
-    @secrets ||= secrets_keys.to_h { |key| [ key, ENV.fetch(key) ] }
+    # TODO: More than one @env_file
+    # TODO: Considerer a merge between env_file and env
+    if @env_file
+      Dotenv::Environment.new(@env_file)
+    else
+      secrets_keys.to_h { |key| [ key, ENV.fetch(key) ] }
+    end
   end
 
   def secrets_directory
@@ -35,6 +45,7 @@ class Kamal::Configuration::Env
     self.class.new \
       clear: @clear.merge(other.clear),
       secrets_keys: @secrets_keys | other.secrets_keys,
+      env_file: @env_file ? @env_file : other.env_file,
       secrets_file: secrets_file
   end
 end

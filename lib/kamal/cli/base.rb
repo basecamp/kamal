@@ -31,6 +31,7 @@ module Kamal::Cli
 
     private
       def load_envs
+        # TODO: How can we load envs from configs? Is necessary?
         if destination = options[:destination]
           Dotenv.load(".env.#{destination}", ".env")
         else

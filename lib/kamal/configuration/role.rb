@@ -239,13 +239,13 @@ class Kamal::Configuration::Role
     end
 
     def specialized_env
-      Kamal::Configuration::Env.from_config config: specializations.fetch("env", {})
+      Kamal::Configuration::Env.from_config config: specializations
     end
 
     # Secrets are stored in an array, which won't merge by default, so have to do it by hand.
     def base_env
       Kamal::Configuration::Env.from_config \
-        config: config.env,
+        config: config,
         secrets_file: File.join(config.host_env_directory, "roles", "#{container_prefix}.env")
     end
 
