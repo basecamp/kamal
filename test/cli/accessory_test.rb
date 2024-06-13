@@ -116,11 +116,39 @@ class CliAccessoryTest < CliTestCase
     assert_match "docker logs app-mysql  --tail 100 --timestamps 2>&1", run_command("logs", "mysql")
   end
 
+  test "logs with grep" do
+    SSHKit::Backend::Abstract.any_instance.stubs(:exec)
+      .with("ssh -t root@1.1.1.3 'docker logs app-mysql --timestamps 2>&1 | grep \'hey\''")
+
+    assert_match "docker logs app-mysql --timestamps 2>&1 | grep 'hey'", run_command("logs", "mysql", "--grep", "hey")
+  end
+
+  test "logs with grep and grep options" do
+    SSHKit::Backend::Abstract.any_instance.stubs(:exec)
+      .with("ssh -t root@1.1.1.3 'docker logs app-mysql --timestamps 2>&1 | grep \'hey\' -C 2'")
+
+    assert_match "docker logs app-mysql --timestamps 2>&1 | grep 'hey' -C 2", run_command("logs", "mysql", "--grep", "hey", "--grep-options", "-C 2")
+  end
+
   test "logs with follow" do
     SSHKit::Backend::Abstract.any_instance.stubs(:exec)
       .with("ssh -t root@1.1.1.3 -p 22 'docker logs app-mysql --timestamps --tail 10 --follow 2>&1'")
 
     assert_match "docker logs app-mysql --timestamps --tail 10 --follow 2>&1", run_command("logs", "mysql", "--follow")
+  end
+
+  test "logs with follow and grep" do
+    SSHKit::Backend::Abstract.any_instance.stubs(:exec)
+      .with("ssh -t root@1.1.1.3 -p 22 'docker logs app-mysql --timestamps --tail 10 --follow 2>&1 | grep \"hey\"'")
+
+    assert_match "docker logs app-mysql --timestamps --tail 10 --follow 2>&1 | grep \"hey\"", run_command("logs", "mysql", "--follow", "--grep", "hey")
+  end
+
+  test "logs with follow, grep, and grep options" do
+    SSHKit::Backend::Abstract.any_instance.stubs(:exec)
+      .with("ssh -t root@1.1.1.3 -p 22 'docker logs app-mysql --timestamps --tail 10 --follow 2>&1 | grep \"hey\" -C 2'")
+
+    assert_match "docker logs app-mysql --timestamps --tail 10 --follow 2>&1 | grep \"hey\" -C 2", run_command("logs", "mysql", "--follow", "--grep", "hey", "--grep-options", "-C 2")
   end
 
   test "remove with confirmation" do
