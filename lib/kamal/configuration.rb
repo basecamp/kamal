@@ -29,7 +29,9 @@ class Kamal::Configuration
 
       def load_config_file(file)
         if file.exist?
-          YAML.load(ERB.new(IO.read(file)).result).symbolize_keys
+          # Newer Psych doesn't load aliases by default
+          load_method = YAML.respond_to?(:unsafe_load) ? :unsafe_load : :load
+          YAML.send(load_method, ERB.new(IO.read(file)).result).symbolize_keys
         else
           raise "Configuration file not found in #{file}"
         end
