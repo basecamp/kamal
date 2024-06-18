@@ -11,6 +11,7 @@ PATH
       net-ssh (~> 7.0)
       sshkit (>= 1.22.2, < 2.0)
       thor (~> 1.2)
+      x25519 (~> 1.0, >= 1.0.10)
       zeitwerk (~> 2.5)
 
 GEM
@@ -165,6 +166,7 @@ GEM
       concurrent-ruby (~> 1.0)
     unicode-display_width (2.5.0)
     webrick (1.8.1)
+    x25519 (1.0.10)
     zeitwerk (2.6.12)
 
 PLATFORMS
