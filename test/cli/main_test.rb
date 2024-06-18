@@ -380,19 +380,6 @@ class CliMainTest < CliTestCase
     end
   end
 
-  test "config with aliases" do
-    run_command("config", config_file: "deploy_with_aliases").tap do |output|
-      config = YAML.load(output)
-
-      assert_equal [ "web", "web_tokyo", "workers", "workers_tokyo" ], config[:roles]
-      assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3", "1.1.1.4" ], config[:hosts]
-      assert_equal "999", config[:version]
-      assert_equal "registry.digitalocean.com/dhh/app", config[:repository]
-      assert_equal "registry.digitalocean.com/dhh/app:999", config[:absolute_image]
-      assert_equal "app-999", config[:service_with_version]
-    end
-  end
-
   test "init" do
     Pathname.any_instance.expects(:exist?).returns(false).times(3)
     Pathname.any_instance.stubs(:mkpath)
@@ -445,11 +432,10 @@ class CliMainTest < CliTestCase
   end
 
   test "envify" do
-    Pathname.any_instance.expects(:exist?).returns(true).times(3)
-    File.expects(:read).with(".env.erb").returns("HELLO=<%= 'world' %>")
-    File.expects(:write).with(".env", "HELLO=world", perm: 0600)
-
-    run_command("envify")
+    with_test_dot_env_erb(contents: "HELLO=<%= 'world' %>") do
+      run_command("envify")
+      assert_equal("HELLO=world", File.read(".env"))
+    end
   end
 
   test "envify with blank line trimming" do
@@ -460,19 +446,17 @@ class CliMainTest < CliTestCase
       <% end -%>
     EOF
 
-    Pathname.any_instance.expects(:exist?).returns(true).times(3)
-    File.expects(:read).with(".env.erb").returns(file.strip)
-    File.expects(:write).with(".env", "HELLO=world\nKEY=value\n", perm: 0600)
-
-    run_command("envify")
+    with_test_dot_env_erb(contents: file) do
+      run_command("envify")
+      assert_equal("HELLO=world\nKEY=value\n", File.read(".env"))
+    end
   end
 
   test "envify with destination" do
-    Pathname.any_instance.expects(:exist?).returns(true).times(4)
-    File.expects(:read).with(".env.world.erb").returns("HELLO=<%= 'world' %>")
-    File.expects(:write).with(".env.world", "HELLO=world", perm: 0600)
-
-    run_command("envify", "-d", "world", config_file: "deploy_for_dest")
+    with_test_dot_env_erb(contents: "HELLO=<%= 'world' %>", file: ".env.world.erb") do
+      run_command("envify", "-d", "world", config_file: "deploy_for_dest")
+      assert_equal "HELLO=world", File.read(".env.world")
+    end
   end
 
   test "envify with skip_push" do
@@ -508,6 +492,24 @@ class CliMainTest < CliTestCase
     end
   end
 
+  test "docs" do
+    run_command("docs").tap do |output|
+      assert_match "# Kamal Configuration", output
+    end
+  end
+
+  test "docs subsection" do
+    run_command("docs", "accessory").tap do |output|
+      assert_match "# Accessories", output
+    end
+  end
+
+  test "docs unknown" do
+    run_command("docs", "foo").tap do |output|
+      assert_match "No documentation found for foo", output
+    end
+  end
+
   test "version" do
     version = stdouted { Kamal::Cli::Main.new.version }
     assert_equal Kamal::VERSION, version
@@ -516,5 +518,18 @@ class CliMainTest < CliTestCase
   private
     def run_command(*command, config_file: "deploy_simple")
       stdouted { Kamal::Cli::Main.start([ *command, "-c", "test/fixtures/#{config_file}.yml" ]) }
+    end
+
+    def with_test_dot_env_erb(contents:, file: ".env.erb")
+      Dir.mktmpdir do |dir|
+        fixtures_dup = File.join(dir, "test")
+        FileUtils.mkdir_p(fixtures_dup)
+        FileUtils.cp_r("test/fixtures/", fixtures_dup)
+
+        Dir.chdir(dir) do
+          File.write(file, contents)
+          yield
+        end
+      end
     end
 end

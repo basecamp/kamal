@@ -137,17 +137,17 @@ class CommanderTest < ActiveSupport::TestCase
   end
 
   test "traefik hosts should observe filtered roles" do
-    configure_with(:deploy_with_aliases)
+    configure_with(:deploy_with_multiple_traefik_roles)
 
     @kamal.specific_roles = [ "web_tokyo" ]
     assert_equal [ "1.1.1.3", "1.1.1.4" ], @kamal.traefik_hosts
   end
 
   test "traefik hosts should observe filtered hosts" do
-    configure_with(:deploy_with_aliases)
+    configure_with(:deploy_with_multiple_traefik_roles)
 
-    @kamal.specific_hosts = [ "1.1.1.4" ]
-    assert_equal [ "1.1.1.4" ], @kamal.traefik_hosts
+    @kamal.specific_hosts = [ "1.1.1.2" ]
+    assert_equal [ "1.1.1.2" ], @kamal.traefik_hosts
   end
 
   private

@@ -146,6 +146,6 @@ class IntegrationTest < ActiveSupport::TestCase
     end
 
     def container_running?(host:, name:)
-      docker_compose("exec #{host} docker ps --filter=name=#{name} | tail -n+2", capture: true).tap { |x| p [ x, x.strip, x.strip.present? ] }.strip.present?
+      docker_compose("exec #{host} docker ps --filter=name=#{name} | tail -n+2", capture: true).strip.present?
     end
 end

@@ -126,6 +126,18 @@ class Kamal::Cli::Main < Kamal::Cli::Base
     end
   end
 
+  desc "docs", "Show Kamal documentation for configuration setting"
+  def docs(section = nil)
+    case section
+    when NilClass
+      puts Kamal::Configuration.validation_doc
+    else
+      puts Kamal::Configuration.const_get(section.titlecase.to_sym).validation_doc
+    end
+  rescue NameError
+    puts "No documentation found for #{section}"
+  end
+
   desc "init", "Create config stub in config/deploy.yml and env stub in .env"
   option :bundle, type: :boolean, default: false, desc: "Add Kamal to the Gemfile and create a bin/kamal binstub"
   def init
