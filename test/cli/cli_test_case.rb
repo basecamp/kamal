@@ -63,4 +63,12 @@ class CliTestCase < ActiveSupport::TestCase
 
       assert_match expected, output
     end
+
+    def with_argv(*argv)
+      old_argv = ARGV
+      ARGV.replace(*argv)
+      yield
+    ensure
+      ARGV.replace(old_argv)
+    end
 end

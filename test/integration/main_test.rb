@@ -82,6 +82,19 @@ class MainTest < IntegrationTest
     assert_equal({ "cmd"=>"wget -qO- http://localhost > /dev/null || exit 1", "interval"=>"1s", "max_attempts"=>3, "port"=>3000, "path"=>"/up", "cord"=>"/tmp/kamal-cord", "log_lines"=>50 }, config[:healthcheck])
   end
 
+  test "aliases" do
+    @app = "app_with_roles"
+
+    kamal :envify
+    kamal :deploy
+
+    output = kamal :whome, capture: true
+    assert_equal Kamal::VERSION, output
+
+    output = kamal :worker_hostname, capture: true
+    assert_match /App Host: vm3\nvm3-[0-9a-f]{12}$/, output
+  end
+
   test "setup and remove" do
     # Check remove completes when nothing has been setup yet
     kamal :remove, "-y"

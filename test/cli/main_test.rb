@@ -537,9 +537,40 @@ class CliMainTest < CliTestCase
     assert_equal Kamal::VERSION, version
   end
 
+  test "run an alias for details" do
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:traefik:details")
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:details")
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:accessory:details", [ "all" ])
+
+    run_command("info", config_file: "deploy_with_aliases")
+  end
+
+  test "run an alias for a console" do
+    run_command("console", config_file: "deploy_with_aliases").tap do |output|
+      assert_match "docker exec app-console-999 bin/console on 1.1.1.5", output
+      assert_match "App Host: 1.1.1.5", output
+    end
+  end
+
+  test "run an alias for a console overriding role" do
+    run_command("console", "-r", "workers", config_file: "deploy_with_aliases").tap do |output|
+      assert_match "docker exec app-workers-999 bin/console on 1.1.1.3", output
+      assert_match "App Host: 1.1.1.3", output
+    end
+  end
+
+  test "run an alias for a console passing command" do
+    run_command("exec", "bin/job", config_file: "deploy_with_aliases").tap do |output|
+      assert_match "docker exec app-console-999 bin/job on 1.1.1.5", output
+      assert_match "App Host: 1.1.1.5", output
+    end
+  end
+
   private
     def run_command(*command, config_file: "deploy_simple")
-      stdouted { Kamal::Cli::Main.start([ *command, "-c", "test/fixtures/#{config_file}.yml" ]) }
+      with_argv([ *command, "-c", "test/fixtures/#{config_file}.yml" ]) do
+        stdouted { Kamal::Cli::Main.start }
+      end
     end
 
     def with_test_dotenv(**files)

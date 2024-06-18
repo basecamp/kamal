@@ -6,7 +6,8 @@ module Kamal::Cli
   class Base < Thor
     include SSHKit::DSL
 
-    def self.exit_on_failure?() true end
+    def self.exit_on_failure?() false end
+    def self.dynamic_command_class() Kamal::Cli::Alias::Command end
 
     class_option :verbose, type: :boolean, aliases: "-v", desc: "Detailed logging"
     class_option :quiet, type: :boolean, aliases: "-q", desc: "Minimal logging"
@@ -22,8 +23,14 @@ module Kamal::Cli
 
     class_option :skip_hooks, aliases: "-H", type: :boolean, default: false, desc: "Don't run hooks"
 
-    def initialize(*)
-      super
+    def initialize(args = [], local_options = {}, config = {})
+      if config[:current_command].is_a?(Kamal::Cli::Alias::Command)
+        # When Thor generates a dynamic command, it doesn't attempt to parse the arguments.
+        # For our purposes, it means the arguments are passed in args rather than local_options.
+        super([], args, config)
+      else
+        super
+      end
       @original_env = ENV.to_h.dup
       load_env
       initialize_commander(options_with_subcommand_class_options)

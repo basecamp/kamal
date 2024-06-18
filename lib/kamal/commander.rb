@@ -27,7 +27,11 @@ class Kamal::Commander
 
   def specific_primary!
     @specifics = nil
-    self.specific_hosts = [ config.primary_host ]
+    if specific_roles.present?
+      self.specific_hosts = [ specific_roles.first.primary_host ]
+    else
+      self.specific_hosts = [ config.primary_host ]
+    end
   end
 
   def specific_roles=(role_names)
@@ -111,6 +115,10 @@ class Kamal::Commander
 
   def traefik
     @traefik ||= Kamal::Commands::Traefik.new(config)
+  end
+
+  def alias(name)
+    config.aliases[name]
   end
 
 
