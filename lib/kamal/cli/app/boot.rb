@@ -19,6 +19,8 @@ class Kamal::Cli::App::Boot
     begin
       start_new_version
     rescue => e
+      error capture_with_info(*app.logs(version: version))
+      error capture_with_info(*app.container_health_log(version: version))
       close_barrier if gatekeeper?
       stop_new_version
       raise
@@ -88,8 +90,6 @@ class Kamal::Cli::App::Boot
     def close_barrier
       if barrier.close
         info "First #{KAMAL.primary_role} container is unhealthy on #{host}, not booting other roles"
-        error capture_with_info(*app.logs(version: version))
-        error capture_with_info(*app.container_health_log(version: version))
       end
     end
 
