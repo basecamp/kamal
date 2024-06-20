@@ -72,7 +72,7 @@ class Kamal::Cli::App::Boot
 
     def release_barrier
       if barrier.open
-        info "First #{KAMAL.primary_role} container is healthy on #{host}, booting other roles"
+        info "First #{KAMAL.primary_role} container is healthy on #{host}, booting any other roles"
       end
     end
 
@@ -87,7 +87,7 @@ class Kamal::Cli::App::Boot
 
     def close_barrier
       if barrier.close
-        info "First #{KAMAL.primary_role} container is unhealthy on #{host}, not booting other roles"
+        info "First #{KAMAL.primary_role} container is unhealthy on #{host}, not booting any other roles"
         error capture_with_info(*app.logs(version: version))
         error capture_with_info(*app.container_health_log(version: version))
       end
