@@ -9,7 +9,7 @@ PATH
       dotenv (~> 2.8)
       ed25519 (~> 1.2)
       net-ssh (~> 7.0)
-      sshkit (>= 1.22.2, < 2.0)
+      sshkit (>= 1.23.0, < 2.0)
       thor (~> 1.2)
       x25519 (~> 1.0, >= 1.0.10)
       zeitwerk (~> 2.5)
@@ -154,9 +154,8 @@ GEM
       rubocop-rails
     ruby-progressbar (1.13.0)
     ruby2_keywords (0.0.5)
-    sshkit (1.22.2)
+    sshkit (1.23.0)
       base64
-      mutex_m
       net-scp (>= 1.1.2)
       net-sftp (>= 2.1.2)
       net-ssh (>= 2.8.0)
