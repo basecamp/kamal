@@ -43,8 +43,8 @@ class Kamal::Cli::Build < Kamal::Cli::Base
           cli.create
         end
       rescue SSHKit::Command::Failed => e
-        warn "Missing compatible builder, so creating a new one first"
-        if e.message =~ /(context not found|no builder)/
+        if e.message =~ /(context not found|no builder|does not exist)/
+          warn "Missing compatible builder, so creating a new one first"
           cli.create
         else
           raise
