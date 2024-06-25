@@ -111,6 +111,11 @@ class CommandsTraefikTest < ActiveSupport::TestCase
       new_command.run.join(" ")
   end
 
+  test "run with args array" do
+    @config[:traefik]["args"] = { "entrypoints.web.forwardedheaders.trustedips" => %w[ 127.0.0.1 127.0.0.2 ] }
+    assert_equal "docker run --name traefik --detach --restart unless-stopped --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock --env-file .kamal/env/traefik/traefik.env --log-opt max-size=\"10m\" --label traefik.http.routers.catchall.entryPoints=\"http\" --label traefik.http.routers.catchall.rule=\"PathPrefix(\\`/\\`)\" --label traefik.http.routers.catchall.service=\"unavailable\" --label traefik.http.routers.catchall.priority=\"1\" --label traefik.http.services.unavailable.loadbalancer.server.port=\"0\" traefik:test --providers.docker --log.level=\"DEBUG\" --entrypoints.web.forwardedheaders.trustedips=\"127.0.0.1\" --entrypoints.web.forwardedheaders.trustedips=\"127.0.0.2\"", new_command.run.join(" ")
+  end
+
   test "traefik start" do
     assert_equal \
       "docker container start traefik",

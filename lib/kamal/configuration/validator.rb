@@ -31,9 +31,9 @@ class Kamal::Configuration::Validator
             validate_array_of! value, example_value.first.class
           elsif example_value.is_a?(Hash)
             case key.to_s
-            when "options"
+            when "options", "args"
               validate_type! value, Hash
-            when "args", "labels"
+            when "labels"
               validate_hash_of! value, example_value.first[1].class
             else
               validate_against_example! value, example_value
