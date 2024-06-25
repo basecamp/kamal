@@ -94,7 +94,7 @@ class ConfigurationValidationTest < ActiveSupport::TestCase
     assert_error "builder/remote: unknown key: foo", builder: { "remote" => { "foo" => "bar" } }
     assert_error "builder/local: unknown key: foo", builder: { "local" => { "foo" => "bar" } }
     assert_error "builder/remote/arch: should be a string", builder: { "remote" => { "arch" => [] } }
-    assert_error "builder/args/foo: should be a string", builder: { "args" => { "foo" => [] } }
+    assert_error "builder/args: should be a hash", builder: { "args" => [ "foo" ] }
     assert_error "builder/cache/options: should be a string", builder: { "cache" => { "options" => [] } }
   end
 
