@@ -156,6 +156,7 @@ class CliAccessoryTest < CliTestCase
     Kamal::Cli::Accessory.any_instance.expects(:remove_container).with("mysql")
     Kamal::Cli::Accessory.any_instance.expects(:remove_image).with("mysql")
     Kamal::Cli::Accessory.any_instance.expects(:remove_service_directory).with("mysql")
+    Kamal::Cli::Accessory.any_instance.expects(:remove_env_file).with("mysql")
 
     run_command("remove", "mysql", "-y")
   end
@@ -165,10 +166,12 @@ class CliAccessoryTest < CliTestCase
     Kamal::Cli::Accessory.any_instance.expects(:remove_container).with("mysql")
     Kamal::Cli::Accessory.any_instance.expects(:remove_image).with("mysql")
     Kamal::Cli::Accessory.any_instance.expects(:remove_service_directory).with("mysql")
+    Kamal::Cli::Accessory.any_instance.expects(:remove_env_file).with("mysql")
     Kamal::Cli::Accessory.any_instance.expects(:stop).with("redis")
     Kamal::Cli::Accessory.any_instance.expects(:remove_container).with("redis")
     Kamal::Cli::Accessory.any_instance.expects(:remove_image).with("redis")
     Kamal::Cli::Accessory.any_instance.expects(:remove_service_directory).with("redis")
+    Kamal::Cli::Accessory.any_instance.expects(:remove_env_file).with("redis")
 
     run_command("remove", "all", "-y")
   end
@@ -183,6 +186,10 @@ class CliAccessoryTest < CliTestCase
 
   test "remove_service_directory" do
     assert_match "rm -rf app-mysql", run_command("remove_service_directory", "mysql")
+  end
+
+  test "remove_env_file" do
+    assert_match "rm -f .kamal/env/accessories/app-mysql.env", run_command("remove_env_file", "mysql")
   end
 
   test "hosts param respected" do
