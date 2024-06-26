@@ -26,8 +26,20 @@ class Kamal::Configuration::Ssh
     end
   end
 
+  def keys_only
+    ssh_config["keys_only"]
+  end
+
+  def keys
+    ssh_config["keys"]
+  end
+
+  def key_data
+    ssh_config["key_data"]
+  end
+
   def options
-    { user: user, port: port, proxy: proxy, logger: logger, keepalive: true, keepalive_interval: 30 }.compact
+    { user: user, port: port, proxy: proxy, logger: logger, keepalive: true, keepalive_interval: 30, keys_only: keys_only, keys: keys, key_data: key_data }.compact
   end
 
   def to_h
