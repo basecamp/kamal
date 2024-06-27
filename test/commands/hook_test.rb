@@ -22,7 +22,8 @@ class CommandsHookTest < ActiveSupport::TestCase
         "KAMAL_RECORDED_AT" => @recorded_at,
         "KAMAL_PERFORMER" => @performer,
         "KAMAL_VERSION" => "123",
-        "KAMAL_SERVICE_VERSION" => "app@123" } }
+        "KAMAL_SERVICE_VERSION" => "app@123",
+        "KAMAL_SERVICE" => "app" } }
     ], new_command.run("foo")
   end
 
@@ -33,7 +34,8 @@ class CommandsHookTest < ActiveSupport::TestCase
         "KAMAL_RECORDED_AT" => @recorded_at,
         "KAMAL_PERFORMER" => @performer,
         "KAMAL_VERSION" => "123",
-        "KAMAL_SERVICE_VERSION" => "app@123" } }
+        "KAMAL_SERVICE_VERSION" => "app@123",
+        "KAMAL_SERVICE" => "app" } }
     ], new_command(hooks_path: "custom/hooks/path").run("foo")
   end
 
