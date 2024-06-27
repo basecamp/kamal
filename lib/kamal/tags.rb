@@ -13,7 +13,8 @@ class Kamal::Tags
         performer: `whoami`.chomp,
         destination: config.destination,
         version: config.version,
-        service_version: service_version(config) }
+        service_version: service_version(config),
+        service: config.service }
     end
 
     def service_version(config)
