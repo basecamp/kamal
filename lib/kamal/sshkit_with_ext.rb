@@ -118,6 +118,8 @@ class SSHKit::Runner::Parallel
         rescue ::StandardError => e
           e2 = SSHKit::Runner::ExecuteError.new e
           raise e2, "Exception while executing #{host.user ? "as #{host.user}@" : "on host "}#{host}: #{e.message}"
+        ensure
+          SSHKit::Backend::Netssh.pool.close_connections
         end
       end
 
