@@ -12,7 +12,7 @@ Gem::Specification.new do |spec|
   spec.executables = %w[ kamal ]
 
   spec.add_dependency "activesupport", ">= 7.0"
-  spec.add_dependency "sshkit", ">= 1.22.2", "< 2.0"
+  spec.add_dependency "sshkit", ">= 1.23.0", "< 2.0"
   spec.add_dependency "net-ssh", "~> 7.0"
   spec.add_dependency "thor", "~> 1.2"
   spec.add_dependency "dotenv", "~> 2.8"
