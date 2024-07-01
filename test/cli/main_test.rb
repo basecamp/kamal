@@ -1,6 +1,9 @@
 require_relative "cli_test_case"
 
 class CliMainTest < CliTestCase
+  setup { @original_env = ENV.to_h.dup }
+  teardown { ENV.clear; ENV.update @original_env }
+
   test "setup" do
     invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false }
 
@@ -434,7 +437,7 @@ class CliMainTest < CliTestCase
   end
 
   test "envify" do
-    with_test_dot_env_erb(contents: "HELLO=<%= 'world' %>") do
+    with_test_dotenv(".env.erb": "HELLO=<%= 'world' %>") do
       run_command("envify")
       assert_equal("HELLO=world", File.read(".env"))
     end
@@ -448,14 +451,14 @@ class CliMainTest < CliTestCase
       <% end -%>
     EOF
 
-    with_test_dot_env_erb(contents: file) do
+    with_test_dotenv(".env.erb": file) do
       run_command("envify")
       assert_equal("HELLO=world\nKEY=value\n", File.read(".env"))
     end
   end
 
   test "envify with destination" do
-    with_test_dot_env_erb(contents: "HELLO=<%= 'world' %>", file: ".env.world.erb") do
+    with_test_dotenv(".env.world.erb": "HELLO=<%= 'world' %>") do
       run_command("envify", "-d", "world", config_file: "deploy_for_dest")
       assert_equal "HELLO=world", File.read(".env.world")
     end
@@ -468,6 +471,13 @@ class CliMainTest < CliTestCase
 
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:env:push").never
     run_command("envify", "--skip-push")
+  end
+
+  test "envify with clean env" do
+    with_test_dotenv(".env": "HELLO=already", ".env.erb": "HELLO=<%= ENV.fetch 'HELLO', 'never' %>") do
+      run_command("envify", "--skip-push")
+      assert_equal "HELLO=never", File.read(".env")
+    end
   end
 
   test "remove with confirmation" do
@@ -522,14 +532,16 @@ class CliMainTest < CliTestCase
       stdouted { Kamal::Cli::Main.start([ *command, "-c", "test/fixtures/#{config_file}.yml" ]) }
     end
 
-    def with_test_dot_env_erb(contents:, file: ".env.erb")
+    def with_test_dotenv(**files)
       Dir.mktmpdir do |dir|
         fixtures_dup = File.join(dir, "test")
         FileUtils.mkdir_p(fixtures_dup)
         FileUtils.cp_r("test/fixtures/", fixtures_dup)
 
         Dir.chdir(dir) do
-          File.write(file, contents)
+          files.each do |filename, contents|
+            File.binwrite(filename.to_s, contents)
+          end
           yield
         end
       end
