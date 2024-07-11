@@ -12,7 +12,7 @@ class CommandsAuditorTest < ActiveSupport::TestCase
     }
 
     @auditor = new_command
-    @performer = `whoami`.strip
+    @performer = Kamal::Git.email.presence || `whoami`.chomp
     @recorded_at = Time.now.utc.iso8601
   end
 
