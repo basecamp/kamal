@@ -59,11 +59,14 @@ class Kamal::Cli::Build < Kamal::Cli::Base
 
   desc "pull", "Pull app image from registry onto servers"
   def pull
-    on(KAMAL.hosts) do
-      execute *KAMAL.auditor.record("Pulled image with version #{KAMAL.config.version}"), verbosity: :debug
-      execute *KAMAL.builder.clean, raise_on_non_zero_exit: false
-      execute *KAMAL.builder.pull
-      execute *KAMAL.builder.validate_image
+    if (first_hosts = mirror_hosts).any?
+      #  Pull on a single host per mirror first to seed them
+      say "Pulling image on #{first_hosts.join(", ")} to seed the #{"mirror".pluralize(first_hosts.count)}...", :magenta
+      pull_on_hosts(first_hosts)
+      say "Pulling image on remaining hosts...", :magenta
+      pull_on_hosts(KAMAL.hosts - first_hosts)
+    else
+      pull_on_hosts(KAMAL.hosts)
     end
   end
 
@@ -129,6 +132,30 @@ class Kamal::Cli::Build < Kamal::Cli::Base
         on(host, options) do
           execute "true"
         end
+      end
+    end
+
+    def mirror_hosts
+      if KAMAL.hosts.many?
+        mirror_hosts = Concurrent::Hash.new
+        on(KAMAL.hosts) do |host|
+          first_mirror = capture_with_info(*KAMAL.builder.first_mirror).strip.presence
+          mirror_hosts[first_mirror] ||= host if first_mirror
+        rescue SSHKit::Command::Failed => e
+          raise unless e.message =~ /error calling index: reflect: slice index out of range/
+        end
+        mirror_hosts.values
+      else
+        []
+      end
+    end
+
+    def pull_on_hosts(hosts)
+      on(hosts) do
+        execute *KAMAL.auditor.record("Pulled image with version #{KAMAL.config.version}"), verbosity: :debug
+        execute *KAMAL.builder.clean, raise_on_non_zero_exit: false
+        execute *KAMAL.builder.pull
+        execute *KAMAL.builder.validate_image
       end
     end
 end

@@ -200,6 +200,11 @@ class CommandsBuilderTest < ActiveSupport::TestCase
     assert_equal [ "unix:///var/run/docker.sock", "ssh://host" ], command.config_context_hosts
   end
 
+  test "mirror count" do
+    command = new_builder_command
+    assert_equal "docker info --format '{{index .RegistryConfig.Mirrors 0}}'", command.first_mirror.join(" ")
+  end
+
   private
     def new_builder_command(additional_config = {})
       Kamal::Commands::Builder.new(Kamal::Configuration.new(@config.merge(additional_config), version: "123"))
