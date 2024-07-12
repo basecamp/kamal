@@ -3,13 +3,14 @@ class Kamal::Cli::Main < Kamal::Cli::Base
   option :skip_push, aliases: "-P", type: :boolean, default: false, desc: "Skip image build and push"
   def setup
     print_runtime do
-      mutating do
+      with_lock do
         invoke_options = deploy_options
 
         say "Ensure Docker is installed...", :magenta
         invoke "kamal:cli:server:bootstrap", [], invoke_options
 
-        say "Push env files...", :magenta
+        say "Evaluate and push env files...", :magenta
+        invoke "kamal:cli:main:envify", [], invoke_options
         invoke "kamal:cli:env:push", [], invoke_options
 
         invoke "kamal:cli:accessory:boot", [ "all" ], invoke_options
@@ -22,29 +23,24 @@ class Kamal::Cli::Main < Kamal::Cli::Base
   option :skip_push, aliases: "-P", type: :boolean, default: false, desc: "Skip image build and push"
   def deploy
     runtime = print_runtime do
-      mutating do
-        invoke_options = deploy_options
+      invoke_options = deploy_options
 
-        say "Log into image registry...", :magenta
-        invoke "kamal:cli:registry:login", [], invoke_options
+      say "Log into image registry...", :magenta
+      invoke "kamal:cli:registry:login", [], invoke_options.merge(skip_local: options[:skip_push])
 
-        if options[:skip_push]
-          say "Pull app image...", :magenta
-          invoke "kamal:cli:build:pull", [], invoke_options
-        else
-          say "Build and push app image...", :magenta
-          invoke "kamal:cli:build:deliver", [], invoke_options
-        end
+      if options[:skip_push]
+        say "Pull app image...", :magenta
+        invoke "kamal:cli:build:pull", [], invoke_options
+      else
+        say "Build and push app image...", :magenta
+        invoke "kamal:cli:build:deliver", [], invoke_options
+      end
 
+      with_lock do
         run_hook "pre-deploy"
 
         say "Ensure Traefik is running...", :magenta
         invoke "kamal:cli:traefik:boot", [], invoke_options
-
-        if KAMAL.config.role(KAMAL.config.primary_role).running_traefik?
-          say "Ensure app can pass healthcheck...", :magenta
-          invoke "kamal:cli:healthcheck:perform", [], invoke_options
-        end
 
         say "Detect stale containers...", :magenta
         invoke "kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true)
@@ -63,21 +59,18 @@ class Kamal::Cli::Main < Kamal::Cli::Base
   option :skip_push, aliases: "-P", type: :boolean, default: false, desc: "Skip image build and push"
   def redeploy
     runtime = print_runtime do
-      mutating do
-        invoke_options = deploy_options
+      invoke_options = deploy_options
 
-        if options[:skip_push]
-          say "Pull app image...", :magenta
-          invoke "kamal:cli:build:pull", [], invoke_options
-        else
-          say "Build and push app image...", :magenta
-          invoke "kamal:cli:build:deliver", [], invoke_options
-        end
+      if options[:skip_push]
+        say "Pull app image...", :magenta
+        invoke "kamal:cli:build:pull", [], invoke_options
+      else
+        say "Build and push app image...", :magenta
+        invoke "kamal:cli:build:deliver", [], invoke_options
+      end
 
+      with_lock do
         run_hook "pre-deploy"
-
-        say "Ensure app can pass healthcheck...", :magenta
-        invoke "kamal:cli:healthcheck:perform", [], invoke_options
 
         say "Detect stale containers...", :magenta
         invoke "kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true)
@@ -93,7 +86,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
   def rollback(version)
     rolled_back = false
     runtime = print_runtime do
-      mutating do
+      with_lock do
         invoke_options = deploy_options
 
         KAMAL.config.version = version
@@ -132,6 +125,18 @@ class Kamal::Cli::Main < Kamal::Cli::Base
     run_locally do
       puts Kamal::Utils.redacted(KAMAL.config.to_h).to_yaml
     end
+  end
+
+  desc "docs", "Show Kamal documentation for configuration setting"
+  def docs(section = nil)
+    case section
+    when NilClass
+      puts Kamal::Configuration.validation_doc
+    else
+      puts Kamal::Configuration.const_get(section.titlecase.to_sym).validation_doc
+    end
+  rescue NameError
+    puts "No documentation found for #{section}"
   end
 
   desc "init", "Create config stub in config/deploy.yml and env stub in .env"
@@ -185,23 +190,27 @@ class Kamal::Cli::Main < Kamal::Cli::Base
       env_path          = ".env"
     end
 
-    File.write(env_path, ERB.new(File.read(env_template_path), trim_mode: "-").result, perm: 0600)
+    if Pathname.new(File.expand_path(env_template_path)).exist?
+      File.write(env_path, ERB.new(File.read(env_template_path), trim_mode: "-").result, perm: 0600)
 
-    unless options[:skip_push]
-      reload_envs
-      invoke "kamal:cli:env:push", options
+      unless options[:skip_push]
+        reload_envs
+        invoke "kamal:cli:env:push", options
+      end
+    else
+      puts "Skipping envify (no #{env_template_path} exist)"
     end
   end
 
   desc "remove", "Remove Traefik, app, accessories, and registry session from servers"
   option :confirmed, aliases: "-y", type: :boolean, default: false, desc: "Proceed without confirmation question"
   def remove
-    mutating do
-      confirming "This will remove all containers and images. Are you sure?" do
+    confirming "This will remove all containers and images. Are you sure?" do
+      with_lock do
         invoke "kamal:cli:traefik:remove", [], options.without(:confirmed)
         invoke "kamal:cli:app:remove", [], options.without(:confirmed)
         invoke "kamal:cli:accessory:remove", [ "all" ], options
-        invoke "kamal:cli:registry:logout", [], options.without(:confirmed)
+        invoke "kamal:cli:registry:logout", [], options.without(:confirmed).merge(skip_local: true)
       end
     end
   end
@@ -223,9 +232,6 @@ class Kamal::Cli::Main < Kamal::Cli::Base
   desc "env", "Manage environment files"
   subcommand "env", Kamal::Cli::Env
 
-  desc "healthcheck", "Healthcheck application"
-  subcommand "healthcheck", Kamal::Cli::Healthcheck
-
   desc "lock", "Manage the deploy lock"
   subcommand "lock", Kamal::Cli::Lock
 
@@ -246,11 +252,11 @@ class Kamal::Cli::Main < Kamal::Cli::Base
       begin
         on(KAMAL.hosts) do
           KAMAL.roles_on(host).each do |role|
-            container_id = capture_with_info(*KAMAL.app(role: role).container_id_for_version(version))
+            container_id = capture_with_info(*KAMAL.app(role: role, host: host).container_id_for_version(version))
             raise "Container not found" unless container_id.present?
           end
         end
-      rescue SSHKit::Runner::ExecuteError => e
+      rescue SSHKit::Runner::ExecuteError, SSHKit::Runner::MultipleExecuteError => e
         if e.message =~ /Container not found/
           say "Error looking for container version #{version}: #{e.message}"
           return false

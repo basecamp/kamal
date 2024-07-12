@@ -1,15 +1,19 @@
 require "active_support/ordered_options"
 require "active_support/core_ext/string/inquiry"
 require "active_support/core_ext/module/delegation"
+require "active_support/core_ext/hash/keys"
 require "pathname"
 require "erb"
 require "net/ssh/proxy/jump"
 
 class Kamal::Configuration
-  delegate :service, :image, :servers, :labels, :registry, :stop_wait_time, :hooks_path, :logging, to: :raw_config, allow_nil: true
+  delegate :service, :image, :labels, :stop_wait_time, :hooks_path, to: :raw_config, allow_nil: true
   delegate :argumentize, :optionize, to: Kamal::Utils
 
   attr_reader :destination, :raw_config
+  attr_reader :accessories, :boot, :builder, :env, :healthcheck, :logging, :traefik, :servers, :ssh, :sshkit, :registry
+
+  include Validation
 
   class << self
     def create_from(config_file:, destination: nil, version: nil)
@@ -42,7 +46,29 @@ class Kamal::Configuration
     @raw_config = ActiveSupport::InheritableOptions.new(raw_config)
     @destination = destination
     @declared_version = version
-    valid? if validate
+
+    validate! raw_config, example: validation_yml.symbolize_keys, context: ""
+
+    # Eager load config to validate it, these are first as they have dependencies later on
+    @servers = Servers.new(config: self)
+    @registry = Registry.new(config: self)
+
+    @accessories = @raw_config.accessories&.keys&.collect { |name| Accessory.new(name, config: self) } || []
+    @boot = Boot.new(config: self)
+    @builder = Builder.new(config: self)
+    @env = Env.new(config: @raw_config.env || {})
+
+    @healthcheck = Healthcheck.new(healthcheck_config: @raw_config.healthcheck)
+    @logging = Logging.new(logging_config: @raw_config.logging)
+    @traefik = Traefik.new(config: self)
+    @ssh = Ssh.new(config: self)
+    @sshkit = Sshkit.new(config: self)
+
+    ensure_destination_if_required
+    ensure_required_keys_present
+    ensure_valid_kamal_version
+    ensure_retain_containers_valid
+    ensure_valid_service_name
   end
 
 
@@ -71,15 +97,11 @@ class Kamal::Configuration
 
 
   def roles
-    @roles ||= role_names.collect { |role_name| Role.new(role_name, config: self) }
+    servers.roles
   end
 
   def role(name)
     roles.detect { |r| r.name == name.to_s }
-  end
-
-  def accessories
-    @accessories ||= raw_config.accessories&.keys&.collect { |name| Kamal::Configuration::Accessory.new(name, config: self) } || []
   end
 
   def accessory(name)
@@ -88,7 +110,7 @@ class Kamal::Configuration
 
 
   def all_hosts
-    roles.flat_map(&:hosts).uniq
+    (roles + accessories).flat_map(&:hosts).uniq
   end
 
   def primary_host
@@ -120,7 +142,7 @@ class Kamal::Configuration
   end
 
   def repository
-    [ raw_config.registry["server"], image ].compact.join("/")
+    [ registry.server, image ].compact.join("/")
   end
 
   def absolute_image
@@ -157,39 +179,9 @@ class Kamal::Configuration
   end
 
   def logging_args
-    if logging.present?
-      optionize({ "log-driver" => logging["driver"] }.compact) +
-        argumentize("--log-opt", logging["options"])
-    else
-      argumentize("--log-opt", { "max-size" => "10m" })
-    end
+    logging.args
   end
 
-
-  def boot
-    Kamal::Configuration::Boot.new(config: self)
-  end
-
-  def builder
-    Kamal::Configuration::Builder.new(config: self)
-  end
-
-  def traefik
-    raw_config.traefik || {}
-  end
-
-  def ssh
-    Kamal::Configuration::Ssh.new(config: self)
-  end
-
-  def sshkit
-    Kamal::Configuration::Sshkit.new(config: self)
-  end
-
-
-  def healthcheck
-    { "path" => "/up", "port" => 3000, "max_attempts" => 7, "exposed_port" => 3999, "cord" => "/tmp/kamal-cord", "log_lines" => 50 }.merge(raw_config.healthcheck || {})
-  end
 
   def healthcheck_service
     [ "healthcheck", service, destination ].compact.join("-")
@@ -229,14 +221,18 @@ class Kamal::Configuration
     File.join(run_directory, "env")
   end
 
-  def env
-    raw_config.env || {}
+  def env_tags
+    @env_tags ||= if (tags = raw_config.env["tags"])
+      tags.collect { |name, config| Env::Tag.new(name, config: config) }
+    else
+      []
+    end
   end
 
-
-  def valid?
-    ensure_destination_if_required && ensure_required_keys_present && ensure_valid_kamal_version && ensure_retain_containers_valid && ensure_valid_service_name
+  def env_tag(name)
+    env_tags.detect { |t| t.name == name.to_s }
   end
+
 
   def to_h
     {
@@ -253,10 +249,9 @@ class Kamal::Configuration
       builder: builder.to_h,
       accessories: raw_config.accessories,
       logging: logging_args,
-      healthcheck: healthcheck
+      healthcheck: healthcheck.to_h
     }.compact
   end
-
 
   private
     # Will raise ArgumentError if any required config keys are missing
@@ -270,29 +265,21 @@ class Kamal::Configuration
 
     def ensure_required_keys_present
       %i[ service image registry servers ].each do |key|
-        raise ArgumentError, "Missing required configuration for #{key}" unless raw_config[key].present?
+        raise Kamal::ConfigurationError, "Missing required configuration for #{key}" unless raw_config[key].present?
       end
 
-      if raw_config.registry["username"].blank?
-        raise ArgumentError, "You must specify a username for the registry in config/deploy.yml"
-      end
-
-      if raw_config.registry["password"].blank?
-        raise ArgumentError, "You must specify a password for the registry in config/deploy.yml (or set the ENV variable if that's used)"
-      end
-
-      unless role_names.include?(primary_role_name)
-        raise ArgumentError, "The primary_role #{primary_role_name} isn't defined"
+      unless role(primary_role_name).present?
+        raise Kamal::ConfigurationError, "The primary_role #{primary_role_name} isn't defined"
       end
 
       if primary_role.hosts.empty?
-        raise ArgumentError, "No servers specified for the #{primary_role.name} primary_role"
+        raise Kamal::ConfigurationError, "No servers specified for the #{primary_role.name} primary_role"
       end
 
       unless allow_empty_roles?
         roles.each do |role|
           if role.hosts.empty?
-            raise ArgumentError, "No servers specified for the #{role.name} role. You can ignore this with allow_empty_roles: true"
+            raise Kamal::ConfigurationError, "No servers specified for the #{role.name} role. You can ignore this with allow_empty_roles: true"
           end
         end
       end
@@ -301,21 +288,21 @@ class Kamal::Configuration
     end
 
     def ensure_valid_service_name
-      raise ArgumentError, "Service name can only include alphanumeric characters, hyphens, and underscores" unless raw_config[:service] =~ /^[a-z0-9_-]+$/
+      raise Kamal::ConfigurationError, "Service name can only include alphanumeric characters, hyphens, and underscores" unless raw_config[:service] =~ /^[a-z0-9_-]+$/i
 
       true
     end
 
     def ensure_valid_kamal_version
       if minimum_version && Gem::Version.new(minimum_version) > Gem::Version.new(Kamal::VERSION)
-        raise ArgumentError, "Current version is #{Kamal::VERSION}, minimum required is #{minimum_version}"
+        raise Kamal::ConfigurationError, "Current version is #{Kamal::VERSION}, minimum required is #{minimum_version}"
       end
 
       true
     end
 
     def ensure_retain_containers_valid
-      raise ArgumentError, "Must retain at least 1 container" if retain_containers < 1
+      raise Kamal::ConfigurationError, "Must retain at least 1 container" if retain_containers < 1
 
       true
     end
@@ -328,7 +315,7 @@ class Kamal::Configuration
     def git_version
       @git_version ||=
         if Kamal::Git.used?
-          if Kamal::Git.uncommitted_changes.present? && !builder.git_archive?
+          if Kamal::Git.uncommitted_changes.present? && !builder.git_clone?
             uncommitted_suffix = "_uncommitted_#{SecureRandom.hex(8)}"
           end
           [ Kamal::Git.revision, uncommitted_suffix ].compact.join

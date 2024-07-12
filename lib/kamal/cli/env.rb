@@ -3,13 +3,13 @@ require "tempfile"
 class Kamal::Cli::Env < Kamal::Cli::Base
   desc "push", "Push the env file to the remote hosts"
   def push
-    mutating do
+    with_lock do
       on(KAMAL.hosts) do
         execute *KAMAL.auditor.record("Pushed env files"), verbosity: :debug
 
         KAMAL.roles_on(host).each do |role|
-          execute *KAMAL.app(role: role).make_env_directory
-          upload! role.env.secrets_io, role.env.secrets_file, mode: 400
+          execute *KAMAL.app(role: role, host: host).make_env_directory
+          upload! role.env(host).secrets_io, role.env(host).secrets_file, mode: 400
         end
       end
 
@@ -30,12 +30,12 @@ class Kamal::Cli::Env < Kamal::Cli::Base
 
   desc "delete", "Delete the env file from the remote hosts"
   def delete
-    mutating do
+    with_lock do
       on(KAMAL.hosts) do
         execute *KAMAL.auditor.record("Deleted env files"), verbosity: :debug
 
         KAMAL.roles_on(host).each do |role|
-          execute *KAMAL.app(role: role).remove_env_file
+          execute *KAMAL.app(role: role, host: host).remove_env_file
         end
       end
 

@@ -35,7 +35,7 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
           "hosts" => [ "1.1.1.6", "1.1.1.7" ],
           "port" => "6379:6379",
           "labels" => {
-            "cache" => true
+            "cache" => "true"
           },
           "env" => {
             "SOMETHING" => "else"
@@ -44,7 +44,7 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
             "/var/lib/redis:/data"
           ],
           "options" => {
-            "cpus" => 4,
+            "cpus" => "4",
             "memory" => "2GB"
           }
         },
@@ -54,13 +54,13 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
           "roles" => [ "web" ],
           "port" => "4321:4321",
           "labels" => {
-            "cache" => true
+            "cache" => "true"
           },
           "env" => {
             "STATSD_PORT" => "8126"
           },
           "options" => {
-            "cpus" => 4,
+            "cpus" => "4",
             "memory" => "2GB"
           }
         }
@@ -89,22 +89,24 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
 
   test "missing host" do
     @deploy[:accessories]["mysql"]["host"] = nil
-    @config = Kamal::Configuration.new(@deploy)
 
-    assert_raises(ArgumentError) do
-      @config.accessory(:mysql).hosts
+    assert_raises(Kamal::ConfigurationError) do
+      Kamal::Configuration.new(@deploy)
     end
   end
 
   test "setting host, hosts and roles" do
-    @deploy[:accessories]["mysql"]["hosts"] = true
-    @deploy[:accessories]["mysql"]["roles"] = true
-    @config = Kamal::Configuration.new(@deploy)
+    @deploy[:accessories]["mysql"]["hosts"] = [ "mysql-db1" ]
+    @deploy[:accessories]["mysql"]["roles"] = [ "db" ]
 
-    exception = assert_raises(ArgumentError) do
-      @config.accessory(:mysql).hosts
+    exception = assert_raises(Kamal::ConfigurationError) do
+      Kamal::Configuration.new(@deploy)
     end
-    assert_equal "Specify one of `host`, `hosts` or `roles` for accessory `mysql`", exception.message
+    assert_equal "accessories/mysql: specify one of `host`, `hosts` or `roles`", exception.message
+  end
+
+  test "all hosts" do
+    assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3", "1.1.1.4", "1.1.1.5", "1.1.1.6", "1.1.1.7" ], @config.all_hosts
   end
 
   test "label args" do

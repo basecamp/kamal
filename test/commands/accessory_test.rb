@@ -24,7 +24,7 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
           "host" => "1.1.1.6",
           "port" => "6379:6379",
           "labels" => {
-            "cache" => true
+            "cache" => "true"
           },
           "env" => {
             "SOMETHING" => "else"
@@ -125,6 +125,10 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
     assert_equal \
       "docker logs app-mysql  --since 5m  --tail 100 --timestamps 2>&1 | grep 'thing'",
       new_command(:mysql).logs(since: "5m", lines: 100, grep: "thing").join(" ")
+
+    assert_equal \
+      "docker logs app-mysql  --since 5m  --tail 100 --timestamps 2>&1 | grep 'thing' -C 2",
+      new_command(:mysql).logs(since: "5m", lines: 100, grep: "thing", grep_options: "-C 2").join(" ")
   end
 
   test "follow logs" do

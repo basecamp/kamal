@@ -24,6 +24,9 @@ class CommanderTest < ActiveSupport::TestCase
     @kamal.specific_hosts = [ "*" ]
     assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3", "1.1.1.4" ], @kamal.hosts
 
+    @kamal.specific_hosts = [ "1.1.1.[12]" ]
+    assert_equal [ "1.1.1.1", "1.1.1.2" ], @kamal.hosts
+
     exception = assert_raises(ArgumentError) do
       @kamal.specific_hosts = [ "*miss" ]
     end
@@ -55,6 +58,9 @@ class CommanderTest < ActiveSupport::TestCase
     assert_equal [ "web", "workers" ], @kamal.roles.map(&:name)
 
     @kamal.specific_roles = [ "*" ]
+    assert_equal [ "web", "workers" ], @kamal.roles.map(&:name)
+
+    @kamal.specific_roles = [ "w{eb,orkers}" ]
     assert_equal [ "web", "workers" ], @kamal.roles.map(&:name)
 
     exception = assert_raises(ArgumentError) do
@@ -93,6 +99,11 @@ class CommanderTest < ActiveSupport::TestCase
     assert_equal [ "workers" ], @kamal.roles_on("1.1.1.3").map(&:name)
   end
 
+  test "roles_on web comes first" do
+    configure_with(:deploy_with_two_roles_one_host)
+    assert_equal [ "web", "workers" ], @kamal.roles_on("1.1.1.1").map(&:name)
+  end
+
   test "default group strategy" do
     assert_empty @kamal.boot_strategy
   end
@@ -123,6 +134,20 @@ class CommanderTest < ActiveSupport::TestCase
     assert_equal "web_tokyo", @kamal.primary_role.name
     assert_equal "1.1.1.3", @kamal.primary_host
     assert_equal [ "1.1.1.3", "1.1.1.4", "1.1.1.1", "1.1.1.2" ], @kamal.hosts
+  end
+
+  test "traefik hosts should observe filtered roles" do
+    configure_with(:deploy_with_multiple_traefik_roles)
+
+    @kamal.specific_roles = [ "web_tokyo" ]
+    assert_equal [ "1.1.1.3", "1.1.1.4" ], @kamal.traefik_hosts
+  end
+
+  test "traefik hosts should observe filtered hosts" do
+    configure_with(:deploy_with_multiple_traefik_roles)
+
+    @kamal.specific_hosts = [ "1.1.1.2" ]
+    assert_equal [ "1.1.1.2" ], @kamal.traefik_hosts
   end
 
   private

@@ -1,19 +1,30 @@
 class Kamal::Cli::App::Boot
-  attr_reader :host, :role, :version, :sshkit
-  delegate :execute, :capture_with_info, :info, to: :sshkit
-  delegate :uses_cord?, :assets?, to: :role
+  attr_reader :host, :role, :version, :barrier, :sshkit
+  delegate :execute, :capture_with_info, :capture_with_pretty_json, :info, :error, to: :sshkit
+  delegate :uses_cord?, :assets?, :running_traefik?, to: :role
 
-  def initialize(host, role, version, sshkit)
+  def initialize(host, role, sshkit, version, barrier)
     @host = host
     @role = role
     @version = version
+    @barrier = barrier
     @sshkit = sshkit
   end
 
   def run
     old_version = old_version_renamed_if_clashing
 
-    start_new_version
+    wait_at_barrier if queuer?
+
+    begin
+      start_new_version
+    rescue => e
+      close_barrier if gatekeeper?
+      stop_new_version
+      raise
+    end
+
+    release_barrier if gatekeeper?
 
     if old_version
       stop_old_version(old_version)
@@ -21,18 +32,6 @@ class Kamal::Cli::App::Boot
   end
 
   private
-    def app
-      @app ||= KAMAL.app(role: role)
-    end
-
-    def auditor
-      @auditor = KAMAL.auditor(role: role)
-    end
-
-    def audit(message)
-      execute *auditor.record(message), verbosity: :debug
-    end
-
     def old_version_renamed_if_clashing
       if capture_with_info(*app.container_id_for_version(version), raise_on_non_zero_exit: false).present?
         renamed_version = "#{version}_replaced_#{SecureRandom.hex(8)}"
@@ -46,9 +45,15 @@ class Kamal::Cli::App::Boot
 
     def start_new_version
       audit "Booted app version #{version}"
+
       execute *app.tie_cord(role.cord_host_file) if uses_cord?
-      execute *app.run(hostname: "#{host}-#{SecureRandom.hex(6)}")
+      hostname = "#{host.to_s[0...51].gsub(/\.+$/, '')}-#{SecureRandom.hex(6)}"
+      execute *app.run(hostname: hostname)
       Kamal::Cli::Healthcheck::Poller.wait_for_healthy(pause_after_ready: true) { capture_with_info(*app.status(version: version)) }
+    end
+
+    def stop_new_version
+      execute *app.stop(version: version), raise_on_non_zero_exit: false
     end
 
     def stop_old_version(version)
@@ -63,5 +68,52 @@ class Kamal::Cli::App::Boot
       execute *app.stop(version: version), raise_on_non_zero_exit: false
 
       execute *app.clean_up_assets if assets?
+    end
+
+    def release_barrier
+      if barrier.open
+        info "First #{KAMAL.primary_role} container is healthy on #{host}, booting any other roles"
+      end
+    end
+
+    def wait_at_barrier
+      info "Waiting for the first healthy #{KAMAL.primary_role} container before booting #{role} on #{host}..."
+      barrier.wait
+      info "First #{KAMAL.primary_role} container is healthy, booting #{role} on #{host}..."
+    rescue Kamal::Cli::Healthcheck::Error
+      info "First #{KAMAL.primary_role} container is unhealthy, not booting #{role} on #{host}"
+      raise
+    end
+
+    def close_barrier
+      if barrier.close
+        info "First #{KAMAL.primary_role} container is unhealthy on #{host}, not booting any other roles"
+        error capture_with_info(*app.logs(version: version))
+        error capture_with_info(*app.container_health_log(version: version))
+      end
+    end
+
+    def barrier_role?
+      role == KAMAL.primary_role
+    end
+
+    def app
+      @app ||= KAMAL.app(role: role, host: host)
+    end
+
+    def auditor
+      @auditor = KAMAL.auditor(role: role)
+    end
+
+    def audit(message)
+      execute *auditor.record(message), verbosity: :debug
+    end
+
+    def gatekeeper?
+      barrier && barrier_role?
+    end
+
+    def queuer?
+      barrier && !barrier_role?
     end
 end

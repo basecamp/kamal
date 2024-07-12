@@ -13,6 +13,19 @@ class Kamal::Commands::Builder::Multiarch < Kamal::Commands::Builder::Base
       docker(:buildx, :ls)
   end
 
+  def push
+    docker :buildx, :build,
+      "--push",
+      "--platform", platform_names,
+      "--builder", builder_name,
+      *build_options,
+      build_context
+  end
+
+  def context_hosts
+    docker :buildx, :inspect, builder_name, "> /dev/null"
+  end
+
   private
     def builder_name
       "kamal-#{config.service}-multiarch"
@@ -24,14 +37,5 @@ class Kamal::Commands::Builder::Multiarch < Kamal::Commands::Builder::Base
       else
         "linux/amd64,linux/arm64"
       end
-    end
-
-    def build_and_push
-      docker :buildx, :build,
-        "--push",
-        "--platform", platform_names,
-        "--builder", builder_name,
-        *build_options,
-        build_context
     end
 end

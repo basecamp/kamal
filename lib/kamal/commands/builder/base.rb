@@ -2,8 +2,10 @@
 class Kamal::Commands::Builder::Base < Kamal::Commands::Base
   class BuilderError < StandardError; end
 
+  ENDPOINT_DOCKER_HOST_INSPECT = "'{{.Endpoints.docker.Host}}'"
+
   delegate :argumentize, to: Kamal::Utils
-  delegate :args, :secrets, :dockerfile, :local_arch, :local_host, :remote_arch, :remote_host, :cache_from, :cache_to, :ssh, :git_archive?, to: :builder_config
+  delegate :args, :secrets, :dockerfile, :target, :local_arch, :local_host, :remote_arch, :remote_host, :cache_from, :cache_to, :ssh, to: :builder_config
 
   def clean
     docker :image, :rm, "--force", config.absolute_image
@@ -13,18 +15,8 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
     docker :pull, config.absolute_image
   end
 
-  def push
-    if git_archive?
-      pipe \
-        git(:archive, "--format=tar", :HEAD),
-        build_and_push
-    else
-      build_and_push
-    end
-  end
-
   def build_options
-    [ *build_tags, *build_cache, *build_labels, *build_args, *build_secrets, *build_dockerfile, *build_ssh ]
+    [ *build_tags, *build_cache, *build_labels, *build_args, *build_secrets, *build_dockerfile, *build_target, *build_ssh ]
   end
 
   def build_context
@@ -40,6 +32,13 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
       )
   end
 
+  def context_hosts
+    :true
+  end
+
+  def config_context_hosts
+    []
+  end
 
   private
     def build_tags
@@ -73,11 +72,19 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
       end
     end
 
+    def build_target
+      argumentize "--target", target if target.present?
+    end
+
     def build_ssh
       argumentize "--ssh", ssh if ssh.present?
     end
 
     def builder_config
       config.builder
+    end
+
+    def context_host(builder_name)
+      docker :context, :inspect, builder_name, "--format", ENDPOINT_DOCKER_HOST_INSPECT
     end
 end

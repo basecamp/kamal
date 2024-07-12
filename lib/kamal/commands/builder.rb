@@ -1,24 +1,32 @@
 require "active_support/core_ext/string/filters"
 
 class Kamal::Commands::Builder < Kamal::Commands::Base
-  delegate :create, :remove, :push, :clean, :pull, :info, :validate_image, to: :target
+  delegate :create, :remove, :push, :clean, :pull, :info, :context_hosts, :config_context_hosts, :validate_image,
+    to: :target
+
+  include Clone
 
   def name
     target.class.to_s.remove("Kamal::Commands::Builder::").underscore.inquiry
   end
 
   def target
-    case
-    when !config.builder.multiarch? && !config.builder.cached?
-      native
-    when !config.builder.multiarch? && config.builder.cached?
-      native_cached
-    when config.builder.local? && config.builder.remote?
-      multiarch_remote
-    when config.builder.remote?
-      native_remote
+    if config.builder.multiarch?
+      if config.builder.remote?
+        if config.builder.local?
+          multiarch_remote
+        else
+          native_remote
+        end
+      else
+        multiarch
+      end
     else
-      multiarch
+      if config.builder.cached?
+        native_cached
+      else
+        native
+      end
     end
   end
 

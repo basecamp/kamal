@@ -1,0 +1,8 @@
+service: app
+image: dhh/app
+servers:
+  - "this-hostname-with-random-part-is-too-long.example.com"
+  - "this-hostname-is-really-unacceptably-long-to-be-honest.example.com"
+registry:
+  username: user
+  password: pw

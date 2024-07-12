@@ -19,7 +19,7 @@ class Kamal::Commander::Specifics
   end
 
   def traefik_hosts
-    specific_hosts || config.traefik_hosts
+    config.traefik_hosts & specified_hosts
   end
 
   def accessory_hosts

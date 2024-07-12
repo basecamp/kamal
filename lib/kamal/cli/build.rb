@@ -5,74 +5,84 @@ class Kamal::Cli::Build < Kamal::Cli::Base
 
   desc "deliver", "Build app and push app image to registry then pull image on servers"
   def deliver
-    mutating do
-      push
-      pull
-    end
+    push
+    pull
   end
 
   desc "push", "Build and push app image to registry"
   def push
-    mutating do
-      cli = self
+    cli = self
 
-      verify_local_dependencies
-      run_hook "pre-build"
+    verify_local_dependencies
+    run_hook "pre-build"
 
-      if (uncommitted_changes = Kamal::Git.uncommitted_changes).present?
-        say "The following paths have uncommitted changes:\n #{uncommitted_changes}", :yellow
+    uncommitted_changes = Kamal::Git.uncommitted_changes
+
+    if KAMAL.config.builder.git_clone?
+      if uncommitted_changes.present?
+        say "Building from a local git clone, so ignoring these uncommitted changes:\n #{uncommitted_changes}", :yellow
       end
 
       run_locally do
-        begin
-          KAMAL.with_verbosity(:debug) do
-            execute *KAMAL.builder.push
-          end
-        rescue SSHKit::Command::Failed => e
-          if e.message =~ /(no builder)|(no such file or directory)/
-            error "Missing compatible builder, so creating a new one first"
+        Clone.new(self).prepare
+      end
+    elsif uncommitted_changes.present?
+      say "Building with uncommitted changes:\n #{uncommitted_changes}", :yellow
+    end
 
-            if cli.create
-              KAMAL.with_verbosity(:debug) { execute *KAMAL.builder.push }
-            end
-          else
-            raise
-          end
+    # Get the command here to ensure the Dir.chdir doesn't interfere with it
+    push = KAMAL.builder.push
+
+    run_locally do
+      begin
+        context_hosts = capture_with_info(*KAMAL.builder.context_hosts).split("\n")
+
+        if context_hosts != KAMAL.builder.config_context_hosts
+          warn "Context hosts have changed, so re-creating builder, was: #{context_hosts.join(", ")}], now: #{KAMAL.builder.config_context_hosts.join(", ")}"
+          cli.remove
+          cli.create
         end
+      rescue SSHKit::Command::Failed => e
+        if e.message =~ /(context not found|no builder|does not exist)/
+          warn "Missing compatible builder, so creating a new one first"
+          cli.create
+        else
+          raise
+        end
+      end
+
+      KAMAL.with_verbosity(:debug) do
+        Dir.chdir(KAMAL.config.builder.build_directory) { execute *push }
       end
     end
   end
 
   desc "pull", "Pull app image from registry onto servers"
   def pull
-    mutating do
-      on(KAMAL.hosts) do
-        execute *KAMAL.auditor.record("Pulled image with version #{KAMAL.config.version}"), verbosity: :debug
-        execute *KAMAL.builder.clean, raise_on_non_zero_exit: false
-        execute *KAMAL.builder.pull
-        execute *KAMAL.builder.validate_image
-      end
+    on(KAMAL.hosts) do
+      execute *KAMAL.auditor.record("Pulled image with version #{KAMAL.config.version}"), verbosity: :debug
+      execute *KAMAL.builder.clean, raise_on_non_zero_exit: false
+      execute *KAMAL.builder.pull
+      execute *KAMAL.builder.validate_image
     end
   end
 
   desc "create", "Create a build setup"
   def create
-    mutating do
-      if (remote_host = KAMAL.config.builder.remote_host)
-        connect_to_remote_host(remote_host)
-      end
+    if (remote_host = KAMAL.config.builder.remote_host)
+      connect_to_remote_host(remote_host)
+    end
 
-      run_locally do
-        begin
-          debug "Using builder: #{KAMAL.builder.name}"
-          execute *KAMAL.builder.create
-        rescue SSHKit::Command::Failed => e
-          if e.message =~ /stderr=(.*)/
-            error "Couldn't create remote builder: #{$1}"
-            false
-          else
-            raise
-          end
+    run_locally do
+      begin
+        debug "Using builder: #{KAMAL.builder.name}"
+        execute *KAMAL.builder.create
+      rescue SSHKit::Command::Failed => e
+        if e.message =~ /stderr=(.*)/
+          error "Couldn't create remote builder: #{$1}"
+          false
+        else
+          raise
         end
       end
     end
@@ -80,11 +90,9 @@ class Kamal::Cli::Build < Kamal::Cli::Base
 
   desc "remove", "Remove build setup"
   def remove
-    mutating do
-      run_locally do
-        debug "Using builder: #{KAMAL.builder.name}"
-        execute *KAMAL.builder.remove
-      end
+    run_locally do
+      debug "Using builder: #{KAMAL.builder.name}"
+      execute *KAMAL.builder.remove
     end
   end
 
@@ -114,8 +122,11 @@ class Kamal::Cli::Build < Kamal::Cli::Base
     def connect_to_remote_host(remote_host)
       remote_uri = URI.parse(remote_host)
       if remote_uri.scheme == "ssh"
-        options = { user: remote_uri.user, port: remote_uri.port }.compact
-        on(remote_uri.host, options) do
+        host = SSHKit::Host.new(
+          hostname: remote_uri.host,
+          ssh_options: { user: remote_uri.user, port: remote_uri.port }.compact
+        )
+        on(host, options) do
           execute "true"
         end
       end

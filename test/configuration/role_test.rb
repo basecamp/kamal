@@ -18,7 +18,7 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
           "cmd" => "bin/jobs",
           "env" => {
             "REDIS_URL" => "redis://a/b",
-            "WEB_CONCURRENCY" => 4
+            "WEB_CONCURRENCY" => "4"
           }
         }
       }
@@ -53,7 +53,7 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
   test "custom labels via role specialization" do
     @deploy_with_roles[:labels] = { "my.custom.label" => "50" }
     @deploy_with_roles[:servers]["workers"]["labels"] = { "my.custom.label" => "70" }
-    assert_equal "70", @config_with_roles.role(:workers).labels["my.custom.label"]
+    assert_equal "70", Kamal::Configuration.new(@deploy_with_roles).role(:workers).labels["my.custom.label"]
   end
 
   test "overwriting default traefik label" do
@@ -63,17 +63,17 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
 
   test "default traefik label on non-web role" do
     config = Kamal::Configuration.new(@deploy_with_roles.tap { |c|
-      c[:servers]["beta"] = { "traefik" => "true", "hosts" => [ "1.1.1.5" ] }
+      c[:servers]["beta"] = { "traefik" => true, "hosts" => [ "1.1.1.5" ] }
     })
 
     assert_equal [ "--label", "service=\"app\"", "--label", "role=\"beta\"", "--label", "destination", "--label", "traefik.http.services.app-beta.loadbalancer.server.scheme=\"http\"", "--label", "traefik.http.routers.app-beta.rule=\"PathPrefix(\\`/\\`)\"", "--label", "traefik.http.routers.app-beta.priority=\"2\"", "--label", "traefik.http.middlewares.app-beta-retry.retry.attempts=\"5\"", "--label", "traefik.http.middlewares.app-beta-retry.retry.initialinterval=\"500ms\"", "--label", "traefik.http.routers.app-beta.middlewares=\"app-beta-retry@docker\"" ], config.role(:beta).label_args
   end
 
   test "env overwritten by role" do
-    assert_equal "redis://a/b", @config_with_roles.role(:workers).env.clear["REDIS_URL"]
+    assert_equal "redis://a/b", @config_with_roles.role(:workers).env("1.1.1.3").clear["REDIS_URL"]
 
-    assert_equal "\n", @config_with_roles.role(:workers).env.secrets_io.string
-    assert_equal [ "--env-file", ".kamal/env/roles/app-workers.env", "--env", "REDIS_URL=\"redis://a/b\"", "--env", "WEB_CONCURRENCY=\"4\"" ], @config_with_roles.role(:workers).env_args
+    assert_equal "\n", @config_with_roles.role(:workers).env("1.1.1.3").secrets_io.string
+    assert_equal [ "--env-file", ".kamal/env/roles/app-workers.env", "--env", "REDIS_URL=\"redis://a/b\"", "--env", "WEB_CONCURRENCY=\"4\"" ], @config_with_roles.role(:workers).env_args("1.1.1.3")
   end
 
   test "container name" do
@@ -86,7 +86,7 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
   end
 
   test "env args" do
-    assert_equal [ "--env-file", ".kamal/env/roles/app-workers.env", "--env", "REDIS_URL=\"redis://a/b\"", "--env", "WEB_CONCURRENCY=\"4\"" ], @config_with_roles.role(:workers).env_args
+    assert_equal [ "--env-file", ".kamal/env/roles/app-workers.env", "--env", "REDIS_URL=\"redis://a/b\"", "--env", "WEB_CONCURRENCY=\"4\"" ], @config_with_roles.role(:workers).env_args("1.1.1.3")
   end
 
   test "env secret overwritten by role" do
@@ -102,7 +102,7 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
     @deploy_with_roles[:servers]["workers"]["env"] = {
       "clear" => {
         "REDIS_URL" => "redis://a/b",
-        "WEB_CONCURRENCY" => 4
+        "WEB_CONCURRENCY" => "4"
       },
       "secret" => [
         "DB_PASSWORD"
@@ -117,8 +117,8 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
       DB_PASSWORD=secret&\"123
     ENV
 
-    assert_equal expected_secrets_file, @config_with_roles.role(:workers).env.secrets_io.string
-    assert_equal [ "--env-file", ".kamal/env/roles/app-workers.env", "--env", "REDIS_URL=\"redis://a/b\"", "--env", "WEB_CONCURRENCY=\"4\"" ], @config_with_roles.role(:workers).env_args
+    assert_equal expected_secrets_file, Kamal::Configuration.new(@deploy_with_roles).role(:workers).env("1.1.1.3").secrets_io.string
+    assert_equal [ "--env-file", ".kamal/env/roles/app-workers.env", "--env", "REDIS_URL=\"redis://a/b\"", "--env", "WEB_CONCURRENCY=\"4\"" ], @config_with_roles.role(:workers).env_args("1.1.1.3")
   ensure
     ENV["REDIS_PASSWORD"] = nil
     ENV["DB_PASSWORD"] = nil
@@ -128,7 +128,7 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
     @deploy_with_roles[:servers]["workers"]["env"] = {
       "clear" => {
         "REDIS_URL" => "redis://a/b",
-        "WEB_CONCURRENCY" => 4
+        "WEB_CONCURRENCY" => "4"
       },
       "secret" => [
         "DB_PASSWORD"
@@ -141,8 +141,8 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
       DB_PASSWORD=secret123
     ENV
 
-    assert_equal expected_secrets_file, @config_with_roles.role(:workers).env.secrets_io.string
-    assert_equal [ "--env-file", ".kamal/env/roles/app-workers.env", "--env", "REDIS_URL=\"redis://a/b\"", "--env", "WEB_CONCURRENCY=\"4\"" ], @config_with_roles.role(:workers).env_args
+    assert_equal expected_secrets_file, Kamal::Configuration.new(@deploy_with_roles).role(:workers).env("1.1.1.3").secrets_io.string
+    assert_equal [ "--env-file", ".kamal/env/roles/app-workers.env", "--env", "REDIS_URL=\"redis://a/b\"", "--env", "WEB_CONCURRENCY=\"4\"" ], @config_with_roles.role(:workers).env_args("1.1.1.3")
   ensure
     ENV["DB_PASSWORD"] = nil
   end
@@ -163,8 +163,8 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
       REDIS_PASSWORD=secret456
     ENV
 
-    assert_equal expected_secrets_file, @config_with_roles.role(:workers).env.secrets_io.string
-    assert_equal [ "--env-file", ".kamal/env/roles/app-workers.env", "--env", "REDIS_URL=\"redis://a/b\"", "--env", "WEB_CONCURRENCY=\"4\"" ], @config_with_roles.role(:workers).env_args
+    assert_equal expected_secrets_file, Kamal::Configuration.new(@deploy_with_roles).role(:workers).env("1.1.1.3").secrets_io.string
+    assert_equal [ "--env-file", ".kamal/env/roles/app-workers.env", "--env", "REDIS_URL=\"redis://a/b\"", "--env", "WEB_CONCURRENCY=\"4\"" ], @config_with_roles.role(:workers).env_args("1.1.1.3")
   ensure
     ENV["REDIS_PASSWORD"] = nil
   end
@@ -191,14 +191,15 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
       REDIS_PASSWORD=secret456
     ENV
 
-    assert_equal expected_secrets_file, @config_with_roles.role(:workers).env.secrets_io.string
-    assert_equal [ "--env-file", ".kamal/env/roles/app-workers.env", "--env", "REDIS_URL=\"redis://c/d\"" ], @config_with_roles.role(:workers).env_args
+    config = Kamal::Configuration.new(@deploy_with_roles)
+    assert_equal expected_secrets_file, config.role(:workers).env("1.1.1.3").secrets_io.string
+    assert_equal [ "--env-file", ".kamal/env/roles/app-workers.env", "--env", "REDIS_URL=\"redis://c/d\"" ], config.role(:workers).env_args("1.1.1.3")
   ensure
     ENV["REDIS_PASSWORD"] = nil
   end
 
   test "env secrets_file" do
-    assert_equal ".kamal/env/roles/app-workers.env", @config_with_roles.role(:workers).env.secrets_file
+    assert_equal ".kamal/env/roles/app-workers.env", @config_with_roles.role(:workers).env("1.1.1.3").secrets_file
   end
 
   test "uses cord" do

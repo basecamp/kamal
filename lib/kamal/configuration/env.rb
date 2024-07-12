@@ -1,18 +1,15 @@
 class Kamal::Configuration::Env
-  attr_reader :secrets_keys, :clear, :secrets_file
+  include Kamal::Configuration::Validation
+
+  attr_reader :secrets_keys, :clear, :secrets_file, :context
   delegate :argumentize, to: Kamal::Utils
 
-  def self.from_config(config:, secrets_file: nil)
-    secrets_keys = config.fetch("secret", [])
-    clear = config.fetch("clear", config.key?("secret") ? {} : config)
-
-    new clear: clear, secrets_keys: secrets_keys, secrets_file: secrets_file
-  end
-
-  def initialize(clear:, secrets_keys:, secrets_file:)
-    @clear = clear
-    @secrets_keys = secrets_keys
+  def initialize(config:, secrets_file: nil, context: "env")
+    @clear = config.fetch("clear", config.key?("secret") || config.key?("tags") ? {} : config)
+    @secrets_keys = config.fetch("secret", [])
     @secrets_file = secrets_file
+    @context = context
+    validate! config, context: context, with: Kamal::Configuration::Validator::Env
   end
 
   def args
@@ -33,8 +30,7 @@ class Kamal::Configuration::Env
 
   def merge(other)
     self.class.new \
-      clear: @clear.merge(other.clear),
-      secrets_keys: @secrets_keys | other.secrets_keys,
-      secrets_file: secrets_file
+      config: { "clear" => clear.merge(other.clear), "secret" => secrets_keys | other.secrets_keys },
+      secrets_file: secrets_file || other.secrets_file
   end
 end

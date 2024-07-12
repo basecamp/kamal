@@ -91,7 +91,7 @@ class CommandsTraefikTest < ActiveSupport::TestCase
     @config.delete(:traefik)
 
     assert_equal \
-      "docker run --name traefik --detach --restart unless-stopped --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock --env-file .kamal/env/traefik/traefik.env --log-opt max-size=\"10m\" --label traefik.http.routers.catchall.entryPoints=\"http\" --label traefik.http.routers.catchall.rule=\"PathPrefix(\\`/\\`)\" --label traefik.http.routers.catchall.service=\"unavailable\" --label traefik.http.routers.catchall.priority=\"1\" --label traefik.http.services.unavailable.loadbalancer.server.port=\"0\" #{Kamal::Commands::Traefik::DEFAULT_IMAGE} --providers.docker --log.level=\"DEBUG\"",
+      "docker run --name traefik --detach --restart unless-stopped --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock --env-file .kamal/env/traefik/traefik.env --log-opt max-size=\"10m\" --label traefik.http.routers.catchall.entryPoints=\"http\" --label traefik.http.routers.catchall.rule=\"PathPrefix(\\`/\\`)\" --label traefik.http.routers.catchall.service=\"unavailable\" --label traefik.http.routers.catchall.priority=\"1\" --label traefik.http.services.unavailable.loadbalancer.server.port=\"0\" #{Kamal::Configuration::Traefik::DEFAULT_IMAGE} --providers.docker --log.level=\"DEBUG\"",
       new_command.run.join(" ")
   end
 
@@ -109,6 +109,11 @@ class CommandsTraefikTest < ActiveSupport::TestCase
     assert_equal \
     "docker run --name traefik --detach --restart unless-stopped --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock --env-file .kamal/env/traefik/traefik.env --log-opt max-size=\"10m\" --label traefik.http.routers.catchall.entryPoints=\"http\" --label traefik.http.routers.catchall.rule=\"PathPrefix(\\`/\\`)\" --label traefik.http.routers.catchall.service=\"unavailable\" --label traefik.http.routers.catchall.priority=\"1\" --label traefik.http.services.unavailable.loadbalancer.server.port=\"0\" #{@image} --providers.docker --log.level=\"ERROR\" --accesslog.format=\"json\" --api.insecure --metrics.prometheus.buckets=\"0.1,0.3,1.2,5.0\"",
       new_command.run.join(" ")
+  end
+
+  test "run with args array" do
+    @config[:traefik]["args"] = { "entrypoints.web.forwardedheaders.trustedips" => %w[ 127.0.0.1 127.0.0.2 ] }
+    assert_equal "docker run --name traefik --detach --restart unless-stopped --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock --env-file .kamal/env/traefik/traefik.env --log-opt max-size=\"10m\" --label traefik.http.routers.catchall.entryPoints=\"http\" --label traefik.http.routers.catchall.rule=\"PathPrefix(\\`/\\`)\" --label traefik.http.routers.catchall.service=\"unavailable\" --label traefik.http.routers.catchall.priority=\"1\" --label traefik.http.services.unavailable.loadbalancer.server.port=\"0\" traefik:test --providers.docker --log.level=\"DEBUG\" --entrypoints.web.forwardedheaders.trustedips=\"127.0.0.1\" --entrypoints.web.forwardedheaders.trustedips=\"127.0.0.2\"", new_command.run.join(" ")
   end
 
   test "traefik start" do
@@ -151,6 +156,12 @@ class CommandsTraefikTest < ActiveSupport::TestCase
     assert_equal \
       "docker logs traefik --timestamps 2>&1 | grep 'hello!'",
       new_command.logs(grep: "hello!").join(" ")
+  end
+
+  test "traefik logs with grep hello! and grep options" do
+    assert_equal \
+      "docker logs traefik --timestamps 2>&1 | grep 'hello!' -C 2",
+      new_command.logs(grep: "hello!", grep_options: "-C 2").join(" ")
   end
 
   test "traefik remove container" do

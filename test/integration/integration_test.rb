@@ -78,6 +78,11 @@ class IntegrationTest < ActiveSupport::TestCase
       latest_app_version
     end
 
+    def break_app
+      deployer_exec "./break_app.sh #{@app}", workdir: "/"
+      latest_app_version
+    end
+
     def latest_app_version
       deployer_exec("git rev-parse HEAD", capture: true)
     end
@@ -130,5 +135,17 @@ class IntegrationTest < ActiveSupport::TestCase
         docker_compose :logs, :load_balancer
         puts "Tried to get the response code again and got #{app_response.code}"
       end
+    end
+
+    def assert_container_running(host:, name:)
+      assert container_running?(host: host, name: name)
+    end
+
+    def assert_container_not_running(host:, name:)
+      assert_not container_running?(host: host, name: name)
+    end
+
+    def container_running?(host:, name:)
+      docker_compose("exec #{host} docker ps --filter=name=#{name} | tail -n+2", capture: true).strip.present?
     end
 end

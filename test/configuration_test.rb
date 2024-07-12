@@ -28,7 +28,7 @@ class ConfigurationTest < ActiveSupport::TestCase
 
   %i[ service image registry ].each do |key|
     test "#{key} config required" do
-      assert_raise(ArgumentError) do
+      assert_raise(Kamal::ConfigurationError) do
         Kamal::Configuration.new @deploy.tap { _1.delete key }
       end
     end
@@ -36,18 +36,21 @@ class ConfigurationTest < ActiveSupport::TestCase
 
   %w[ username password ].each do |key|
     test "registry #{key} required" do
-      assert_raise(ArgumentError) do
+      assert_raise(Kamal::ConfigurationError) do
         Kamal::Configuration.new @deploy.tap { _1[:registry].delete key }
       end
     end
   end
 
   test "service name valid" do
-    assert Kamal::Configuration.new(@deploy.tap { _1[:service] = "hey-app1_primary" }).valid?
+    assert_nothing_raised do
+      Kamal::Configuration.new(@deploy.tap { _1[:service] = "hey-app1_primary" })
+      Kamal::Configuration.new(@deploy.tap { _1[:service] = "MyApp" })
+    end
   end
 
   test "service name invalid" do
-    assert_raise(ArgumentError) do
+    assert_raise(Kamal::ConfigurationError) do
       Kamal::Configuration.new @deploy.tap { _1[:service] = "app.com" }
     end
   end
@@ -74,6 +77,15 @@ class ConfigurationTest < ActiveSupport::TestCase
   end
 
   test "traefik hosts" do
+    assert_equal [ "1.1.1.1", "1.1.1.2" ], @config_with_roles.traefik_hosts
+
+    @deploy_with_roles[:servers]["workers"]["traefik"] = true
+    config = Kamal::Configuration.new(@deploy_with_roles)
+
+    assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3" ], config.traefik_hosts
+  end
+
+  test "filtered traefik hosts" do
     assert_equal [ "1.1.1.1", "1.1.1.2" ], @config_with_roles.traefik_hosts
 
     @deploy_with_roles[:servers]["workers"]["traefik"] = true
@@ -148,39 +160,34 @@ class ConfigurationTest < ActiveSupport::TestCase
     assert_equal "healthcheck-app", @config.healthcheck_service
   end
 
-  test "valid config" do
-    assert @config.valid?
-    assert @config_with_roles.valid?
-  end
-
   test "hosts required for all roles" do
     # Empty server list for implied web role
-    assert_raises(ArgumentError) do
+    assert_raises(Kamal::ConfigurationError) do
       Kamal::Configuration.new @deploy.merge(servers: [])
     end
 
     # Empty server list
-    assert_raises(ArgumentError) do
+    assert_raises(Kamal::ConfigurationError) do
       Kamal::Configuration.new @deploy.merge(servers: { "web" => [] })
     end
 
     # Missing hosts key
-    assert_raises(ArgumentError) do
+    assert_raises(Kamal::ConfigurationError) do
       Kamal::Configuration.new @deploy.merge(servers: { "web" => {} })
     end
 
     # Empty hosts list
-    assert_raises(ArgumentError) do
+    assert_raises(Kamal::ConfigurationError) do
       Kamal::Configuration.new @deploy.merge(servers: { "web" => { "hosts" => [] } })
     end
 
     # Nil hosts
-    assert_raises(ArgumentError) do
+    assert_raises(Kamal::ConfigurationError) do
       Kamal::Configuration.new @deploy.merge(servers: { "web" => { "hosts" => nil } })
     end
 
     # One role with hosts, one without
-    assert_raises(ArgumentError) do
+    assert_raises(Kamal::ConfigurationError) do
       Kamal::Configuration.new @deploy.merge(servers: { "web" => %w[ web ], "workers" => { "hosts" => %w[ ] } })
     end
   end
@@ -190,7 +197,7 @@ class ConfigurationTest < ActiveSupport::TestCase
       Kamal::Configuration.new @deploy.merge(servers: { "web" => %w[ web ], "workers" => { "hosts" => %w[ ] } }, allow_empty_roles: true)
     end
 
-    assert_raises(ArgumentError) do
+    assert_raises(Kamal::ConfigurationError) do
       Kamal::Configuration.new @deploy.merge(servers: { "web" => %w[], "workers" => { "hosts" => %w[] } }, allow_empty_roles: true)
     end
   end
@@ -205,17 +212,17 @@ class ConfigurationTest < ActiveSupport::TestCase
 
   test "logging args with configured options" do
     config = Kamal::Configuration.new(@deploy.tap { |c| c.merge!(logging: { "options" => { "max-size" => "100m", "max-file" => 5 } }) })
-    assert_equal [ "--log-opt", "max-size=\"100m\"", "--log-opt", "max-file=\"5\"" ], @config.logging_args
+    assert_equal [ "--log-opt", "max-size=\"100m\"", "--log-opt", "max-file=\"5\"" ], config.logging_args
   end
 
   test "logging args with configured driver and options" do
     config = Kamal::Configuration.new(@deploy.tap { |c| c.merge!(logging: { "driver" => "local", "options" => { "max-size" => "100m", "max-file" => 5 } }) })
-    assert_equal [ "--log-driver", "\"local\"", "--log-opt", "max-size=\"100m\"", "--log-opt", "max-file=\"5\"" ], @config.logging_args
+    assert_equal [ "--log-driver", "\"local\"", "--log-opt", "max-size=\"100m\"", "--log-opt", "max-file=\"5\"" ], config.logging_args
   end
 
   test "erb evaluation of yml config" do
     config = Kamal::Configuration.create_from config_file: Pathname.new(File.expand_path("fixtures/deploy.erb.yml", __dir__))
-    assert_equal "my-user", config.registry["username"]
+    assert_equal "my-user", config.registry.username
   end
 
   test "destination yml config merge" do
@@ -239,7 +246,7 @@ class ConfigurationTest < ActiveSupport::TestCase
   test "destination required" do
     dest_config_file = Pathname.new(File.expand_path("fixtures/deploy_for_required_dest.yml", __dir__))
 
-    assert_raises(ArgumentError) do
+    assert_raises(Kamal::ConfigurationError) do
       config = Kamal::Configuration.create_from config_file: dest_config_file
     end
 
@@ -262,7 +269,7 @@ class ConfigurationTest < ActiveSupport::TestCase
         volume_args: [ "--volume", "/local/path:/container/path" ],
         builder: {},
         logging: [ "--log-opt", "max-size=\"10m\"" ],
-        healthcheck: { "path"=>"/up", "port"=>3000, "max_attempts" => 7, "exposed_port" => 3999, "cord" => "/tmp/kamal-cord", "log_lines" => 50 } }
+        healthcheck: { "cmd"=>"curl -f http://localhost:3000/up || exit 1", "interval" => "1s", "path"=>"/up", "port"=>3000, "max_attempts" => 7, "cord" => "/tmp/kamal-cord", "log_lines" => 50 } }
 
     assert_equal expected_config, @config.to_h
   end
@@ -278,7 +285,7 @@ class ConfigurationTest < ActiveSupport::TestCase
   end
 
   test "min version is higher" do
-    assert_raises(ArgumentError) do
+    assert_raises(Kamal::ConfigurationError) do
       Kamal::Configuration.new(@deploy.tap { |c| c.merge!(minimum_version: "10000.0.0") })
     end
   end
@@ -324,7 +331,7 @@ class ConfigurationTest < ActiveSupport::TestCase
   end
 
   test "primary role missing" do
-    error = assert_raises(ArgumentError) do
+    error = assert_raises(Kamal::ConfigurationError) do
       Kamal::Configuration.new(@deploy.merge(primary_role: "bar"))
     end
     assert_match /bar isn't defined/, error.message
@@ -335,6 +342,6 @@ class ConfigurationTest < ActiveSupport::TestCase
     config = Kamal::Configuration.new(@deploy_with_roles.merge(retain_containers: 2))
     assert_equal 2, config.retain_containers
 
-    assert_raises(ArgumentError) { Kamal::Configuration.new(@deploy_with_roles.merge(retain_containers: 0)) }
+    assert_raises(Kamal::ConfigurationError) { Kamal::Configuration.new(@deploy_with_roles.merge(retain_containers: 0)) }
   end
 end

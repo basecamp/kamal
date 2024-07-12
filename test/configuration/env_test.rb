@@ -19,7 +19,7 @@ class ConfigurationEnvTest < ActiveSupport::TestCase
 
   test "secret" do
     ENV["PASSWORD"] = "hello"
-    env = Kamal::Configuration::Env.from_config config: { "secret" => [ "PASSWORD" ] }
+    env = Kamal::Configuration::Env.new config: { "secret" => [ "PASSWORD" ] }
 
     assert_config \
       config: { "secret" => [ "PASSWORD" ] },
@@ -34,7 +34,7 @@ class ConfigurationEnvTest < ActiveSupport::TestCase
       "secret" => [ "PASSWORD" ]
     }
 
-    assert_raises(KeyError) { Kamal::Configuration::Env.from_config(config: { "secret" => [ "PASSWORD" ] }).secrets }
+    assert_raises(KeyError) { Kamal::Configuration::Env.new(config: { "secret" => [ "PASSWORD" ] }).secrets }
   end
 
   test "secret and clear" do
@@ -67,7 +67,7 @@ class ConfigurationEnvTest < ActiveSupport::TestCase
 
   private
     def assert_config(config:, clear:, secrets:)
-      env = Kamal::Configuration::Env.from_config config: config
+      env = Kamal::Configuration::Env.new config: config, secrets_file: "secrets.env"
       assert_equal clear, env.clear
       assert_equal secrets, env.secrets
     end

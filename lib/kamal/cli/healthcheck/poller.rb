@@ -3,11 +3,10 @@ module Kamal::Cli::Healthcheck::Poller
 
   TRAEFIK_UPDATE_DELAY = 5
 
-  class HealthcheckError < StandardError; end
 
   def wait_for_healthy(pause_after_ready: false, &block)
     attempt = 1
-    max_attempts = KAMAL.config.healthcheck["max_attempts"]
+    max_attempts = KAMAL.config.healthcheck.max_attempts
 
     begin
       case status = block.call
@@ -16,9 +15,9 @@ module Kamal::Cli::Healthcheck::Poller
       when "running" # No health check configured
         sleep KAMAL.config.readiness_delay if pause_after_ready
       else
-        raise HealthcheckError, "container not ready (#{status})"
+        raise Kamal::Cli::Healthcheck::Error, "container not ready (#{status})"
       end
-    rescue HealthcheckError => e
+    rescue Kamal::Cli::Healthcheck::Error => e
       if attempt <= max_attempts
         info "#{e.message}, retrying in #{attempt}s (attempt #{attempt}/#{max_attempts})..."
         sleep attempt
@@ -34,16 +33,16 @@ module Kamal::Cli::Healthcheck::Poller
 
   def wait_for_unhealthy(pause_after_ready: false, &block)
     attempt = 1
-    max_attempts = KAMAL.config.healthcheck["max_attempts"]
+    max_attempts = KAMAL.config.healthcheck.max_attempts
 
     begin
       case status = block.call
       when "unhealthy"
         sleep TRAEFIK_UPDATE_DELAY if pause_after_ready
       else
-        raise HealthcheckError, "container not unhealthy (#{status})"
+        raise Kamal::Cli::Healthcheck::Error, "container not unhealthy (#{status})"
       end
-    rescue HealthcheckError => e
+    rescue Kamal::Cli::Healthcheck::Error => e
       if attempt <= max_attempts
         info "#{e.message}, retrying in #{attempt}s (attempt #{attempt}/#{max_attempts})..."
         sleep attempt

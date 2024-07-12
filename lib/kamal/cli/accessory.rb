@@ -1,7 +1,7 @@
 class Kamal::Cli::Accessory < Kamal::Cli::Base
   desc "boot [NAME]", "Boot new accessory service on host (use NAME=all to boot all accessories)"
   def boot(name, login: true)
-    mutating do
+    with_lock do
       if name == "all"
         KAMAL.accessory_names.each { |accessory_name| boot(accessory_name) }
       else
@@ -21,7 +21,7 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
 
   desc "upload [NAME]", "Upload accessory files to host", hide: true
   def upload(name)
-    mutating do
+    with_lock do
       with_accessory(name) do |accessory, hosts|
         on(hosts) do
           accessory.files.each do |(local, remote)|
@@ -38,7 +38,7 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
 
   desc "directories [NAME]", "Create accessory directories on host", hide: true
   def directories(name)
-    mutating do
+    with_lock do
       with_accessory(name) do |accessory, hosts|
         on(hosts) do
           accessory.directories.keys.each do |host_path|
@@ -51,7 +51,7 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
 
   desc "reboot [NAME]", "Reboot existing accessory on host (stop container, remove container, start new container; use NAME=all to boot all accessories)"
   def reboot(name)
-    mutating do
+    with_lock do
       if name == "all"
         KAMAL.accessory_names.each { |accessory_name| reboot(accessory_name) }
       else
@@ -70,7 +70,7 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
 
   desc "start [NAME]", "Start existing accessory container on host"
   def start(name)
-    mutating do
+    with_lock do
       with_accessory(name) do |accessory, hosts|
         on(hosts) do
           execute *KAMAL.auditor.record("Started #{name} accessory"), verbosity: :debug
@@ -82,7 +82,7 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
 
   desc "stop [NAME]", "Stop existing accessory container on host"
   def stop(name)
-    mutating do
+    with_lock do
       with_accessory(name) do |accessory, hosts|
         on(hosts) do
           execute *KAMAL.auditor.record("Stopped #{name} accessory"), verbosity: :debug
@@ -94,7 +94,7 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
 
   desc "restart [NAME]", "Restart existing accessory container on host"
   def restart(name)
-    mutating do
+    with_lock do
       with_accessory(name) do
         stop(name)
         start(name)
@@ -107,8 +107,9 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
     if name == "all"
       KAMAL.accessory_names.each { |accessory_name| details(accessory_name) }
     else
+      type = "Accessory #{name}"
       with_accessory(name) do |accessory, hosts|
-        on(hosts) { puts capture_with_info(*accessory.info) }
+        on(hosts) { puts_by_host host, capture_with_info(*accessory.info), type: type }
       end
     end
   end
@@ -148,23 +149,25 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
   option :since, aliases: "-s", desc: "Show logs since timestamp (e.g. 2013-01-02T13:23:37Z) or relative (e.g. 42m for 42 minutes)"
   option :lines, type: :numeric, aliases: "-n", desc: "Number of log lines to pull from each server"
   option :grep, aliases: "-g", desc: "Show lines with grep match only (use this to fetch specific requests by id)"
+  option :grep_options, aliases: "-o", desc: "Additional options supplied to grep"
   option :follow, aliases: "-f", desc: "Follow logs on primary server (or specific host set by --hosts)"
   def logs(name)
     with_accessory(name) do |accessory, hosts|
       grep = options[:grep]
+      grep_options = options[:grep_options]
 
       if options[:follow]
         run_locally do
           info "Following logs on #{hosts}..."
-          info accessory.follow_logs(grep: grep)
-          exec accessory.follow_logs(grep: grep)
+          info accessory.follow_logs(grep: grep, grep_options: grep_options)
+          exec accessory.follow_logs(grep: grep, grep_options: grep_options)
         end
       else
         since = options[:since]
         lines = options[:lines].presence || ((since || grep) ? nil : 100) # Default to 100 lines if since or grep isn't set
 
         on(hosts) do
-          puts capture_with_info(*accessory.logs(since: since, lines: lines, grep: grep))
+          puts capture_with_info(*accessory.logs(since: since, lines: lines, grep: grep, grep_options: grep_options))
         end
       end
     end
@@ -173,17 +176,12 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
   desc "remove [NAME]", "Remove accessory container, image and data directory from host (use NAME=all to remove all accessories)"
   option :confirmed, aliases: "-y", type: :boolean, default: false, desc: "Proceed without confirmation question"
   def remove(name)
-    mutating do
-      if name == "all"
-        KAMAL.accessory_names.each { |accessory_name| remove(accessory_name) }
-      else
-        confirming "This will remove all containers, images and data directories for #{name}. Are you sure?" do
-          with_accessory(name) do
-            stop(name)
-            remove_container(name)
-            remove_image(name)
-            remove_service_directory(name)
-          end
+    confirming "This will remove all containers, images and data directories for #{name}. Are you sure?" do
+      with_lock do
+        if name == "all"
+          KAMAL.accessory_names.each { |accessory_name| remove_accessory(accessory_name) }
+        else
+          remove_accessory(name)
         end
       end
     end
@@ -191,7 +189,7 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
 
   desc "remove_container [NAME]", "Remove accessory container from host", hide: true
   def remove_container(name)
-    mutating do
+    with_lock do
       with_accessory(name) do |accessory, hosts|
         on(hosts) do
           execute *KAMAL.auditor.record("Remove #{name} accessory container"), verbosity: :debug
@@ -203,7 +201,7 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
 
   desc "remove_image [NAME]", "Remove accessory image from host", hide: true
   def remove_image(name)
-    mutating do
+    with_lock do
       with_accessory(name) do |accessory, hosts|
         on(hosts) do
           execute *KAMAL.auditor.record("Removed #{name} accessory image"), verbosity: :debug
@@ -215,7 +213,7 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
 
   desc "remove_service_directory [NAME]", "Remove accessory directory used for uploaded files and data directories from host", hide: true
   def remove_service_directory(name)
-    mutating do
+    with_lock do
       with_accessory(name) do |accessory, hosts|
         on(hosts) do
           execute *accessory.remove_service_directory
@@ -247,6 +245,15 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
         KAMAL.specific_hosts & accessory.hosts
       else
         accessory.hosts
+      end
+    end
+
+    def remove_accessory(name)
+      with_accessory(name) do
+        stop(name)
+        remove_container(name)
+        remove_image(name)
+        remove_service_directory(name)
       end
     end
 end

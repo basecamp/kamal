@@ -67,13 +67,12 @@ module Kamal::Utils
     Array(filters).select do |filter|
       matches += Array(items).select do |item|
         # Only allow * for a wildcard
-        pattern = Regexp.escape(filter).gsub('\*', ".*")
         # items are roles or hosts
-        (item.respond_to?(:name) ? item.name : item).match(/^#{pattern}$/)
+        File.fnmatch(filter, item.to_s, File::FNM_EXTGLOB)
       end
     end
 
-    matches
+    matches.uniq
   end
 
   def stable_sort!(elements, &block)

@@ -2,13 +2,20 @@ service: app
 image: app
 servers:
   - vm1
-  - vm2
+  - vm2: [ tag1, tag2 ]
 env:
   clear:
     CLEAR_TOKEN: 4321
+    CLEAR_TAG: ""
     HOST_TOKEN: "${HOST_TOKEN}"
   secret:
     - SECRET_TOKEN
+  tags:
+    tag1:
+      CLEAR_TAG: tagged
+    tag2:
+      secret:
+        - SECRET_TAG
 asset_path: /usr/share/nginx/html/versions
 
 registry:
@@ -21,6 +28,7 @@ builder:
     COMMIT_SHA: <%= `git rev-parse HEAD` %>
 healthcheck:
   cmd: wget -qO- http://localhost > /dev/null || exit 1
+  max_attempts: 3
 traefik:
   args:
     accesslog: true
@@ -34,3 +42,4 @@ accessories:
     roles:
       - web
 stop_wait_time: 1
+readiness_delay: 0

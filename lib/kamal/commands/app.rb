@@ -3,11 +3,12 @@ class Kamal::Commands::App < Kamal::Commands::Base
 
   ACTIVE_DOCKER_STATUSES = [ :running, :restarting ]
 
-  attr_reader :role, :role
+  attr_reader :role, :host
 
-  def initialize(config, role: nil)
+  def initialize(config, role: nil, host: nil)
     super(config)
     @role = role
+    @host = host
   end
 
   def run(hostname: nil)
@@ -18,7 +19,7 @@ class Kamal::Commands::App < Kamal::Commands::Base
       *([ "--hostname", hostname ] if hostname),
       "-e", "KAMAL_CONTAINER_NAME=\"#{container_name}\"",
       "-e", "KAMAL_VERSION=\"#{config.version}\"",
-      *role.env_args,
+      *role.env_args(host),
       *role.health_check_args,
       *role.logging_args,
       *config.volume_args,
@@ -70,11 +71,11 @@ class Kamal::Commands::App < Kamal::Commands::Base
 
 
   def make_env_directory
-    make_directory role.env.secrets_directory
+    make_directory role.env(host).secrets_directory
   end
 
   def remove_env_file
-    [ :rm, "-f", role.env.secrets_file ]
+    [ :rm, "-f", role.env(host).secrets_file ]
   end
 
 

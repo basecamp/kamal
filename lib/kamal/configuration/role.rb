@@ -1,12 +1,33 @@
 class Kamal::Configuration::Role
+  include Kamal::Configuration::Validation
+
   CORD_FILE = "cord"
   delegate :argumentize, :optionize, to: Kamal::Utils
 
-  attr_accessor :name
+  attr_reader :name, :config, :specialized_env, :specialized_logging, :specialized_healthcheck
+
   alias to_s name
 
   def initialize(name, config:)
     @name, @config = name.inquiry, config
+    validate! \
+      specializations,
+      example: validation_yml["servers"]["workers"],
+      context: "servers/#{name}",
+      with: Kamal::Configuration::Validator::Role
+
+    @specialized_env = Kamal::Configuration::Env.new \
+      config: specializations.fetch("env", {}),
+      secrets_file: File.join(config.host_env_directory, "roles", "#{container_prefix}.env"),
+      context: "servers/#{name}/env"
+
+    @specialized_logging = Kamal::Configuration::Logging.new \
+      logging_config: specializations.fetch("logging", {}),
+      context: "servers/#{name}/logging"
+
+    @specialized_healthcheck = Kamal::Configuration::Healthcheck.new \
+      healthcheck_config: specializations.fetch("healthcheck", {}),
+      context: "servers/#{name}/healthcheck"
   end
 
   def primary_host
@@ -14,7 +35,11 @@ class Kamal::Configuration::Role
   end
 
   def hosts
-    @hosts ||= extract_hosts_from_config
+    tagged_hosts.keys
+  end
+
+  def env_tags(host)
+    tagged_hosts.fetch(host).collect { |tag| config.env_tag(tag) }
   end
 
   def cmd
@@ -38,24 +63,21 @@ class Kamal::Configuration::Role
   end
 
   def logging_args
-    args = config.logging || {}
-    args.deep_merge!(specializations["logging"]) if specializations["logging"].present?
+    logging.args
+  end
 
-    if args.any?
-      optionize({ "log-driver" => args["driver"] }.compact) +
-        argumentize("--log-opt", args["options"])
-    else
-      config.logging_args
-    end
+  def logging
+    @logging ||= config.logging.merge(specialized_logging)
   end
 
 
-  def env
-    @env ||= base_env.merge(specialized_env)
+  def env(host)
+    @envs ||= {}
+    @envs[host] ||= [ config.env, specialized_env, *env_tags(host).map(&:env) ].reduce(:merge)
   end
 
-  def env_args
-    env.args
+  def env_args(host)
+    env(host).args
   end
 
   def asset_volume_args
@@ -64,28 +86,29 @@ class Kamal::Configuration::Role
 
 
   def health_check_args(cord: true)
-    if health_check_cmd.present?
+    if running_traefik? || healthcheck.set_port_or_path?
       if cord && uses_cord?
-        optionize({ "health-cmd" => health_check_cmd_with_cord, "health-interval" => health_check_interval })
+        optionize({ "health-cmd" => health_check_cmd_with_cord, "health-interval" => healthcheck.interval })
           .concat(cord_volume.docker_args)
       else
-        optionize({ "health-cmd" => health_check_cmd, "health-interval" => health_check_interval })
+        optionize({ "health-cmd" => healthcheck.cmd, "health-interval" => healthcheck.interval })
       end
     else
       []
     end
   end
 
-  def health_check_cmd
-    health_check_options["cmd"] || http_health_check(port: health_check_options["port"], path: health_check_options["path"])
+  def healthcheck
+    @healthcheck ||=
+      if running_traefik?
+        config.healthcheck.merge(specialized_healthcheck)
+      else
+        specialized_healthcheck
+      end
   end
 
   def health_check_cmd_with_cord
-    "(#{health_check_cmd}) && (stat #{cord_container_file} > /dev/null || exit 1)"
-  end
-
-  def health_check_interval
-    health_check_options["interval"] || "1s"
+    "(#{healthcheck.cmd}) && (stat #{cord_container_file} > /dev/null || exit 1)"
   end
 
 
@@ -103,7 +126,7 @@ class Kamal::Configuration::Role
 
 
   def uses_cord?
-    running_traefik? && cord_volume && health_check_cmd.present?
+    running_traefik? && cord_volume && healthcheck.cmd.present?
   end
 
   def cord_host_directory
@@ -111,7 +134,7 @@ class Kamal::Configuration::Role
   end
 
   def cord_volume
-    if (cord = health_check_options["cord"])
+    if (cord = healthcheck.cord)
       @cord_volume ||= Kamal::Configuration::Volume.new \
         host_path: File.join(config.run_directory, "cords", [ container_prefix, config.run_id ].join("-")),
         container_path: cord
@@ -164,19 +187,38 @@ class Kamal::Configuration::Role
   end
 
   private
-    attr_accessor :config
+    def tagged_hosts
+      {}.tap do |tagged_hosts|
+        extract_hosts_from_config.map do |host_config|
+          if host_config.is_a?(Hash)
+            host, tags = host_config.first
+            tagged_hosts[host] = Array(tags)
+          elsif host_config.is_a?(String)
+            tagged_hosts[host_config] = []
+          end
+        end
+      end
+    end
 
     def extract_hosts_from_config
-      if config.servers.is_a?(Array)
-        config.servers
+      if config.raw_config.servers.is_a?(Array)
+        config.raw_config.servers
       else
-        servers = config.servers[name]
+        servers = config.raw_config.servers[name]
         servers.is_a?(Array) ? servers : Array(servers["hosts"])
       end
     end
 
     def default_labels
       { "service" => config.service, "role" => name, "destination" => config.destination }
+    end
+
+    def specializations
+      if config.raw_config.servers.is_a?(Array) || config.raw_config.servers[name].is_a?(Array)
+        {}
+      else
+        config.raw_config.servers[name]
+      end
     end
 
     def traefik_labels
@@ -204,37 +246,6 @@ class Kamal::Configuration::Role
       Hash.new.tap do |labels|
         labels.merge!(config.labels) if config.labels.present?
         labels.merge!(specializations["labels"]) if specializations["labels"].present?
-      end
-    end
-
-    def specializations
-      if config.servers.is_a?(Array) || config.servers[name].is_a?(Array)
-        {}
-      else
-        config.servers[name].except("hosts")
-      end
-    end
-
-    def specialized_env
-      Kamal::Configuration::Env.from_config config: specializations.fetch("env", {})
-    end
-
-    # Secrets are stored in an array, which won't merge by default, so have to do it by hand.
-    def base_env
-      Kamal::Configuration::Env.from_config \
-        config: config.env,
-        secrets_file: File.join(config.host_env_directory, "roles", "#{container_prefix}.env")
-    end
-
-    def http_health_check(port:, path:)
-      "curl -f #{URI.join("http://localhost:#{port}", path)} || exit 1" if path.present? || port.present?
-    end
-
-    def health_check_options
-      @health_check_options ||= begin
-        options = specializations["healthcheck"] || {}
-        options = config.healthcheck.merge(options) if running_traefik?
-        options
       end
     end
 end

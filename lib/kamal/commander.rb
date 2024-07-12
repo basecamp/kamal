@@ -2,13 +2,13 @@ require "active_support/core_ext/enumerable"
 require "active_support/core_ext/module/delegation"
 
 class Kamal::Commander
-  attr_accessor :verbosity, :holding_lock, :hold_lock_on_error
+  attr_accessor :verbosity, :holding_lock, :connected
   delegate :hosts, :roles, :primary_host, :primary_role, :roles_on, :traefik_hosts, :accessory_hosts, to: :specifics
 
   def initialize
     self.verbosity = :info
     self.holding_lock = false
-    self.hold_lock_on_error = false
+    self.connected = false
     @specifics = nil
   end
 
@@ -65,8 +65,8 @@ class Kamal::Commander
   end
 
 
-  def app(role: nil)
-    Kamal::Commands::App.new(config, role: role)
+  def app(role: nil, host: nil)
+    Kamal::Commands::App.new(config, role: role, host: host)
   end
 
   def accessory(name)
@@ -138,8 +138,8 @@ class Kamal::Commander
     self.holding_lock
   end
 
-  def hold_lock_on_error?
-    self.hold_lock_on_error
+  def connected?
+    self.connected
   end
 
   private

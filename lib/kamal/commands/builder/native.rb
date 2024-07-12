@@ -11,11 +11,10 @@ class Kamal::Commands::Builder::Native < Kamal::Commands::Builder::Base
     # No-op on native
   end
 
-  private
-    def build_and_push
-      combine \
-        docker(:build, *build_options, build_context),
-        docker(:push, config.absolute_image),
-        docker(:push, config.latest_image)
-    end
+  def push
+    combine \
+      docker(:build, *build_options, build_context),
+      docker(:push, config.absolute_image),
+      docker(:push, config.latest_image)
+  end
 end
