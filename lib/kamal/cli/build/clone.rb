@@ -34,6 +34,7 @@ class Kamal::Cli::Build::Clone
 
       FileUtils.mkdir_p KAMAL.config.builder.clone_directory
       execute *KAMAL.builder.clone
+      execute *KAMAL.builder.update_submodules_after_clone
     end
 
     def reset

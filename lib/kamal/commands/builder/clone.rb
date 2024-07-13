@@ -9,6 +9,10 @@ module Kamal::Commands::Builder::Clone
     git :clone, Kamal::Git.root, path: clone_directory
   end
 
+  def update_submodules_after_clone
+    git :submodule, :update, "--init", "--recursive", "--depth", "1", path: build_directory
+  end
+
   def clone_reset_steps
     [
       git(:remote, "set-url", :origin, Kamal::Git.root, path: build_directory),
