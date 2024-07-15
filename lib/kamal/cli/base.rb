@@ -25,12 +25,17 @@ module Kamal::Cli
     def initialize(*)
       super
       @original_env = ENV.to_h.dup
-      load_envs
+      load_env
       initialize_commander(options_with_subcommand_class_options)
     end
 
     private
-      def load_envs
+      def reload_env
+        reset_env
+        load_env
+      end
+
+      def load_env
         if destination = options[:destination]
           Dotenv.load(".env.#{destination}", ".env")
         else
@@ -38,10 +43,27 @@ module Kamal::Cli
         end
       end
 
-      def reload_envs
+      def reset_env
+        replace_env @original_env
+      end
+
+      def replace_env(env)
         ENV.clear
-        ENV.update(@original_env)
-        load_envs
+        ENV.update(env)
+      end
+
+      def with_original_env
+        keeping_current_env do
+          reset_env
+          yield
+        end
+      end
+
+      def keeping_current_env
+        current_env = ENV.to_h.dup
+        yield
+      ensure
+        replace_env(current_env)
       end
 
       def options_with_subcommand_class_options

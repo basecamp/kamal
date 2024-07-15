@@ -191,10 +191,12 @@ class Kamal::Cli::Main < Kamal::Cli::Base
     end
 
     if Pathname.new(File.expand_path(env_template_path)).exist?
-      File.write(env_path, ERB.new(File.read(env_template_path), trim_mode: "-").result, perm: 0600)
+      # Ensure existing env doesn't pollute template evaluation
+      content = with_original_env { ERB.new(File.read(env_template_path), trim_mode: "-").result }
+      File.write(env_path, content, perm: 0600)
 
       unless options[:skip_push]
-        reload_envs
+        reload_env
         invoke "kamal:cli:env:push", options
       end
     else
