@@ -5,7 +5,7 @@ class Kamal::Cli::Build < Kamal::Cli::Base
 
   desc "deliver", "Build app and push app image to registry then pull image on servers"
   def deliver
-    invoke :push
+    invoke :push unless already_built?
     invoke :pull
   end
 
@@ -180,5 +180,11 @@ class Kamal::Cli::Build < Kamal::Cli::Base
         execute *KAMAL.builder.pull
         execute *KAMAL.builder.validate_image
       end
+    end
+
+    def already_built?
+      run_locally { execute *KAMAL.docker.manifest(KAMAL.builder.absolute_image) }
+    rescue SSHKit::Command::Failed
+      false
     end
 end
