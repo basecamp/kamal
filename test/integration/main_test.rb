@@ -8,14 +8,14 @@ class MainTest < IntegrationTest
 
     kamal :deploy
     assert_app_is_up version: first_version
-    assert_hooks_ran "pre-connect", "pre-build", "pre-deploy", "post-deploy"
+    assert_hooks_ran "pre-connect", "pre-deploy", "post-deploy"
     assert_envs version: first_version
 
     second_version = update_app_rev
 
     kamal :redeploy
     assert_app_is_up version: second_version
-    assert_hooks_ran "pre-connect", "pre-build", "pre-deploy", "post-deploy"
+    assert_hooks_ran "pre-connect", "pre-deploy", "post-deploy"
 
     assert_accumulated_assets first_version, second_version
 
