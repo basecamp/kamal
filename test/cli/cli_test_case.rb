@@ -42,7 +42,7 @@ class CliTestCase < ActiveSupport::TestCase
     end
 
     def assert_hook_ran(hook, output, version:, service_version:, hosts:, command:, subcommand: nil, runtime: false)
-      performer = `whoami`.strip
+      performer = Kamal::Git.email.presence || `whoami`.chomp
       service = service_version.split("@").first
 
       assert_match "Running the #{hook} hook...\n", output

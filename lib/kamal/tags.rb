@@ -10,7 +10,7 @@ class Kamal::Tags
 
     def default_tags(config)
       { recorded_at: Time.now.utc.iso8601,
-        performer: `whoami`.chomp,
+        performer: Kamal::Git.email.presence || `whoami`.chomp,
         destination: config.destination,
         version: config.version,
         service_version: service_version(config),

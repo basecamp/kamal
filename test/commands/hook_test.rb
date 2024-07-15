@@ -11,7 +11,7 @@ class CommandsHookTest < ActiveSupport::TestCase
       traefik: { "args" => { "accesslog.format" => "json", "metrics.prometheus.buckets" => "0.1,0.3,1.2,5.0" } }
     }
 
-    @performer = `whoami`.strip
+    @performer = Kamal::Git.email.presence || `whoami`.chomp
     @recorded_at = Time.now.utc.iso8601
   end
 
