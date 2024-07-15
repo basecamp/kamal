@@ -18,7 +18,6 @@ Gem::Specification.new do |spec|
   spec.add_dependency "dotenv", "~> 2.8"
   spec.add_dependency "zeitwerk", "~> 2.5"
   spec.add_dependency "ed25519", "~> 1.2"
-  spec.add_dependency "x25519", "~> 1.0", ">= 1.0.10"
   spec.add_dependency "bcrypt_pbkdf", "~> 1.0"
   spec.add_dependency "concurrent-ruby", "~> 1.2"
   spec.add_dependency "base64", "~> 0.2"
