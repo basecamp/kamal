@@ -47,7 +47,7 @@ class Kamal::Configuration
     @destination = destination
     @declared_version = version
 
-    validate! raw_config, example: validation_yml.symbolize_keys, context: ""
+    validate! raw_config, example: validation_yml.symbolize_keys, context: "", with: Kamal::Configuration::Validator::Configuration
 
     # Eager load config to validate it, these are first as they have dependencies later on
     @servers = Servers.new(config: self)

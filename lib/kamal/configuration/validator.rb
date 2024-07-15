@@ -15,11 +15,10 @@ class Kamal::Configuration::Validator
     def validate_against_example!(validation_config, example)
       validate_type! validation_config, Hash
 
-      if (unknown_keys = validation_config.keys - example.keys).any?
-        unknown_keys_error unknown_keys
-      end
+      check_unknown_keys! validation_config, example
 
       validation_config.each do |key, value|
+        next if extension?(key)
         with_context(key) do
           example_value = example[key]
 
@@ -136,5 +135,19 @@ class Kamal::Configuration::Validator
       yield
     ensure
       @context = old_context
+    end
+
+    def allow_extensions?
+      false
+    end
+
+    def extension?(key)
+      key.to_s.start_with?("x-")
+    end
+
+    def check_unknown_keys!(config, example)
+      unknown_keys = config.keys - example.keys
+      unknown_keys.reject! { |key| extension?(key) } if allow_extensions?
+      unknown_keys_error unknown_keys if unknown_keys.present?
     end
 end

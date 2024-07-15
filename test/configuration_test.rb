@@ -344,4 +344,12 @@ class ConfigurationTest < ActiveSupport::TestCase
 
     assert_raises(Kamal::ConfigurationError) { Kamal::Configuration.new(@deploy_with_roles.merge(retain_containers: 0)) }
   end
+
+  test "extensions" do
+    dest_config_file = Pathname.new(File.expand_path("fixtures/deploy_with_extensions.yml", __dir__))
+
+    config = Kamal::Configuration.create_from config_file: dest_config_file
+    assert_equal config.role(:web_tokyo).running_traefik?, true
+    assert_equal config.role(:web_chicago).running_traefik?, true
+  end
 end
