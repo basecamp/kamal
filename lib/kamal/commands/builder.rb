@@ -3,6 +3,7 @@ require "active_support/core_ext/string/filters"
 class Kamal::Commands::Builder < Kamal::Commands::Base
   delegate :create, :remove, :push, :clean, :pull, :info, :context_hosts, :config_context_hosts, :validate_image,
            :first_mirror, to: :target
+  delegate :absolute_image, to: :config
 
   include Clone
 
