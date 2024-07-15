@@ -40,6 +40,10 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
     []
   end
 
+  def first_mirror
+    docker(:info, "--format '{{index .RegistryConfig.Mirrors 0}}'")
+  end
+
   private
     def build_tags
       [ "-t", config.absolute_image, "-t", config.latest_image ]
