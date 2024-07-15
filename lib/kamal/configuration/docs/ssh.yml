@@ -44,3 +44,23 @@ ssh:
   # Defaults to `fatal`. Set this to debug if you are having
   # SSH connection issues.
   log_level: debug
+
+  # Keys Only
+  #
+  # Set to true to use only private keys from keys and key_data parameters, 
+  # even if ssh-agent offers more identities. This option is intended for 
+  # situations where ssh-agent offers many different identites or you have 
+  # a need to overwrite all identites and force a single one.
+  keys_only: false
+
+  # Keys
+  #
+  # An array of file names of private keys to use for publickey
+  # and hostbased authentication
+  keys: [ "~/.ssh/id.pem" ]
+
+  # Key Data
+  #
+  # An array of strings, with each element of the array being
+  # a raw private key in PEM format.
+  key_data: [ "-----BEGIN OPENSSH PRIVATE KEY-----" ]
