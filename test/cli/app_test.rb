@@ -356,6 +356,18 @@ class CliAppTest < CliTestCase
     end
   end
 
+  test "boot proxy" do
+    SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info).returns("123") # old version
+
+    run_command("boot", config: :with_proxy).tap do |output|
+      assert_match /Renaming container .* to .* as already deployed on 1.1.1.1/, output # Rename
+      assert_match /docker rename app-web-latest app-web-latest_replaced_[0-9a-f]{16}/, output
+      assert_match /docker run --detach --restart unless-stopped --name app-web-latest --hostname 1.1.1.1-[0-9a-f]{12} -e KAMAL_CONTAINER_NAME="app-web-latest" -e KAMAL_VERSION="latest" --env-file .kamal\/env\/roles\/app-web.env --log-opt max-size="10m" --label service="app" --label role="web" --label destination dhh\/app:latest/, output
+      assert_match /docker exec kamal-proxy kamal-proxy deploy app-web --target "123"/, output
+      assert_match "docker container ls --all --filter name=^app-web-123$ --quiet | xargs docker stop", output
+    end
+  end
+
   private
     def run_command(*command, config: :with_accessories, host: "1.1.1.1", allow_execute_error: false)
       stdouted do

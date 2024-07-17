@@ -10,7 +10,7 @@ class Kamal::Configuration
   delegate :argumentize, :optionize, to: Kamal::Utils
 
   attr_reader :destination, :raw_config, :secrets
-  attr_reader :accessories, :aliases, :boot, :builder, :env, :healthcheck, :logging, :traefik, :servers, :ssh, :sshkit, :registry
+  attr_reader :accessories, :aliases :boot, :builder, :env, :healthcheck, :logging, :proxy, :traefik, :servers, :ssh, :sshkit, :registry
 
   include Validation
 
@@ -60,6 +60,7 @@ class Kamal::Configuration
 
     @healthcheck = Healthcheck.new(healthcheck_config: @raw_config.healthcheck)
     @logging = Logging.new(logging_config: @raw_config.logging)
+    @proxy = Proxy.new(config: self)
     @traefik = Traefik.new(config: self)
     @ssh = Ssh.new(config: self)
     @sshkit = Sshkit.new(config: self)
@@ -141,6 +142,10 @@ class Kamal::Configuration
 
   def traefik_hosts
     traefik_roles.flat_map(&:hosts).uniq
+  end
+
+  def proxy_hosts
+    proxy.hosts
   end
 
   def repository

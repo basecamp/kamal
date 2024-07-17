@@ -35,8 +35,13 @@ class Kamal::Cli::Main < Kamal::Cli::Base
       with_lock do
         run_hook "pre-deploy", secrets: true
 
-        say "Ensure Traefik is running...", :magenta
-        invoke "kamal:cli:traefik:boot", [], invoke_options
+        if KAMAL.config.proxy.enabled?
+          say "Ensure Traefik/kamal-proxy is running...", :magenta
+          invoke "kamal:cli:proxy:boot", [], invoke_options
+        else
+          say "Ensure Traefik is running...", :magenta
+          invoke "kamal:cli:traefik:boot", [], invoke_options
+        end
 
         say "Detect stale containers...", :magenta
         invoke "kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true)
@@ -104,7 +109,11 @@ class Kamal::Cli::Main < Kamal::Cli::Base
 
   desc "details", "Show details about all containers"
   def details
-    invoke "kamal:cli:traefik:details"
+    if KAMAL.config.proxy.enabled?
+      invoke "kamal:cli:proxy:details"
+    else
+      invoke "kamal:cli:traefik:details"
+    end
     invoke "kamal:cli:app:details"
     invoke "kamal:cli:accessory:details", [ "all" ]
   end
@@ -181,7 +190,11 @@ class Kamal::Cli::Main < Kamal::Cli::Base
   def remove
     confirming "This will remove all containers and images. Are you sure?" do
       with_lock do
-        invoke "kamal:cli:traefik:remove", [], options.without(:confirmed)
+        if KAMAL.config.proxy.enabled?
+          invoke "kamal:cli:proxy:remove", [], options.without(:confirmed)
+        else
+          invoke "kamal:cli:traefik:remove", [], options.without(:confirmed)
+        end
         invoke "kamal:cli:app:remove", [], options.without(:confirmed)
         invoke "kamal:cli:accessory:remove", [ "all" ], options
         invoke "kamal:cli:registry:logout", [], options.without(:confirmed).merge(skip_local: true)
@@ -205,6 +218,9 @@ class Kamal::Cli::Main < Kamal::Cli::Base
 
   desc "lock", "Manage the deploy lock"
   subcommand "lock", Kamal::Cli::Lock
+
+  desc "proxy", "Prune old application images and containers"
+  subcommand "proxy", Kamal::Cli::Proxy
 
   desc "prune", "Prune old application images and containers"
   subcommand "prune", Kamal::Cli::Prune

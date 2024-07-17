@@ -45,15 +45,25 @@ class Kamal::Cli::App::Boot
 
     def start_new_version
       audit "Booted app version #{version}"
-
-      execute *app.tie_cord(role.cord_host_file) if uses_cord?
       hostname = "#{host.to_s[0...51].gsub(/\.+$/, '')}-#{SecureRandom.hex(6)}"
 
       execute *app.ensure_env_directory
       upload! role.secrets_io(host), role.secrets_path, mode: "0600"
-      execute *app.run(hostname: hostname)
 
-      Kamal::Cli::Healthcheck::Poller.wait_for_healthy(pause_after_ready: true) { capture_with_info(*app.status(version: version)) }
+      if proxy_host?
+        execute *app.run_for_proxy(hostname: hostname)
+        if running_traefik?
+          endpoint = capture_with_info(*app.container_endpoint(version: version)).strip
+          raise Kamal::Cli::BootError, "Failed to get endpoint for #{role} on #{host}, did the container boot?" if endpoint.empty?
+          execute *KAMAL.proxy.deploy(role.container_prefix, target: endpoint)
+        else
+          Kamal::Cli::Healthcheck::Poller.wait_for_healthy(pause_after_ready: true) { capture_with_info(*app.status(version: version)) }
+        end
+      else
+        execute *app.tie_cord(role.cord_host_file) if uses_cord?
+        execute *app.run(hostname: hostname)
+        Kamal::Cli::Healthcheck::Poller.wait_for_healthy(pause_after_ready: true) { capture_with_info(*app.status(version: version)) }
+      end
     end
 
     def stop_new_version
@@ -61,7 +71,7 @@ class Kamal::Cli::App::Boot
     end
 
     def stop_old_version(version)
-      if uses_cord?
+      if uses_cord? && !proxy_host?
         cord = capture_with_info(*app.cord(version: version), raise_on_non_zero_exit: false).strip
         if cord.present?
           execute *app.cut_cord(cord)
@@ -123,5 +133,9 @@ class Kamal::Cli::App::Boot
 
     def queuer?
       barrier && !barrier_role?
+    end
+
+    def proxy_host?
+      KAMAL.proxy_host?(host)
     end
 end
