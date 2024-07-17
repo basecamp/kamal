@@ -24,6 +24,7 @@ DOCS = {
   "env" => "Environment variables",
   "healthcheck" => "Healthchecks",
   "logging" => "Logging",
+  "proxy" => "Proxy (Experimental)",
   "registry" => "Docker Registry",
   "role" => "Roles",
   "servers" => "Servers",

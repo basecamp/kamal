@@ -1,4 +1,5 @@
 module Kamal::Cli
+  class BootError < StandardError; end
   class HookError < StandardError; end
   class LockError < StandardError; end
 end

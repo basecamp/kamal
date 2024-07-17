@@ -1,6 +1,7 @@
 class Kamal::Cli::Traefik < Kamal::Cli::Base
   desc "boot", "Boot Traefik on servers"
   def boot
+    raise_if_kamal_proxy_enabled!
     with_lock do
       on(KAMAL.traefik_hosts) do
         execute *KAMAL.registry.login
@@ -13,6 +14,7 @@ class Kamal::Cli::Traefik < Kamal::Cli::Base
   option :rolling, type: :boolean, default: false, desc: "Reboot traefik on hosts in sequence, rather than in parallel"
   option :confirmed, aliases: "-y", type: :boolean, default: false, desc: "Proceed without confirmation question"
   def reboot
+    raise_if_kamal_proxy_enabled!
     confirming "This will cause a brief outage on each host. Are you sure?" do
       with_lock do
         host_groups = options[:rolling] ? KAMAL.traefik_hosts : [ KAMAL.traefik_hosts ]
@@ -34,6 +36,7 @@ class Kamal::Cli::Traefik < Kamal::Cli::Base
 
   desc "start", "Start existing Traefik container on servers"
   def start
+    raise_if_kamal_proxy_enabled!
     with_lock do
       on(KAMAL.traefik_hosts) do
         execute *KAMAL.auditor.record("Started traefik"), verbosity: :debug
@@ -44,6 +47,7 @@ class Kamal::Cli::Traefik < Kamal::Cli::Base
 
   desc "stop", "Stop existing Traefik container on servers"
   def stop
+    raise_if_kamal_proxy_enabled!
     with_lock do
       on(KAMAL.traefik_hosts) do
         execute *KAMAL.auditor.record("Stopped traefik"), verbosity: :debug
@@ -54,6 +58,7 @@ class Kamal::Cli::Traefik < Kamal::Cli::Base
 
   desc "restart", "Restart existing Traefik container on servers"
   def restart
+    raise_if_kamal_proxy_enabled!
     with_lock do
       stop
       start
@@ -62,6 +67,7 @@ class Kamal::Cli::Traefik < Kamal::Cli::Base
 
   desc "details", "Show details about Traefik container from servers"
   def details
+    raise_if_kamal_proxy_enabled!
     on(KAMAL.traefik_hosts) { |host| puts_by_host host, capture_with_info(*KAMAL.traefik.info), type: "Traefik" }
   end
 
@@ -72,6 +78,7 @@ class Kamal::Cli::Traefik < Kamal::Cli::Base
   option :grep_options, aliases: "-o", desc: "Additional options supplied to grep"
   option :follow, aliases: "-f", desc: "Follow logs on primary server (or specific host set by --hosts)"
   def logs
+    raise_if_kamal_proxy_enabled!
     grep = options[:grep]
     grep_options = options[:grep_options]
 
@@ -93,6 +100,7 @@ class Kamal::Cli::Traefik < Kamal::Cli::Base
 
   desc "remove", "Remove Traefik container and image from servers"
   def remove
+    raise_if_kamal_proxy_enabled!
     with_lock do
       stop
       remove_container
@@ -102,6 +110,7 @@ class Kamal::Cli::Traefik < Kamal::Cli::Base
 
   desc "remove_container", "Remove Traefik container from servers", hide: true
   def remove_container
+    raise_if_kamal_proxy_enabled!
     with_lock do
       on(KAMAL.traefik_hosts) do
         execute *KAMAL.auditor.record("Removed traefik container"), verbosity: :debug
@@ -112,6 +121,7 @@ class Kamal::Cli::Traefik < Kamal::Cli::Base
 
   desc "remove_image", "Remove Traefik image from servers", hide: true
   def remove_image
+    raise_if_kamal_proxy_enabled!
     with_lock do
       on(KAMAL.traefik_hosts) do
         execute *KAMAL.auditor.record("Removed traefik image"), verbosity: :debug
@@ -119,4 +129,11 @@ class Kamal::Cli::Traefik < Kamal::Cli::Base
       end
     end
   end
+
+  private
+    def raise_if_kamal_proxy_enabled!
+      if KAMAL.config.proxy.enabled?
+        raise "kamal traefik commands are disabled when experimental proxy support is enabled. Use `kamal proxy` commands instead."
+      end
+    end
 end

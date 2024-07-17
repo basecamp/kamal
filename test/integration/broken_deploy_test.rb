@@ -29,6 +29,5 @@ class BrokenDeployTest < IntegrationTest
       assert_match /First web container is unhealthy on vm[12], not booting any other roles/, output
       assert_match "First web container is unhealthy, not booting workers on vm3", output
       assert_match "nginx: [emerg] unexpected end of file, expecting \";\" or \"}\" in /etc/nginx/conf.d/default.conf:2", output
-      assert_match 'ERROR {"Status":"unhealthy","FailingStreak":0,"Log":[]}', output
     end
 end

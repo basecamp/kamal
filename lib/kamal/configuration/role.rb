@@ -58,8 +58,16 @@ class Kamal::Configuration::Role
     default_labels.merge(traefik_labels).merge(custom_labels)
   end
 
+  def labels_for_proxy
+    default_labels.merge(custom_labels)
+  end
+
   def label_args
     argumentize "--label", labels
+  end
+
+  def label_args_for_proxy
+    argumentize "--label", labels_for_proxy
   end
 
   def logging_args

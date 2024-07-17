@@ -38,8 +38,17 @@ class Kamal::Cli::App < Kamal::Cli::Base
         roles = KAMAL.roles_on(host)
 
         roles.each do |role|
+          app = KAMAL.app(role: role, host: host)
           execute *KAMAL.auditor.record("Started app version #{KAMAL.config.version}"), verbosity: :debug
-          execute *KAMAL.app(role: role, host: host).start, raise_on_non_zero_exit: false
+          execute *app.start, raise_on_non_zero_exit: false
+
+          if role.running_traefik? && KAMAL.proxy_host?(host)
+            version = capture_with_info(*app.current_running_version, raise_on_non_zero_exit: false).strip
+            endpoint = capture_with_info(*app.container_endpoint(version: version)).strip
+            raise Kamal::Cli::BootError, "Failed to get endpoint for #{role} on #{host}, did the container boot?" if endpoint.empty?
+
+            execute *KAMAL.proxy.deploy(role.container_prefix, target: endpoint)
+          end
         end
       end
     end
@@ -52,8 +61,18 @@ class Kamal::Cli::App < Kamal::Cli::Base
         roles = KAMAL.roles_on(host)
 
         roles.each do |role|
+          app = KAMAL.app(role: role, host: host)
           execute *KAMAL.auditor.record("Stopped app", role: role), verbosity: :debug
-          execute *KAMAL.app(role: role, host: host).stop, raise_on_non_zero_exit: false
+
+          if role.running_traefik? && KAMAL.proxy_host?(host)
+            version = capture_with_info(*app.current_running_version, raise_on_non_zero_exit: false).strip
+            endpoint = capture_with_info(*app.container_endpoint(version: version)).strip
+            if endpoint.present?
+              execute *KAMAL.proxy.remove(role.container_prefix, target: endpoint), raise_on_non_zero_exit: false
+            end
+          end
+
+          execute *app.stop, raise_on_non_zero_exit: false
         end
       end
     end

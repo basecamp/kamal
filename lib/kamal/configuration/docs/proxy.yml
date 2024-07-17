@@ -1,0 +1,83 @@
+# Proxy
+#
+# **Experimental** [kamal-proxy](http://github.com/basecamp/kamal-proxy) is a
+# custom built specifically for Kamal. It will replace Traefik in Kamal v2.0,
+# but currently is available as an experimental feature.
+#
+# When this is enabled, the proxy will be started on the hosts listed under the hosts key.
+# In addition, the kamal traefik command will be disabled and replaced by kamal proxy.
+#
+# The kamal proxy command works identically to kamal traefik on hosts that have not
+# been included. It will also handle switching between Traefik and kamal-proxy when you
+# run kamal proxy reboot.
+
+# Limitations
+#
+# Currently the proxy will run on ports 80 and 443 and will bind to those
+# ports on the host.
+#
+# There is no way to set custom options for `docker run` when booting the proxy.
+#
+# If you have custom Traefik configuration via labels or boot arguments they may
+# not have an equivalent in kamal-proxy.
+
+# Proxy settings
+#
+# The proxy is configured in the root configuration under `traefik`. These are
+# options that are set when deploying the application, not when booting the proxy
+#
+# They are application specific, so are not shared when multiple applications
+# with the same proxy.
+proxy:
+
+  # Enabled
+  #
+  # Whether to enable experimental proxy support. Defaults to false
+  enabled: true
+
+  # Hosts
+  #
+  # The hosts to run the proxy on, instead of Traefik
+  # This is a temporary setting and will be removed when we full switch to kamal-proxy
+  #
+  # If you run `kamal traefik reboot`, then the proxy will be started on these hosts
+  # in place of traefik.
+  hosts:
+    - 10.0.0.1
+    - 10.0.0.2
+
+  # Host
+  #
+  # This is the host that will be used to serve the app. By setting this you can run
+  # multiple apps on the same server sharing the same instance of the proxy.
+  #
+  # If this is set only requests that match this host will be forwarded by the proxy.
+  # if this is not set, then all requests will be forwarded, except for matching
+  # requests for other apps that do have a host set.
+  host: foo.example.com
+
+  # Deploy timeout
+  #
+  # How long to wait for the app to boot when deploying, defaults to 30 seconds
+  deploy_timeout: 10s
+
+  # Response timeout
+  #
+  # How long to wait for requests to complete before timing out, defaults to 30 seconds
+  response_timeout: 10
+
+  # Healthcheck
+  #
+  # When deploying, the proxy will by default hit /up once every second until we hit
+  # the deploy timeout, with a 5 second timeout for each request.
+  #
+  # Once the app is up, the proxy will stop hitting the healthcheck endpoint.
+  healthcheck:
+    interval: 3
+    path: /health
+    timeout: 3
+
+  # Max Request Body Size
+  #
+  # The maximum request size in bytes that the proxy will accept, defaults to 1GB
+  max_request_body_size: 40_000_000
