@@ -9,6 +9,11 @@ servers:
     hosts:
       - vm3
     cmd: sleep infinity
+proxy:
+  enabled: true
+  hosts:
+    - vm2
+  deploy_timeout: 2s
 
 asset_path: /usr/share/nginx/html/versions
 

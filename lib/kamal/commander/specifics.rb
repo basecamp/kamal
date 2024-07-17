@@ -22,6 +22,15 @@ class Kamal::Commander::Specifics
     config.traefik_hosts & specified_hosts
   end
 
+  def proxy_hosts
+    traefik_hosts & config.proxy_hosts
+  end
+
+  def proxy_host?(host)
+    host = host.hostname if host.is_a?(SSHKit::Host)
+    proxy_hosts.include?(host)
+  end
+
   def accessory_hosts
     specific_hosts || config.accessories.flat_map(&:hosts)
   end

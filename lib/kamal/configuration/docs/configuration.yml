@@ -143,6 +143,12 @@ accessories:
 traefik:
   ...
 
+# Proxy
+#
+# **Experimental** Configuration for kamal-proxy the replacement for Traefik, see kamal docs proxy
+proxy:
+  ...
+
 # SSHKit
 #
 # See kamal docs sshkit

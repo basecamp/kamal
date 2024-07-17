@@ -31,7 +31,7 @@ class IntegrationTest < ActiveSupport::TestCase
         succeeded = system("cd test/integration && #{command}")
       end
 
-      raise "Command `#{command}` failed with error code `#{$?}`" if !succeeded && raise_on_error
+      raise "Command `#{command}` failed with error code `#{$?}`, and output:\n#{result}" if !succeeded && raise_on_error
       result
     end
 
