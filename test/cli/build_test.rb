@@ -185,7 +185,7 @@ class CliBuildTest < CliTestCase
     run_command("pull").tap do |output|
       assert_match /Pulling image on 1\.1\.1\.\d to seed the mirror\.\.\./, output
       assert_match "Pulling image on remaining hosts...", output
-      assert_match /docker pull dhh\/app:999/, output
+      assert_equal 4, output.scan(/docker pull dhh\/app:999/).size, output
       assert_match "docker inspect -f '{{ .Config.Labels.service }}' dhh/app:999 | grep -x app || (echo \"Image dhh/app:999 is missing the 'service' label\" && exit 1)", output
     end
   end
@@ -199,7 +199,7 @@ class CliBuildTest < CliTestCase
     run_command("pull").tap do |output|
       assert_match /Pulling image on 1\.1\.1\.\d, 1\.1\.1\.\d to seed the mirrors\.\.\./, output
       assert_match "Pulling image on remaining hosts...", output
-      assert_match /docker pull dhh\/app:999/, output
+      assert_equal 4, output.scan(/docker pull dhh\/app:999/).size, output
       assert_match "docker inspect -f '{{ .Config.Labels.service }}' dhh/app:999 | grep -x app || (echo \"Image dhh/app:999 is missing the 'service' label\" && exit 1)", output
     end
   end

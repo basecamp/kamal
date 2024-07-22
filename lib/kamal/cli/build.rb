@@ -140,7 +140,7 @@ class Kamal::Cli::Build < Kamal::Cli::Base
         mirror_hosts = Concurrent::Hash.new
         on(KAMAL.hosts) do |host|
           first_mirror = capture_with_info(*KAMAL.builder.first_mirror).strip.presence
-          mirror_hosts[first_mirror] ||= host if first_mirror
+          mirror_hosts[first_mirror] ||= host.to_s if first_mirror
         rescue SSHKit::Command::Failed => e
           raise unless e.message =~ /error calling index: reflect: slice index out of range/
         end
