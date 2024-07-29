@@ -44,7 +44,11 @@ class Kamal::Configuration::Proxy
       "health-check-interval": proxy_config.dig("health_check", "interval"),
       "health-check-timeout": proxy_config.dig("health_check", "timeout"),
       "health-check-path": proxy_config.dig("health_check", "path"),
-      "target-timeout": proxy_config["response_timeout"]
+      "target-timeout": proxy_config["response_timeout"],
+      "buffer": proxy_config.fetch("buffer", { enabled: true }).fetch("enabled", true),
+      "buffer-memory": proxy_config.dig("buffer", "memory"),
+      "max-request-body": proxy_config.dig("buffer", "max_request_body"),
+      "max-response-body": proxy_config.dig("buffer", "max_response_body")
     }.compact
   end
 
