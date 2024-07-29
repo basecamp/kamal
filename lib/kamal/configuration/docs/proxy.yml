@@ -77,7 +77,17 @@ proxy:
     path: /health
     timeout: 3
 
-  # Max Request Body Size
+  # Buffering
   #
-  # The maximum request size in bytes that the proxy will accept, defaults to 1GB
-  max_request_body_size: 40_000_000
+  # Whether to buffer request and response bodies in the proxy
+  #
+  # By default buffering is enabled with a max request body size of 1GB and no limit
+  # for response size.
+  #
+  # You can also set the memory limit for buffering, which defaults to 1MB, anything
+  # larger than that is written to disk.
+  buffering:
+    enabled: true
+    max_request_body: 40_000_000
+    max_response_body: 0
+    memory: 2_000_000
