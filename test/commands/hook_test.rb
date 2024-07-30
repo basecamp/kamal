@@ -28,6 +28,7 @@ class CommandsHookTest < ActiveSupport::TestCase
   end
 
   test "run with custom hooks_path" do
+    ENV["KAMAL_HOOKS_PATH"] = "custom/hooks/path"
     assert_equal [
       "custom/hooks/path/foo",
       { env: {
@@ -36,7 +37,9 @@ class CommandsHookTest < ActiveSupport::TestCase
         "KAMAL_VERSION" => "123",
         "KAMAL_SERVICE_VERSION" => "app@123",
         "KAMAL_SERVICE" => "app" } }
-    ], new_command(hooks_path: "custom/hooks/path").run("foo")
+    ], new_command.run("foo")
+  ensure
+    ENV.delete("KAMAL_HOOKS_PATH")
   end
 
   private

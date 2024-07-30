@@ -18,7 +18,7 @@ class CliTestCase < ActiveSupport::TestCase
   private
     def fail_hook(hook)
       @executions = []
-      Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
+      Kamal::Hooks.stubs(:exists?).returns(true)
 
       SSHKit::Backend::Abstract.any_instance.stubs(:execute)
         .with { |*args| @executions << args; args != [ ".kamal/hooks/#{hook}" ] }

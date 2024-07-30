@@ -74,10 +74,6 @@ env:
 # To configure this, set the path to the assets:
 asset_path: /path/to/assets
 
-# Path to hooks, defaults to `.kamal/hooks`
-# See https://kamal-deploy.org/docs/hooks for more information
-hooks_path: /user_home/kamal/hooks
-
 # Require destinations
 #
 # Whether deployments require a destination to be specified, defaults to `false`

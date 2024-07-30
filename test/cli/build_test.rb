@@ -10,7 +10,7 @@ class CliBuildTest < CliTestCase
 
   test "push" do
     with_build_directory do |build_directory|
-      Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
+      Kamal::Hooks.stubs(:exists?).returns(true)
       hook_variables = { version: 999, service_version: "app@999", hosts: "1.1.1.1,1.1.1.2,1.1.1.3,1.1.1.4", command: "build", subcommand: "push" }
 
       SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
@@ -70,7 +70,7 @@ class CliBuildTest < CliTestCase
   end
 
   test "push without clone" do
-    Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
+    Kamal::Hooks.stubs(:exists?).returns(true)
     hook_variables = { version: 999, service_version: "app@999", hosts: "1.1.1.1,1.1.1.2,1.1.1.3,1.1.1.4", command: "build", subcommand: "push" }
 
     run_command("push", "--verbose", fixture: :without_clone).tap do |output|

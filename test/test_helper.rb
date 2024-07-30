@@ -26,6 +26,10 @@ end
 class ActiveSupport::TestCase
   include ActiveSupport::Testing::Stream
 
+  setup do
+    Kamal::Cli::Base.ran_pre_init_hook = false
+  end
+
   private
     def stdouted
       capture(:stdout) { yield }.strip

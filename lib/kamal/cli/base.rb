@@ -22,9 +22,21 @@ module Kamal::Cli
 
     class_option :skip_hooks, aliases: "-H", type: :boolean, default: false, desc: "Don't run hooks"
 
+    @@ran_pre_init_hook = false
+    class << self
+      def ran_pre_init_hook
+        @@ran_pre_init_hook
+      end
+
+      def ran_pre_init_hook=(value)
+        @@ran_pre_init_hook = value
+      end
+    end
+
     def initialize(*)
       super
       @original_env = ENV.to_h.dup
+      run_pre_init_hook
       load_env
       initialize_commander(options_with_subcommand_class_options)
     end
@@ -176,8 +188,23 @@ module Kamal::Cli
         end
       end
 
+      def run_pre_init_hook
+        unless self.class.ran_pre_init_hook
+          hook = "pre-init"
+          if run_hook?(hook)
+            say "Running the #{hook} hook...", :magenta
+            run_locally do
+              execute *Kamal::Hooks.file(hook), verbosity: :debug
+            rescue SSHKit::Command::Failed => e
+              raise HookError.new("Hook `#{hook}` failed:\n#{e.message}")
+            end
+          end
+          self.class.ran_pre_init_hook = true
+        end
+      end
+
       def run_hook(hook, **extra_details)
-        if !options[:skip_hooks] && KAMAL.hook.hook_exists?(hook)
+        if run_hook?(hook)
           details = { hosts: KAMAL.hosts.join(","), command: command, subcommand: subcommand }
 
           say "Running the #{hook} hook...", :magenta
@@ -187,6 +214,10 @@ module Kamal::Cli
             raise HookError.new("Hook `#{hook}` failed:\n#{e.message}")
           end
         end
+      end
+
+      def run_hook?(hook)
+        !options[:skip_hooks] && Kamal::Hooks.exists?(hook)
       end
 
       def on(*args, &block)

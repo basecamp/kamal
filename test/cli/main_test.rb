@@ -58,10 +58,11 @@ class CliMainTest < CliTestCase
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:boot", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:prune:all", [], invoke_options)
 
-    Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
+    Kamal::Hooks.stubs(:exists?).returns(true)
     hook_variables = { version: 999, service_version: "app@999", hosts: "1.1.1.1,1.1.1.2", command: "deploy" }
 
     run_command("deploy", "--verbose").tap do |output|
+      assert_match "Running /usr/bin/env .kamal/hooks/pre-init", output
       assert_hook_ran "pre-connect", output, **hook_variables
       assert_match /Log into image registry/, output
       assert_match /Build and push app image/, output
@@ -237,7 +238,7 @@ class CliMainTest < CliTestCase
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true))
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:boot", [], invoke_options)
 
-    Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
+    Kamal::Hooks.stubs(:exists?).returns(true)
 
     hook_variables = { version: 999, service_version: "app@999", hosts: "1.1.1.1,1.1.1.2", command: "redeploy" }
 
@@ -298,7 +299,7 @@ class CliMainTest < CliTestCase
       .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-version-to-rollback$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
       .returns("unhealthy").at_least_once # health check
 
-    Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
+    Kamal::Hooks.stubs(:exists?).returns(true)
     hook_variables = { version: 123, service_version: "app@123", hosts: "1.1.1.1,1.1.1.2,1.1.1.3,1.1.1.4", command: "rollback" }
 
     run_command("rollback", "--verbose", "123", config_file: "deploy_with_accessories").tap do |output|
@@ -396,7 +397,7 @@ class CliMainTest < CliTestCase
   end
 
   test "init" do
-    Pathname.any_instance.expects(:exist?).returns(false).times(3)
+    Pathname.any_instance.expects(:exist?).returns(false).times(4)
     Pathname.any_instance.stubs(:mkpath)
     FileUtils.stubs(:mkdir_p)
     FileUtils.stubs(:cp_r)
@@ -409,7 +410,7 @@ class CliMainTest < CliTestCase
   end
 
   test "init with existing config" do
-    Pathname.any_instance.expects(:exist?).returns(true).times(3)
+    Pathname.any_instance.expects(:exist?).returns(true).times(4)
 
     run_command("init").tap do |output|
       assert_match /Config file already exists in config\/deploy.yml \(remove first to create a new one\)/, output
@@ -417,7 +418,7 @@ class CliMainTest < CliTestCase
   end
 
   test "init with bundle option" do
-    Pathname.any_instance.expects(:exist?).returns(false).times(4)
+    Pathname.any_instance.expects(:exist?).returns(false).times(5)
     Pathname.any_instance.stubs(:mkpath)
     FileUtils.stubs(:mkdir_p)
     FileUtils.stubs(:cp_r)
@@ -434,7 +435,7 @@ class CliMainTest < CliTestCase
   end
 
   test "init with bundle option and existing binstub" do
-    Pathname.any_instance.expects(:exist?).returns(true).times(4)
+    Pathname.any_instance.expects(:exist?).returns(true).times(5)
     Pathname.any_instance.stubs(:mkpath)
     FileUtils.stubs(:mkdir_p)
     FileUtils.stubs(:cp_r)
@@ -475,7 +476,7 @@ class CliMainTest < CliTestCase
   end
 
   test "envify with skip_push" do
-    Pathname.any_instance.expects(:exist?).returns(true).times(1)
+    Pathname.any_instance.expects(:exist?).returns(true).times(2)
     File.expects(:read).with(".kamal/.env.erb").returns("HELLO=<%= 'world' %>")
     File.expects(:write).with(".kamal/.env", "HELLO=world", perm: 0600)
 
