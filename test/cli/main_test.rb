@@ -8,7 +8,6 @@ class CliMainTest < CliTestCase
     invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false }
 
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:server:bootstrap", [], invoke_options)
-    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:main:envify", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:env:push", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:accessory:boot", [ "all" ], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:deploy)
@@ -24,7 +23,6 @@ class CliMainTest < CliTestCase
 
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:server:bootstrap", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:env:push", [], invoke_options)
-    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:main:envify", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:accessory:boot", [ "all" ], invoke_options)
     # deploy
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:registry:login", [], invoke_options.merge(skip_local: true))
@@ -62,7 +60,7 @@ class CliMainTest < CliTestCase
     hook_variables = { version: 999, service_version: "app@999", hosts: "1.1.1.1,1.1.1.2", command: "deploy" }
 
     run_command("deploy", "--verbose").tap do |output|
-      assert_match "Running /usr/bin/env .kamal/hooks/pre-init", output
+      assert_match "Running the pre-init hook...", output
       assert_hook_ran "pre-connect", output, **hook_variables
       assert_match /Log into image registry/, output
       assert_match /Build and push app image/, output
@@ -444,50 +442,6 @@ class CliMainTest < CliTestCase
     run_command("init", "--bundle").tap do |output|
       assert_match /Config file already exists in config\/deploy.yml \(remove first to create a new one\)/, output
       assert_match /Binstub already exists in bin\/kamal \(remove first to create a new one\)/, output
-    end
-  end
-
-  test "envify" do
-    with_test_dotenv(".env.erb": "HELLO=<%= 'world' %>") do
-      run_command("envify")
-      assert_equal("HELLO=world", File.read(".kamal/.env"))
-    end
-  end
-
-  test "envify with blank line trimming" do
-    file = <<~EOF
-      HELLO=<%= 'world' %>
-      <% if true -%>
-      KEY=value
-      <% end -%>
-    EOF
-
-    with_test_dotenv(".env.erb": file) do
-      run_command("envify")
-      assert_equal("HELLO=world\nKEY=value\n", File.read(".kamal/.env"))
-    end
-  end
-
-  test "envify with destination" do
-    with_test_dotenv(".env.world.erb": "HELLO=<%= 'world' %>") do
-      run_command("envify", "-d", "world", config_file: "deploy_for_dest")
-      assert_equal "HELLO=world", File.read(".kamal/.env.world")
-    end
-  end
-
-  test "envify with skip_push" do
-    Pathname.any_instance.expects(:exist?).returns(true).times(2)
-    File.expects(:read).with(".kamal/.env.erb").returns("HELLO=<%= 'world' %>")
-    File.expects(:write).with(".kamal/.env", "HELLO=world", perm: 0600)
-
-    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:env:push").never
-    run_command("envify", "--skip-push")
-  end
-
-  test "envify with clean env" do
-    with_test_dotenv(".env": "HELLO=already", ".env.erb": "HELLO=<%= ENV.fetch 'HELLO', 'never' %>") do
-      run_command("envify", "--skip-push")
-      assert_equal "HELLO=never", File.read(".kamal/.env")
     end
   end
 

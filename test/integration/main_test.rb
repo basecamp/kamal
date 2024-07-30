@@ -1,8 +1,8 @@
 require_relative "integration_test"
 
 class MainTest < IntegrationTest
-  test "envify, deploy, redeploy, rollback, details and audit" do
-    kamal :envify
+  test "env push, deploy, redeploy, rollback, details and audit" do
+    kamal :env, :push
     assert_env_files
     remove_local_env_file
 
@@ -45,7 +45,7 @@ class MainTest < IntegrationTest
   test "app with roles" do
     @app = "app_with_roles"
 
-    kamal :envify
+    kamal :env, :push
 
     version = latest_app_version
 
@@ -65,7 +65,7 @@ class MainTest < IntegrationTest
   end
 
   test "config" do
-    config = YAML.load(kamal(:config, "-q", capture: true))
+    config = YAML.load(kamal(:config, capture: true))
     version = latest_app_version
 
     assert_equal [ "web" ], config[:roles]
@@ -87,7 +87,7 @@ class MainTest < IntegrationTest
     kamal :remove, "-y"
     assert_no_images_or_containers
 
-    kamal :envify
+    kamal :env, :push
     kamal :setup
     assert_images_and_containers
 

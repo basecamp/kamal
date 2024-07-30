@@ -2,8 +2,6 @@ require_relative "integration_test"
 
 class TraefikTest < IntegrationTest
   test "boot, reboot, stop, start, restart, logs, remove" do
-    kamal :envify
-
     kamal :traefik, :boot
     assert_traefik_running
 

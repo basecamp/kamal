@@ -2,8 +2,6 @@ require_relative "integration_test"
 
 class LockTest < IntegrationTest
   test "acquire, release, status" do
-    kamal :envify
-
     kamal :lock, :acquire, "-m 'Integration Tests'"
 
     status = kamal :lock, :status, capture: true
