@@ -37,9 +37,23 @@ module Kamal::Cli
 
       def load_env
         if destination = options[:destination]
-          Dotenv.load(".env.#{destination}", ".env")
+          if File.exist?(".kamal/.env.#{destination}") || File.exist?(".kamal/.env")
+            Dotenv.load(".kamal/.env.#{destination}", ".kamal/.env")
+          else
+            loading_files = [ (".env" if File.exist?(".env")), (".env.#{destination}" if File.exist?(".env.#{destination}")) ].compact
+            if loading_files.any?
+              warn "Loading #{loading_files.join(" and ")} from the project root, in future they will be loaded from .kamal/"
+              Dotenv.load(".env.#{destination}", ".env")
+            end
+          end
         else
-          Dotenv.load(".env")
+          if File.exist?(".kamal/.env")
+            Dotenv.load(".kamal/.env")
+          elsif File.exist?(".env")
+            $stderr.puts caller
+            warn "Loading .env from the project root, in future it will be loaded then from .kamal/.env"
+            Dotenv.load(".env")
+          end
         end
       end
 

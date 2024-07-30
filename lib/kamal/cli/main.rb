@@ -179,15 +179,15 @@ class Kamal::Cli::Main < Kamal::Cli::Base
     end
   end
 
-  desc "envify", "Create .env by evaluating .env.erb (or .env.staging.erb -> .env.staging when using -d staging)"
+  desc "envify", "Create .kamal/.env by evaluating .kamal/.env.erb (or .kamal/.env.staging.erb -> .kamal/.env.staging when using -d staging)"
   option :skip_push, aliases: "-P", type: :boolean, default: false, desc: "Skip .env file push"
   def envify
     if destination = options[:destination]
-      env_template_path = ".env.#{destination}.erb"
-      env_path          = ".env.#{destination}"
+      env_template_path = ".kamal/.env.#{destination}.erb"
+      env_path          = ".kamal/.env.#{destination}"
     else
-      env_template_path = ".env.erb"
-      env_path          = ".env"
+      env_template_path = ".kamal/.env.erb"
+      env_path          = ".kamal/.env"
     end
 
     if Pathname.new(File.expand_path(env_template_path)).exist?

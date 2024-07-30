@@ -97,7 +97,7 @@ class MainTest < IntegrationTest
 
   private
     def assert_local_env_file(contents)
-      assert_equal contents, deployer_exec("cat .env", capture: true)
+      assert_equal contents, deployer_exec("cat .kamal/.env", capture: true)
     end
 
     def assert_envs(version:)
@@ -127,7 +127,7 @@ class MainTest < IntegrationTest
     end
 
     def remove_local_env_file
-      deployer_exec("rm .env")
+      deployer_exec("rm .kamal/.env")
     end
 
     def assert_remote_env_file(contents, vm:)

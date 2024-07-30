@@ -449,7 +449,7 @@ class CliMainTest < CliTestCase
   test "envify" do
     with_test_dotenv(".env.erb": "HELLO=<%= 'world' %>") do
       run_command("envify")
-      assert_equal("HELLO=world", File.read(".env"))
+      assert_equal("HELLO=world", File.read(".kamal/.env"))
     end
   end
 
@@ -463,21 +463,21 @@ class CliMainTest < CliTestCase
 
     with_test_dotenv(".env.erb": file) do
       run_command("envify")
-      assert_equal("HELLO=world\nKEY=value\n", File.read(".env"))
+      assert_equal("HELLO=world\nKEY=value\n", File.read(".kamal/.env"))
     end
   end
 
   test "envify with destination" do
     with_test_dotenv(".env.world.erb": "HELLO=<%= 'world' %>") do
       run_command("envify", "-d", "world", config_file: "deploy_for_dest")
-      assert_equal "HELLO=world", File.read(".env.world")
+      assert_equal "HELLO=world", File.read(".kamal/.env.world")
     end
   end
 
   test "envify with skip_push" do
     Pathname.any_instance.expects(:exist?).returns(true).times(1)
-    File.expects(:read).with(".env.erb").returns("HELLO=<%= 'world' %>")
-    File.expects(:write).with(".env", "HELLO=world", perm: 0600)
+    File.expects(:read).with(".kamal/.env.erb").returns("HELLO=<%= 'world' %>")
+    File.expects(:write).with(".kamal/.env", "HELLO=world", perm: 0600)
 
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:env:push").never
     run_command("envify", "--skip-push")
@@ -486,7 +486,7 @@ class CliMainTest < CliTestCase
   test "envify with clean env" do
     with_test_dotenv(".env": "HELLO=already", ".env.erb": "HELLO=<%= ENV.fetch 'HELLO', 'never' %>") do
       run_command("envify", "--skip-push")
-      assert_equal "HELLO=never", File.read(".env")
+      assert_equal "HELLO=never", File.read(".kamal/.env")
     end
   end
 
@@ -549,8 +549,11 @@ class CliMainTest < CliTestCase
         FileUtils.cp_r("test/fixtures/", fixtures_dup)
 
         Dir.chdir(dir) do
-          files.each do |filename, contents|
-            File.binwrite(filename.to_s, contents)
+          FileUtils.mkdir_p(".kamal")
+          Dir.chdir(".kamal") do
+            files.each do |filename, contents|
+              File.binwrite(filename.to_s, contents)
+            end
           end
           yield
         end
