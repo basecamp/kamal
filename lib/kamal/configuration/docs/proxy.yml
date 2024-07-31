@@ -87,7 +87,8 @@ proxy:
   # You can also set the memory limit for buffering, which defaults to 1MB, anything
   # larger than that is written to disk.
   buffering:
-    enabled: true
+    requests: true
+    responses: true
     max_request_body: 40_000_000
     max_response_body: 0
     memory: 2_000_000
