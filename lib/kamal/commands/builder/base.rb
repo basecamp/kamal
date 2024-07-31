@@ -14,7 +14,7 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
   end
 
   def push
-    docker :buildx, :build,
+    docker :build,
       "--push",
       *platform_options,
       "--builder", builder_name,
