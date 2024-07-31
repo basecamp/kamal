@@ -4,6 +4,7 @@ class Kamal::Configuration::Proxy
   DEFAULT_HTTP_PORT = 80
   DEFAULT_HTTPS_PORT = 443
   DEFAULT_IMAGE = "basecamp/kamal-proxy:latest"
+  DEFAULT_LOG_REQUEST_HEADERS = [ "Cache-Control", "Last-Modified" ]
 
   delegate :argumentize, :optionize, to: Kamal::Utils
 
@@ -50,7 +51,9 @@ class Kamal::Configuration::Proxy
       "buffer-memory": proxy_config.dig("buffer", "memory"),
       "max-request-body": proxy_config.dig("buffer", "max_request_body"),
       "max-response-body": proxy_config.dig("buffer", "max_response_body"),
-      "forward-headers": proxy_config.dig("forward_headers")
+      "forward-headers": proxy_config.dig("forward_headers"),
+      "log-request-header": proxy_config.dig("logging", "request_headers") || DEFAULT_LOG_REQUEST_HEADERS,
+      "log-response-header": proxy_config.dig("logging", "response_headers")
     }.compact
   end
 
