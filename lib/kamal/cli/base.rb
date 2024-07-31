@@ -42,11 +42,6 @@ module Kamal::Cli
     end
 
     private
-      def reload_env
-        reset_env
-        load_env
-      end
-
       def load_env
         if destination = options[:destination]
           if File.exist?(".kamal/.env.#{destination}") || File.exist?(".kamal/.env")
@@ -67,29 +62,6 @@ module Kamal::Cli
             Dotenv.load(".env")
           end
         end
-      end
-
-      def reset_env
-        replace_env @original_env
-      end
-
-      def replace_env(env)
-        ENV.clear
-        ENV.update(env)
-      end
-
-      def with_original_env
-        keeping_current_env do
-          reset_env
-          yield
-        end
-      end
-
-      def keeping_current_env
-        current_env = ENV.to_h.dup
-        yield
-      ensure
-        replace_env(current_env)
       end
 
       def options_with_subcommand_class_options
