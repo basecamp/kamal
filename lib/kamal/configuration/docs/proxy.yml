@@ -91,3 +91,10 @@ proxy:
     max_request_body: 40_000_000
     max_response_body: 0
     memory: 2_000_000
+
+  # Forward headers
+  #
+  # Whether to forward the X-Forwarded-For and X-Forwarded-Proto headers (defaults to false)
+  #
+  # If you are behind a trusted proxy, you can set this to true to forward the headers.
+  forward_headers: true
