@@ -22,7 +22,6 @@ COPY app_with_roles/ app_with_roles/
 
 RUN rm -rf /root/.ssh
 RUN ln -s /shared/ssh /root/.ssh
-RUN mkdir -p /etc/docker/certs.d/registry:4443 && ln -s /shared/certs/domain.crt /etc/docker/certs.d/registry:4443/ca.crt
 
 RUN git config --global user.email "deployer@example.com"
 RUN git config --global user.name "Deployer"
