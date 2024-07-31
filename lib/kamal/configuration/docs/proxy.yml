@@ -93,6 +93,19 @@ proxy:
     max_response_body: 0
     memory: 2_000_000
 
+  # Logging
+  #
+  # Configure request logging for the proxy
+  # You can specify request and response headers to log.
+  # By default, Cache-Control and Last-Modified request headers are logged
+  logging:
+    request_headers:
+      - Cache-Control
+      - X-Forwarded-Proto
+    response_headers:
+      - X-Request-ID
+      - X-Request-Start
+
   # Forward headers
   #
   # Whether to forward the X-Forwarded-For and X-Forwarded-Proto headers (defaults to false)

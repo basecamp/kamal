@@ -34,7 +34,6 @@ class Kamal::Commands::Proxy < Kamal::Commands::Base
   end
 
   def deploy(service, target:)
-    optionize({ target: target })
     docker :exec, container_name, "kamal-proxy", :deploy, service, *optionize({ target: target }), *proxy_config.deploy_command_args
   end
 
