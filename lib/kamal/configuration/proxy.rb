@@ -48,7 +48,8 @@ class Kamal::Configuration::Proxy
       "buffer": proxy_config.fetch("buffer", { enabled: true }).fetch("enabled", true),
       "buffer-memory": proxy_config.dig("buffer", "memory"),
       "max-request-body": proxy_config.dig("buffer", "max_request_body"),
-      "max-response-body": proxy_config.dig("buffer", "max_response_body")
+      "max-response-body": proxy_config.dig("buffer", "max_response_body"),
+      "forward-headers": proxy_config.dig("forward_headers")
     }.compact
   end
 
