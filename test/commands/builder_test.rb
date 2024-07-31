@@ -9,7 +9,7 @@ class CommandsBuilderTest < ActiveSupport::TestCase
     builder = new_builder_command(builder: { "cache" => { "type" => "gha" } })
     assert_equal "local", builder.name
     assert_equal \
-      "docker buildx build --push --platform linux/amd64,linux/arm64 --builder kamal-local -t dhh/app:123 -t dhh/app:latest --cache-to type=gha --cache-from type=gha --label service=\"app\" --file Dockerfile .",
+      "docker build --push --platform linux/amd64,linux/arm64 --builder kamal-local -t dhh/app:123 -t dhh/app:latest --cache-to type=gha --cache-from type=gha --label service=\"app\" --file Dockerfile .",
       builder.push.join(" ")
   end
 
@@ -17,7 +17,7 @@ class CommandsBuilderTest < ActiveSupport::TestCase
     builder = new_builder_command(builder: { "multiarch" => false })
     assert_equal "local", builder.name
     assert_equal \
-      "docker buildx build --push --builder kamal-local -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile .",
+      "docker build --push --builder kamal-local -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile .",
       builder.push.join(" ")
   end
 
@@ -25,7 +25,7 @@ class CommandsBuilderTest < ActiveSupport::TestCase
     builder = new_builder_command(builder: { "multiarch" => false, "cache" => { "type" => "gha" } })
     assert_equal "local", builder.name
     assert_equal \
-      "docker buildx build --push --builder kamal-local -t dhh/app:123 -t dhh/app:latest --cache-to type=gha --cache-from type=gha --label service=\"app\" --file Dockerfile .",
+      "docker build --push --builder kamal-local -t dhh/app:123 -t dhh/app:latest --cache-to type=gha --cache-from type=gha --label service=\"app\" --file Dockerfile .",
       builder.push.join(" ")
   end
 
@@ -33,7 +33,7 @@ class CommandsBuilderTest < ActiveSupport::TestCase
     builder = new_builder_command(builder: { "local" => { "arch" => "arm64" }, "remote" => { "arch" => "amd64", "host" => "ssh://app@127.0.0.1" }, "cache" => { "type" => "gha" } })
     assert_equal "hybrid", builder.name
     assert_equal \
-      "docker buildx build --push --platform linux/arm64,linux/amd64 --builder kamal-hybrid-arm64-amd64-ssh---app-127-0-0-1 -t dhh/app:123 -t dhh/app:latest --cache-to type=gha --cache-from type=gha --label service=\"app\" --file Dockerfile .",
+      "docker build --push --platform linux/arm64,linux/amd64 --builder kamal-hybrid-arm64-amd64-ssh---app-127-0-0-1 -t dhh/app:123 -t dhh/app:latest --cache-to type=gha --cache-from type=gha --label service=\"app\" --file Dockerfile .",
       builder.push.join(" ")
   end
 
@@ -41,7 +41,7 @@ class CommandsBuilderTest < ActiveSupport::TestCase
     builder = new_builder_command(builder: { "local" => { "arch" => "amd64" } })
     assert_equal "local", builder.name
     assert_equal \
-      "docker buildx build --push --platform linux/amd64 --builder kamal-local -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile .",
+      "docker build --push --platform linux/amd64 --builder kamal-local -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile .",
       builder.push.join(" ")
   end
 
@@ -49,7 +49,7 @@ class CommandsBuilderTest < ActiveSupport::TestCase
     builder = new_builder_command(builder: { "remote" => { "arch" => "amd64", "host" => "ssh://app@host" }, "cache" => { "type" => "gha" } })
     assert_equal "remote", builder.name
     assert_equal \
-      "docker buildx build --push --platform linux/amd64 --builder kamal-remote-amd64-ssh---app-host -t dhh/app:123 -t dhh/app:latest --cache-to type=gha --cache-from type=gha --label service=\"app\" --file Dockerfile .",
+      "docker build --push --platform linux/amd64 --builder kamal-remote-amd64-ssh---app-host -t dhh/app:123 -t dhh/app:latest --cache-to type=gha --cache-from type=gha --label service=\"app\" --file Dockerfile .",
       builder.push.join(" ")
   end
 
@@ -93,28 +93,28 @@ class CommandsBuilderTest < ActiveSupport::TestCase
   test "build context" do
     builder = new_builder_command(builder: { "context" => ".." })
     assert_equal \
-      "docker buildx build --push --platform linux/amd64,linux/arm64 --builder kamal-local -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile ..",
+      "docker build --push --platform linux/amd64,linux/arm64 --builder kamal-local -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile ..",
       builder.push.join(" ")
   end
 
   test "native push with build args" do
     builder = new_builder_command(builder: { "multiarch" => false, "args" => { "a" => 1, "b" => 2 } })
     assert_equal \
-      "docker buildx build --push --builder kamal-local -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --build-arg a=\"1\" --build-arg b=\"2\" --file Dockerfile .",
+      "docker build --push --builder kamal-local -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --build-arg a=\"1\" --build-arg b=\"2\" --file Dockerfile .",
       builder.push.join(" ")
   end
 
   test "multiarch push with build args" do
     builder = new_builder_command(builder: { "args" => { "a" => 1, "b" => 2 } })
     assert_equal \
-      "docker buildx build --push --platform linux/amd64,linux/arm64 --builder kamal-local -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --build-arg a=\"1\" --build-arg b=\"2\" --file Dockerfile .",
+      "docker build --push --platform linux/amd64,linux/arm64 --builder kamal-local -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --build-arg a=\"1\" --build-arg b=\"2\" --file Dockerfile .",
       builder.push.join(" ")
   end
 
   test "native push with build secrets" do
     builder = new_builder_command(builder: { "multiarch" => false, "secrets" => [ "a", "b" ] })
     assert_equal \
-      "docker buildx build --push --builder kamal-local -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --secret id=\"a\" --secret id=\"b\" --file Dockerfile .",
+      "docker build --push --builder kamal-local -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --secret id=\"a\" --secret id=\"b\" --file Dockerfile .",
       builder.push.join(" ")
   end
 
@@ -133,28 +133,28 @@ class CommandsBuilderTest < ActiveSupport::TestCase
   test "multiarch context build" do
     builder = new_builder_command(builder: { "context" => "./foo" })
     assert_equal \
-      "docker buildx build --push --platform linux/amd64,linux/arm64 --builder kamal-local -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile ./foo",
+      "docker build --push --platform linux/amd64,linux/arm64 --builder kamal-local -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile ./foo",
       builder.push.join(" ")
   end
 
   test "native context build" do
     builder = new_builder_command(builder: { "multiarch" => false, "context" => "./foo" })
     assert_equal \
-      "docker buildx build --push --builder kamal-local -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile ./foo",
+      "docker build --push --builder kamal-local -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile ./foo",
       builder.push.join(" ")
   end
 
   test "cached context build" do
     builder = new_builder_command(builder: { "multiarch" => false, "context" => "./foo", "cache" => { "type" => "gha" } })
     assert_equal \
-      "docker buildx build --push --builder kamal-local -t dhh/app:123 -t dhh/app:latest --cache-to type=gha --cache-from type=gha --label service=\"app\" --file Dockerfile ./foo",
+      "docker build --push --builder kamal-local -t dhh/app:123 -t dhh/app:latest --cache-to type=gha --cache-from type=gha --label service=\"app\" --file Dockerfile ./foo",
       builder.push.join(" ")
   end
 
   test "remote context build" do
     builder = new_builder_command(builder: { "remote" => { "arch" => "amd64", "host" => "ssh://app@host" }, "context" => "./foo" })
     assert_equal \
-      "docker buildx build --push --platform linux/amd64 --builder kamal-remote-amd64-ssh---app-host -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile ./foo",
+      "docker build --push --platform linux/amd64 --builder kamal-remote-amd64-ssh---app-host -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile ./foo",
       builder.push.join(" ")
   end
 

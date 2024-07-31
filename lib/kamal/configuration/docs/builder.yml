@@ -1,10 +1,10 @@
 # Builder
 #
-# The builder configuration controls how the application is built with `docker build` or `docker buildx build`
+# The builder configuration controls how the application is built with `docker build`
 #
 # If no configuration is specified, Kamal will:
 # 1. Create a buildx context called `kamal-<service>-multiarch`
-# 2. Use `docker buildx build` to build a multiarch image for linux/amd64,linux/arm64 with that context
+# 2. Use `docker build` to build a multiarch image for linux/amd64,linux/arm64 with that context
 #
 # See https://kamal-deploy.org/docs/configuration/builder-examples/ for more information
 

@@ -26,7 +26,7 @@ class CliBuildTest < CliTestCase
         assert_match /Cloning repo into build directory/, output
         assert_match /git -C #{Dir.tmpdir}\/kamal-clones\/app-#{pwd_sha} clone #{Dir.pwd}/, output
         assert_match /docker --version && docker buildx version/, output
-        assert_match /docker buildx build --push --platform linux\/amd64,linux\/arm64 --builder kamal-local -t dhh\/app:999 -t dhh\/app:latest --label service="app" --file Dockerfile \. as .*@localhost/, output
+        assert_match /docker build --push --platform linux\/amd64,linux\/arm64 --builder kamal-local -t dhh\/app:999 -t dhh\/app:latest --label service="app" --file Dockerfile \. as .*@localhost/, output
       end
     end
   end
@@ -48,7 +48,7 @@ class CliBuildTest < CliTestCase
       SSHKit::Backend::Abstract.any_instance.expects(:execute).with(:git, "-C", build_directory, :clean, "-fdx")
 
       SSHKit::Backend::Abstract.any_instance.expects(:execute)
-        .with(:docker, :buildx, :build, "--push", "--platform", "linux/amd64,linux/arm64", "--builder", "kamal-local", "-t", "dhh/app:999", "-t", "dhh/app:latest", "--label", "service=\"app\"", "--file", "Dockerfile", ".")
+        .with(:docker, :build, "--push", "--platform", "linux/amd64,linux/arm64", "--builder", "kamal-local", "-t", "dhh/app:999", "-t", "dhh/app:latest", "--label", "service=\"app\"", "--file", "Dockerfile", ".")
 
       SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
         .with(:git, "-C", anything, :"rev-parse", :HEAD)
@@ -73,7 +73,7 @@ class CliBuildTest < CliTestCase
       assert_no_match /Cloning repo into build directory/, output
       assert_hook_ran "pre-build", output, **hook_variables
       assert_match /docker --version && docker buildx version/, output
-      assert_match /docker buildx build --push --platform linux\/amd64,linux\/arm64 --builder kamal-local -t dhh\/app:999 -t dhh\/app:latest --label service="app" --file Dockerfile . as .*@localhost/, output
+      assert_match /docker build --push --platform linux\/amd64,linux\/arm64 --builder kamal-local -t dhh\/app:999 -t dhh\/app:latest --label service="app" --file Dockerfile . as .*@localhost/, output
     end
   end
 
@@ -136,7 +136,7 @@ class CliBuildTest < CliTestCase
         .returns("")
 
       SSHKit::Backend::Abstract.any_instance.expects(:execute)
-        .with(:docker, :buildx, :build, "--push", "--platform", "linux/amd64,linux/arm64", "--builder", "kamal-local", "-t", "dhh/app:999", "-t", "dhh/app:latest", "--label", "service=\"app\"", "--file", "Dockerfile", ".")
+        .with(:docker, :build, "--push", "--platform", "linux/amd64,linux/arm64", "--builder", "kamal-local", "-t", "dhh/app:999", "-t", "dhh/app:latest", "--label", "service=\"app\"", "--file", "Dockerfile", ".")
 
       run_command("push").tap do |output|
         assert_match /WARN Missing compatible builder, so creating a new one first/, output
@@ -160,7 +160,7 @@ class CliBuildTest < CliTestCase
     error = assert_raises(Kamal::Cli::HookError) { run_command("push") }
     assert_equal "Hook `pre-build` failed:\nfailed", error.message
 
-    assert @executions.none? { |args| args[0..2] == [ :docker, :buildx, :build ] }
+    assert @executions.none? { |args| args[0..2] == [ :docker, :build ] }
   end
 
   test "pull" do
