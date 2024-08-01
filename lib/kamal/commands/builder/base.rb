@@ -6,7 +6,7 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
   delegate :argumentize, to: Kamal::Utils
   delegate \
     :args, :secrets, :dockerfile, :target, :local_arch, :remote_arch, :remote_host,
-    :cache_from, :cache_to, :multiarch?, :ssh,
+    :cache_from, :cache_to, :multiarch?, :ssh, :driver, :docker_driver?,
     to: :builder_config
 
   def clean
@@ -17,7 +17,7 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
     docker :build,
       "--push",
       *platform_options,
-      "--builder", builder_name,
+      *([ "--builder", builder_name ] unless docker_driver?),
       *build_options,
       build_context
   end

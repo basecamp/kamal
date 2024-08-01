@@ -18,6 +18,7 @@ registry:
   password: root
 builder:
   multiarch: false
+  driver: docker
   args:
     COMMIT_SHA: <%= `git rev-parse HEAD` %>
 healthcheck:
