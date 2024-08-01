@@ -18,6 +18,11 @@ builder:
   # Enables multiarch builds, defaults to `true`
   multiarch: false
 
+  # Driver
+  #
+  # The build driver to use, defaults to `docker-container`
+  driver: docker
+
   # Local configuration
   #
   # The build configuration for local builds, only used if multiarch is enabled (the default)

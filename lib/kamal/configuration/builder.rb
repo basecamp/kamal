@@ -55,6 +55,10 @@ class Kamal::Configuration::Builder
     builder_config["context"] || "."
   end
 
+  def driver
+    builder_config.fetch("driver", "docker-container")
+  end
+
   def local_arch
     builder_config["local"]["arch"] if local?
   end
@@ -110,6 +114,10 @@ class Kamal::Configuration::Builder
       end
   end
 
+  def docker_driver?
+    driver == "docker"
+  end
+
   private
     def valid?
       if multiarch?
@@ -121,6 +129,10 @@ class Kamal::Configuration::Builder
           raise ArgumentError, "Invalid builder configuration: remote configuration, arch required" unless remote_arch
           raise ArgumentError, "Invalid builder configuration: remote configuration, arch required" unless remote_host
         end
+
+        if docker_driver?
+          raise ArgumentError, "Invalid builder configuration: the docker driver does not support multiarch builds"
+        end
       else
         raise ArgumentError, "Invalid builder configuration: multiarch must be enabled for local configuration" if local?
         raise ArgumentError, "Invalid builder configuration: multiarch must be enabled for remote configuration" if remote?
@@ -128,6 +140,7 @@ class Kamal::Configuration::Builder
 
       if @options["cache"] && @options["cache"]["type"]
         raise ArgumentError, "Invalid cache type: #{@options["cache"]["type"]}" unless [ "gha", "registry" ].include?(@options["cache"]["type"])
+        raise ArgumentError, "The docker driver does not support caching" if docker_driver?
       end
     end
 

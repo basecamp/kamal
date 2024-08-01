@@ -28,7 +28,7 @@ class Kamal::Commands::Builder::Remote < Kamal::Commands::Builder::Base
 
   private
     def builder_name
-      "kamal-remote-#{remote_arch}-#{remote_host.gsub(/[^a-z0-9_-]/, "-")}"
+      "kamal-remote-#{driver}-#{remote_arch}-#{remote_host.gsub(/[^a-z0-9_-]/, "-")}"
     end
 
     def create_remote_context

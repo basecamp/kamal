@@ -8,11 +8,11 @@ class Kamal::Commands::Builder::Hybrid < Kamal::Commands::Builder::Remote
 
   private
     def builder_name
-      "kamal-hybrid-#{local_arch}-#{remote_arch}-#{remote_host.gsub(/[^a-z0-9_-]/, "-")}"
+      "kamal-hybrid-#{driver}-#{local_arch}-#{remote_arch}-#{remote_host.gsub(/[^a-z0-9_-]/, "-")}"
     end
 
     def create_local_buildx
-      docker :buildx, :create, "--name", builder_name, "--platform", "linux/#{local_arch}", "--driver=docker-container"
+      docker :buildx, :create, "--name", builder_name, "--platform", "linux/#{local_arch}", "--driver=#{driver}"
     end
 
     def append_remote_buildx
