@@ -183,11 +183,25 @@ class Kamal::Cli::Main < Kamal::Cli::Base
   option :skip_push, aliases: "-P", type: :boolean, default: false, desc: "Skip .env file push"
   def envify
     if destination = options[:destination]
-      env_template_path = ".env.#{destination}.erb"
-      env_path          = ".env.#{destination}"
+      env_template_path = ".kamal/env.#{destination}.erb"
+      env_path          = ".kamal/env.#{destination}"
     else
-      env_template_path = ".env.erb"
-      env_path          = ".env"
+      env_template_path = ".kamal/env.erb"
+      env_path          = ".kamal/env"
+    end
+
+    unless Pathname.new(File.expand_path(env_template_path)).exist?
+      if destination = options[:destination]
+        env_template_path = ".env.#{destination}.erb"
+        env_path          = ".env.#{destination}"
+      else
+        env_template_path = ".env.erb"
+        env_path          = ".env"
+      end
+
+      if Pathname.new(File.expand_path(env_template_path)).exist?
+        warn "Loading #{env_template_path} from the project root is deprecated, use .kamal/env[.<DESTINATION>].erb instead"
+      end
     end
 
     if Pathname.new(File.expand_path(env_template_path)).exist?
