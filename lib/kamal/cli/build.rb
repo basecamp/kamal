@@ -66,7 +66,7 @@ class Kamal::Cli::Build < Kamal::Cli::Base
 
   desc "create", "Create a build setup"
   def create
-    if (remote_host = KAMAL.config.builder.remote_host)
+    if (remote_host = KAMAL.config.builder.remote)
       connect_to_remote_host(remote_host)
     end
 

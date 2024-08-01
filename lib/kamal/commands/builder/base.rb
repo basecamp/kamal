@@ -5,8 +5,8 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
 
   delegate :argumentize, to: Kamal::Utils
   delegate \
-    :args, :secrets, :dockerfile, :target, :local_arch, :remote_arch, :remote_host,
-    :cache_from, :cache_to, :multiarch?, :ssh, :driver, :docker_driver?,
+    :args, :secrets, :dockerfile, :target, :arches, :local_arches, :remote_arches, :remote,
+    :cache_from, :cache_to, :ssh, :driver, :docker_driver?,
     to: :builder_config
 
   def clean
@@ -16,7 +16,7 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
   def push
     docker :build,
       "--push",
-      *platform_options,
+      *platform_options(arches),
       *([ "--builder", builder_name ] unless docker_driver?),
       *build_options,
       build_context
@@ -33,7 +33,7 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
   end
 
   def buildx_inspect
-    docker :buildx, :inspect, builder_name
+    docker :buildx, :inspect, builder_name unless docker_driver?
   end
 
   def build_options
@@ -103,5 +103,9 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
 
     def context_host(builder_name)
       docker :context, :inspect, builder_name, "--format", ENDPOINT_DOCKER_HOST_INSPECT
+    end
+
+    def platform_options(arches)
+      argumentize "--platform", arches.map { |arch| "linux/#{arch}" }.join(",") if arches.any?
     end
 end

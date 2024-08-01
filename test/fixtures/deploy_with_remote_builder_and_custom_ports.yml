@@ -40,6 +40,5 @@ ssh:
   port: 22
 
 builder:
-  remote:
-    arch: amd64
-    host: ssh://app@1.1.1.5:2122
+  arch: <%= `uname -m`.strip == "x86_64" ? "arm64" : "amd64" %>
+  remote: ssh://app@1.1.1.5:2122

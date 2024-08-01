@@ -14,45 +14,29 @@ class ConfigurationBuilderTest < ActiveSupport::TestCase
     }
   end
 
-  test "multiarch?" do
-    assert_equal true, config.builder.multiarch?
-  end
-
-  test "setting multiarch to false" do
-    @deploy_with_builder_option[:builder] = { "multiarch" => false }
-
-    assert_equal false, config_with_builder_option.builder.multiarch?
-  end
-
   test "local?" do
-    assert_equal false, config.builder.local?
+    assert_equal true, config.builder.local?
   end
 
   test "remote?" do
     assert_equal false, config.builder.remote?
   end
 
-  test "remote_arch" do
-    assert_nil config.builder.remote_arch
-  end
-
-  test "remote_host" do
-    assert_nil config.builder.remote_host
+  test "remote" do
+    assert_nil config.builder.remote
   end
 
   test "setting both local and remote configs" do
     @deploy_with_builder_option[:builder] = {
-      "local" => { "arch" => "arm64" },
-      "remote" => { "arch" => "amd64", "host" => "ssh://root@192.168.0.1" }
+      "arch" => [ "amd64", "arm64" ],
+      "remote" => "ssh://root@192.168.0.1"
     }
 
     assert_equal true, config_with_builder_option.builder.local?
     assert_equal true, config_with_builder_option.builder.remote?
 
-    assert_equal "amd64", config_with_builder_option.builder.remote_arch
-    assert_equal "ssh://root@192.168.0.1", config_with_builder_option.builder.remote_host
-
-    assert_equal "arm64", config_with_builder_option.builder.local_arch
+    assert_equal [ "amd64", "arm64" ], config_with_builder_option.builder.arches
+    assert_equal "ssh://root@192.168.0.1", config_with_builder_option.builder.remote
   end
 
   test "cached?" do
