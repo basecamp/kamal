@@ -29,8 +29,6 @@ services:
       context: docker/registry
     environment:
       - REGISTRY_HTTP_ADDR=0.0.0.0:4443
-      - REGISTRY_HTTP_TLS_CERTIFICATE=/certs/domain.crt
-      - REGISTRY_HTTP_TLS_KEY=/certs/domain.key
     volumes:
       - shared:/shared
       - registry:/var/lib/registry/
