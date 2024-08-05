@@ -2,9 +2,6 @@ require_relative "integration_test"
 
 class MainTest < IntegrationTest
   test "deploy, redeploy, rollback, details and audit" do
-    assert_env_files
-    remove_local_env_file
-
     first_version = latest_app_version
 
     assert_app_is_down
@@ -105,11 +102,7 @@ class MainTest < IntegrationTest
   end
 
   private
-    def assert_local_env_file(contents)
-      assert_equal contents, deployer_exec("cat .kamal/secrets", capture: true)
-    end
-
-    def assert_envs(version:)
+  def assert_envs(version:)
       assert_env :CLEAR_TOKEN, "4321", version: version, vm: :vm1
       assert_env :HOST_TOKEN, "abcd", version: version, vm: :vm1
       assert_env :SECRET_TOKEN, "1234 with \"中文\"", version: version, vm: :vm1
@@ -127,24 +120,6 @@ class MainTest < IntegrationTest
       assert_raises(RuntimeError, /exit 1/) do
         docker_compose("exec #{vm} docker exec app-web-#{version} env | grep #{key}", capture: true)
       end
-    end
-
-    def assert_env_files
-      assert_local_env_file "SECRET_TOKEN='1234 with \"中文\"'\nSECRET_TAG='TAGME'"
-      assert_remote_env_file "SECRET_TOKEN=1234 with \"中文\"", vm: :vm1
-      assert_remote_env_file "SECRET_TOKEN=1234 with \"中文\"\nSECRET_TAG=TAGME", vm: :vm2
-    end
-
-    def remove_local_env_file
-      deployer_exec("rm .kamal/secrets")
-    end
-
-    def assert_remote_env_file(contents, vm:)
-      assert_equal contents, docker_compose("exec #{vm} cat /root/.kamal/secrets/roles/app-web.env", capture: true)
-    end
-
-    def assert_no_remote_env_file
-      assert_equal "nofile", docker_compose("exec vm1 stat /root/.kamal/secrets/roles/app-web.env 2> /dev/null || echo nofile", capture: true)
     end
 
     def assert_accumulated_assets(*versions)

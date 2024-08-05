@@ -34,7 +34,7 @@ class Kamal::Configuration::Traefik
   def env
     Kamal::Configuration::Env.new \
       config: traefik_config.fetch("env", {}),
-      secrets_file: File.join(config.host_env_directory, "traefik", "traefik.env"),
+      secrets: config.secrets,
       context: "traefik/env"
   end
 

@@ -54,14 +54,6 @@ class Kamal::Commands::Traefik < Kamal::Commands::Base
     docker :image, :prune, "--all", "--force", "--filter", "label=org.opencontainers.image.title=Traefik"
   end
 
-  def make_env_directory
-    make_directory(env.secrets_directory)
-  end
-
-  def remove_env_file
-    [ :rm, "-f", env.secrets_file ]
-  end
-
   private
     def publish_args
       argumentize "--publish", port if publish?

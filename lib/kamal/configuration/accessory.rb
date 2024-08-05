@@ -16,7 +16,7 @@ class Kamal::Configuration::Accessory
 
     @env = Kamal::Configuration::Env.new \
       config: accessory_config.fetch("env", {}),
-      secrets_file: File.join(config.host_env_directory, "accessories", "#{service_name}.env"),
+      secrets: config.secrets,
       context: "accessories/#{name}/env"
   end
 

@@ -202,9 +202,6 @@ class Kamal::Cli::Main < Kamal::Cli::Base
   desc "build", "Build application image"
   subcommand "build", Kamal::Cli::Build
 
-  desc "env", "Manage environment files"
-  subcommand "env", Kamal::Cli::Env
-
   desc "lock", "Manage the deploy lock"
   subcommand "lock", Kamal::Cli::Lock
 

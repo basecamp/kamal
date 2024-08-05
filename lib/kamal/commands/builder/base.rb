@@ -78,7 +78,7 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
     end
 
     def build_secrets
-      argumentize "--secret", secrets.collect { |secret| [ "id", secret ] }
+      argumentize "--secret", secrets.keys.collect { |secret| [ "id", secret ] }
     end
 
     def build_dockerfile

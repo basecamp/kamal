@@ -69,16 +69,6 @@ class Kamal::Commands::App < Kamal::Commands::Base
       extract_version_from_name
   end
 
-
-  def make_env_directory
-    make_directory role.env(host).secrets_directory
-  end
-
-  def remove_env_file
-    [ :rm, "-f", role.env(host).secrets_file ]
-  end
-
-
   private
     def container_name(version = nil)
       [ role.container_prefix, version || config.version ].compact.join("-")

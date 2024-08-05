@@ -13,7 +13,6 @@ class CliMainTest < CliTestCase
 
     run_command("setup").tap do |output|
       assert_match /Ensure Docker is installed.../, output
-      assert_match /Evaluate and push env files.../, output
     end
   end
 
@@ -21,7 +20,6 @@ class CliMainTest < CliTestCase
     invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false }
 
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:server:bootstrap", [], invoke_options)
-    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:env:push", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:accessory:boot", [ "all" ], invoke_options)
     # deploy
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:registry:login", [], invoke_options.merge(skip_local: true))
@@ -33,7 +31,6 @@ class CliMainTest < CliTestCase
 
     run_command("setup", "--skip_push").tap do |output|
       assert_match /Ensure Docker is installed.../, output
-      assert_match /Evaluate and push env files.../, output
       # deploy
       assert_match /Acquiring the deploy lock/, output
       assert_match /Log into image registry/, output
@@ -522,24 +519,6 @@ class CliMainTest < CliTestCase
     def run_command(*command, config_file: "deploy_simple")
       with_argv([ *command, "-c", "test/fixtures/#{config_file}.yml" ]) do
         stdouted { Kamal::Cli::Main.start }
-      end
-    end
-
-    def with_test_env_files(**files)
-      Dir.mktmpdir do |dir|
-        fixtures_dup = File.join(dir, "test")
-        FileUtils.mkdir_p(fixtures_dup)
-        FileUtils.cp_r("test/fixtures/", fixtures_dup)
-
-        Dir.chdir(dir) do
-          FileUtils.mkdir_p(".kamal")
-          Dir.chdir(".kamal") do
-            files.each do |filename, contents|
-              File.binwrite(filename.to_s, contents)
-            end
-          end
-          yield
-        end
       end
     end
 end

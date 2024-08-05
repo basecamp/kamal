@@ -23,6 +23,10 @@ class Kamal::Commander
     @config, @config_kwargs = nil, kwargs
   end
 
+  def configured?
+    @config || @config_kwargs
+  end
+
   attr_reader :specific_roles, :specific_hosts
 
   def specific_primary!

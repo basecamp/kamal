@@ -18,7 +18,7 @@ class Kamal::Configuration::Role
 
     @specialized_env = Kamal::Configuration::Env.new \
       config: specializations.fetch("env", {}),
-      secrets_file: File.join(config.host_env_directory, "roles", "#{container_prefix}.env"),
+      secrets: config.secrets,
       context: "servers/#{name}/env"
 
     @specialized_logging = Kamal::Configuration::Logging.new \

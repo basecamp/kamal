@@ -98,14 +98,6 @@ class Kamal::Commands::Accessory < Kamal::Commands::Base
     docker :image, :rm, "--force", image
   end
 
-  def make_env_directory
-    make_directory accessory_config.env.secrets_directory
-  end
-
-  def remove_env_file
-    [ :rm, "-f", accessory_config.env.secrets_file ]
-  end
-
   private
     def service_filter
       [ "--filter", "label=service=#{service_name}" ]

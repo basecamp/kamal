@@ -31,24 +31,15 @@ module Kamal::Cli
       else
         super
       end
-      @original_env = ENV.to_h.dup
-      initialize_commander(options_with_subcommand_class_options)
+      initialize_commander unless KAMAL.configured?
     end
 
     private
-      def load_secrets
-        if destination = options[:destination]
-          Dotenv.parse(".kamal/secrets.#{destination}", ".kamal/secrets")
-        else
-          Dotenv.parse(".kamal/secrets")
-        end
-      end
-
       def options_with_subcommand_class_options
         options.merge(@_initializer.last[:class_options] || {})
       end
 
-      def initialize_commander(options)
+      def initialize_commander
         KAMAL.tap do |commander|
           if options[:verbose]
             ENV["VERBOSE"] = "1" # For backtraces via cli/start

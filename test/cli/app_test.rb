@@ -113,7 +113,7 @@ class CliAppTest < CliTestCase
 
     run_command("boot", config: :with_env_tags).tap do |output|
       assert_match "docker tag dhh/app:latest dhh/app:latest", output
-      assert_match %r{docker run --detach --restart unless-stopped --name app-web-latest --hostname 1.1.1.1-[0-9a-f]{12} -e KAMAL_CONTAINER_NAME="app-web-latest" -e KAMAL_VERSION="latest" --env-file .kamal/env/roles/app-web.env --env TEST="root" --env EXPERIMENT="disabled" --env SITE="site1"}, output
+      assert_match %r{docker run --detach --restart unless-stopped --name app-web-latest --hostname 1.1.1.1-[0-9a-f]{12} -e KAMAL_CONTAINER_NAME="app-web-latest" -e KAMAL_VERSION="latest" --env TEST="root" --env EXPERIMENT="disabled" --env SITE="site1"}, output
       assert_match "docker container ls --all --filter name=^app-web-123$ --quiet | xargs docker stop", output
     end
   end
@@ -243,7 +243,7 @@ class CliAppTest < CliTestCase
 
   test "exec" do
     run_command("exec", "ruby -v").tap do |output|
-      assert_match "docker run --rm --env-file .kamal/env/roles/app-web.env dhh/app:latest ruby -v", output
+      assert_match "docker run --rm dhh/app:latest ruby -v", output
     end
   end
 
@@ -262,7 +262,7 @@ class CliAppTest < CliTestCase
 
   test "exec interactive" do
     SSHKit::Backend::Abstract.any_instance.expects(:exec)
-      .with("ssh -t root@1.1.1.1 -p 22 'docker run -it --rm --env-file .kamal/env/roles/app-web.env dhh/app:latest ruby -v'")
+      .with("ssh -t root@1.1.1.1 -p 22 'docker run -it --rm dhh/app:latest ruby -v'")
     run_command("exec", "-i", "ruby -v").tap do |output|
       assert_match "Get most recent version available as an image...", output
       assert_match "Launching interactive command with version latest via SSH from new container on 1.1.1.1...", output

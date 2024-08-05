@@ -34,4 +34,32 @@ class ActiveSupport::TestCase
     def stderred
       capture(:stderr) { yield }.strip
     end
+
+    def with_test_secrets(**files)
+      setup_test_secrets(**files)
+      yield
+    ensure
+      teardown_test_secrets
+    end
+
+    def setup_test_secrets(**files)
+      @original_pwd = Dir.pwd
+      @secrets_tmpdir = Dir.mktmpdir
+      fixtures_dup = File.join(@secrets_tmpdir, "test")
+      FileUtils.mkdir_p(fixtures_dup)
+      FileUtils.cp_r("test/fixtures/", fixtures_dup)
+
+      Dir.chdir(@secrets_tmpdir)
+      FileUtils.mkdir_p(".kamal")
+      Dir.chdir(".kamal") do
+        files.each do |filename, contents|
+          File.binwrite(filename.to_s, contents)
+        end
+      end
+    end
+
+    def teardown_test_secrets
+      Dir.chdir(@original_pwd)
+      FileUtils.rm_rf(@secrets_tmpdir)
+    end
 end
