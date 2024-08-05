@@ -32,58 +32,16 @@ module Kamal::Cli
         super
       end
       @original_env = ENV.to_h.dup
-      load_env
       initialize_commander(options_with_subcommand_class_options)
     end
 
     private
-      def reload_env
-        reset_env
-        load_env
-      end
-
-      def load_env
+      def load_secrets
         if destination = options[:destination]
-          if File.exist?(".kamal/env.#{destination}") || File.exist?(".kamal/env")
-            Dotenv.load(".kamal/env.#{destination}", ".kamal/env")
-          else
-            loading_files = [ (".env" if File.exist?(".env")), (".env.#{destination}" if File.exist?(".env.#{destination}")) ].compact
-            if loading_files.any?
-              warn "Loading #{loading_files.join(" and ")} from the project root, use .kamal/env* instead"
-              Dotenv.load(".env.#{destination}", ".env")
-            end
-          end
+          Dotenv.parse(".kamal/secrets.#{destination}", ".kamal/secrets")
         else
-          if File.exist?(".kamal/env")
-            Dotenv.load(".kamal/env")
-          elsif File.exist?(".env")
-            warn "Loading .env from the project root is deprecated, use .kamal/env instead"
-            Dotenv.load(".env")
-          end
+          Dotenv.parse(".kamal/secrets")
         end
-      end
-
-      def reset_env
-        replace_env @original_env
-      end
-
-      def replace_env(env)
-        ENV.clear
-        ENV.update(env)
-      end
-
-      def with_original_env
-        keeping_current_env do
-          reset_env
-          yield
-        end
-      end
-
-      def keeping_current_env
-        current_env = ENV.to_h.dup
-        yield
-      ensure
-        replace_env(current_env)
       end
 
       def options_with_subcommand_class_options

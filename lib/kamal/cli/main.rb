@@ -9,10 +9,6 @@ class Kamal::Cli::Main < Kamal::Cli::Base
         say "Ensure Docker is installed...", :magenta
         invoke "kamal:cli:server:bootstrap", [], invoke_options
 
-        say "Evaluate and push env files...", :magenta
-        invoke "kamal:cli:main:envify", [], invoke_options
-        invoke "kamal:cli:env:push", [], invoke_options
-
         invoke "kamal:cli:accessory:boot", [ "all" ], invoke_options
         deploy
       end
@@ -176,45 +172,6 @@ class Kamal::Cli::Main < Kamal::Cli::Base
         end
         puts "Created binstub file in bin/kamal"
       end
-    end
-  end
-
-  desc "envify", "Create .env by evaluating .env.erb (or .env.staging.erb -> .env.staging when using -d staging)"
-  option :skip_push, aliases: "-P", type: :boolean, default: false, desc: "Skip .env file push"
-  def envify
-    if destination = options[:destination]
-      env_template_path = ".kamal/env.#{destination}.erb"
-      env_path          = ".kamal/env.#{destination}"
-    else
-      env_template_path = ".kamal/env.erb"
-      env_path          = ".kamal/env"
-    end
-
-    unless Pathname.new(File.expand_path(env_template_path)).exist?
-      if destination = options[:destination]
-        env_template_path = ".env.#{destination}.erb"
-        env_path          = ".env.#{destination}"
-      else
-        env_template_path = ".env.erb"
-        env_path          = ".env"
-      end
-
-      if Pathname.new(File.expand_path(env_template_path)).exist?
-        warn "Loading #{env_template_path} from the project root is deprecated, use .kamal/env[.<DESTINATION>].erb instead"
-      end
-    end
-
-    if Pathname.new(File.expand_path(env_template_path)).exist?
-      # Ensure existing env doesn't pollute template evaluation
-      content = with_original_env { ERB.new(File.read(env_template_path), trim_mode: "-").result }
-      File.write(env_path, content, perm: 0600)
-
-      unless options[:skip_push]
-        reload_env
-        invoke "kamal:cli:env:push", options
-      end
-    else
-      puts "Skipping envify (no #{env_template_path} exist)"
     end
   end
 

@@ -1,8 +1,7 @@
 require_relative "integration_test"
 
 class MainTest < IntegrationTest
-  test "envify, deploy, redeploy, rollback, details and audit" do
-    kamal :envify
+  test "deploy, redeploy, rollback, details and audit" do
     assert_env_files
     remove_local_env_file
 
@@ -37,15 +36,10 @@ class MainTest < IntegrationTest
 
     audit = kamal :audit, capture: true
     assert_match /Booted app version #{first_version}.*Booted app version #{second_version}.*Booted app version #{first_version}.*/m, audit
-
-    kamal :env, :delete
-    assert_no_remote_env_file
   end
 
   test "app with roles" do
     @app = "app_with_roles"
-
-    kamal :envify
 
     version = latest_app_version
 
@@ -103,7 +97,6 @@ class MainTest < IntegrationTest
     kamal :remove, "-y"
     assert_no_images_or_containers
 
-    kamal :envify
     kamal :setup
     assert_images_and_containers
 
@@ -113,7 +106,7 @@ class MainTest < IntegrationTest
 
   private
     def assert_local_env_file(contents)
-      assert_equal contents, deployer_exec("cat .kamal/env", capture: true)
+      assert_equal contents, deployer_exec("cat .kamal/secrets", capture: true)
     end
 
     def assert_envs(version:)
@@ -143,15 +136,15 @@ class MainTest < IntegrationTest
     end
 
     def remove_local_env_file
-      deployer_exec("rm .kamal/env")
+      deployer_exec("rm .kamal/secrets")
     end
 
     def assert_remote_env_file(contents, vm:)
-      assert_equal contents, docker_compose("exec #{vm} cat /root/.kamal/env/roles/app-web.env", capture: true)
+      assert_equal contents, docker_compose("exec #{vm} cat /root/.kamal/secrets/roles/app-web.env", capture: true)
     end
 
     def assert_no_remote_env_file
-      assert_equal "nofile", docker_compose("exec vm1 stat /root/.kamal/env/roles/app-web.env 2> /dev/null || echo nofile", capture: true)
+      assert_equal "nofile", docker_compose("exec vm1 stat /root/.kamal/secrets/roles/app-web.env 2> /dev/null || echo nofile", capture: true)
     end
 
     def assert_accumulated_assets(*versions)
