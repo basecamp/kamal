@@ -273,6 +273,12 @@ class CliAppTest < CliTestCase
     end
   end
 
+  test "exec detach" do
+    run_command("exec", "--detach", "ruby -v").tap do |output|
+      assert_match "docker run --detach --rm --network kamal --env-file .kamal/apps/app/env/roles/web.env dhh/app:latest ruby -v", output
+    end
+  end
+
   test "exec with reuse" do
     run_command("exec", "--reuse", "ruby -v").tap do |output|
       assert_match "sh -c 'docker ps --latest --format '\\''{{.Names}}'\\'' --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --format '\\''{{.Names}}'\\'' --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting' | head -1 | while read line; do echo ${line#app-web-}; done", output # Get current version

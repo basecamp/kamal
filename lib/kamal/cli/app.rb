@@ -94,9 +94,11 @@ class Kamal::Cli::App < Kamal::Cli::Base
   option :interactive, aliases: "-i", type: :boolean, default: false, desc: "Execute command over ssh for an interactive shell (use for console/bash)"
   option :reuse, type: :boolean, default: false, desc: "Reuse currently running container instead of starting a new one"
   option :env, aliases: "-e", type: :hash, desc: "Set environment variables for the command"
+  option :detach, type: :boolean, default: false, desc: "Execute command in a detached container"
   def exec(*cmd)
     cmd = Kamal::Utils.join_commands(cmd)
     env = options[:env]
+    detach = options[:detach]
     case
     when options[:interactive] && options[:reuse]
       say "Get current version of running container...", :magenta unless options[:version]
@@ -138,7 +140,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
 
           roles.each do |role|
             execute *KAMAL.auditor.record("Executed cmd '#{cmd}' on app version #{version}"), verbosity: :debug
-            puts_by_host host, capture_with_info(*KAMAL.app(role: role, host: host).execute_in_new_container(cmd, env: env))
+            puts_by_host host, capture_with_info(*KAMAL.app(role: role, host: host).execute_in_new_container(cmd, env: env, detach: detach))
           end
         end
       end
