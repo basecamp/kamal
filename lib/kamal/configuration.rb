@@ -254,7 +254,7 @@ class Kamal::Configuration
   end
 
   def secrets
-    @secrets ||= Secrets.new(destination: destination)
+    @secrets ||= Kamal::Secrets.new(destination: destination)
   end
 
   private

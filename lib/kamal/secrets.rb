@@ -1,4 +1,4 @@
-class Kamal::Configuration::Secrets
+class Kamal::Secrets
   attr_reader :secrets_file
 
   def initialize(destination: nil)

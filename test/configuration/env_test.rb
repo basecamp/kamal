@@ -28,7 +28,7 @@ class ConfigurationEnvTest < ActiveSupport::TestCase
       "secret" => [ "PASSWORD" ]
     }
 
-    assert_raises(Kamal::ConfigurationError) { Kamal::Configuration::Env.new(config: { "secret" => [ "PASSWORD" ] }, secrets: Kamal::Configuration::Secrets.new).args }
+    assert_raises(Kamal::ConfigurationError) { Kamal::Configuration::Env.new(config: { "secret" => [ "PASSWORD" ] }, secrets: Kamal::Secrets.new).args }
   end
 
   test "secret and clear" do
@@ -49,7 +49,7 @@ class ConfigurationEnvTest < ActiveSupport::TestCase
 
   private
     def assert_config(config:, results:)
-      env = Kamal::Configuration::Env.new config: config, secrets: Kamal::Configuration::Secrets.new
+      env = Kamal::Configuration::Env.new config: config, secrets: Kamal::Secrets.new
       expected_args = results.to_a.flat_map { |key, value| [ "--env", "#{key}=\"#{value}\"" ] }
       assert_equal expected_args, env.args.map(&:to_s) #  to_s removes the redactions
     end
