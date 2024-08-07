@@ -3,8 +3,7 @@ class Kamal::Configuration::Secrets
 
   def initialize(destination: nil)
     @secret_files = \
-      (destination ? [ ".kamal/secrets", ".kamal/secrets.#{destination}" ] : [ ".kamal/secrets" ])
-        .select { |file| File.exist?(file) }
+      (destination ? [ ".kamal/secrets.#{destination}", ".kamal/secrets" ] : [ ".kamal/secrets" ])
   end
 
   def [](key)
