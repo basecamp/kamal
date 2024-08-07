@@ -107,7 +107,7 @@ class MainTest < IntegrationTest
       assert_env :HOST_TOKEN, "abcd", version: version, vm: :vm1
       assert_env :SECRET_TOKEN, "1234 with \"中文\"", version: version, vm: :vm1
       assert_no_env :CLEAR_TAG, version: version, vm: :vm1
-      assert_no_env :SECRET_TAG, version: version, vm: :vm11
+      assert_no_env :SECRET_TAG, version: version, vm: :vm1
       assert_env :CLEAR_TAG, "tagged", version: version, vm: :vm2
       assert_env :SECRET_TAG, "TAGME", version: version, vm: :vm2
     end

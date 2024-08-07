@@ -74,8 +74,6 @@ module Kamal::Cli
         if KAMAL.holding_lock?
           yield
         else
-          ensure_run_and_locks_directory
-
           acquire_lock
 
           begin
@@ -104,6 +102,8 @@ module Kamal::Cli
       end
 
       def acquire_lock
+        ensure_run_and_locks_directory
+
         raise_if_locked do
           say "Acquiring the deploy lock...", :magenta
           on(KAMAL.primary_host) { execute *KAMAL.lock.acquire("Automatic deploy lock", KAMAL.config.version), verbosity: :debug }

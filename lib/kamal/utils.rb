@@ -1,3 +1,5 @@
+require "active_support/core_ext/object/try"
+
 module Kamal::Utils
   extend self
 

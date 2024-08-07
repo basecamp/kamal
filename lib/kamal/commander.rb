@@ -1,5 +1,6 @@
 require "active_support/core_ext/enumerable"
 require "active_support/core_ext/module/delegation"
+require "active_support/core_ext/object/blank"
 
 class Kamal::Commander
   attr_accessor :verbosity, :holding_lock, :connected

@@ -3,6 +3,7 @@ require "sshkit/dsl"
 require "net/scp"
 require "active_support/core_ext/hash/deep_merge"
 require "json"
+require "concurrent/atomic/semaphore"
 
 class SSHKit::Backend::Abstract
   def capture_with_info(*args, **kwargs)
