@@ -7,9 +7,10 @@ module Kamal::Commands::App::Execution
       *command
   end
 
-  def execute_in_new_container(*command, interactive: false, env:)
+  def execute_in_new_container(*command, interactive: false, detach: false, env:)
     docker :run,
       ("-it" if interactive),
+      ("--detach" if detach),
       "--rm",
       "--network", "kamal",
       *role&.env_args(host),
