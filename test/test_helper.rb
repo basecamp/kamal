@@ -63,3 +63,20 @@ class ActiveSupport::TestCase
       FileUtils.rm_rf(@secrets_tmpdir)
     end
 end
+
+class Kamal::Secrets::Adapters::Test
+  def login(boom: false)
+    raise "Boom!" if boom
+    "LOGIN_TOKEN"
+  end
+
+  def fetch(name, boom: false)
+    raise "Boom!" if boom
+    name.reverse
+  end
+
+  def fetch_all(*names, boom: false)
+    raise "Boom!" if boom
+    names.to_h { |name| [ name, name.reverse ] }
+  end
+end

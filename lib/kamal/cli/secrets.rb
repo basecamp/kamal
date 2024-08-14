@@ -1,21 +1,21 @@
 class Kamal::Cli::Secrets < Kamal::Cli::Base
   desc "login", "Login to a secrets vault"
   option :adapter, type: :string, aliases: "-a", required: true, desc: "Which vault adapter to use"
-  option :adapter_options, type: :hash, aliases: "-O", required: true, desc: "Options to pass to the vault adapter"
+  option :adapter_options, type: :hash, aliases: "-O", required: false, desc: "Options to pass to the vault adapter"
   def login
     puts adapter(options).login(**adapter_options(options))
   end
 
   desc "fetch", "Fetch a secret from a vault"
   option :adapter, type: :string, aliases: "-a", required: true, desc: "Which vault adapter to use"
-  option :adapter_options, type: :hash, aliases: "-O", required: true, desc: "Options to pass to the vault adapter"
+  option :adapter_options, type: :hash, aliases: "-O", required: false, desc: "Options to pass to the vault adapter"
   def fetch(name)
     puts adapter(options).fetch(name, **adapter_options(options))
   end
 
   desc "fetch_all", "Fetch multiple secrets from a vault"
   option :adapter, type: :string, aliases: "-a", required: true, desc: "Which vault adapter to use"
-  option :adapter_options, type: :hash, aliases: "-O", required: true, desc: "Options to pass to the vault adapter"
+  option :adapter_options, type: :hash, aliases: "-O", required: false, desc: "Options to pass to the vault adapter"
   def fetch_all(*names)
     puts JSON.dump(adapter(options).fetch_all(*names, **adapter_options(options))).shellescape
   end
@@ -31,6 +31,6 @@ class Kamal::Cli::Secrets < Kamal::Cli::Base
     end
 
     def adapter_options(options)
-      options[:adapter_options].transform_keys(&:to_sym)
+      options.fetch(:adapter_options, {}).transform_keys(&:to_sym)
     end
 end

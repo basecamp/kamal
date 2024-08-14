@@ -2,45 +2,41 @@ require_relative "cli_test_case"
 
 class CliSecretsTest < CliTestCase
   test "login" do
-    run_command("login").tap do |output|
-      assert_match /docker login -u \[REDACTED\] -p \[REDACTED\] as .*@localhost/, output
-      assert_match /docker login -u \[REDACTED\] -p \[REDACTED\] on 1.1.1.\d/, output
+    assert_equal "LOGIN_TOKEN", run_command("login", "--adapter", "test")
+  end
+
+  test "login failed" do
+    assert_raises("Boom!") do
+      run_command("login", "--adapter", "test", "--adapter-options", "boom:true")
     end
   end
 
   test "fetch" do
-    run_command("login", "-L").tap do |output|
-      assert_no_match /docker login -u \[REDACTED\] -p \[REDACTED\] as .*@localhost/, output
-      assert_match /docker login -u \[REDACTED\] -p \[REDACTED\] on 1.1.1.\d/, output
+    assert_equal "oof", run_command("fetch", "foo", "--adapter", "test")
+  end
+
+  test "fetch failed" do
+    assert_raises("Boom!") do
+      run_command("fetch", "foo", "--adapter", "test", "--adapter-options", "boom:true")
     end
   end
 
   test "fetch_all" do
-    run_command("login", "-R").tap do |output|
-      assert_match /docker login -u \[REDACTED\] -p \[REDACTED\] as .*@localhost/, output
-      assert_no_match /docker login -u \[REDACTED\] -p \[REDACTED\] on 1.1.1.\d/, output
+    assert_equal \
+      "\\{\\\"foo\\\":\\\"oof\\\",\\\"bar\\\":\\\"rab\\\",\\\"baz\\\":\\\"zab\\\"\\}",
+      run_command("fetch_all", "foo", "bar", "baz", "--adapter", "test")
+  end
+
+  test "fetch_all failed" do
+    assert_raises("Boom!") do
+      assert_equal \
+        "\\{\\\"foo\\\":\\\"oof\\\",\\\"bar\\\":\\\"rab\\\",\\\"baz\\\":\\\"zab\\\"\\}",
+        run_command("fetch_all", "foo", "bar", "baz", "--adapter", "test", "--adapter-options", "boom:true")
     end
   end
 
   test "extract" do
-    run_command("logout").tap do |output|
-      assert_match /docker logout as .*@localhost/, output
-      assert_match /docker logout on 1.1.1.\d/, output
-    end
-  end
-
-  test "logout skip local" do
-    run_command("logout", "-L").tap do |output|
-      assert_no_match /docker logout as .*@localhost/, output
-      assert_match /docker logout on 1.1.1.\d/, output
-    end
-  end
-
-  test "logout skip remote" do
-    run_command("logout", "-R").tap do |output|
-      assert_match /docker logout as .*@localhost/, output
-      assert_no_match /docker logout on 1.1.1.\d/, output
-    end
+    assert_equal "oof", run_command("extract", "foo", "{\"foo\":\"oof\", \"bar\":\"rab\", \"baz\":\"zab\"}")
   end
 
   private
