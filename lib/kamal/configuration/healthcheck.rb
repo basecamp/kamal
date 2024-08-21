@@ -58,6 +58,6 @@ class Kamal::Configuration::Healthcheck
 
   private
     def http_health_check
-      "curl -f #{URI.join("http://localhost:#{port}", path)} || exit 1" if path.present? || port.present?
+      "curl -fs #{URI.join("http://localhost:#{port}", path)} || exit 1" if path.present? || port.present?
     end
 end
