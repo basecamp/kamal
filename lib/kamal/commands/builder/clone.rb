@@ -6,7 +6,7 @@ module Kamal::Commands::Builder::Clone
   end
 
   def clone
-    git :clone, Kamal::Git.root, path: clone_directory
+    git :clone, Kamal::Git.root, "--recurse-submodules", path: clone_directory
   end
 
   def clone_reset_steps
@@ -14,7 +14,8 @@ module Kamal::Commands::Builder::Clone
       git(:remote, "set-url", :origin, Kamal::Git.root, path: build_directory),
       git(:fetch, :origin, path: build_directory),
       git(:reset, "--hard", Kamal::Git.revision, path: build_directory),
-      git(:clean, "-fdx", path: build_directory)
+      git(:clean, "-fdx", path: build_directory),
+      git(:submodule, :update, "--init", path: build_directory)
     ]
   end
 
