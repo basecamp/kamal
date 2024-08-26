@@ -42,7 +42,7 @@ class CliBuildTest < CliTestCase
       SSHKit::Backend::Abstract.any_instance.expects(:execute).with(:docker, "--version", "&&", :docker, :buildx, "version")
 
       SSHKit::Backend::Abstract.any_instance.expects(:execute)
-        .with(:git, "-C", "#{Dir.tmpdir}/kamal-clones/app-#{pwd_sha}", :clone, Dir.pwd)
+        .with(:git, "-C", "#{Dir.tmpdir}/kamal-clones/app-#{pwd_sha}", :clone, Dir.pwd, "--recurse-submodules")
         .raises(SSHKit::Command::Failed.new("fatal: destination path 'kamal' already exists and is not an empty directory"))
         .then
         .returns(true)
@@ -50,6 +50,7 @@ class CliBuildTest < CliTestCase
       SSHKit::Backend::Abstract.any_instance.expects(:execute).with(:git, "-C", build_directory, :fetch, :origin)
       SSHKit::Backend::Abstract.any_instance.expects(:execute).with(:git, "-C", build_directory, :reset, "--hard", Kamal::Git.revision)
       SSHKit::Backend::Abstract.any_instance.expects(:execute).with(:git, "-C", build_directory, :clean, "-fdx")
+      SSHKit::Backend::Abstract.any_instance.expects(:execute).with(:git, "-C", build_directory, :submodule, :update, "--init")
 
       SSHKit::Backend::Abstract.any_instance.expects(:execute)
         .with(:docker, :buildx, :build, "--push", "--platform", "linux/amd64,linux/arm64", "--builder", "kamal-app-multiarch", "-t", "dhh/app:999", "-t", "dhh/app:latest", "--label", "service=\"app\"", "--file", "Dockerfile", ".")
@@ -88,7 +89,7 @@ class CliBuildTest < CliTestCase
       SSHKit::Backend::Abstract.any_instance.expects(:execute).with(:docker, "--version", "&&", :docker, :buildx, "version")
 
       SSHKit::Backend::Abstract.any_instance.expects(:execute)
-        .with(:git, "-C", "#{Dir.tmpdir}/kamal-clones/app-#{pwd_sha}", :clone, Dir.pwd)
+        .with(:git, "-C", "#{Dir.tmpdir}/kamal-clones/app-#{pwd_sha}", :clone, Dir.pwd, "--recurse-submodules")
         .raises(SSHKit::Command::Failed.new("fatal: destination path 'kamal' already exists and is not an empty directory"))
         .then
         .returns(true)
