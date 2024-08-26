@@ -1,53 +1,37 @@
 class Kamal::Secrets::Adapters::OnePassword
   delegate :optionize, to: Kamal::Utils
 
-  def login(account:)
-    `op signin #{to_options(account: account, force: true, raw: true)}`.tap do
-      raise RuntimeError, "Failed to login to 1Password: #{output}" unless $?.success?
+  def fetch(item, fields, account: nil)
+    # session may be nil if logging in with the app CLI integration
+    session = signin(account)
+    vault, vault_item = item.split("/")
+    labels = fields.map { |field| "label=#{field}" }.join(",")
+    options = to_options(vault: vault, fields: labels, format: "json", account: account, session: session.presence)
+
+    secrets_json = `op item get #{vault_item} #{options}`.tap do
+      raise RuntimeError, "Could not read #{labels} from #{vault_item} in the #{vault} 1Password vault" unless $?.success?
     end
-  end
 
-  def fetch(name, account:, session: nil)
-    `op read #{name} #{to_options(account: account, session: session)}`.tap do
-      raise RuntimeError, "Could not read #{name} from 1Password" unless $?.success?
-    end
-  end
-
-  def fetch_all(*names, account:, session: nil)
-    secrets = {}
-
-    vaults_items_fields(names).each do |vault, items|
-      items.each do |item, fields|
-        labels = fields.map { |field| "label=#{field}" }.join(",")
-        secrets_json = `op item get #{item} #{to_options(vault: vault, fields: labels, format: "json", account: account, session: session.presence)}`.tap do
-          raise RuntimeError, "Could not read #{labels} from #{item} in the #{vault} 1Password vault" unless $?.success?
-        end
-
-        JSON.parse(secrets_json).each do |secret_json|
-          secrets[secret_json["reference"]] = secret_json["value"]
-        end
+    {}.tap do |secrets|
+      JSON.parse(secrets_json).each do |secret_json|
+        # The reference is in the form `op://vault/item/field[/field]`
+        field = secret_json["reference"].delete_prefix("op://#{item}/")
+        secrets[field] = secret_json["value"]
+        secrets[field.split("/").last] = secret_json["value"]
       end
     end
+  rescue => e
+    $stderr.puts "  \e[31mERROR (#{e.class}): #{e.message}\e[0m"
 
-    secrets
+    Process.kill("INT", Process.ppid) if ENV["KAMAL_SECRETS_KILL_PARENT"]
+    exit 1
   end
 
   private
-    def vaults_items_fields(names)
-      {}.tap do |vaults|
-        names.each do |name|
-          vault, item, field = vault_item_field(name)
-          vaults[vault] ||= {}
-          vaults[vault][item] ||= []
-          vaults[vault][item] << field
-        end
+    def signin(account)
+      `op signin #{to_options(account: account, force: true, raw: true)}`.tap do
+        raise RuntimeError, "Failed to login to 1Password" unless $?.success?
       end
-    end
-
-    def vault_item_field(name)
-      parts = name.delete_prefix("op://").split("/")
-
-      [ parts[0], parts[1], parts[2..-1].join(".") ]
     end
 
     def to_options(**options)
