@@ -6,9 +6,15 @@ class MainTest < IntegrationTest
 
     assert_app_is_down
 
-    kamal :deploy
+    mock = Minitest::Mock.new
+    mock.expect(:manifest, false, [ first_version ])
+    mock.expect(:installed?, true)
+    mock.expect(:running?, true)
+    Kamal::Commands::Docker.stub(:new, mock) do
+      kamal :deploy
+    end
     assert_app_is_up version: first_version
-    assert_hooks_ran "pre-connect", "pre-deploy", "post-deploy"
+    assert_hooks_ran "pre-connect", "pre-build", "pre-deploy", "post-deploy"
     assert_envs version: first_version
 
     second_version = update_app_rev
