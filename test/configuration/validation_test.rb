@@ -101,6 +101,7 @@ class ConfigurationValidationTest < ActiveSupport::TestCase
       valid_config = {
         service: "app",
         image: "app",
+        builder: { "arch" => "amd64" },
         registry: { "username" => "user", "password" => "secret" },
         servers: [ "1.1.1.1" ]
       }
