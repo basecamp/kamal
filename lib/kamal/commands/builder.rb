@@ -18,6 +18,8 @@ class Kamal::Commands::Builder < Kamal::Commands::Base
         else
           native_remote
         end
+      elsif config.builder.pack?
+        pack
       else
         multiarch
       end
@@ -50,6 +52,9 @@ class Kamal::Commands::Builder < Kamal::Commands::Base
     @multiarch_remote ||= Kamal::Commands::Builder::Multiarch::Remote.new(config)
   end
 
+  def pack
+    @pack ||= Kamal::Commands::Builder::Native::Pack.new(config)
+  end
 
   def ensure_local_dependencies_installed
     if name.native?

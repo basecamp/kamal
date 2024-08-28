@@ -5,7 +5,7 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
   ENDPOINT_DOCKER_HOST_INSPECT = "'{{.Endpoints.docker.Host}}'"
 
   delegate :argumentize, to: Kamal::Utils
-  delegate :args, :secrets, :dockerfile, :target, :local_arch, :local_host, :remote_arch, :remote_host, :cache_from, :cache_to, :ssh, to: :builder_config
+  delegate :args, :secrets, :dockerfile, :target, :local_arch, :local_host, :pack_arch, :pack_builder, :pack_buildpacks, :remote_arch, :remote_host, :cache_from, :cache_to, :ssh, to: :builder_config
 
   def clean
     docker :image, :rm, "--force", config.absolute_image

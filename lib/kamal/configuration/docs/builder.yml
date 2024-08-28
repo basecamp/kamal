@@ -37,6 +37,16 @@ builder:
     arch: arm64
     host: ssh://docker@docker-builder
 
+  # Buildpack configuration
+  #
+  # The build configuration for using pack to build a Cloud Native Buildpack image.
+  pack:
+    builder: heroku/builder:24
+    arch: amd64
+    buildpacks:
+    - heroku/ruby
+    - heroku/procfile
+
   # Builder cache
   #
   # The type must be either 'gha' or 'registry'

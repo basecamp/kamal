@@ -77,6 +77,10 @@ module Kamal::Commands
         args.compact.unshift :docker
       end
 
+      def pack(*args)
+        args.compact.unshift :pack
+      end
+
       def git(*args, path: nil)
         [ :git, *([ "-C", path ] if path), *args.compact ]
       end

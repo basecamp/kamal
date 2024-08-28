@@ -35,6 +35,10 @@ class Kamal::Configuration::Builder
     !!builder_config["cache"]
   end
 
+  def pack?
+    !!builder_config["pack"]
+  end
+
   def args
     builder_config["args"] || {}
   end
@@ -61,6 +65,18 @@ class Kamal::Configuration::Builder
 
   def local_host
     builder_config["local"]["host"] if local?
+  end
+
+  def pack_arch
+    builder_config["pack"]["arch"] if pack?
+  end
+
+  def pack_builder
+    builder_config["pack"]["builder"] if pack?
+  end
+
+  def pack_buildpacks
+    builder_config["pack"]["buildpacks"] if pack?
   end
 
   def remote_arch
