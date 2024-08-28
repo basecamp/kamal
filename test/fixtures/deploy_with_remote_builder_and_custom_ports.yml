@@ -42,5 +42,5 @@ ssh:
   port: 22
 
 builder:
-  arch: <%= `uname -m`.strip == "x86_64" ? "arm64" : "amd64" %>
+  arch: <%= Kamal::Utils.docker_arch == "arm64" ? "amd64" : "arm64" %>
   remote: ssh://app@1.1.1.5:2122

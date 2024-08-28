@@ -29,9 +29,7 @@ class Kamal::Configuration::Builder
 
   def local_arches
     @local_arches ||= if remote
-      uname_m = `uname -m`.strip
-      local_arch = uname_m == "x86_64" ? "amd64" : uname_m
-      arches & [ local_arch ]
+      arches & [ Kamal::Utils.docker_arch ]
     else
       arches
     end

@@ -145,10 +145,10 @@ class CommandsBuilderTest < ActiveSupport::TestCase
     end
 
     def local_arch
-      `uname -m`.strip == "x86_64" ? "amd64" : "arm64"
+      Kamal::Utils.docker_arch
     end
 
     def remote_arch
-      `uname -m`.strip == "x86_64" ? "arm64" : "amd64"
+      Kamal::Utils.docker_arch == "arm64" ? "amd64" : "arm64"
     end
 end

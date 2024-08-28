@@ -24,7 +24,7 @@ registry:
   password: root
 builder:
   driver: docker
-  arch: <%= uname_m = `uname -m`; uname_m == "x86_64" ? "amd64" : uname_m %>
+  arch: <%= Kamal::Utils.docker_arch %>
   args:
     COMMIT_SHA: <%= `git rev-parse HEAD` %>
 healthcheck:
