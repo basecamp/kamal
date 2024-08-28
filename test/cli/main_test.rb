@@ -566,6 +566,13 @@ class CliMainTest < CliTestCase
     end
   end
 
+  test "append to command with an alias" do
+    run_command("rails", "db:migrate:status", config_file: "deploy_with_aliases").tap do |output|
+      assert_match "docker exec app-console-999 rails db:migrate:status on 1.1.1.5", output
+      assert_match "App Host: 1.1.1.5", output
+    end
+  end
+
   private
     def run_command(*command, config_file: "deploy_simple")
       with_argv([ *command, "-c", "test/fixtures/#{config_file}.yml" ]) do

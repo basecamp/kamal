@@ -93,6 +93,9 @@ class MainTest < IntegrationTest
 
     output = kamal :worker_hostname, capture: true
     assert_match /App Host: vm3\nvm3-[0-9a-f]{12}$/, output
+
+    output = kamal :uname, "-o", capture: true
+    assert_match "App Host: vm1\nGNU/Linux", output
   end
 
   test "setup and remove" do
