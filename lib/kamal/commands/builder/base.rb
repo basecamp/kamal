@@ -14,7 +14,7 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
   end
 
   def push
-    docker :build,
+    docker :buildx, :build,
       "--push",
       *platform_options(arches),
       *([ "--builder", builder_name ] unless docker_driver?),
