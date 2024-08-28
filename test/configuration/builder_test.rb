@@ -33,21 +33,21 @@ class ConfigurationBuilderTest < ActiveSupport::TestCase
   end
 
   test "pack?" do
-    refute config.builder.pack?
+    assert_not config.builder.pack?
   end
 
   test "pack? with pack builder" do
-    @deploy[:builder] = { "pack" => {"builder" => "heroku/builder:24"} }
+    @deploy[:builder] = { "pack" => { "builder" => "heroku/builder:24" } }
 
     assert config.builder.pack?
   end
 
   test "pack details" do
-    @deploy[:builder] = { "pack" => {"arch" => "amd64", "builder" => "heroku/builder:24", "buildpacks" => ["heroku/ruby", "heroku/procfile"]} }
+    @deploy[:builder] = { "pack" => { "arch" => "amd64", "builder" => "heroku/builder:24", "buildpacks" => [ "heroku/ruby", "heroku/procfile" ] } }
 
     assert_equal "amd64", config.builder.pack_arch
     assert_equal "heroku/builder:24", config.builder.pack_builder
-    assert_equal ["heroku/ruby", "heroku/procfile"], config.builder.pack_buildpacks
+    assert_equal [ "heroku/ruby", "heroku/procfile" ], config.builder.pack_buildpacks
   end
 
   test "remote_arch" do

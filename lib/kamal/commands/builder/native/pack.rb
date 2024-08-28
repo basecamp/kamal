@@ -9,7 +9,7 @@ class Kamal::Commands::Builder::Native::Pack < Kamal::Commands::Builder::Native
         "-t", config.absolute_image,
         "-t", config.latest_image,
         "--env", "BP_IMAGE_LABELS=service=#{config.service}",
-        secrets.map { |secret| ["--env", Kamal::Utils.sensitive(ENV[secret])] },
+        secrets.map { |secret| [ "--env", Kamal::Utils.sensitive(ENV[secret]) ] },
         "--path", build_context),
       docker(:push, config.absolute_image),
       docker(:push, config.latest_image)
@@ -21,6 +21,6 @@ class Kamal::Commands::Builder::Native::Pack < Kamal::Commands::Builder::Native
     end
 
     def buildpacks
-      (pack_buildpacks << "paketo-buildpacks/image-labels").map { |buildpack| ["--buildpack", buildpack] }
+      (pack_buildpacks << "paketo-buildpacks/image-labels").map { |buildpack| [ "--buildpack", buildpack ] }
     end
 end
