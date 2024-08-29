@@ -211,7 +211,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
   desc "registry", "Login and -out of the image registry"
   subcommand "registry", Kamal::Cli::Registry
 
-  desc "secrets", "Helpers for extracting secrets", hide: true
+  desc "secrets", "Helpers for extracting secrets"
   subcommand "secrets", Kamal::Cli::Secrets
 
   desc "server", "Bootstrap servers with curl and Docker"
