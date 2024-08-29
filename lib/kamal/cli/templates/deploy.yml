@@ -18,10 +18,6 @@ registry:
   password:
     - KAMAL_REGISTRY_PASSWORD
 
-# Configure builder setup.
-builder:
-  arch: amd64
-
 # Inject ENV variables into containers (secrets come from .env).
 # Remember to run `kamal env push` after making changes!
 # env:
@@ -33,6 +29,16 @@ builder:
 # Use a different ssh user than root
 # ssh:
 #   user: app
+
+# Configure builder setup.
+# builder:
+#   args:
+#     RUBY_VERSION: 3.2.0
+#   secrets:
+#     - GITHUB_TOKEN
+#   remote:
+#     arch: amd64
+#     host: ssh://app@192.168.0.1
 
 # Use accessory services (secrets come from .env).
 # accessories:

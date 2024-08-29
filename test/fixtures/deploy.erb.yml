@@ -9,5 +9,3 @@ registry:
   server: registry.digitalocean.com
   username: <%= "my-user" %>
   password: <%= "my-password" %>
-builder:
-  arch: amd64

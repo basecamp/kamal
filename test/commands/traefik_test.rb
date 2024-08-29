@@ -5,7 +5,7 @@ class CommandsTraefikTest < ActiveSupport::TestCase
     @image = "traefik:test"
 
     @config = {
-      service: "app", image: "dhh/app", registry: { "username" => "dhh", "password" => "secret" }, servers: [ "1.1.1.1" ], builder: { "arch" => "amd64" },
+      service: "app", image: "dhh/app", registry: { "username" => "dhh", "password" => "secret" }, servers: [ "1.1.1.1" ],
       traefik: { "image" => @image, "args" => { "accesslog.format" => "json", "api.insecure" => true, "metrics.prometheus.buckets" => "0.1,0.3,1.2,5.0" } }
     }
 

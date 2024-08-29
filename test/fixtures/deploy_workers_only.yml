@@ -10,5 +10,3 @@ primary_role: workers
 registry:
   username: user
   password: pw
-builder:
-  arch: amd64

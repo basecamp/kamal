@@ -21,12 +21,16 @@ class CliBuildTest < CliTestCase
         .with(:git, "-C", anything, :status, "--porcelain")
         .returns("")
 
+      SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+        .with(:docker, :buildx, :inspect, "kamal-app-multiarch", "> /dev/null")
+        .returns("")
+
       run_command("push", "--verbose").tap do |output|
         assert_hook_ran "pre-build", output, **hook_variables
         assert_match /Cloning repo into build directory/, output
         assert_match /git -C #{Dir.tmpdir}\/kamal-clones\/app-#{pwd_sha} clone #{Dir.pwd}/, output
         assert_match /docker --version && docker buildx version/, output
-        assert_match /docker buildx build --push --platform linux\/amd64 --builder kamal-local-docker-container -t dhh\/app:999 -t dhh\/app:latest --label service="app" --file Dockerfile \. as .*@localhost/, output
+        assert_match /docker buildx build --push --platform linux\/amd64,linux\/arm64 --builder kamal-app-multiarch -t dhh\/app:999 -t dhh\/app:latest --label service="app" --file Dockerfile \. as .*@localhost/, output
       end
     end
   end
@@ -49,7 +53,7 @@ class CliBuildTest < CliTestCase
       SSHKit::Backend::Abstract.any_instance.expects(:execute).with(:git, "-C", build_directory, :submodule, :update, "--init")
 
       SSHKit::Backend::Abstract.any_instance.expects(:execute)
-        .with(:docker, :buildx, :build, "--push", "--platform", "linux/amd64", "--builder", "kamal-local-docker-container", "-t", "dhh/app:999", "-t", "dhh/app:latest", "--label", "service=\"app\"", "--file", "Dockerfile", ".")
+        .with(:docker, :buildx, :build, "--push", "--platform", "linux/amd64,linux/arm64", "--builder", "kamal-app-multiarch", "-t", "dhh/app:999", "-t", "dhh/app:latest", "--label", "service=\"app\"", "--file", "Dockerfile", ".")
 
       SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
         .with(:git, "-C", anything, :"rev-parse", :HEAD)
@@ -74,7 +78,7 @@ class CliBuildTest < CliTestCase
       assert_no_match /Cloning repo into build directory/, output
       assert_hook_ran "pre-build", output, **hook_variables
       assert_match /docker --version && docker buildx version/, output
-      assert_match /docker buildx build --push --platform linux\/amd64 --builder kamal-local-docker-container -t dhh\/app:999 -t dhh\/app:latest --label service="app" --file Dockerfile . as .*@localhost/, output
+      assert_match /docker buildx build --push --platform linux\/amd64,linux\/arm64 --builder kamal-app-multiarch -t dhh\/app:999 -t dhh\/app:latest --label service="app" --file Dockerfile . as .*@localhost/, output
     end
   end
 
@@ -120,10 +124,10 @@ class CliBuildTest < CliTestCase
         .with(:docker, "--version", "&&", :docker, :buildx, "version")
 
       SSHKit::Backend::Abstract.any_instance.expects(:execute)
-        .with(:docker, :buildx, :create, "--name", "kamal-local-docker-container", "--driver=docker-container")
+        .with(:docker, :buildx, :create, "--use", "--name", "kamal-app-multiarch")
 
-      SSHKit::Backend::Abstract.any_instance.expects(:execute)
-        .with(:docker, :buildx, :inspect, "kamal-local-docker-container")
+      SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+        .with(:docker, :buildx, :inspect, "kamal-app-multiarch", "> /dev/null")
         .raises(SSHKit::Command::Failed.new("no builder"))
 
       SSHKit::Backend::Abstract.any_instance.expects(:execute).with { |*args| args.first.start_with?("git") }
@@ -137,7 +141,7 @@ class CliBuildTest < CliTestCase
         .returns("")
 
       SSHKit::Backend::Abstract.any_instance.expects(:execute)
-        .with(:docker, :buildx, :build, "--push", "--platform", "linux/amd64", "--builder", "kamal-local-docker-container", "-t", "dhh/app:999", "-t", "dhh/app:latest", "--label", "service=\"app\"", "--file", "Dockerfile", ".")
+        .with(:docker, :buildx, :build, "--push", "--platform", "linux/amd64,linux/arm64", "--builder", "kamal-app-multiarch", "-t", "dhh/app:999", "-t", "dhh/app:latest", "--label", "service=\"app\"", "--file", "Dockerfile", ".")
 
       run_command("push").tap do |output|
         assert_match /WARN Missing compatible builder, so creating a new one first/, output
@@ -161,7 +165,7 @@ class CliBuildTest < CliTestCase
     error = assert_raises(Kamal::Cli::HookError) { run_command("push") }
     assert_equal "Hook `pre-build` failed:\nfailed", error.message
 
-    assert @executions.none? { |args| args[0..2] == [ :docker, :build ] }
+    assert @executions.none? { |args| args[0..2] == [ :docker, :buildx, :build ] }
   end
 
   test "pull" do
@@ -203,23 +207,23 @@ class CliBuildTest < CliTestCase
 
   test "create" do
     run_command("create").tap do |output|
-      assert_match /docker buildx create --name kamal-local-docker-container --driver=docker-container/, output
+      assert_match /docker buildx create --use --name kamal-app-multiarch/, output
     end
   end
 
   test "create remote" do
     run_command("create", fixture: :with_remote_builder).tap do |output|
       assert_match "Running /usr/bin/env true on 1.1.1.5", output
-      assert_match "docker context create kamal-remote-docker-container-ssh---app-1-1-1-5 --description 'kamal-remote-docker-container-ssh---app-1-1-1-5 host' --docker 'host=ssh://app@1.1.1.5'", output
-      assert_match "docker buildx create --name kamal-remote-docker-container-ssh---app-1-1-1-5 kamal-remote-docker-container-ssh---app-1-1-1-5", output
+      assert_match "docker context create kamal-app-native-remote-amd64 --description 'kamal-app-native-remote amd64 native host' --docker 'host=ssh://app@1.1.1.5'", output
+      assert_match "docker buildx create --name kamal-app-native-remote kamal-app-native-remote-amd64 --platform linux/amd64", output
     end
   end
 
   test "create remote with custom ports" do
     run_command("create", fixture: :with_remote_builder_and_custom_ports).tap do |output|
       assert_match "Running /usr/bin/env true on 1.1.1.5", output
-      assert_match "docker context create kamal-remote-docker-container-ssh---app-1-1-1-5-2122 --description 'kamal-remote-docker-container-ssh---app-1-1-1-5-2122 host' --docker 'host=ssh://app@1.1.1.5:2122'", output
-      assert_match "docker buildx create --name kamal-remote-docker-container-ssh---app-1-1-1-5-2122 kamal-remote-docker-container-ssh---app-1-1-1-5-2122", output
+      assert_match "docker context create kamal-app-native-remote-amd64 --description 'kamal-app-native-remote amd64 native host' --docker 'host=ssh://app@1.1.1.5:2122'", output
+      assert_match "docker buildx create --name kamal-app-native-remote kamal-app-native-remote-amd64 --platform linux/amd64", output
     end
   end
 
@@ -236,7 +240,7 @@ class CliBuildTest < CliTestCase
 
   test "remove" do
     run_command("remove").tap do |output|
-      assert_match /docker buildx rm kamal-local/, output
+      assert_match /docker buildx rm kamal-app-multiarch/, output
     end
   end
 
@@ -246,7 +250,7 @@ class CliBuildTest < CliTestCase
       .returns("docker builder info")
 
     run_command("details").tap do |output|
-      assert_match /Builder: local/, output
+      assert_match /Builder: multiarch/, output
       assert_match /docker builder info/, output
     end
   end

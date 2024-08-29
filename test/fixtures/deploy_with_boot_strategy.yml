@@ -7,8 +7,6 @@ servers:
   workers:
     - "1.1.1.3"
     - "1.1.1.4"
-builder:
-  arch: amd64
 
 registry:
   username: user

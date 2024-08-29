@@ -13,5 +13,3 @@ registry:
   server: registry.digitalocean.com
   username: user
   password: pw
-builder:
-  arch: amd64

@@ -5,7 +5,6 @@ class ConfigurationSshTest < ActiveSupport::TestCase
     @deploy = {
       service: "app", image: "dhh/app",
       registry: { "username" => "dhh", "password" => "secret" },
-      builder: { "arch" => "amd64" },
       env: { "REDIS_URL" => "redis://x/y" },
       servers: [ "1.1.1.1", "1.1.1.2" ],
       volumes: [ "/local/path:/container/path" ]
