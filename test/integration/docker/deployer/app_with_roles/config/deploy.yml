@@ -37,3 +37,7 @@ accessories:
       - web
 stop_wait_time: 1
 readiness_delay: 0
+aliases:
+  whome: version
+  worker_hostname: app exec -r workers -q --reuse hostname
+  uname: server exec -q -p uname

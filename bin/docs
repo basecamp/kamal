@@ -17,6 +17,7 @@ end
 
 DOCS = {
   "accessory" => "Accessories",
+  "alias" => "Aliases",
   "boot" => "Booting",
   "builder" => "Builders",
   "configuration" => "Configuration overview",
@@ -67,26 +68,27 @@ class DocWriter
             output.puts
             place = :new_section
           elsif line =~ /^ *#/
-            generate_line(line, place: place)
+            generate_line(line, heading: place == :new_section)
             place = :in_section
           else
             output.puts "```yaml"
-            output.print line
+            output.puts line
             place = :in_yaml
           end
-        when :in_yaml
+        when :in_yaml, :in_empty_line_yaml
           if line =~ /^ *#/
             output.puts "```"
-            generate_line(line, place: :new_section)
+            generate_line(line, heading: place == :in_empty_line_yaml)
             place = :in_section
+          elsif line.empty?
+            place = :in_empty_line_yaml
           else
-            output.puts
-            output.print line
+            output.puts line
           end
         end
       end
 
-      output.puts "\n```" if place == :in_yaml
+      output.puts "```" if place == :in_yaml
     end
 
     def generate_header
@@ -98,7 +100,7 @@ class DocWriter
       output.puts
     end
 
-    def generate_line(line, place: :in_section)
+    def generate_line(line, heading: false)
       line = line.gsub(/^ *#\s?/, "")
 
       if line =~ /(.*)kamal docs ([a-z]*)(.*)/
@@ -109,7 +111,7 @@ class DocWriter
         line = "#{$1}[#{titlify($2.split("/").last)}](#{$2})#{$3}"
       end
 
-      if place == :new_section
+      if heading
         output.puts "## [#{line}](##{linkify(line)})"
       else
         output.puts line

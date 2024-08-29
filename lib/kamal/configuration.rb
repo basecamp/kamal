@@ -11,7 +11,7 @@ class Kamal::Configuration
   delegate :argumentize, :optionize, to: Kamal::Utils
 
   attr_reader :destination, :raw_config
-  attr_reader :accessories, :boot, :builder, :env, :healthcheck, :logging, :traefik, :servers, :ssh, :sshkit, :registry
+  attr_reader :accessories, :aliases, :boot, :builder, :env, :healthcheck, :logging, :traefik, :servers, :ssh, :sshkit, :registry
 
   include Validation
 
@@ -54,6 +54,7 @@ class Kamal::Configuration
     @registry = Registry.new(config: self)
 
     @accessories = @raw_config.accessories&.keys&.collect { |name| Accessory.new(name, config: self) } || []
+    @aliases = @raw_config.aliases&.keys&.to_h { |name| [ name, Alias.new(name, config: self) ] } || {}
     @boot = Boot.new(config: self)
     @builder = Builder.new(config: self)
     @env = Env.new(config: @raw_config.env || {})

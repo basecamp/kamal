@@ -13,32 +13,34 @@ class Kamal::Configuration::Validator
 
   private
     def validate_against_example!(validation_config, example)
-      validate_type! validation_config, Hash
+      validate_type! validation_config, example.class
 
-      check_unknown_keys! validation_config, example
+      if example.class == Hash
+        check_unknown_keys! validation_config, example
 
-      validation_config.each do |key, value|
-        next if extension?(key)
-        with_context(key) do
-          example_value = example[key]
+        validation_config.each do |key, value|
+          next if extension?(key)
+          with_context(key) do
+            example_value = example[key]
 
-          if example_value == "..."
-            validate_type! value, *(Array if key == :servers), Hash
-          elsif key == "hosts"
-            validate_servers! value
-          elsif example_value.is_a?(Array)
-            validate_array_of! value, example_value.first.class
-          elsif example_value.is_a?(Hash)
-            case key.to_s
-            when "options", "args"
-              validate_type! value, Hash
-            when "labels"
-              validate_hash_of! value, example_value.first[1].class
+            if example_value == "..."
+              validate_type! value, *(Array if key == :servers), Hash
+            elsif key == "hosts"
+              validate_servers! value
+            elsif example_value.is_a?(Array)
+              validate_array_of! value, example_value.first.class
+            elsif example_value.is_a?(Hash)
+              case key.to_s
+              when "options", "args"
+                validate_type! value, Hash
+              when "labels"
+                validate_hash_of! value, example_value.first[1].class
+              else
+                validate_against_example! value, example_value
+              end
             else
-              validate_against_example! value, example_value
+              validate_type! value, example_value.class
             end
-          else
-            validate_type! value, example_value.class
           end
         end
       end

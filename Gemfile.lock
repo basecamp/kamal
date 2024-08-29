@@ -10,7 +10,7 @@ PATH
       ed25519 (~> 1.2)
       net-ssh (~> 7.0)
       sshkit (>= 1.23.0, < 2.0)
-      thor (~> 1.2)
+      thor (~> 1.3)
       zeitwerk (~> 2.5)
 
 GEM
