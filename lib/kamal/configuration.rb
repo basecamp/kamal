@@ -10,7 +10,7 @@ class Kamal::Configuration
   delegate :argumentize, :optionize, to: Kamal::Utils
 
   attr_reader :destination, :raw_config, :secrets
-  attr_reader :accessories, :aliases :boot, :builder, :env, :healthcheck, :logging, :proxy, :traefik, :servers, :ssh, :sshkit, :registry
+  attr_reader :accessories, :aliases, :boot, :builder, :env, :healthcheck, :logging, :proxy, :traefik, :servers, :ssh, :sshkit, :registry
 
   include Validation
 
