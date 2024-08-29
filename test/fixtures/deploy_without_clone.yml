@@ -36,4 +36,5 @@ accessories:
 readiness_delay: 0
 
 builder:
+  arch: amd64
   context: "."

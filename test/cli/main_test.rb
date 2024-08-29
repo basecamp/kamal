@@ -122,10 +122,6 @@ class CliMainTest < CliTestCase
       .returns("")
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :buildx, :inspect, "kamal-app-multiarch", "> /dev/null")
-      .returns("")
-
-    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
       .with(:docker, :info, "--format '{{index .RegistryConfig.Mirrors 0}}'")
       .returns("")
       .at_least_once
@@ -157,10 +153,6 @@ class CliMainTest < CliTestCase
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
       .with(:git, "-C", anything, :status, "--porcelain")
-      .returns("")
-
-    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :buildx, :inspect, "kamal-app-multiarch", "> /dev/null")
       .returns("")
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)

@@ -32,6 +32,8 @@ accessories:
     port: 6379
     directories:
       - data:/data
+builder:
+  arch: amd64
 
 readiness_delay: 0
 
@@ -40,6 +42,5 @@ ssh:
   port: 22
 
 builder:
-  remote:
-    arch: amd64
-    host: ssh://app@1.1.1.5:2122
+  arch: <%= Kamal::Utils.docker_arch == "arm64" ? "amd64" : "arm64" %>
+  remote: ssh://app@1.1.1.5:2122

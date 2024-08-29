@@ -6,4 +6,6 @@ servers:
 registry:
   username: user
   password: pw
+builder:
+  arch: amd64
 asset_path: /public/assets

@@ -11,6 +11,8 @@ servers:
     - 1.1.1.4: site1
     - 1.2.1.3: site2
     - 1.2.1.4: [ site2 experimental ]
+builder:
+  arch: amd64
 env:
   clear:
     TEST: "root"

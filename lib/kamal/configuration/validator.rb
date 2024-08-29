@@ -28,7 +28,11 @@ class Kamal::Configuration::Validator
             elsif key == "hosts"
               validate_servers! value
             elsif example_value.is_a?(Array)
-              validate_array_of! value, example_value.first.class
+              if key == "arch"
+                validate_array_of_or_type! value, example_value.first.class
+              else
+                validate_array_of! value, example_value.first.class
+              end
             elsif example_value.is_a?(Hash)
               case key.to_s
               when "options", "args"
@@ -69,6 +73,16 @@ class Kamal::Configuration::Validator
 
     def stringish?(value)
       value.is_a?(String) || value.is_a?(Symbol) || value.is_a?(Numeric) || value.is_a?(TrueClass) || value.is_a?(FalseClass)
+    end
+
+    def validate_array_of_or_type!(value, type)
+      if value.is_a?(Array)
+        validate_array_of! value, type
+      else
+        validate_type! value, type
+      end
+    rescue Kamal::ConfigurationError
+      type_error(Array, type)
     end
 
     def validate_array_of!(array, type)

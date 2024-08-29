@@ -30,18 +30,9 @@ class Kamal::Cli::Build < Kamal::Cli::Base
       say "Building with uncommitted changes:\n #{uncommitted_changes}", :yellow
     end
 
-    # Get the command here to ensure the Dir.chdir doesn't interfere with it
-    push = KAMAL.builder.push
-
     run_locally do
       begin
-        context_hosts = capture_with_info(*KAMAL.builder.context_hosts).split("\n")
-
-        if context_hosts != KAMAL.builder.config_context_hosts
-          warn "Context hosts have changed, so re-creating builder, was: #{context_hosts.join(", ")}], now: #{KAMAL.builder.config_context_hosts.join(", ")}"
-          cli.remove
-          cli.create
-        end
+        execute *KAMAL.builder.buildx_inspect
       rescue SSHKit::Command::Failed => e
         if e.message =~ /(context not found|no builder|does not exist)/
           warn "Missing compatible builder, so creating a new one first"
@@ -50,6 +41,9 @@ class Kamal::Cli::Build < Kamal::Cli::Base
           raise
         end
       end
+
+      # Get the command here to ensure the Dir.chdir doesn't interfere with it
+      push = KAMAL.builder.push
 
       KAMAL.with_verbosity(:debug) do
         Dir.chdir(KAMAL.config.builder.build_directory) { execute *push }
@@ -72,7 +66,7 @@ class Kamal::Cli::Build < Kamal::Cli::Base
 
   desc "create", "Create a build setup"
   def create
-    if (remote_host = KAMAL.config.builder.remote_host)
+    if (remote_host = KAMAL.config.builder.remote)
       connect_to_remote_host(remote_host)
     end
 

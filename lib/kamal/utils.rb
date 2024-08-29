@@ -81,4 +81,16 @@ module Kamal::Utils
   def join_commands(commands)
     commands.map(&:strip).join(" ")
   end
+
+  def docker_arch
+    arch = `docker info --format '{{.Architecture}}'`.strip
+    case arch
+    when /aarch64/
+      "arm64"
+    when /x86_64/
+      "amd64"
+    else
+      arch
+    end
+  end
 end
