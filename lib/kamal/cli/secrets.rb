@@ -1,8 +1,8 @@
 class Kamal::Cli::Secrets < Kamal::Cli::Base
-  desc "fetch [ITEM] [FIELDS...]", "Fetch secrets from a vault"
+  desc "fetch [SECRETS...]", "Fetch secrets from a vault"
   option :adapter, type: :string, aliases: "-a", required: true, desc: "Which vault adapter to use"
-  option :account, type: :string, aliases: "-a", required: true, desc: "The account identifier or username"
-  option :location, type: :string, aliases: "-a", required: false, desc: "A vault or folder to fetch the secrets from"
+  option :account, type: :string, required: true, desc: "The account identifier or username"
+  option :location, type: :string, required: false, desc: "A vault or folder to fetch the secrets from"
   def fetch(*secrets)
     ENV["KAMAL_SECRETS_KILL_PARENT"] = "1"
 
