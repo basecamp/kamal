@@ -5,7 +5,6 @@ class ConfigurationEnvTagsTest < ActiveSupport::TestCase
     @deploy = {
       service: "app", image: "dhh/app", registry: { "username" => "dhh", "password" => "secret" },
       servers: [ { "1.1.1.1" => "odd" }, { "1.1.1.2" => "even" }, { "1.1.1.3" => [ "odd", "three" ] } ],
-      builder: { "arch" => "amd64" },
       env: {
         "clear" => { "REDIS_URL" => "redis://x/y", "THREE" => "false" },
         "tags" => {
@@ -65,7 +64,6 @@ class ConfigurationEnvTagsTest < ActiveSupport::TestCase
     deploy = {
       service: "app", image: "dhh/app", registry: { "username" => "dhh", "password" => "secret" },
       servers: [ { "1.1.1.1" => [ "first", "second" ] } ],
-      builder: { "arch" => "amd64" },
       env: {
         "tags" => {
           "first" => { "TYPE" => "first" },
@@ -84,7 +82,6 @@ class ConfigurationEnvTagsTest < ActiveSupport::TestCase
     deploy = {
       service: "app", image: "dhh/app", registry: { "username" => "dhh", "password" => "secret" },
       servers: [ { "1.1.1.1" => "secrets" } ],
-      builder: { "arch" => "amd64" },
       env: {
         "tags" => {
           "secrets" => { "secret" => [ "PASSWORD" ] }
@@ -102,7 +99,6 @@ class ConfigurationEnvTagsTest < ActiveSupport::TestCase
     deploy = {
       service: "app", image: "dhh/app", registry: { "username" => "dhh", "password" => "secret" },
       servers: [ { "1.1.1.1" => "clearly" } ],
-      builder: { "arch" => "amd64" },
       env: {
         "tags" => {
           "clearly" => { "clear" => { "FOO" => "bar" } }

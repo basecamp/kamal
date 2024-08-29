@@ -22,8 +22,7 @@ registry:
   username: root
   password: root
 builder:
-  driver: docker
-  arch: <%= Kamal::Utils.docker_arch %>
+  multiarch: false
   args:
     COMMIT_SHA: <%= `git rev-parse HEAD` %>
 healthcheck:

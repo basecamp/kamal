@@ -8,7 +8,6 @@ class CommandsRegistryTest < ActiveSupport::TestCase
         "password" => "secret",
         "server" => "hub.docker.com"
       },
-      builder: { "arch" => "amd64" },
       servers: [ "1.1.1.1" ]
     }
     @registry = Kamal::Commands::Registry.new Kamal::Configuration.new(@config)

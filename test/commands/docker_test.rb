@@ -3,7 +3,7 @@ require "test_helper"
 class CommandsDockerTest < ActiveSupport::TestCase
   setup do
     @config = {
-      service: "app", image: "dhh/app", registry: { "username" => "dhh", "password" => "secret" }, servers: [ "1.1.1.1" ], builder: { "arch" => "amd64" }
+      service: "app", image: "dhh/app", registry: { "username" => "dhh", "password" => "secret" }, servers: [ "1.1.1.1" ]
     }
     @docker = Kamal::Commands::Docker.new(Kamal::Configuration.new(@config))
   end

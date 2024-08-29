@@ -10,8 +10,6 @@ servers:
 registry:
   username: user
   password: pw
-builder:
-  arch: amd64
 
 accessories:
   mysql:

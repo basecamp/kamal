@@ -5,7 +5,6 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
     @deploy = {
       service: "app", image: "dhh/app", registry: { "username" => "dhh", "password" => "secret" },
       servers: [ "1.1.1.1", "1.1.1.2" ],
-      builder: { "arch" => "amd64" },
       env: { "REDIS_URL" => "redis://x/y" }
     }
 

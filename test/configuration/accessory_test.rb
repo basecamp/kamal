@@ -8,7 +8,6 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
         "web" => [ "1.1.1.1", "1.1.1.2" ],
         "workers" => [ "1.1.1.3", "1.1.1.4" ]
       },
-      builder: { "arch" => "amd64" },
       env: { "REDIS_URL" => "redis://x/y" },
       accessories: {
         "mysql" => {

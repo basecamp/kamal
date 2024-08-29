@@ -32,11 +32,10 @@ accessories:
     port: 6379
     directories:
       - data:/data
-builder:
-  arch: amd64
 
 readiness_delay: 0
 
 builder:
-  arch: <%= Kamal::Utils.docker_arch == "arm64" ? "amd64" : "arm64" %>
-  remote: ssh://app@1.1.1.5
+  remote:
+    arch: amd64
+    host: ssh://app@1.1.1.5

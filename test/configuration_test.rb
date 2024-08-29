@@ -8,7 +8,6 @@ class ConfigurationTest < ActiveSupport::TestCase
     @deploy = {
       service: "app", image: "dhh/app",
       registry: { "username" => "dhh", "password" => "secret" },
-      builder: { "arch" => "amd64" },
       env: { "REDIS_URL" => "redis://x/y" },
       servers: [ "1.1.1.1", "1.1.1.2" ],
       volumes: [ "/local/path:/container/path" ]
@@ -122,7 +121,7 @@ class ConfigurationTest < ActiveSupport::TestCase
   test "version from uncommitted context" do
     ENV.delete("VERSION")
 
-    config = Kamal::Configuration.new(@deploy.tap { |c| c[:builder]["context"] = "." })
+    config = Kamal::Configuration.new(@deploy.tap { |c| c[:builder] = { "context" => "." } })
 
     Kamal::Git.expects(:revision).returns("git-version")
     Kamal::Git.expects(:uncommitted_changes).returns("M   file\n")
@@ -268,7 +267,7 @@ class ConfigurationTest < ActiveSupport::TestCase
         ssh_options: { user: "root", port: 22, log_level: :fatal, keepalive: true, keepalive_interval: 30 },
         sshkit: {},
         volume_args: [ "--volume", "/local/path:/container/path" ],
-        builder: { "arch" => "amd64" },
+        builder: {},
         logging: [ "--log-opt", "max-size=\"10m\"" ],
         healthcheck: { "cmd"=>"curl -f http://localhost:3000/up || exit 1", "interval" => "1s", "path"=>"/up", "port"=>3000, "max_attempts" => 7, "cord" => "/tmp/kamal-cord", "log_lines" => 50 } }
 

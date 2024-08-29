@@ -5,7 +5,7 @@ class CommandsAppTest < ActiveSupport::TestCase
     ENV["RAILS_MASTER_KEY"] = "456"
     Kamal::Configuration.any_instance.stubs(:run_id).returns("12345678901234567890123456789012")
 
-    @config = { service: "app", image: "dhh/app", registry: { "username" => "dhh", "password" => "secret" }, servers: [ "1.1.1.1" ], env: { "secret" => [ "RAILS_MASTER_KEY" ] }, builder: { "arch" => "amd64" } }
+    @config = { service: "app", image: "dhh/app", registry: { "username" => "dhh", "password" => "secret" }, servers: [ "1.1.1.1" ], env: { "secret" => [ "RAILS_MASTER_KEY" ] } }
   end
 
   teardown do
