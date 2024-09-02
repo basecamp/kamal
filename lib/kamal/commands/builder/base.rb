@@ -1,18 +1,39 @@
-
 class Kamal::Commands::Builder::Base < Kamal::Commands::Base
   class BuilderError < StandardError; end
 
   ENDPOINT_DOCKER_HOST_INSPECT = "'{{.Endpoints.docker.Host}}'"
 
   delegate :argumentize, to: Kamal::Utils
-  delegate :args, :secrets, :dockerfile, :target, :local_arch, :local_host, :remote_arch, :remote_host, :cache_from, :cache_to, :ssh, to: :builder_config
+  delegate \
+    :args, :secrets, :dockerfile, :target, :arches, :local_arches, :remote_arches, :remote,
+    :cache_from, :cache_to, :ssh, :driver, :docker_driver?,
+    to: :builder_config
 
   def clean
     docker :image, :rm, "--force", config.absolute_image
   end
 
+  def push
+    docker :buildx, :build,
+      "--push",
+      *platform_options(arches),
+      *([ "--builder", builder_name ] unless docker_driver?),
+      *build_options,
+      build_context
+  end
+
   def pull
     docker :pull, config.absolute_image
+  end
+
+  def info
+    combine \
+      docker(:context, :ls),
+      docker(:buildx, :ls)
+  end
+
+  def inspect_builder
+    docker :buildx, :inspect, builder_name unless docker_driver?
   end
 
   def build_options
@@ -30,14 +51,6 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
         [ :grep, "-x", config.service ],
         "(echo \"Image #{config.absolute_image} is missing the 'service' label\" && exit 1)"
       )
-  end
-
-  def context_hosts
-    :true
-  end
-
-  def config_context_hosts
-    []
   end
 
   def first_mirror
@@ -88,7 +101,7 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
       config.builder
     end
 
-    def context_host(builder_name)
-      docker :context, :inspect, builder_name, "--format", ENDPOINT_DOCKER_HOST_INSPECT
+    def platform_options(arches)
+      argumentize "--platform", arches.map { |arch| "linux/#{arch}" }.join(",") if arches.any?
     end
 end

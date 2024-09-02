@@ -13,32 +13,38 @@ class Kamal::Configuration::Validator
 
   private
     def validate_against_example!(validation_config, example)
-      validate_type! validation_config, Hash
+      validate_type! validation_config, example.class
 
-      check_unknown_keys! validation_config, example
+      if example.class == Hash
+        check_unknown_keys! validation_config, example
 
-      validation_config.each do |key, value|
-        next if extension?(key)
-        with_context(key) do
-          example_value = example[key]
+        validation_config.each do |key, value|
+          next if extension?(key)
+          with_context(key) do
+            example_value = example[key]
 
-          if example_value == "..."
-            validate_type! value, *(Array if key == :servers), Hash
-          elsif key == "hosts"
-            validate_servers! value
-          elsif example_value.is_a?(Array)
-            validate_array_of! value, example_value.first.class
-          elsif example_value.is_a?(Hash)
-            case key.to_s
-            when "options", "args"
-              validate_type! value, Hash
-            when "labels"
-              validate_hash_of! value, example_value.first[1].class
+            if example_value == "..."
+              validate_type! value, *(Array if key == :servers), Hash
+            elsif key == "hosts"
+              validate_servers! value
+            elsif example_value.is_a?(Array)
+              if key == "arch"
+                validate_array_of_or_type! value, example_value.first.class
+              else
+                validate_array_of! value, example_value.first.class
+              end
+            elsif example_value.is_a?(Hash)
+              case key.to_s
+              when "options", "args"
+                validate_type! value, Hash
+              when "labels"
+                validate_hash_of! value, example_value.first[1].class
+              else
+                validate_against_example! value, example_value
+              end
             else
-              validate_against_example! value, example_value
+              validate_type! value, example_value.class
             end
-          else
-            validate_type! value, example_value.class
           end
         end
       end
@@ -67,6 +73,16 @@ class Kamal::Configuration::Validator
 
     def stringish?(value)
       value.is_a?(String) || value.is_a?(Symbol) || value.is_a?(Numeric) || value.is_a?(TrueClass) || value.is_a?(FalseClass)
+    end
+
+    def validate_array_of_or_type!(value, type)
+      if value.is_a?(Array)
+        validate_array_of! value, type
+      else
+        validate_type! value, type
+      end
+    rescue Kamal::ConfigurationError
+      type_error(Array, type)
     end
 
     def validate_array_of!(array, type)

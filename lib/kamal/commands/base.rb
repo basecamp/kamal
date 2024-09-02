@@ -81,6 +81,10 @@ module Kamal::Commands
         [ :git, *([ "-C", path ] if path), *args.compact ]
       end
 
+      def grep(*args)
+        args.compact.unshift :grep
+      end
+
       def tags(**details)
         Kamal::Tags.from_config(config, **details)
       end

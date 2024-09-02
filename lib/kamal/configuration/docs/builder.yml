@@ -1,10 +1,10 @@
 # Builder
 #
-# The builder configuration controls how the application is built with `docker build` or `docker buildx build`
+# The builder configuration controls how the application is built with `docker build`
 #
 # If no configuration is specified, Kamal will:
-# 1. Create a buildx context called `kamal-<service>-multiarch`
-# 2. Use `docker buildx build` to build a multiarch image for linux/amd64,linux/arm64 with that context
+# 1. Create a buildx context called `kamal-local-docker-container`, using the docker-container driver
+# 2. Use `docker build` to build a multiarch image for linux/amd64,linux/arm64 with that context
 #
 # See https://kamal-deploy.org/docs/configuration/builder-examples/ for more information
 
@@ -12,36 +12,29 @@
 #
 # Options go under the builder key in the root configuration.
 builder:
+  # Driver
+  #
+  # The build driver to use, defaults to `docker-container`
+  driver: docker
 
-  # Multiarch
+  # Arch
   #
-  # Enables multiarch builds, defaults to `true`
-  multiarch: false
-
-  # Local configuration
-  #
-  # The build configuration for local builds, only used if multiarch is enabled (the default)
-  #
-  # If there is no remote configuration, by default we build for amd64 and arm64.
-  # If you only want to build for one architecture, you can specify it here.
-  # The docker socket is optional and uses the default docker host socket when not specified
-  local:
-    arch: amd64
-    host: /var/run/docker.sock
+  # The architectures to build for, defaults to `[ amd64, arm64 ]`
+  # Unless you are using the docker driver, when it defaults to the local architecture
+  # You can set an array or just a single value
+  arch:
+    - amd64
 
   # Remote configuration
   #
-  # The build configuration for remote builds, also only used if multiarch is enabled.
-  # The arch is required and can be either amd64 or arm64.
-  remote:
-    arch: arm64
-    host: ssh://docker@docker-builder
+  # If you have a remote builder, you can configure it here
+  remote: ssh://docker@docker-builder
 
   # Builder cache
   #
   # The type must be either 'gha' or 'registry'
   #
-  # The image is only used for registry cache
+  # The image is only used for registry cache. Not compatible with the docker driver
   cache:
     type: registry
     options: mode=max

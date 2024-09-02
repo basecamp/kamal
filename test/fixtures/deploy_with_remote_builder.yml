@@ -36,6 +36,5 @@ accessories:
 readiness_delay: 0
 
 builder:
-  remote:
-    arch: amd64
-    host: ssh://app@1.1.1.5
+  arch: <%= Kamal::Utils.docker_arch == "arm64" ? "amd64" : "arm64" %>
+  remote: ssh://app@1.1.1.5

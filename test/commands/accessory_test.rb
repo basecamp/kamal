@@ -5,6 +5,7 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
     @config = {
       service: "app", image: "dhh/app", registry: { "server" => "private.registry", "username" => "dhh", "password" => "secret" },
       servers: [ "1.1.1.1" ],
+      builder: { "arch" => "amd64" },
       accessories: {
         "mysql" => {
           "image" => "private.registry/mysql:8.0",

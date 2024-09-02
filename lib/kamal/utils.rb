@@ -77,4 +77,20 @@ module Kamal::Utils
   def stable_sort!(elements, &block)
     elements.sort_by!.with_index { |element, index| [ block.call(element), index ] }
   end
+
+  def join_commands(commands)
+    commands.map(&:strip).join(" ")
+  end
+
+  def docker_arch
+    arch = `docker info --format '{{.Architecture}}'`.strip
+    case arch
+    when /aarch64/
+      "arm64"
+    when /x86_64/
+      "amd64"
+    else
+      arch
+    end
+  end
 end

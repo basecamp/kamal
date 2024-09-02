@@ -77,9 +77,25 @@ class MainTest < IntegrationTest
     assert_equal "app-#{version}", config[:service_with_version]
     assert_equal [], config[:volume_args]
     assert_equal({ user: "root", port: 22, keepalive: true, keepalive_interval: 30, log_level: :fatal }, config[:ssh_options])
-    assert_equal({ "multiarch" => false, "args" => { "COMMIT_SHA" => version } }, config[:builder])
+    assert_equal({ "driver" => "docker", "arch" => "amd64", "args" => { "COMMIT_SHA" => version } }, config[:builder])
     assert_equal [ "--log-opt", "max-size=\"10m\"" ], config[:logging]
     assert_equal({ "cmd"=>"wget -qO- http://localhost > /dev/null || exit 1", "interval"=>"1s", "max_attempts"=>3, "port"=>3000, "path"=>"/up", "cord"=>"/tmp/kamal-cord", "log_lines"=>50 }, config[:healthcheck])
+  end
+
+  test "aliases" do
+    @app = "app_with_roles"
+
+    kamal :envify
+    kamal :deploy
+
+    output = kamal :whome, capture: true
+    assert_equal Kamal::VERSION, output
+
+    output = kamal :worker_hostname, capture: true
+    assert_match /App Host: vm3\nvm3-[0-9a-f]{12}$/, output
+
+    output = kamal :uname, "-o", capture: true
+    assert_match "App Host: vm1\nGNU/Linux", output
   end
 
   test "setup and remove" do
