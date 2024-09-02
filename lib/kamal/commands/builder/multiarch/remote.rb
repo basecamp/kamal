@@ -58,4 +58,8 @@ class Kamal::Commands::Builder::Multiarch::Remote < Kamal::Commands::Builder::Mu
     def remove_context(arch)
       docker :context, :rm, builder_name_with_arch(arch)
     end
+
+    def platform_names
+      "linux/#{local_arch},linux/#{remote_arch}"
+    end
 end

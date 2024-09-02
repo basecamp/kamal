@@ -30,10 +30,10 @@ class CommandsBuilderTest < ActiveSupport::TestCase
   end
 
   test "target multiarch remote when local and remote is set" do
-    builder = new_builder_command(builder: { "local" => {}, "remote" => {}, "cache" => { "type" => "gha" } })
+    builder = new_builder_command(builder: { "local" => { "arch" => "arm64" }, "remote" => { "arch" => "amd64" }, "cache" => { "type" => "gha" } })
     assert_equal "multiarch/remote", builder.name
     assert_equal \
-      "docker buildx build --push --platform linux/amd64,linux/arm64 --builder kamal-app-multiarch-remote -t dhh/app:123 -t dhh/app:latest --cache-to type=gha --cache-from type=gha --label service=\"app\" --file Dockerfile .",
+      "docker buildx build --push --platform linux/arm64,linux/amd64 --builder kamal-app-multiarch-remote -t dhh/app:123 -t dhh/app:latest --cache-to type=gha --cache-from type=gha --label service=\"app\" --file Dockerfile .",
       builder.push.join(" ")
   end
 
