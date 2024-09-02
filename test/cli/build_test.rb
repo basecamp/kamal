@@ -120,6 +120,9 @@ class CliBuildTest < CliTestCase
         .with(:docker, "--version", "&&", :docker, :buildx, "version")
 
       SSHKit::Backend::Abstract.any_instance.expects(:execute)
+        .with(:docker, :buildx, :rm, "kamal-local-docker-container")
+
+      SSHKit::Backend::Abstract.any_instance.expects(:execute)
         .with(:docker, :buildx, :create, "--name", "kamal-local-docker-container", "--driver=docker-container")
 
       SSHKit::Backend::Abstract.any_instance.expects(:execute)
@@ -210,16 +213,25 @@ class CliBuildTest < CliTestCase
   test "create remote" do
     run_command("create", fixture: :with_remote_builder).tap do |output|
       assert_match "Running /usr/bin/env true on 1.1.1.5", output
-      assert_match "docker context create kamal-remote-docker-container-ssh---app-1-1-1-5 --description 'kamal-remote-docker-container-ssh---app-1-1-1-5 host' --docker 'host=ssh://app@1.1.1.5'", output
-      assert_match "docker buildx create --name kamal-remote-docker-container-ssh---app-1-1-1-5 kamal-remote-docker-container-ssh---app-1-1-1-5", output
+      assert_match "docker context create kamal-remote-ssh---app-1-1-1-5-context --description 'kamal-remote-ssh---app-1-1-1-5 host' --docker 'host=ssh://app@1.1.1.5'", output
+      assert_match "docker buildx create --name kamal-remote-ssh---app-1-1-1-5 kamal-remote-ssh---app-1-1-1-5-context", output
     end
   end
 
   test "create remote with custom ports" do
     run_command("create", fixture: :with_remote_builder_and_custom_ports).tap do |output|
       assert_match "Running /usr/bin/env true on 1.1.1.5", output
-      assert_match "docker context create kamal-remote-docker-container-ssh---app-1-1-1-5-2122 --description 'kamal-remote-docker-container-ssh---app-1-1-1-5-2122 host' --docker 'host=ssh://app@1.1.1.5:2122'", output
-      assert_match "docker buildx create --name kamal-remote-docker-container-ssh---app-1-1-1-5-2122 kamal-remote-docker-container-ssh---app-1-1-1-5-2122", output
+      assert_match "docker context create kamal-remote-ssh---app-1-1-1-5-2122-context --description 'kamal-remote-ssh---app-1-1-1-5-2122 host' --docker 'host=ssh://app@1.1.1.5:2122'", output
+      assert_match "docker buildx create --name kamal-remote-ssh---app-1-1-1-5-2122 kamal-remote-ssh---app-1-1-1-5-2122-context", output
+    end
+  end
+
+  test "create hybrid" do
+    run_command("create", fixture: :with_hybrid_builder).tap do |output|
+      assert_match "Running /usr/bin/env true on 1.1.1.5", output
+      assert_match "docker buildx create --platform linux/#{Kamal::Utils.docker_arch} --name kamal-hybrid-docker-container-ssh---app-1-1-1-5 --driver=docker-container", output
+      assert_match "docker context create kamal-hybrid-docker-container-ssh---app-1-1-1-5-context --description 'kamal-hybrid-docker-container-ssh---app-1-1-1-5 host' --docker 'host=ssh://app@1.1.1.5'", output
+      assert_match "docker buildx create --platform linux/#{Kamal::Utils.docker_arch == "amd64" ? "arm64" : "amd64"} --append --name kamal-hybrid-docker-container-ssh---app-1-1-1-5 kamal-hybrid-docker-container-ssh---app-1-1-1-5-context", output
     end
   end
 
