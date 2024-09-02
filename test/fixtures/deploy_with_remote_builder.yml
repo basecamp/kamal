@@ -32,8 +32,6 @@ accessories:
     port: 6379
     directories:
       - data:/data
-builder:
-  arch: amd64
 
 readiness_delay: 0
 

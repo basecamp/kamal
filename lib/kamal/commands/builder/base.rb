@@ -32,7 +32,7 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
       docker(:buildx, :ls)
   end
 
-  def buildx_inspect
+  def inspect_builder
     docker :buildx, :inspect, builder_name unless docker_driver?
   end
 
@@ -99,10 +99,6 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
 
     def builder_config
       config.builder
-    end
-
-    def context_host(builder_name)
-      docker :context, :inspect, builder_name, "--format", ENDPOINT_DOCKER_HOST_INSPECT
     end
 
     def platform_options(arches)

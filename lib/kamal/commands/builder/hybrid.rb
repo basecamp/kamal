@@ -16,6 +16,6 @@ class Kamal::Commands::Builder::Hybrid < Kamal::Commands::Builder::Remote
     end
 
     def append_remote_buildx
-      docker :buildx, :create, *platform_options(remote_arches), "--append", "--name", builder_name, builder_name
+      docker :buildx, :create, *platform_options(remote_arches), "--append", "--name", builder_name, remote_context_name
     end
 end

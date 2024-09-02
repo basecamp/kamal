@@ -32,10 +32,15 @@ class Kamal::Cli::Build < Kamal::Cli::Base
 
     run_locally do
       begin
-        execute *KAMAL.builder.buildx_inspect
+        execute *KAMAL.builder.inspect_builder
       rescue SSHKit::Command::Failed => e
-        if e.message =~ /(context not found|no builder|does not exist)/
+        if e.message =~ /(context not found|no builder|no compatible builder|does not exist)/
           warn "Missing compatible builder, so creating a new one first"
+          begin
+            cli.remove
+          rescue SSHKit::Command::Failed
+            raise unless e.message =~ /(context not found|no builder|does not exist)/
+          end
           cli.create
         else
           raise
