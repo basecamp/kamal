@@ -30,6 +30,11 @@ builder:
   # If you have a remote builder, you can configure it here
   remote: ssh://docker@docker-builder
 
+  # Whether to allow local builds
+  #
+  # Defaults to true
+  local: true
+
   # Builder cache
   #
   # The type must be either 'gha' or 'registry'

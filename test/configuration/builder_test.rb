@@ -132,6 +132,23 @@ class ConfigurationBuilderTest < ActiveSupport::TestCase
     assert_equal "default=$SSH_AUTH_SOCK", config.builder.ssh
   end
 
+  test "local disabled but no remote set" do
+    @deploy[:builder]["local"] = false
+
+    assert_raises(Kamal::ConfigurationError) do
+      config.builder
+    end
+  end
+
+  test "local disabled all arches are remote" do
+    @deploy[:builder]["local"] = false
+    @deploy[:builder]["remote"] = "ssh://root@192.168.0.1"
+    @deploy[:builder]["arch"] = [ "amd64", "arm64" ]
+
+    assert_equal [], config.builder.local_arches
+    assert_equal [ "amd64", "arm64" ], config.builder.remote_arches
+  end
+
   private
     def config
       Kamal::Configuration.new(@deploy)

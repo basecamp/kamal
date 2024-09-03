@@ -37,6 +37,14 @@ class CommandsBuilderTest < ActiveSupport::TestCase
       builder.push.join(" ")
   end
 
+  test "remote build if remote is set and local disabled" do
+    builder = new_builder_command(builder: { "arch" => [ "amd64", "arm64" ], "remote" => "ssh://app@127.0.0.1", "cache" => { "type" => "gha" }, "local" => false })
+    assert_equal "remote", builder.name
+    assert_equal \
+      "docker buildx build --push --platform linux/amd64,linux/arm64 --builder kamal-remote-ssh---app-127-0-0-1 -t dhh/app:123 -t dhh/app:latest --cache-to type=gha --cache-from type=gha --label service=\"app\" --file Dockerfile .",
+      builder.push.join(" ")
+  end
+
   test "target remote when remote set and arch is non local" do
     builder = new_builder_command(builder: { "arch" => [ "#{remote_arch}" ], "remote" => "ssh://app@host", "cache" => { "type" => "gha" } })
     assert_equal "remote", builder.name

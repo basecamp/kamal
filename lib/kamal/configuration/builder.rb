@@ -28,7 +28,9 @@ class Kamal::Configuration::Builder
   end
 
   def local_arches
-    @local_arches ||= if remote
+    @local_arches ||= if local_disabled?
+      []
+    elsif remote
       arches & [ Kamal::Utils.docker_arch ]
     else
       arches
@@ -48,7 +50,7 @@ class Kamal::Configuration::Builder
   end
 
   def local?
-    arches.empty? || local_arches.any?
+    !local_disabled? && (arches.empty? || local_arches.any?)
   end
 
   def cached?
@@ -77,6 +79,10 @@ class Kamal::Configuration::Builder
 
   def driver
     builder_config.fetch("driver", "docker-container")
+  end
+
+  def local_disabled?
+    builder_config["local"] == false
   end
 
   def cache_from
