@@ -7,5 +7,7 @@ class Kamal::Configuration::Validator::Builder < Kamal::Configuration::Validator
     end
 
     error "Builder arch not set" unless config["arch"].present?
+
+    error "Cannot disable local builds, no remote is set" if config["local"] == false && config["remote"].blank?
   end
 end
