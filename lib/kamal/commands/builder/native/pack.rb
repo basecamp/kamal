@@ -2,7 +2,7 @@ class Kamal::Commands::Builder::Native::Pack < Kamal::Commands::Builder::Native
   def push
     combine \
       pack(:build,
-        config.absolute_image,
+        config.repository,
         "--platform", platform,
         "--builder", pack_builder,
         buildpacks,
