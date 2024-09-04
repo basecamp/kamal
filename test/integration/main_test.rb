@@ -102,7 +102,7 @@ class MainTest < IntegrationTest
   end
 
   private
-  def assert_envs(version:)
+    def assert_envs(version:)
       assert_env :CLEAR_TOKEN, "4321", version: version, vm: :vm1
       assert_env :HOST_TOKEN, "abcd", version: version, vm: :vm1
       assert_env :SECRET_TOKEN, "1234 with \"中文\"", version: version, vm: :vm1
@@ -110,6 +110,8 @@ class MainTest < IntegrationTest
       assert_no_env :SECRET_TAG, version: version, vm: :vm1
       assert_env :CLEAR_TAG, "tagged", version: version, vm: :vm2
       assert_env :SECRET_TAG, "TAGME", version: version, vm: :vm2
+      assert_env :INTERPOLATED_SECRET1, "1TERCES_DETALOPRETNI", version: version, vm: :vm2
+      assert_env :INTERPOLATED_SECRET2, "2TERCES_DETALOPRETNI", version: version, vm: :vm2
     end
 
     def assert_env(key, value, vm:, version:)

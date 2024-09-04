@@ -20,7 +20,7 @@ class Kamal::Cli::Secrets < Kamal::Cli::Base
 
     raise "Could not find secret #{name}" if value.nil?
 
-    puts JSON.parse(secrets).fetch(name)
+    puts value
   rescue => e
     handle_error(e)
   end

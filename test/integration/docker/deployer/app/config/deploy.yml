@@ -10,6 +10,8 @@ env:
     HOST_TOKEN: "${HOST_TOKEN}"
   secret:
     - SECRET_TOKEN
+    - INTERPOLATED_SECRET1
+    - INTERPOLATED_SECRET2
   tags:
     tag1:
       CLEAR_TAG: tagged
