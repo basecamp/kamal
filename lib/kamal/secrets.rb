@@ -6,10 +6,7 @@ class Kamal::Secrets
   end
 
   def [](key)
-    # If dot env interpolates any `kamal secrets` calls, this tells it to interrupt this process if there are errors
-    ENV["KAMAL_SECRETS_INT_PARENT"] = "1"
-
-    @secrets ||= secrets_file ? Dotenv.parse(secrets_file) : {}
+    @secrets ||= parse_secrets
     @secrets.fetch(key)
   rescue KeyError
     if secrets_file
@@ -29,6 +26,7 @@ class Kamal::Secrets
     end
 
     def interrupting_parent_on_error
+      # Make any `kamal secrets` calls in dotenv interpolation interrupt this process if there are errors
       ENV["KAMAL_SECRETS_INT_PARENT"] = "1"
       yield
     ensure
