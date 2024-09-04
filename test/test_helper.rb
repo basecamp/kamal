@@ -75,3 +75,24 @@ class Kamal::Secrets::Adapters::Test < Kamal::Secrets::Adapters::Base
     secrets.to_h { |name| [ name, name.reverse ] }
   end
 end
+
+class SecretAdapterTestCase < ActiveSupport::TestCase
+  setup do
+    `true` # Ensure $? is 0
+  end
+
+  private
+    def stub_ticks
+      Kamal::Secrets::Adapters::Base.any_instance.stubs(:`)
+    end
+
+    def stub_ticks_with(command, succeed: true)
+      # Sneakily run `false`/`true` after a match to set $? to 1/0
+      stub_ticks.with { |c| c == command && (succeed ? `true` : `false`) }
+      Kamal::Secrets::Adapters::Base.any_instance.stubs(:`)
+    end
+
+    def shellunescape(string)
+      "\"#{string}\"".undump.gsub(/\\([{}])/, "\\1")
+    end
+end

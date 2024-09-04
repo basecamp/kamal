@@ -12,12 +12,13 @@ class Kamal::Secrets::Adapters::LastPass < Kamal::Secrets::Adapters::Base
     end
 
     def fetch_from_vault(secrets, account:, session:)
-      items = JSON.parse(`lpass show #{secrets.join(" ")} --json`
-      raise RuntimeError, "Could not read #{fields} from 1Password" unless $?.success?
+      items = `lpass show #{secrets.join(" ")} --json`
+      raise RuntimeError, "Could not read #{secrets} from 1Password" unless $?.success?
+
+      items = JSON.parse(items)
 
       {}.tap do |results|
         items.each do |item|
-          results[item["name"]] = item["password"]
           results[item["fullname"]] = item["password"]
         end
 

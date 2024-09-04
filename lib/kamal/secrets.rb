@@ -6,7 +6,10 @@ class Kamal::Secrets
   end
 
   def [](key)
-    @secrets ||= secrets_file ? Dotenv.parse(*secrets_file) : {}
+    # If dot env interpolates any `kamal secrets` calls, this tells it to interrupt this process if there are errors
+    ENV["KAMAL_SECRETS_INT_PARENT"] = "1"
+
+    @secrets ||= secrets_file ? Dotenv.parse(secrets_file) : {}
     @secrets.fetch(key)
   rescue KeyError
     if secrets_file
@@ -15,4 +18,20 @@ class Kamal::Secrets
       raise Kamal::ConfigurationError, "Secret '#{key}' not found, no secret files provided"
     end
   end
+
+  private
+    def parse_secrets
+      if secrets_file
+        interrupting_parent_on_error { Dotenv.parse(secrets_file) }
+      else
+        {}
+      end
+    end
+
+    def interrupting_parent_on_error
+      ENV["KAMAL_SECRETS_INT_PARENT"] = "1"
+      yield
+    ensure
+      ENV.delete("KAMAL_SECRETS_INT_PARENT")
+    end
 end

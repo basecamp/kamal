@@ -24,9 +24,8 @@ class Kamal::Secrets::Adapters::OnePassword < Kamal::Secrets::Adapters::Base
 
             fields_json.each do |field_json|
               # The reference is in the form `op://vault/item/field[/field]`
-              field = field_json["reference"].delete_suffix("/password")
+              field = field_json["reference"].delete_prefix("op://").delete_suffix("/password")
               results[field] = field_json["value"]
-              results[field.split("/").last] = field_json["value"]
             end
           end
         end
@@ -40,6 +39,7 @@ class Kamal::Secrets::Adapters::OnePassword < Kamal::Secrets::Adapters::Base
     def vaults_items_fields(secrets)
       {}.tap do |vaults|
         secrets.each do |secret|
+          secret = secret.delete_prefix("op://")
           vault, item, *fields = secret.split("/")
           fields << "password" if fields.empty?
 
