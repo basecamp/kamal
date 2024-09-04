@@ -6,8 +6,7 @@ class Kamal::Secrets
   end
 
   def [](key)
-    @secrets ||= parse_secrets
-    @secrets.fetch(key)
+    secrets.fetch(key)
   rescue KeyError
     if secrets_file
       raise Kamal::ConfigurationError, "Secret '#{key}' not found in #{secrets_file}"
@@ -16,7 +15,15 @@ class Kamal::Secrets
     end
   end
 
+  def to_h
+    secrets
+  end
+
   private
+    def secrets
+      @secrets ||= parse_secrets
+    end
+
     def parse_secrets
       if secrets_file
         interrupting_parent_on_error { Dotenv.parse(secrets_file) }

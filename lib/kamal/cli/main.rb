@@ -33,7 +33,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
       end
 
       with_lock do
-        run_hook "pre-deploy"
+        run_hook "pre-deploy", secrets: true
 
         say "Ensure Traefik is running...", :magenta
         invoke "kamal:cli:traefik:boot", [], invoke_options
@@ -48,7 +48,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
       end
     end
 
-    run_hook "post-deploy", runtime: runtime.round
+    run_hook "post-deploy", secrets: true, runtime: runtime.round
   end
 
   desc "redeploy", "Deploy app to servers without bootstrapping servers, starting Traefik, pruning, and registry login"
@@ -66,7 +66,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
       end
 
       with_lock do
-        run_hook "pre-deploy"
+        run_hook "pre-deploy", secrets: true
 
         say "Detect stale containers...", :magenta
         invoke "kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true)
@@ -75,7 +75,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
       end
     end
 
-    run_hook "post-deploy", runtime: runtime.round
+    run_hook "post-deploy", secrets: true, runtime: runtime.round
   end
 
   desc "rollback [VERSION]", "Rollback app to VERSION"
@@ -89,7 +89,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
         old_version = nil
 
         if container_available?(version)
-          run_hook "pre-deploy"
+          run_hook "pre-deploy", secrets: true
 
           invoke "kamal:cli:app:boot", [], invoke_options.merge(version: version)
           rolled_back = true
@@ -99,7 +99,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
       end
     end
 
-    run_hook "post-deploy", runtime: runtime.round if rolled_back
+    run_hook "post-deploy", secrets: true, runtime: runtime.round if rolled_back
   end
 
   desc "details", "Show details about all containers"

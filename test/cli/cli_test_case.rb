@@ -40,7 +40,7 @@ class CliTestCase < ActiveSupport::TestCase
         .with(:docker, :buildx, :inspect, "kamal-local-docker-container")
     end
 
-    def assert_hook_ran(hook, output, version:, service_version:, hosts:, command:, subcommand: nil, runtime: false)
+    def assert_hook_ran(hook, output, version:, service_version:, hosts:, command:, subcommand: nil, runtime: false, secrets: false)
       whoami = `whoami`.chomp
       performer = Kamal::Git.email.presence || whoami
       service = service_version.split("@").first
@@ -58,6 +58,7 @@ class CliTestCase < ActiveSupport::TestCase
         KAMAL_COMMAND=\"#{command}\"\s
         #{"KAMAL_SUBCOMMAND=\\\"#{subcommand}\\\"\\s" if subcommand}
         #{"KAMAL_RUNTIME=\\\"\\d+\\\"\\s" if runtime}
+        #{"DB_PASSWORD=\"secret\"\\s" if secrets}
         ;\s/usr/bin/env\s\.kamal/hooks/#{hook} }x
 
       assert_match expected, output

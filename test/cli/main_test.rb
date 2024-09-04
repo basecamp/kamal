@@ -43,27 +43,29 @@ class CliMainTest < CliTestCase
   end
 
   test "deploy" do
-    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false, "verbose" => true }
+    with_test_secrets("secrets" => "DB_PASSWORD=secret") do
+      invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false, "verbose" => true }
 
-    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:registry:login", [], invoke_options.merge(skip_local: false))
-    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:deliver", [], invoke_options)
-    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:traefik:boot", [], invoke_options)
-    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true))
-    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:boot", [], invoke_options)
-    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:prune:all", [], invoke_options)
+      Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:registry:login", [], invoke_options.merge(skip_local: false))
+      Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:deliver", [], invoke_options)
+      Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:traefik:boot", [], invoke_options)
+      Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true))
+      Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:boot", [], invoke_options)
+      Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:prune:all", [], invoke_options)
 
-    Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
-    hook_variables = { version: 999, service_version: "app@999", hosts: "1.1.1.1,1.1.1.2", command: "deploy" }
+      Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
+      hook_variables = { version: 999, service_version: "app@999", hosts: "1.1.1.1,1.1.1.2", command: "deploy" }
 
-    run_command("deploy", "--verbose").tap do |output|
-      assert_hook_ran "pre-connect", output, **hook_variables
-      assert_match /Log into image registry/, output
-      assert_match /Build and push app image/, output
-      assert_hook_ran "pre-deploy", output, **hook_variables
-      assert_match /Ensure Traefik is running/, output
-      assert_match /Detect stale containers/, output
-      assert_match /Prune old containers and images/, output
-      assert_hook_ran "post-deploy", output, **hook_variables, runtime: true
+      run_command("deploy", "--verbose").tap do |output|
+        assert_hook_ran "pre-connect", output, **hook_variables
+        assert_match /Log into image registry/, output
+        assert_match /Build and push app image/, output
+        assert_hook_ran "pre-deploy", output, **hook_variables, secrets: true
+        assert_match /Ensure Traefik is running/, output
+        assert_match /Detect stale containers/, output
+        assert_match /Prune old containers and images/, output
+        assert_hook_ran "post-deploy", output, **hook_variables, runtime: true, secrets: true
+      end
     end
   end
 
