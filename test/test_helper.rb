@@ -64,18 +64,6 @@ class ActiveSupport::TestCase
     end
 end
 
-class Kamal::Secrets::Adapters::Test < Kamal::Secrets::Adapters::Base
-  def login(account)
-    "MYSESSION"
-  end
-
-  def fetch_from_vault(secrets, account:, session:)
-    raise "No Session" unless session == "MYSESSION"
-    raise "Boom!" if ENV["BOOM"]
-    secrets.to_h { |name| [ name, name.reverse ] }
-  end
-end
-
 class SecretAdapterTestCase < ActiveSupport::TestCase
   setup do
     `true` # Ensure $? is 0
