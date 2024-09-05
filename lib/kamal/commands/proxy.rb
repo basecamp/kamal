@@ -12,6 +12,7 @@ class Kamal::Commands::Proxy < Kamal::Commands::Base
   def run
     docker :run,
       "--name", container_name,
+      "--network", "kamal",
       "--detach",
       "--restart", "unless-stopped",
       *proxy_config.publish_args,

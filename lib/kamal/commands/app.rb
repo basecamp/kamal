@@ -5,6 +5,8 @@ class Kamal::Commands::App < Kamal::Commands::Base
 
   attr_reader :role, :host
 
+  delegate :container_name, to: :role
+
   def initialize(config, role: nil, host: nil)
     super(config)
     @role = role
@@ -35,6 +37,7 @@ class Kamal::Commands::App < Kamal::Commands::Base
       "--detach",
       "--restart unless-stopped",
       "--name", container_name,
+      "--network", "kamal",
       *([ "--hostname", hostname ] if hostname),
       "-e", "KAMAL_CONTAINER_NAME=\"#{container_name}\"",
       "-e", "KAMAL_VERSION=\"#{config.version}\"",
@@ -92,10 +95,6 @@ class Kamal::Commands::App < Kamal::Commands::Base
   end
 
   private
-    def container_name(version = nil)
-      [ role.container_prefix, version || config.version ].compact.join("-")
-    end
-
     def latest_image_id
       docker :image, :ls, *argumentize("--filter", "reference=#{config.latest_image}"), "--format", "'{{.ID}}'"
     end
