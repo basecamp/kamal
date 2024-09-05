@@ -61,6 +61,43 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
     end
   end
 
+  desc "upgrade", "Upgrade to correct proxy on servers (stop container, remove container, start new container)"
+  option :rolling, type: :boolean, default: false, desc: "Reboot proxy on hosts in sequence, rather than in parallel"
+  option :confirmed, aliases: "-y", type: :boolean, default: false, desc: "Proceed without confirmation question"
+  def upgrade
+    invoke_options = { "version" => KAMAL.config.version }.merge(options)
+
+    raise_unless_kamal_proxy_enabled!
+    confirming "This will cause a brief outage on each host. Are you sure?" do
+      host_groups = options[:rolling] ? KAMAL.hosts : [ KAMAL.hosts ]
+      host_groups.each do |hosts|
+        host_list = Array(hosts).join(",")
+        run_hook "pre-traefik-reboot", hosts: host_list
+        on(hosts) do |host|
+          execute *KAMAL.auditor.record("Rebooted proxy"), verbosity: :debug
+          execute *KAMAL.registry.login
+
+          "Stopping and removing Traefik on #{host}, if running..."
+          execute *KAMAL.traefik.stop, raise_on_non_zero_exit: false
+          execute *KAMAL.traefik.remove_container
+
+          "Stopping and removing kamal-proxy on #{host}, if running..."
+          execute *KAMAL.proxy.stop, raise_on_non_zero_exit: false
+          execute *KAMAL.proxy.remove_container
+        end
+
+        invoke "kamal:cli:proxy:boot", [], invoke_options.merge("hosts" => host_list)
+        reset_invocation(Kamal::Cli::Proxy)
+        invoke "kamal:cli:app:boot", [], invoke_options.merge("hosts" => host_list)
+        reset_invocation(Kamal::Cli::App)
+        invoke "kamal:cli:prune:all", [], invoke_options.merge("hosts" => host_list)
+        reset_invocation(Kamal::Cli::Prune)
+
+        run_hook "post-traefik-reboot", hosts: host_list
+      end
+    end
+  end
+
   desc "start", "Start existing proxy container on servers"
   def start
     raise_unless_kamal_proxy_enabled!
@@ -162,5 +199,9 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
       unless KAMAL.config.proxy.enabled?
         raise "kamal proxy commands are disabled unless experimental proxy support is enabled. Use `kamal traefik` commands instead."
       end
+    end
+
+    def reset_invocation(cli_class)
+      instance_variable_get("@_invocations")[cli_class].pop
     end
 end
