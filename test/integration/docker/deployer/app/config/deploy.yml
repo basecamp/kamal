@@ -12,6 +12,7 @@ env:
     - SECRET_TOKEN
     - INTERPOLATED_SECRET1
     - INTERPOLATED_SECRET2
+    - INTERPOLATED_SECRET3
   tags:
     tag1:
       CLEAR_TAG: tagged

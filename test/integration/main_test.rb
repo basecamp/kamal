@@ -112,6 +112,7 @@ class MainTest < IntegrationTest
       assert_env :SECRET_TAG, "TAGME", version: version, vm: :vm2
       assert_env :INTERPOLATED_SECRET1, "1TERCES_DETALOPRETNI", version: version, vm: :vm2
       assert_env :INTERPOLATED_SECRET2, "2TERCES_DETALOPRETNI", version: version, vm: :vm2
+      assert_env :INTERPOLATED_SECRET3, "文中_DETALOPRETNI", version: version, vm: :vm2
     end
 
     def assert_env(key, value, vm:, version:)
