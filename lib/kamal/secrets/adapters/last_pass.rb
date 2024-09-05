@@ -11,7 +11,7 @@ class Kamal::Secrets::Adapters::LastPass < Kamal::Secrets::Adapters::Base
       `lpass status --color never`.strip == "Logged in as #{account}."
     end
 
-    def fetch_from_vault(secrets, account:, session:)
+    def fetch_secrets(secrets, account:, session:)
       items = `lpass show #{secrets.map(&:shellescape).join(" ")} --json`
       raise RuntimeError, "Could not read #{secrets} from 1Password" unless $?.success?
 

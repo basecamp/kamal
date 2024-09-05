@@ -21,7 +21,7 @@ class Kamal::Secrets::Adapters::Bitwarden < Kamal::Secrets::Adapters::Base
       session
     end
 
-    def fetch_from_vault(secrets, account:, session:)
+    def fetch_secrets(secrets, account:, session:)
       {}.tap do |results|
         items_fields(secrets).each do |item, fields|
           item_json = run_command("get item #{item.shellescape}", session: session, raw: true)

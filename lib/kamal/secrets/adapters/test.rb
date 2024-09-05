@@ -4,7 +4,7 @@ class Kamal::Secrets::Adapters::Test < Kamal::Secrets::Adapters::Base
       true
     end
 
-    def fetch_from_vault(secrets, account:, session:)
+    def fetch_secrets(secrets, account:, session:)
       secrets.to_h { |secret| [ secret, secret.reverse ] }
     end
 end

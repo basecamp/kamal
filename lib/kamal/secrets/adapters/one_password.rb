@@ -15,7 +15,7 @@ class Kamal::Secrets::Adapters::OnePassword < Kamal::Secrets::Adapters::Base
       $?.success?
     end
 
-    def fetch_from_vault(secrets, account:, session:)
+    def fetch_secrets(secrets, account:, session:)
       {}.tap do |results|
         vaults_items_fields(secrets).map do |vault, items|
           items.each do |item, fields|
