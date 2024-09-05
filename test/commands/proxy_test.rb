@@ -3,7 +3,7 @@ require "test_helper"
 class CommandsProxyTest < ActiveSupport::TestCase
   setup do
     @config = {
-      service: "app", image: "dhh/app", registry: { "username" => "dhh", "password" => "secret" }, servers: [ "1.1.1.1" ]
+      service: "app", image: "dhh/app", registry: { "username" => "dhh", "password" => "secret" }, servers: [ "1.1.1.1" ], builder: { "arch" => "amd64" }
     }
 
     ENV["EXAMPLE_API_KEY"] = "456"
@@ -109,7 +109,7 @@ class CommandsProxyTest < ActiveSupport::TestCase
 
   test "deploy" do
     assert_equal \
-      "docker exec kamal-proxy kamal-proxy deploy service --target \"172.1.0.2:80\"",
+      "docker exec kamal-proxy kamal-proxy deploy service --target \"172.1.0.2:80\" --buffer-requests --buffer-responses --log-request-header \"Cache-Control\" --log-request-header \"Last-Modified\"",
       new_command.deploy("service", target: "172.1.0.2:80").join(" ")
   end
 
