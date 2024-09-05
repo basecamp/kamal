@@ -11,7 +11,7 @@ class Kamal::Secrets::Adapters::OnePassword < Kamal::Secrets::Adapters::Base
     end
 
     def loggedin?(account)
-      `op account get --account #{account}`
+      `op account get --account #{account.shellescape}`
       $?.success?
     end
 
@@ -54,7 +54,7 @@ class Kamal::Secrets::Adapters::OnePassword < Kamal::Secrets::Adapters::Base
       labels = fields.map { |field| "label=#{field}" }.join(",")
       options = to_options(vault: vault, fields: labels, format: "json", account: account, session: session.presence)
 
-      `op item get #{item} #{options}`.tap do
+      `op item get #{item.shellescape} #{options}`.tap do
         raise RuntimeError, "Could not read #{fields.join(", ")} from #{item} in the #{vault} 1Password vault" unless $?.success?
       end
     end
