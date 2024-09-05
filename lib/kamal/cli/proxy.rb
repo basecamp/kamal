@@ -3,6 +3,12 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
   def boot
     raise_unless_kamal_proxy_enabled!
     with_lock do
+      on(KAMAL.hosts) do |host|
+        execute *KAMAL.docker.create_network
+      rescue SSHKit::Command::Failed => e
+        raise unless e.message.include?("already exists")
+      end
+
       on(KAMAL.traefik_hosts) do |host|
         execute *KAMAL.registry.login
         execute *KAMAL.traefik_or_proxy(host).start_or_run

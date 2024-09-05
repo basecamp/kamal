@@ -19,6 +19,10 @@ class Kamal::Commands::Docker < Kamal::Commands::Base
     [ '[ "${EUID:-$(id -u)}" -eq 0 ] || command -v sudo >/dev/null || command -v su >/dev/null' ]
   end
 
+  def create_network
+    docker :network, :create, :kamal
+  end
+
   private
     def get_docker
       shell \

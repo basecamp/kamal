@@ -32,7 +32,7 @@ module Kamal::Commands::App::Containers
   def container_endpoint(version:)
     pipe \
       container_id_for(container_name: container_name(version)),
-      xargs(docker(:inspect, "--format", "'{{.NetworkSettings.IPAddress}}{{range $k, $v := .NetworkSettings.Ports}}{{printf \":%s\" $k}}{{break}}{{end}}'")),
+      xargs(docker(:inspect, "--format", "'{{index .NetworkSettings.Networks.kamal.Aliases 0}}{{range $k, $v := .NetworkSettings.Ports}}{{printf \":%s\" $k}}{{break}}{{end}}'")),
       [ :sed, "-e", "'s/\\/tcp$//'" ]
   end
 end
