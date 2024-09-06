@@ -1,8 +1,8 @@
 require "active_support/core_ext/string/filters"
 
 class Kamal::Commands::Builder < Kamal::Commands::Base
-  delegate :create, :remove, :push, :clean, :pull, :info, :context_hosts, :config_context_hosts, :validate_image,
-           :first_mirror, to: :target
+  delegate :create, :remove, :push, :clean, :pull, :info, :inspect_builder, :validate_image, :first_mirror, to: :target
+  delegate :local?, :remote?, :pack?, to: "config.builder"
 
   include Clone
 
@@ -11,49 +11,33 @@ class Kamal::Commands::Builder < Kamal::Commands::Base
   end
 
   def target
-    if config.builder.multiarch?
-      if config.builder.remote?
-        if config.builder.local?
-          multiarch_remote
-        else
-          native_remote
-        end
-      elsif config.builder.pack?
-        pack
+    if remote?
+      if local?
+        hybrid
       else
-        multiarch
+        remote
       end
+    elsif pack?
+      pack
     else
-      if config.builder.cached?
-        native_cached
-      else
-        native
-      end
+      local
     end
   end
 
-  def native
-    @native ||= Kamal::Commands::Builder::Native.new(config)
+  def remote
+    @remote ||= Kamal::Commands::Builder::Remote.new(config)
   end
 
-  def native_cached
-    @native ||= Kamal::Commands::Builder::Native::Cached.new(config)
+  def local
+    @local ||= Kamal::Commands::Builder::Local.new(config)
   end
 
-  def native_remote
-    @native ||= Kamal::Commands::Builder::Native::Remote.new(config)
-  end
-
-  def multiarch
-    @multiarch ||= Kamal::Commands::Builder::Multiarch.new(config)
-  end
-
-  def multiarch_remote
-    @multiarch_remote ||= Kamal::Commands::Builder::Multiarch::Remote.new(config)
+  def hybrid
+    @hybrid ||= Kamal::Commands::Builder::Hybrid.new(config)
   end
 
   def pack
-    @pack ||= Kamal::Commands::Builder::Native::Pack.new(config)
+    @pack ||= Kamal::Commands::Builder::Pack.new(config)
   end
 
   def ensure_local_dependencies_installed

@@ -1,4 +1,4 @@
-class Kamal::Commands::Builder::Native::Pack < Kamal::Commands::Builder::Native
+class Kamal::Commands::Builder::Pack < Kamal::Commands::Builder::Base
   def push
     combine \
       pack(:build,
@@ -17,7 +17,7 @@ class Kamal::Commands::Builder::Native::Pack < Kamal::Commands::Builder::Native
 
   private
     def platform
-      "linux/#{pack_arch}"
+      "linux/#{local_arches.first}"
     end
 
     def buildpacks

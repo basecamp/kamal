@@ -3,13 +3,27 @@ require_relative "cli_test_case"
 class CliServerTest < CliTestCase
   test "running a command with exec" do
     SSHKit::Backend::Abstract.any_instance.stubs(:capture)
-    .with("date", verbosity: 1)
-    .returns("Today")
+      .with("date", verbosity: 1)
+      .returns("Today")
 
     hosts = "1.1.1.1".."1.1.1.4"
     run_command("exec", "date").tap do |output|
       hosts.map do |host|
         assert_match "Running 'date' on #{hosts.to_a.join(', ')}...", output
+        assert_match "App Host: #{host}\nToday", output
+      end
+    end
+  end
+
+  test "running a command with exec multiple arguments" do
+    SSHKit::Backend::Abstract.any_instance.stubs(:capture)
+      .with("date -j", verbosity: 1)
+      .returns("Today")
+
+    hosts = "1.1.1.1".."1.1.1.4"
+    run_command("exec", "date", "-j").tap do |output|
+      hosts.map do |host|
+        assert_match "Running 'date -j' on #{hosts.to_a.join(', ')}...", output
         assert_match "App Host: #{host}\nToday", output
       end
     end

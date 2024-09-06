@@ -17,7 +17,8 @@ registry:
   username: root
   password: root
 builder:
-  multiarch: false
+  driver: docker
+  arch: <%= Kamal::Utils.docker_arch %>
   args:
     COMMIT_SHA: <%= `git rev-parse HEAD` %>
 healthcheck:
@@ -37,3 +38,7 @@ accessories:
       - web
 stop_wait_time: 1
 readiness_delay: 0
+aliases:
+  whome: version
+  worker_hostname: app exec -r workers -q --reuse hostname
+  uname: server exec -q -p uname

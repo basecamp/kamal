@@ -8,7 +8,7 @@ class CommandsAuditorTest < ActiveSupport::TestCase
     freeze_time
 
     @config = {
-      service: "app", image: "dhh/app", registry: { "username" => "dhh", "password" => "secret" }, servers: [ "1.1.1.1" ]
+      service: "app", image: "dhh/app", registry: { "username" => "dhh", "password" => "secret" }, builder: { "arch" => "amd64" },  servers: [ "1.1.1.1" ]
     }
 
     @auditor = new_command

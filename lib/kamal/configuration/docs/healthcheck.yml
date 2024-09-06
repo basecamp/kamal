@@ -3,7 +3,7 @@
 # On roles that are running Traefik, Kamal will supply a default healthcheck to `docker run`.
 # For other roles, by default no healthcheck is supplied.
 #
-# If no healthcheck is supplied and the image does not define one, they we wait for the container
+# If no healthcheck is supplied and the image does not define one, then we wait for the container
 # to reach a running state and then pause for the readiness delay.
 #
 # The default healthcheck is `curl -f http://localhost:<port>/<path>`, so it assumes that `curl`

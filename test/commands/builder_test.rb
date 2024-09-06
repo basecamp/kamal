@@ -2,54 +2,62 @@ require "test_helper"
 
 class CommandsBuilderTest < ActiveSupport::TestCase
   setup do
-    @config = { service: "app", image: "dhh/app", registry: { "username" => "dhh", "password" => "secret" }, servers: [ "1.1.1.1" ] }
+    @config = { service: "app", image: "dhh/app", registry: { "username" => "dhh", "password" => "secret" }, servers: [ "1.1.1.1" ], builder: { "arch" => "amd64" } }
   end
 
-  test "target multiarch by default" do
+  test "target linux/amd64 locally by default" do
     builder = new_builder_command(builder: { "cache" => { "type" => "gha" } })
-    assert_equal "multiarch", builder.name
+    assert_equal "local", builder.name
     assert_equal \
-      "docker buildx build --push --platform linux/amd64,linux/arm64 --builder kamal-app-multiarch -t dhh/app:123 -t dhh/app:latest --cache-to type=gha --cache-from type=gha --label service=\"app\" --file Dockerfile .",
+      "docker buildx build --push --platform linux/amd64 --builder kamal-local-docker-container -t dhh/app:123 -t dhh/app:latest --cache-to type=gha --cache-from type=gha --label service=\"app\" --file Dockerfile .",
       builder.push.join(" ")
   end
 
-  test "target native when multiarch is off" do
-    builder = new_builder_command(builder: { "multiarch" => false })
-    assert_equal "native", builder.name
+  test "target specified arch locally by default" do
+    builder = new_builder_command(builder: { "arch" => [ "amd64" ] })
+    assert_equal "local", builder.name
     assert_equal \
-      "docker build -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile . && docker push dhh/app:123 && docker push dhh/app:latest",
+      "docker buildx build --push --platform linux/amd64 --builder kamal-local-docker-container -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile .",
       builder.push.join(" ")
   end
 
-  test "target native cached when multiarch is off and cache is set" do
-    builder = new_builder_command(builder: { "multiarch" => false, "cache" => { "type" => "gha" } })
-    assert_equal "native/cached", builder.name
+  test "build with caching" do
+    builder = new_builder_command(builder: { "cache" => { "type" => "gha" } })
+    assert_equal "local", builder.name
     assert_equal \
-      "docker buildx build --push -t dhh/app:123 -t dhh/app:latest --cache-to type=gha --cache-from type=gha --label service=\"app\" --file Dockerfile .",
+      "docker buildx build --push --platform linux/amd64 --builder kamal-local-docker-container -t dhh/app:123 -t dhh/app:latest --cache-to type=gha --cache-from type=gha --label service=\"app\" --file Dockerfile .",
       builder.push.join(" ")
   end
 
-  test "target multiarch remote when local and remote is set" do
-    builder = new_builder_command(builder: { "local" => {}, "remote" => {}, "cache" => { "type" => "gha" } })
-    assert_equal "multiarch/remote", builder.name
+  test "hybrid build if remote is set and building multiarch" do
+    builder = new_builder_command(builder: { "arch" => [ "amd64", "arm64" ], "remote" => "ssh://app@127.0.0.1", "cache" => { "type" => "gha" } })
+    assert_equal "hybrid", builder.name
     assert_equal \
-      "docker buildx build --push --platform linux/amd64,linux/arm64 --builder kamal-app-multiarch-remote -t dhh/app:123 -t dhh/app:latest --cache-to type=gha --cache-from type=gha --label service=\"app\" --file Dockerfile .",
+      "docker buildx build --push --platform linux/amd64,linux/arm64 --builder kamal-hybrid-docker-container-ssh---app-127-0-0-1 -t dhh/app:123 -t dhh/app:latest --cache-to type=gha --cache-from type=gha --label service=\"app\" --file Dockerfile .",
       builder.push.join(" ")
   end
 
-  test "target multiarch local when arch is set" do
-    builder = new_builder_command(builder: { "local" => { "arch" => "amd64" } })
-    assert_equal "multiarch", builder.name
+  test "remote build if remote is set and local disabled" do
+    builder = new_builder_command(builder: { "arch" => [ "amd64", "arm64" ], "remote" => "ssh://app@127.0.0.1", "cache" => { "type" => "gha" }, "local" => false })
+    assert_equal "remote", builder.name
     assert_equal \
-      "docker buildx build --push --platform linux/amd64 --builder kamal-app-multiarch -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile .",
+      "docker buildx build --push --platform linux/amd64,linux/arm64 --builder kamal-remote-ssh---app-127-0-0-1 -t dhh/app:123 -t dhh/app:latest --cache-to type=gha --cache-from type=gha --label service=\"app\" --file Dockerfile .",
       builder.push.join(" ")
   end
 
-  test "target native remote when only remote is set" do
-    builder = new_builder_command(builder: { "remote" => { "arch" => "amd64" }, "cache" => { "type" => "gha" } })
-    assert_equal "native/remote", builder.name
+  test "target remote when remote set and arch is non local" do
+    builder = new_builder_command(builder: { "arch" => [ "#{remote_arch}" ], "remote" => "ssh://app@host", "cache" => { "type" => "gha" } })
+    assert_equal "remote", builder.name
     assert_equal \
-      "docker buildx build --push --platform linux/amd64 --builder kamal-app-native-remote -t dhh/app:123 -t dhh/app:latest --cache-to type=gha --cache-from type=gha --label service=\"app\" --file Dockerfile .",
+      "docker buildx build --push --platform linux/#{remote_arch} --builder kamal-remote-ssh---app-host -t dhh/app:123 -t dhh/app:latest --cache-to type=gha --cache-from type=gha --label service=\"app\" --file Dockerfile .",
+      builder.push.join(" ")
+  end
+
+  test "target local when remote set and arch is local" do
+    builder = new_builder_command(builder: { "arch" => [ "#{local_arch}" ], "remote" => "ssh://app@host", "cache" => { "type" => "gha" } })
+    assert_equal "local", builder.name
+    assert_equal \
+      "docker buildx build --push --platform linux/#{local_arch} --builder kamal-local-docker-container -t dhh/app:123 -t dhh/app:latest --cache-to type=gha --cache-from type=gha --label service=\"app\" --file Dockerfile .",
       builder.push.join(" ")
   end
 
@@ -101,28 +109,21 @@ class CommandsBuilderTest < ActiveSupport::TestCase
   test "build context" do
     builder = new_builder_command(builder: { "context" => ".." })
     assert_equal \
-      "docker buildx build --push --platform linux/amd64,linux/arm64 --builder kamal-app-multiarch -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile ..",
+      "docker buildx build --push --platform linux/amd64 --builder kamal-local-docker-container -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile ..",
       builder.push.join(" ")
   end
 
-  test "native push with build args" do
-    builder = new_builder_command(builder: { "multiarch" => false, "args" => { "a" => 1, "b" => 2 } })
-    assert_equal \
-      "docker build -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --build-arg a=\"1\" --build-arg b=\"2\" --file Dockerfile . && docker push dhh/app:123 && docker push dhh/app:latest",
-      builder.push.join(" ")
-  end
-
-  test "multiarch push with build args" do
+  test "push with build args" do
     builder = new_builder_command(builder: { "args" => { "a" => 1, "b" => 2 } })
     assert_equal \
-      "docker buildx build --push --platform linux/amd64,linux/arm64 --builder kamal-app-multiarch -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --build-arg a=\"1\" --build-arg b=\"2\" --file Dockerfile .",
+      "docker buildx build --push --platform linux/amd64 --builder kamal-local-docker-container -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --build-arg a=\"1\" --build-arg b=\"2\" --file Dockerfile .",
       builder.push.join(" ")
   end
 
-  test "native push with build secrets" do
-    builder = new_builder_command(builder: { "multiarch" => false, "secrets" => [ "a", "b" ] })
+  test "push with build secrets" do
+    builder = new_builder_command(builder: { "secrets" => [ "a", "b" ] })
     assert_equal \
-      "docker build -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --secret id=\"a\" --secret id=\"b\" --file Dockerfile . && docker push dhh/app:123 && docker push dhh/app:latest",
+      "docker buildx build --push --platform linux/amd64 --builder kamal-local-docker-container -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --secret id=\"a\" --secret id=\"b\" --file Dockerfile .",
       builder.push.join(" ")
   end
 
@@ -138,74 +139,11 @@ class CommandsBuilderTest < ActiveSupport::TestCase
     assert_equal "docker inspect -f '{{ .Config.Labels.service }}' dhh/app:123 | grep -x app || (echo \"Image dhh/app:123 is missing the 'service' label\" && exit 1)", new_builder_command.validate_image.join(" ")
   end
 
-  test "multiarch context build" do
+  test "context build" do
     builder = new_builder_command(builder: { "context" => "./foo" })
     assert_equal \
-      "docker buildx build --push --platform linux/amd64,linux/arm64 --builder kamal-app-multiarch -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile ./foo",
+      "docker buildx build --push --platform linux/amd64 --builder kamal-local-docker-container -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile ./foo",
       builder.push.join(" ")
-  end
-
-  test "native context build" do
-    builder = new_builder_command(builder: { "multiarch" => false, "context" => "./foo" })
-    assert_equal \
-      "docker build -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile ./foo && docker push dhh/app:123 && docker push dhh/app:latest",
-      builder.push.join(" ")
-  end
-
-  test "cached context build" do
-    builder = new_builder_command(builder: { "multiarch" => false, "context" => "./foo", "cache" => { "type" => "gha" } })
-    assert_equal \
-      "docker buildx build --push -t dhh/app:123 -t dhh/app:latest --cache-to type=gha --cache-from type=gha --label service=\"app\" --file Dockerfile ./foo",
-      builder.push.join(" ")
-  end
-
-  test "remote context build" do
-    builder = new_builder_command(builder: { "remote" => { "arch" => "amd64" }, "context" => "./foo" })
-    assert_equal \
-      "docker buildx build --push --platform linux/amd64 --builder kamal-app-native-remote -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile ./foo",
-      builder.push.join(" ")
-  end
-
-  test "multiarch context hosts" do
-    command = new_builder_command
-    assert_equal "docker buildx inspect kamal-app-multiarch > /dev/null", command.context_hosts.join(" ")
-    assert_equal "", command.config_context_hosts.join(" ")
-  end
-
-  test "native context hosts" do
-    command = new_builder_command(builder: { "multiarch" => false })
-    assert_equal :true, command.context_hosts
-    assert_equal "", command.config_context_hosts.join(" ")
-  end
-
-  test "native cached context hosts" do
-    command = new_builder_command(builder: { "multiarch" => false, "cache" => { "type" => "registry" } })
-    assert_equal "docker buildx inspect kamal-app-native-cached > /dev/null", command.context_hosts.join(" ")
-    assert_equal "", command.config_context_hosts.join(" ")
-  end
-
-  test "native remote context hosts" do
-    command = new_builder_command(builder: { "remote" => { "arch" => "amd64", "host" => "ssh://host" } })
-    assert_equal "docker context inspect kamal-app-native-remote-amd64 --format '{{.Endpoints.docker.Host}}'", command.context_hosts.join(" ")
-    assert_equal [ "ssh://host" ], command.config_context_hosts
-  end
-
-  test "multiarch remote context hosts" do
-    command = new_builder_command(builder: {
-      "remote" => { "arch" => "amd64", "host" => "ssh://host" },
-      "local" => { "arch" => "arm64" }
-    })
-    assert_equal "docker context inspect kamal-app-multiarch-remote-arm64 --format '{{.Endpoints.docker.Host}}' ; docker context inspect kamal-app-multiarch-remote-amd64 --format '{{.Endpoints.docker.Host}}'", command.context_hosts.join(" ")
-    assert_equal [ "ssh://host" ], command.config_context_hosts
-  end
-
-  test "multiarch remote context hosts with local host" do
-    command = new_builder_command(builder: {
-      "remote" => { "arch" => "amd64", "host" => "ssh://host" },
-      "local" => { "arch" => "arm64", "host" => "unix:///var/run/docker.sock" }
-    })
-    assert_equal "docker context inspect kamal-app-multiarch-remote-arm64 --format '{{.Endpoints.docker.Host}}' ; docker context inspect kamal-app-multiarch-remote-amd64 --format '{{.Endpoints.docker.Host}}'", command.context_hosts.join(" ")
-    assert_equal [ "unix:///var/run/docker.sock", "ssh://host" ], command.config_context_hosts
   end
 
   test "mirror count" do
@@ -215,10 +153,18 @@ class CommandsBuilderTest < ActiveSupport::TestCase
 
   private
     def new_builder_command(additional_config = {})
-      Kamal::Commands::Builder.new(Kamal::Configuration.new(@config.merge(additional_config), version: "123"))
+      Kamal::Commands::Builder.new(Kamal::Configuration.new(@config.deep_merge(additional_config), version: "123"))
     end
 
     def build_directory
       "#{Dir.tmpdir}/kamal-clones/app/kamal/"
+    end
+
+    def local_arch
+      Kamal::Utils.docker_arch
+    end
+
+    def remote_arch
+      Kamal::Utils.docker_arch == "arm64" ? "amd64" : "arm64"
     end
 end

@@ -36,9 +36,8 @@ class CliTestCase < ActiveSupport::TestCase
         .with { |arg1, arg2| arg1 == :mkdir && arg2 == ".kamal/locks/app" }
       SSHKit::Backend::Abstract.any_instance.stubs(:execute)
         .with { |arg1, arg2| arg1 == :rm && arg2 == ".kamal/locks/app/details" }
-      SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info)
-        .with { |*args| args[0..2] == [ :docker, :buildx, :inspect ] }
-        .returns("")
+      SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+        .with(:docker, :buildx, :inspect, "kamal-local-docker-container")
     end
 
     def assert_hook_ran(hook, output, version:, service_version:, hosts:, command:, subcommand: nil, runtime: false)
@@ -62,5 +61,13 @@ class CliTestCase < ActiveSupport::TestCase
         ;\s/usr/bin/env\s\.kamal/hooks/#{hook} }x
 
       assert_match expected, output
+    end
+
+    def with_argv(*argv)
+      old_argv = ARGV
+      ARGV.replace(*argv)
+      yield
+    ensure
+      ARGV.replace(old_argv)
     end
 end

@@ -166,3 +166,9 @@ healthcheck:
 # Docker logging configuration, see kamal docs logging
 logging:
   ...
+
+# Aliases
+#
+# Alias configuration, see kamal docs alias
+aliases:
+  ...
