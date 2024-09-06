@@ -1,16 +1,17 @@
 class Kamal::Cli::Accessory < Kamal::Cli::Base
   desc "boot [NAME]", "Boot new accessory service on host (use NAME=all to boot all accessories)"
-  def boot(name, login: true)
+  def boot(name, prepare: true)
     with_lock do
       if name == "all"
         KAMAL.accessory_names.each { |accessory_name| boot(accessory_name) }
       else
+        prepare(name) if prepare
+
         with_accessory(name) do |accessory, hosts|
           directories(name)
           upload(name)
 
           on(hosts) do
-            execute *KAMAL.registry.login if login
             execute *KAMAL.auditor.record("Booted #{name} accessory"), verbosity: :debug
             execute *accessory.ensure_env_directory
             upload! accessory.secrets_io, accessory.secrets_path, mode: "0600"
@@ -57,15 +58,10 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
       if name == "all"
         KAMAL.accessory_names.each { |accessory_name| reboot(accessory_name) }
       else
-        with_accessory(name) do |accessory, hosts|
-          on(hosts) do
-            execute *KAMAL.registry.login
-          end
-
-          stop(name)
-          remove_container(name)
-          boot(name, login: false)
-        end
+        prepare(name)
+        stop(name)
+        remove_container(name)
+        boot(name, prepare: false)
       end
     end
   end
@@ -97,10 +93,8 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
   desc "restart [NAME]", "Restart existing accessory container on host"
   def restart(name)
     with_lock do
-      with_accessory(name) do
-        stop(name)
-        start(name)
-      end
+      stop(name)
+      start(name)
     end
   end
 
@@ -251,11 +245,20 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
     end
 
     def remove_accessory(name)
-      with_accessory(name) do
-        stop(name)
-        remove_container(name)
-        remove_image(name)
-        remove_service_directory(name)
+      stop(name)
+      remove_container(name)
+      remove_image(name)
+      remove_service_directory(name)
+    end
+
+    def prepare(name)
+      with_accessory(name) do |accessory, hosts|
+        on(hosts) do
+          execute *KAMAL.registry.login
+          execute *KAMAL.docker.create_network
+        rescue SSHKit::Command::Failed => e
+          raise unless e.message.include?("already exists")
+        end
       end
     end
 end
