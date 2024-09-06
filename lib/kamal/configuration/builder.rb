@@ -85,10 +85,6 @@ class Kamal::Configuration::Builder
     builder_config.fetch("driver", "docker-container")
   end
 
-  def pack_arch
-    builder_config["pack"]["arch"] if pack?
-  end
-
   def pack_builder
     builder_config["pack"]["builder"] if pack?
   end

@@ -62,8 +62,8 @@ class CommandsBuilderTest < ActiveSupport::TestCase
   end
 
   test "target pack when pack is set" do
-    builder = new_builder_command(image: "dhh/app", builder: { "pack" => { "arch" => "amd64", "builder" => "heroku/builder:24", "buildpacks" => [ "heroku/ruby", "heroku/procfile" ] } })
-    assert_equal "native/pack", builder.name
+    builder = new_builder_command(image: "dhh/app", builder: { "arch" => "amd64", "pack" => { "builder" => "heroku/builder:24", "buildpacks" => [ "heroku/ruby", "heroku/procfile" ] } })
+    assert_equal "pack", builder.name
     assert_equal \
       "pack build dhh/app --platform linux/amd64 --builder heroku/builder:24 --buildpack heroku/ruby --buildpack heroku/procfile --buildpack paketo-buildpacks/image-labels -t dhh/app:123 -t dhh/app:latest --env BP_IMAGE_LABELS=service=app --path . && docker push dhh/app:123 && docker push dhh/app:latest",
       builder.push.join(" ")
