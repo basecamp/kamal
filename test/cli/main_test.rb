@@ -384,40 +384,40 @@ class CliMainTest < CliTestCase
   end
 
   test "init" do
-    Pathname.any_instance.expects(:exist?).returns(false).times(3)
-    Pathname.any_instance.stubs(:mkpath)
-    FileUtils.stubs(:mkdir_p)
-    FileUtils.stubs(:cp_r)
-    FileUtils.stubs(:cp)
+    in_dummy_git_repo do
+      run_command("init").tap do |output|
+        assert_match "Created configuration file in config/deploy.yml", output
+        assert_match "Created .kamal/secrets file", output
+        assert_match "Added .kamal/secrets* to .gitignore", output
+      end
 
-    run_command("init").tap do |output|
-      assert_match /Created configuration file in config\/deploy.yml/, output
-      assert_match /Created \.env file/, output
+      assert_file "config/deploy.yml", "service: my-app"
+      assert_file ".kamal/secrets", "KAMAL_REGISTRY_PASSWORD=change-this"
+      assert_file ".gitignore", %r{\n.kamal/secrets\*\n}
     end
   end
 
   test "init with existing config" do
-    Pathname.any_instance.expects(:exist?).returns(true).times(3)
+    in_dummy_git_repo do
+      run_command("init")
 
-    run_command("init").tap do |output|
-      assert_match /Config file already exists in config\/deploy.yml \(remove first to create a new one\)/, output
+      run_command("init").tap do |output|
+        assert_match /Config file already exists in config\/deploy.yml \(remove first to create a new one\)/, output
+        assert_no_match /Added .kamal\/secrets/, output
+      end
     end
   end
 
   test "init with bundle option" do
-    Pathname.any_instance.expects(:exist?).returns(false).times(4)
-    Pathname.any_instance.stubs(:mkpath)
-    FileUtils.stubs(:mkdir_p)
-    FileUtils.stubs(:cp_r)
-    FileUtils.stubs(:cp)
-
-    run_command("init", "--bundle").tap do |output|
-      assert_match /Created configuration file in config\/deploy.yml/, output
-      assert_match /Created \.env file/, output
-      assert_match /Adding Kamal to Gemfile and bundle/, output
-      assert_match /bundle add kamal/, output
-      assert_match /bundle binstubs kamal/, output
-      assert_match /Created binstub file in bin\/kamal/, output
+    in_dummy_git_repo do
+      run_command("init", "--bundle").tap do |output|
+        assert_match "Created configuration file in config/deploy.yml", output
+        assert_match "Created .kamal/secrets file", output
+        assert_match /Adding Kamal to Gemfile and bundle/, output
+        assert_match /bundle add kamal/, output
+        assert_match /bundle binstubs kamal/, output
+        assert_match /Created binstub file in bin\/kamal/, output
+      end
     end
   end
 
@@ -522,5 +522,19 @@ class CliMainTest < CliTestCase
       with_argv([ *command, "-c", "test/fixtures/#{config_file}.yml" ]) do
         stdouted { Kamal::Cli::Main.start }
       end
+    end
+
+    def in_dummy_git_repo
+      Dir.mktmpdir do |tmpdir|
+        Dir.chdir(tmpdir) do
+          `git init`
+          `echo '/.bundle\n/log/*\n/tmp/*' > .gitignore`
+          yield
+        end
+      end
+    end
+
+    def assert_file(file, content)
+      assert_match content, File.read(file)
     end
 end
