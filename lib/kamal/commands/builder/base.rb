@@ -6,7 +6,7 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
   delegate :argumentize, to: Kamal::Utils
   delegate \
     :args, :secrets, :dockerfile, :target, :arches, :local_arches, :remote_arches, :remote,
-    :pack_builder, :pack_buildpacks,
+    :pack?, :pack_builder, :pack_buildpacks,
     :cache_from, :cache_to, :ssh, :driver, :docker_driver?,
     to: :builder_config
 
@@ -34,7 +34,7 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
   end
 
   def inspect_builder
-    docker :buildx, :inspect, builder_name unless docker_driver?
+    docker :buildx, :inspect, builder_name unless docker_driver? || pack?
   end
 
   def build_options
