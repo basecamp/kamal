@@ -88,7 +88,7 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
 
         invoke "kamal:cli:proxy:boot", [], invoke_options.merge("hosts" => host_list)
         reset_invocation(Kamal::Cli::Proxy)
-        invoke "kamal:cli:app:boot", [], invoke_options.merge("hosts" => host_list)
+        invoke "kamal:cli:app:boot", [], invoke_options.merge("hosts" => host_list, version: KAMAL.config.latest_tag)
         reset_invocation(Kamal::Cli::App)
         invoke "kamal:cli:prune:all", [], invoke_options.merge("hosts" => host_list)
         reset_invocation(Kamal::Cli::Prune)
