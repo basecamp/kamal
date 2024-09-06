@@ -1,5 +1,9 @@
+require "dotenv"
+
 class Kamal::Secrets
   attr_reader :secrets_file
+
+  Kamal::Secrets::Dotenv::InlineCommandSubstitution.install!
 
   def initialize(destination: nil)
     @secrets_file = [ *(".kamal/secrets.#{destination}" if destination), ".kamal/secrets" ].find { |f| File.exist?(f) }
@@ -26,7 +30,7 @@ class Kamal::Secrets
 
     def parse_secrets
       if secrets_file
-        interrupting_parent_on_error { Dotenv.parse(secrets_file) }
+        interrupting_parent_on_error { ::Dotenv.parse(secrets_file) }
       else
         {}
       end

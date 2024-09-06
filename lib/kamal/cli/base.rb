@@ -1,5 +1,4 @@
 require "thor"
-require "dotenv"
 require "kamal/sshkit_with_ext"
 
 module Kamal::Cli
