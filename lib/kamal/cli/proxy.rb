@@ -11,7 +11,13 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
 
       on(KAMAL.traefik_hosts) do |host|
         execute *KAMAL.registry.login
-        execute *KAMAL.traefik_or_proxy(host).start_or_run
+        if KAMAL.proxy_host?(host)
+          execute *KAMAL.proxy.start_or_run
+        else
+          execute *KAMAL.traefik.ensure_env_directory
+          upload! KAMAL.traefik.secrets_io, KAMAL.traefik.secrets_path, mode: "0600"
+          execute *KAMAL.traefik.start_or_run
+        end
       end
     end
   end

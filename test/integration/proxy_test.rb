@@ -6,8 +6,6 @@ class ProxyTest < IntegrationTest
   end
 
   test "boot, reboot, stop, start, restart, logs, remove" do
-    kamal :envify
-
     kamal :proxy, :boot
     assert_proxy_running
 
