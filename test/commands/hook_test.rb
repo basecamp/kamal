@@ -39,6 +39,21 @@ class CommandsHookTest < ActiveSupport::TestCase
     ], new_command(hooks_path: "custom/hooks/path").run("foo")
   end
 
+  test "hook with secrets" do
+    with_test_secrets("secrets" => "DB_PASSWORD=secret") do
+      assert_equal [
+        ".kamal/hooks/foo",
+        { env: {
+          "KAMAL_RECORDED_AT" => @recorded_at,
+          "KAMAL_PERFORMER" => @performer,
+          "KAMAL_VERSION" => "123",
+          "KAMAL_SERVICE_VERSION" => "app@123",
+          "KAMAL_SERVICE" => "app",
+          "DB_PASSWORD" => "secret" } }
+      ], new_command(env: { "secret" => [ "DB_PASSWORD" ] }).run("foo", secrets: true)
+    end
+  end
+
   private
     def new_command(**extra_config)
       Kamal::Commands::Hook.new(Kamal::Configuration.new(@config.merge(**extra_config), version: "123"))

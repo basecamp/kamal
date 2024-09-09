@@ -1,3 +1,5 @@
+require "concurrent/ivar"
+
 class Kamal::Cli::Healthcheck::Barrier
   def initialize
     @ivar = Concurrent::IVar.new

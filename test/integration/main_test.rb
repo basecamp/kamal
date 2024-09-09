@@ -1,11 +1,7 @@
 require_relative "integration_test"
 
 class MainTest < IntegrationTest
-  test "envify, deploy, redeploy, rollback, details and audit" do
-    kamal :envify
-    assert_env_files
-    remove_local_env_file
-
+  test "deploy, redeploy, rollback, details and audit" do
     first_version = latest_app_version
 
     assert_app_is_down
@@ -37,15 +33,10 @@ class MainTest < IntegrationTest
 
     audit = kamal :audit, capture: true
     assert_match /Booted app version #{first_version}.*Booted app version #{second_version}.*Booted app version #{first_version}.*/m, audit
-
-    kamal :env, :delete
-    assert_no_remote_env_file
   end
 
   test "app with roles" do
     @app = "app_with_roles"
-
-    kamal :envify
 
     version = latest_app_version
 
@@ -77,7 +68,7 @@ class MainTest < IntegrationTest
     assert_equal "app-#{version}", config[:service_with_version]
     assert_equal [], config[:volume_args]
     assert_equal({ user: "root", port: 22, keepalive: true, keepalive_interval: 30, log_level: :fatal }, config[:ssh_options])
-    assert_equal({ "driver" => "docker", "arch" => "amd64", "args" => { "COMMIT_SHA" => version } }, config[:builder])
+    assert_equal({ "driver" => "docker", "arch" => "#{Kamal::Utils.docker_arch}", "args" => { "COMMIT_SHA" => version } }, config[:builder])
     assert_equal [ "--log-opt", "max-size=\"10m\"" ], config[:logging]
     assert_equal({ "cmd"=>"wget -qO- http://localhost > /dev/null || exit 1", "interval"=>"1s", "max_attempts"=>3, "port"=>3000, "path"=>"/up", "cord"=>"/tmp/kamal-cord", "log_lines"=>50 }, config[:healthcheck])
   end
@@ -103,7 +94,6 @@ class MainTest < IntegrationTest
     kamal :remove, "-y"
     assert_no_images_or_containers
 
-    kamal :envify
     kamal :setup
     assert_images_and_containers
 
@@ -112,18 +102,17 @@ class MainTest < IntegrationTest
   end
 
   private
-    def assert_local_env_file(contents)
-      assert_equal contents, deployer_exec("cat .env", capture: true)
-    end
-
     def assert_envs(version:)
       assert_env :CLEAR_TOKEN, "4321", version: version, vm: :vm1
       assert_env :HOST_TOKEN, "abcd", version: version, vm: :vm1
       assert_env :SECRET_TOKEN, "1234 with \"中文\"", version: version, vm: :vm1
       assert_no_env :CLEAR_TAG, version: version, vm: :vm1
-      assert_no_env :SECRET_TAG, version: version, vm: :vm11
+      assert_no_env :SECRET_TAG, version: version, vm: :vm1
       assert_env :CLEAR_TAG, "tagged", version: version, vm: :vm2
       assert_env :SECRET_TAG, "TAGME", version: version, vm: :vm2
+      assert_env :INTERPOLATED_SECRET1, "1TERCES_DETALOPRETNI", version: version, vm: :vm2
+      assert_env :INTERPOLATED_SECRET2, "2TERCES_DETALOPRETNI", version: version, vm: :vm2
+      assert_env :INTERPOLATED_SECRET3, "文中_DETALOPRETNI", version: version, vm: :vm2
     end
 
     def assert_env(key, value, vm:, version:)
@@ -134,24 +123,6 @@ class MainTest < IntegrationTest
       assert_raises(RuntimeError, /exit 1/) do
         docker_compose("exec #{vm} docker exec app-web-#{version} env | grep #{key}", capture: true)
       end
-    end
-
-    def assert_env_files
-      assert_local_env_file "SECRET_TOKEN='1234 with \"中文\"'\nSECRET_TAG='TAGME'"
-      assert_remote_env_file "SECRET_TOKEN=1234 with \"中文\"", vm: :vm1
-      assert_remote_env_file "SECRET_TOKEN=1234 with \"中文\"\nSECRET_TAG=TAGME", vm: :vm2
-    end
-
-    def remove_local_env_file
-      deployer_exec("rm .env")
-    end
-
-    def assert_remote_env_file(contents, vm:)
-      assert_equal contents, docker_compose("exec #{vm} cat /root/.kamal/env/roles/app-web.env", capture: true)
-    end
-
-    def assert_no_remote_env_file
-      assert_equal "nofile", docker_compose("exec vm1 stat /root/.kamal/env/roles/app-web.env 2> /dev/null || echo nofile", capture: true)
     end
 
     def assert_accumulated_assets(*versions)

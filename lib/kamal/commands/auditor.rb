@@ -8,9 +8,12 @@ class Kamal::Commands::Auditor < Kamal::Commands::Base
 
   # Runs remotely
   def record(line, **details)
-    append \
-      [ :echo, audit_tags(**details).except(:version, :service_version, :service).to_s, line ],
-      audit_log_file
+    combine \
+      [ :mkdir, "-p", config.run_directory ],
+      append(
+        [ :echo, audit_tags(**details).except(:version, :service_version, :service).to_s, line ],
+        audit_log_file
+      )
   end
 
   def reveal

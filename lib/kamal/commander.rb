@@ -1,5 +1,6 @@
 require "active_support/core_ext/enumerable"
 require "active_support/core_ext/module/delegation"
+require "active_support/core_ext/object/blank"
 
 class Kamal::Commander
   attr_accessor :verbosity, :holding_lock, :connected
@@ -21,6 +22,10 @@ class Kamal::Commander
 
   def configure(**kwargs)
     @config, @config_kwargs = nil, kwargs
+  end
+
+  def configured?
+    @config || @config_kwargs
   end
 
   attr_reader :specific_roles, :specific_hosts

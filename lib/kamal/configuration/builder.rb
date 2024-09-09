@@ -62,7 +62,7 @@ class Kamal::Configuration::Builder
   end
 
   def secrets
-    builder_config["secrets"] || []
+    (builder_config["secrets"] || []).to_h { |key| [ key, config.secrets[key] ] }
   end
 
   def dockerfile

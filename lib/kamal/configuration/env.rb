@@ -1,36 +1,29 @@
 class Kamal::Configuration::Env
   include Kamal::Configuration::Validation
 
-  attr_reader :secrets_keys, :clear, :secrets_file, :context
+  attr_reader :context, :secrets
+  attr_reader :clear, :secret_keys
   delegate :argumentize, to: Kamal::Utils
 
-  def initialize(config:, secrets_file: nil, context: "env")
+  def initialize(config:, secrets:, context: "env")
     @clear = config.fetch("clear", config.key?("secret") || config.key?("tags") ? {} : config)
-    @secrets_keys = config.fetch("secret", [])
-    @secrets_file = secrets_file
+    @secrets = secrets
+    @secret_keys = config.fetch("secret", [])
     @context = context
     validate! config, context: context, with: Kamal::Configuration::Validator::Env
   end
 
-  def args
-    [ "--env-file", secrets_file, *argumentize("--env", clear) ]
+  def clear_args
+    argumentize("--env", clear)
   end
 
   def secrets_io
-    StringIO.new(Kamal::EnvFile.new(secrets).to_s)
-  end
-
-  def secrets
-    @secrets ||= secrets_keys.to_h { |key| [ key, ENV.fetch(key) ] }
-  end
-
-  def secrets_directory
-    File.dirname(secrets_file)
+    Kamal::EnvFile.new(secret_keys.to_h { |key| [ key, secrets[key] ] }).to_io
   end
 
   def merge(other)
     self.class.new \
-      config: { "clear" => clear.merge(other.clear), "secret" => secrets_keys | other.secrets_keys },
-      secrets_file: secrets_file || other.secrets_file
+      config: { "clear" => clear.merge(other.clear), "secret" => secret_keys | other.secret_keys },
+      secrets: secrets
   end
 end

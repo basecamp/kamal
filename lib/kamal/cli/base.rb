@@ -1,5 +1,4 @@
 require "thor"
-require "dotenv"
 require "kamal/sshkit_with_ext"
 
 module Kamal::Cli
@@ -31,53 +30,15 @@ module Kamal::Cli
       else
         super
       end
-      @original_env = ENV.to_h.dup
-      load_env
-      initialize_commander(options_with_subcommand_class_options)
+      initialize_commander unless KAMAL.configured?
     end
 
     private
-      def reload_env
-        reset_env
-        load_env
-      end
-
-      def load_env
-        if destination = options[:destination]
-          Dotenv.load(".env.#{destination}", ".env")
-        else
-          Dotenv.load(".env")
-        end
-      end
-
-      def reset_env
-        replace_env @original_env
-      end
-
-      def replace_env(env)
-        ENV.clear
-        ENV.update(env)
-      end
-
-      def with_original_env
-        keeping_current_env do
-          reset_env
-          yield
-        end
-      end
-
-      def keeping_current_env
-        current_env = ENV.to_h.dup
-        yield
-      ensure
-        replace_env(current_env)
-      end
-
       def options_with_subcommand_class_options
         options.merge(@_initializer.last[:class_options] || {})
       end
 
-      def initialize_commander(options)
+      def initialize_commander
         KAMAL.tap do |commander|
           if options[:verbose]
             ENV["VERBOSE"] = "1" # For backtraces via cli/start
@@ -112,8 +73,6 @@ module Kamal::Cli
         if KAMAL.holding_lock?
           yield
         else
-          ensure_run_and_locks_directory
-
           acquire_lock
 
           begin
@@ -142,6 +101,8 @@ module Kamal::Cli
       end
 
       def acquire_lock
+        ensure_run_and_locks_directory
+
         raise_if_locked do
           say "Acquiring the deploy lock...", :magenta
           on(KAMAL.primary_host) { execute *KAMAL.lock.acquire("Automatic deploy lock", KAMAL.config.version), verbosity: :debug }

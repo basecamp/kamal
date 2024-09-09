@@ -49,7 +49,7 @@ class CliBuildTest < CliTestCase
       SSHKit::Backend::Abstract.any_instance.expects(:execute).with(:git, "-C", build_directory, :submodule, :update, "--init")
 
       SSHKit::Backend::Abstract.any_instance.expects(:execute)
-        .with(:docker, :buildx, :build, "--push", "--platform", "linux/amd64", "--builder", "kamal-local-docker-container", "-t", "dhh/app:999", "-t", "dhh/app:latest", "--label", "service=\"app\"", "--file", "Dockerfile", ".")
+        .with(:docker, :buildx, :build, "--push", "--platform", "linux/amd64", "--builder", "kamal-local-docker-container", "-t", "dhh/app:999", "-t", "dhh/app:latest", "--label", "service=\"app\"", "--file", "Dockerfile", ".", env: {})
 
       SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
         .with(:git, "-C", anything, :"rev-parse", :HEAD)
@@ -140,7 +140,7 @@ class CliBuildTest < CliTestCase
         .returns("")
 
       SSHKit::Backend::Abstract.any_instance.expects(:execute)
-        .with(:docker, :buildx, :build, "--push", "--platform", "linux/amd64", "--builder", "kamal-local-docker-container", "-t", "dhh/app:999", "-t", "dhh/app:latest", "--label", "service=\"app\"", "--file", "Dockerfile", ".")
+        .with(:docker, :buildx, :build, "--push", "--platform", "linux/amd64", "--builder", "kamal-local-docker-container", "-t", "dhh/app:999", "-t", "dhh/app:latest", "--label", "service=\"app\"", "--file", "Dockerfile", ".", env: {})
 
       run_command("push").tap do |output|
         assert_match /WARN Missing compatible builder, so creating a new one first/, output

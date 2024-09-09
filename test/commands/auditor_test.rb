@@ -18,6 +18,7 @@ class CommandsAuditorTest < ActiveSupport::TestCase
 
   test "record" do
     assert_equal [
+      :mkdir, "-p", ".kamal", "&&",
       :echo,
       "[#{@recorded_at}] [#{@performer}]",
       "app removed container",
@@ -28,6 +29,7 @@ class CommandsAuditorTest < ActiveSupport::TestCase
   test "record with destination" do
     new_command(destination: "staging").tap do |auditor|
       assert_equal [
+        :mkdir, "-p", ".kamal", "&&",
         :echo,
         "[#{@recorded_at}] [#{@performer}] [staging]",
         "app removed container",
@@ -39,6 +41,7 @@ class CommandsAuditorTest < ActiveSupport::TestCase
   test "record with command details" do
     new_command(role: "web").tap do |auditor|
       assert_equal [
+        :mkdir, "-p", ".kamal", "&&",
         :echo,
         "[#{@recorded_at}] [#{@performer}] [web]",
         "app removed container",
@@ -49,6 +52,7 @@ class CommandsAuditorTest < ActiveSupport::TestCase
 
   test "record with arg details" do
     assert_equal [
+      :mkdir, "-p", ".kamal", "&&",
       :echo,
       "[#{@recorded_at}] [#{@performer}] [value]",
       "app removed container",

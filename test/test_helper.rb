@@ -34,4 +34,53 @@ class ActiveSupport::TestCase
     def stderred
       capture(:stderr) { yield }.strip
     end
+
+    def with_test_secrets(**files)
+      setup_test_secrets(**files)
+      yield
+    ensure
+      teardown_test_secrets
+    end
+
+    def setup_test_secrets(**files)
+      @original_pwd = Dir.pwd
+      @secrets_tmpdir = Dir.mktmpdir
+      fixtures_dup = File.join(@secrets_tmpdir, "test")
+      FileUtils.mkdir_p(fixtures_dup)
+      FileUtils.cp_r("test/fixtures/", fixtures_dup)
+
+      Dir.chdir(@secrets_tmpdir)
+      FileUtils.mkdir_p(".kamal")
+      Dir.chdir(".kamal") do
+        files.each do |filename, contents|
+          File.binwrite(filename.to_s, contents)
+        end
+      end
+    end
+
+    def teardown_test_secrets
+      Dir.chdir(@original_pwd)
+      FileUtils.rm_rf(@secrets_tmpdir)
+    end
+end
+
+class SecretAdapterTestCase < ActiveSupport::TestCase
+  setup do
+    `true` # Ensure $? is 0
+  end
+
+  private
+    def stub_ticks
+      Kamal::Secrets::Adapters::Base.any_instance.stubs(:`)
+    end
+
+    def stub_ticks_with(command, succeed: true)
+      # Sneakily run `false`/`true` after a match to set $? to 1/0
+      stub_ticks.with { |c| c == command && (succeed ? `true` : `false`) }
+      Kamal::Secrets::Adapters::Base.any_instance.stubs(:`)
+    end
+
+    def shellunescape(string)
+      "\"#{string}\"".undump.gsub(/\\([{}])/, "\\1")
+    end
 end

@@ -15,6 +15,10 @@ class Kamal::EnvFile
     env_file.presence || "\n"
   end
 
+  def to_io
+    StringIO.new(to_s)
+  end
+
   alias to_str to_s
 
   private

@@ -79,23 +79,21 @@ class ConfigurationEnvTagsTest < ActiveSupport::TestCase
   end
 
   test "tag secret env" do
-    ENV["PASSWORD"] = "hello"
-
-    deploy = {
-      service: "app", image: "dhh/app", registry: { "username" => "dhh", "password" => "secret" },
-      servers: [ { "1.1.1.1" => "secrets" } ],
-      builder: { "arch" => "amd64" },
-      env: {
-        "tags" => {
-          "secrets" => { "secret" => [ "PASSWORD" ] }
+    with_test_secrets("secrets" => "PASSWORD=hello") do
+      deploy = {
+        service: "app", image: "dhh/app", registry: { "username" => "dhh", "password" => "secret" },
+        servers: [ { "1.1.1.1" => "secrets" } ],
+        builder: { "arch" => "amd64" },
+        env: {
+          "tags" => {
+            "secrets" => { "secret" => [ "PASSWORD" ] }
+          }
         }
       }
-    }
 
-    config = Kamal::Configuration.new(deploy)
-    assert_equal "hello", config.role("web").env("1.1.1.1").secrets["PASSWORD"]
-  ensure
-    ENV.delete "PASSWORD"
+      config = Kamal::Configuration.new(deploy)
+      assert_equal "hello", config.role("web").env("1.1.1.1").secrets["PASSWORD"]
+    end
   end
 
   test "tag clear env" do

@@ -69,10 +69,13 @@ class CommandsBuilderTest < ActiveSupport::TestCase
   end
 
   test "build secrets" do
-    builder = new_builder_command(builder: { "secrets" => [ "token_a", "token_b" ] })
-    assert_equal \
-      "-t dhh/app:123 -t dhh/app:latest --label service=\"app\" --secret id=\"token_a\" --secret id=\"token_b\" --file Dockerfile",
-      builder.target.build_options.join(" ")
+    with_test_secrets("secrets" => "token_a=foo\ntoken_b=bar") do
+      FileUtils.touch("Dockerfile")
+      builder = new_builder_command(builder: { "secrets" => [ "token_a", "token_b" ] })
+      assert_equal \
+        "-t dhh/app:123 -t dhh/app:latest --label service=\"app\" --secret id=\"token_a\" --secret id=\"token_b\" --file Dockerfile",
+        builder.target.build_options.join(" ")
+    end
   end
 
   test "build dockerfile" do
@@ -113,10 +116,13 @@ class CommandsBuilderTest < ActiveSupport::TestCase
   end
 
   test "push with build secrets" do
-    builder = new_builder_command(builder: { "secrets" => [ "a", "b" ] })
-    assert_equal \
-      "docker buildx build --push --platform linux/amd64 --builder kamal-local-docker-container -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --secret id=\"a\" --secret id=\"b\" --file Dockerfile .",
-      builder.push.join(" ")
+    with_test_secrets("secrets" => "a=foo\nb=bar") do
+      FileUtils.touch("Dockerfile")
+      builder = new_builder_command(builder: { "secrets" => [ "a", "b" ] })
+      assert_equal \
+        "docker buildx build --push --platform linux/amd64 --builder kamal-local-docker-container -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --secret id=\"a\" --secret id=\"b\" --file Dockerfile .",
+        builder.push.join(" ")
+    end
   end
 
   test "build with ssh agent socket" do

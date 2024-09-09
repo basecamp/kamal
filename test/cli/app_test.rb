@@ -113,7 +113,7 @@ class CliAppTest < CliTestCase
 
     run_command("boot", config: :with_env_tags).tap do |output|
       assert_match "docker tag dhh/app:latest dhh/app:latest", output
-      assert_match %r{docker run --detach --restart unless-stopped --name app-web-latest --hostname 1.1.1.1-[0-9a-f]{12} -e KAMAL_CONTAINER_NAME="app-web-latest" -e KAMAL_VERSION="latest" --env-file .kamal/env/roles/app-web.env --env TEST="root" --env EXPERIMENT="disabled" --env SITE="site1"}, output
+      assert_match %r{docker run --detach --restart unless-stopped --name app-web-latest --hostname 1.1.1.1-[0-9a-f]{12} -e KAMAL_CONTAINER_NAME="app-web-latest" -e KAMAL_VERSION="latest" --env TEST="root" --env EXPERIMENT="disabled" --env SITE="site1"}, output
       assert_match "docker container ls --all --filter name=^app-web-123$ --quiet | xargs docker stop", output
     end
   end
