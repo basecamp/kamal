@@ -1,6 +1,6 @@
 class Kamal::Cli::App::Boot
   attr_reader :host, :role, :version, :barrier, :sshkit
-  delegate :execute, :capture_with_info, :capture_with_pretty_json, :info, :error, to: :sshkit
+  delegate :execute, :capture_with_info, :capture_with_pretty_json, :info, :error, :upload!, to: :sshkit
   delegate :uses_cord?, :assets?, :running_traefik?, to: :role
 
   def initialize(host, role, sshkit, version, barrier)
@@ -48,7 +48,11 @@ class Kamal::Cli::App::Boot
 
       execute *app.tie_cord(role.cord_host_file) if uses_cord?
       hostname = "#{host.to_s[0...51].gsub(/\.+$/, '')}-#{SecureRandom.hex(6)}"
+
+      execute *app.ensure_env_directory
+      upload! role.secrets_io(host), role.secrets_path, mode: "0600"
       execute *app.run(hostname: hostname)
+
       Kamal::Cli::Healthcheck::Poller.wait_for_healthy(pause_after_ready: true) { capture_with_info(*app.status(version: version)) }
     end
 

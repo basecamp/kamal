@@ -69,6 +69,10 @@ class Kamal::Commands::App < Kamal::Commands::Base
       extract_version_from_name
   end
 
+  def ensure_env_directory
+    make_directory role.env_directory
+  end
+
   private
     def container_name(version = nil)
       [ role.container_prefix, version || config.version ].compact.join("-")

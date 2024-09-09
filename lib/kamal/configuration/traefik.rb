@@ -1,4 +1,6 @@
 class Kamal::Configuration::Traefik
+  delegate :argumentize, to: Kamal::Utils
+
   DEFAULT_IMAGE = "traefik:v2.10"
   CONTAINER_PORT = 80
   DEFAULT_ARGS = {
@@ -56,5 +58,21 @@ class Kamal::Configuration::Traefik
 
   def image
     traefik_config.fetch("image", DEFAULT_IMAGE)
+  end
+
+  def env_args
+    [ *env.clear_args, *argumentize("--env-file", secrets_path) ]
+  end
+
+  def env_directory
+    File.join(config.env_directory, "traefik")
+  end
+
+  def secrets_io
+    env.secrets_io
+  end
+
+  def secrets_path
+    File.join(config.env_directory, "traefik", "traefik.env")
   end
 end

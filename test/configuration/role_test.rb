@@ -69,10 +69,13 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
   test "env overwritten by role" do
     assert_equal "redis://a/b", config_with_roles.role(:workers).env("1.1.1.3").clear["REDIS_URL"]
 
-    assert_equal [
-      "--env", "REDIS_URL=\"redis://a/b\"",
-      "--env", "WEB_CONCURRENCY=\"4\"" ],
-      config_with_roles.role(:workers).env_args("1.1.1.3")
+    assert_equal \
+      [ "--env", "REDIS_URL=\"redis://a/b\"", "--env", "WEB_CONCURRENCY=\"4\"", "--env-file", ".kamal/env/roles/app-workers.env" ],
+      config_with_roles.role(:workers).env_args("1.1.1.3").map(&:to_s)
+
+    assert_equal \
+      "\n",
+      config_with_roles.role(:workers).secrets_io("1.1.1.3").read
   end
 
   test "container name" do
@@ -85,7 +88,13 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
   end
 
   test "env args" do
-    assert_equal [ "--env", "REDIS_URL=\"redis://a/b\"", "--env", "WEB_CONCURRENCY=\"4\"" ], config_with_roles.role(:workers).env_args("1.1.1.3")
+    assert_equal \
+      [ "--env", "REDIS_URL=\"redis://a/b\"", "--env", "WEB_CONCURRENCY=\"4\"", "--env-file", ".kamal/env/roles/app-workers.env" ],
+      config_with_roles.role(:workers).env_args("1.1.1.3").map(&:to_s)
+
+    assert_equal \
+      "\n",
+      config_with_roles.role(:workers).secrets_io("1.1.1.3").read
   end
 
   test "env secret overwritten by role" do
@@ -109,12 +118,13 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
         ]
       }
 
-      assert_equal [
-        "--env", "REDIS_URL=\"redis://a/b\"",
-        "--env", "WEB_CONCURRENCY=\"4\"",
-        "--env", "REDIS_PASSWORD=\"secret456\"",
-        "--env", "DB_PASSWORD=\"secret&\\\"123\"" ],
+      assert_equal \
+        [ "--env", "REDIS_URL=\"redis://a/b\"", "--env", "WEB_CONCURRENCY=\"4\"", "--env-file", ".kamal/env/roles/app-workers.env" ],
         config_with_roles.role(:workers).env_args("1.1.1.3").map(&:to_s)
+
+      assert_equal \
+        "REDIS_PASSWORD=secret456\nDB_PASSWORD=secret&\"123\n",
+        config_with_roles.role(:workers).secrets_io("1.1.1.3").read
     end
   end
 
@@ -130,11 +140,13 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
         ]
       }
 
-      assert_equal [
-        "--env", "REDIS_URL=\"redis://a/b\"",
-        "--env", "WEB_CONCURRENCY=\"4\"",
-        "--env", "DB_PASSWORD=\"secret123\"" ],
+      assert_equal \
+        [ "--env", "REDIS_URL=\"redis://a/b\"", "--env", "WEB_CONCURRENCY=\"4\"", "--env-file", ".kamal/env/roles/app-workers.env" ],
         config_with_roles.role(:workers).env_args("1.1.1.3").map(&:to_s)
+
+      assert_equal \
+        "DB_PASSWORD=secret123\n",
+        config_with_roles.role(:workers).secrets_io("1.1.1.3").read
     end
   end
 
@@ -149,11 +161,13 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
         ]
       }
 
-      assert_equal [
-        "--env", "REDIS_URL=\"redis://a/b\"",
-        "--env", "WEB_CONCURRENCY=\"4\"",
-        "--env", "REDIS_PASSWORD=\"secret456\"" ],
+      assert_equal \
+        [ "--env", "REDIS_URL=\"redis://a/b\"", "--env", "WEB_CONCURRENCY=\"4\"", "--env-file", ".kamal/env/roles/app-workers.env" ],
         config_with_roles.role(:workers).env_args("1.1.1.3").map(&:to_s)
+
+      assert_equal \
+        "REDIS_PASSWORD=secret456\n",
+        config_with_roles.role(:workers).secrets_io("1.1.1.3").read
     end
   end
 
@@ -174,11 +188,13 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
         }
       }
 
-      config = config_with_roles
-      assert_equal [
-        "--env", "REDIS_URL=\"redis://c/d\"",
-        "--env", "REDIS_PASSWORD=\"secret456\"" ],
-        config.role(:workers).env_args("1.1.1.3").map(&:to_s)
+      assert_equal \
+        [ "--env", "REDIS_URL=\"redis://c/d\"", "--env-file", ".kamal/env/roles/app-workers.env" ],
+        config_with_roles.role(:workers).env_args("1.1.1.3").map(&:to_s)
+
+      assert_equal \
+        "REDIS_PASSWORD=secret456\n",
+        config_with_roles.role(:workers).secrets_io("1.1.1.3").read
     end
   end
 

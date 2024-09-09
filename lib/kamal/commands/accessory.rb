@@ -1,7 +1,9 @@
 class Kamal::Commands::Accessory < Kamal::Commands::Base
   attr_reader :accessory_config
   delegate :service_name, :image, :hosts, :port, :files, :directories, :cmd,
-           :publish_args, :env_args, :volume_args, :label_args, :option_args, to: :accessory_config
+           :publish_args, :env_args, :volume_args, :label_args, :option_args,
+           :secrets_io, :secrets_path, :env_directory,
+           to: :accessory_config
 
   def initialize(config, name:)
     super(config)
@@ -96,6 +98,10 @@ class Kamal::Commands::Accessory < Kamal::Commands::Base
 
   def remove_image
     docker :image, :rm, "--force", image
+  end
+
+  def ensure_env_directory
+    make_directory env_directory
   end
 
   private

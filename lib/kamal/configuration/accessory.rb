@@ -51,7 +51,19 @@ class Kamal::Configuration::Accessory
   end
 
   def env_args
-    env.args
+    [ *env.clear_args, *argumentize("--env-file", secrets_path) ]
+  end
+
+  def env_directory
+    File.join(config.env_directory, "accessories")
+  end
+
+  def secrets_io
+    env.secrets_io
+  end
+
+  def secrets_path
+    File.join(config.env_directory, "accessories", "#{service_name}.env")
   end
 
   def files

@@ -3,7 +3,6 @@ class Kamal::Cli::Lock < Kamal::Cli::Base
   def status
     handle_missing_lock do
       on(KAMAL.primary_host) do
-        execute *KAMAL.server.ensure_run_directory
         puts capture_with_debug(*KAMAL.lock.status)
       end
     end
@@ -17,7 +16,6 @@ class Kamal::Cli::Lock < Kamal::Cli::Base
 
     raise_if_locked do
       on(KAMAL.primary_host) do
-        execute *KAMAL.server.ensure_run_directory
         execute *KAMAL.lock.acquire(message, KAMAL.config.version), verbosity: :debug
       end
       say "Acquired the deploy lock"
@@ -28,7 +26,6 @@ class Kamal::Cli::Lock < Kamal::Cli::Base
   def release
     handle_missing_lock do
       on(KAMAL.primary_host) do
-        execute *KAMAL.server.ensure_run_directory
         execute *KAMAL.lock.release, verbosity: :debug
       end
       say "Released the deploy lock"

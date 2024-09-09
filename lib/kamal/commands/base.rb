@@ -37,6 +37,10 @@ module Kamal::Commands
       [ :rm, "-r", path ]
     end
 
+    def remove_file(path)
+      [ :rm, path ]
+    end
+
     private
       def combine(*commands, by: "&&")
         commands

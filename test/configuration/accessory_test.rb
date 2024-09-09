@@ -119,8 +119,10 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
     with_test_secrets("secrets" => "MYSQL_ROOT_PASSWORD=secret123") do
       config = Kamal::Configuration.new(@deploy)
 
-      assert_equal [ "--env", "MYSQL_ROOT_HOST=\"%\"", "--env", "MYSQL_ROOT_PASSWORD=\"secret123\"" ], config.accessory(:mysql).env_args.map(&:to_s)
-      assert_equal [ "--env", "SOMETHING=\"else\"" ], @config.accessory(:redis).env_args
+      assert_equal [ "--env", "MYSQL_ROOT_HOST=\"%\"", "--env-file", ".kamal/env/accessories/app-mysql.env" ], config.accessory(:mysql).env_args.map(&:to_s)
+      assert_equal "MYSQL_ROOT_PASSWORD=secret123\n", config.accessory(:mysql).secrets_io.string
+      assert_equal [ "--env", "SOMETHING=\"else\"", "--env-file", ".kamal/env/accessories/app-redis.env" ], @config.accessory(:redis).env_args
+      assert_equal "\n", config.accessory(:redis).secrets_io.string
     end
   end
 

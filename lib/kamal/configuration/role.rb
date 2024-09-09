@@ -77,7 +77,19 @@ class Kamal::Configuration::Role
   end
 
   def env_args(host)
-    env(host).args
+    [ *env(host).clear_args, *argumentize("--env-file", secrets_path) ]
+  end
+
+  def env_directory
+    File.join(config.env_directory, "roles")
+  end
+
+  def secrets_io(host)
+    env(host).secrets_io
+  end
+
+  def secrets_path
+    File.join(config.env_directory, "roles", "#{container_prefix}.env")
   end
 
   def asset_volume_args

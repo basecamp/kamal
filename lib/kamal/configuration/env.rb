@@ -13,8 +13,12 @@ class Kamal::Configuration::Env
     validate! config, context: context, with: Kamal::Configuration::Validator::Env
   end
 
-  def args
-    [ *clear_args, *secret_args ]
+  def clear_args
+    argumentize("--env", clear)
+  end
+
+  def secrets_io
+    Kamal::EnvFile.new(secret_keys.to_h { |key| [ key, secrets[key] ] }).to_io
   end
 
   def merge(other)
@@ -22,13 +26,4 @@ class Kamal::Configuration::Env
       config: { "clear" => clear.merge(other.clear), "secret" => secret_keys | other.secret_keys },
       secrets: secrets
   end
-
-  private
-    def clear_args
-      argumentize("--env", clear)
-    end
-
-    def secret_args
-      argumentize("--env", secret_keys.to_h { |key| [ key, secrets[key] ] }, sensitive: true)
-    end
 end
