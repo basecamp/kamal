@@ -76,7 +76,6 @@ class MainTest < IntegrationTest
   test "aliases" do
     @app = "app_with_roles"
 
-    kamal :envify
     kamal :deploy
 
     output = kamal :whome, capture: true
