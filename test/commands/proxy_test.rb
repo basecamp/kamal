@@ -109,14 +109,14 @@ class CommandsProxyTest < ActiveSupport::TestCase
 
   test "deploy" do
     assert_equal \
-      "docker exec kamal-proxy kamal-proxy deploy service --target \"172.1.0.2:80\" --buffer-requests --buffer-responses --log-request-header \"Cache-Control\" --log-request-header \"Last-Modified\"",
-      new_command.deploy("service", target: "172.1.0.2:80").join(" ")
+      "docker exec kamal-proxy kamal-proxy deploy service --target \"172.1.0.2:3000\" --buffer-requests --buffer-responses --log-request-header \"Cache-Control\" --log-request-header \"Last-Modified\"",
+      new_command.deploy("service", target: "172.1.0.2").join(" ")
   end
 
   test "remove" do
     assert_equal \
-      "docker exec kamal-proxy kamal-proxy remove service --target \"172.1.0.2:80\"",
-      new_command.remove("service", target: "172.1.0.2:80").join(" ")
+      "docker exec kamal-proxy kamal-proxy remove service --target \"172.1.0.2:3000\"",
+      new_command.remove("service", target: "172.1.0.2").join(" ")
   end
 
   private

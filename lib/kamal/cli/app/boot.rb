@@ -53,7 +53,7 @@ class Kamal::Cli::App::Boot
       if proxy_host?
         execute *app.run_for_proxy(hostname: hostname)
         if running_traefik?
-          endpoint = capture_with_info(*app.container_endpoint(version: version)).strip
+          endpoint = capture_with_info(*app.container_id_for_version(version)).strip
           raise Kamal::Cli::BootError, "Failed to get endpoint for #{role} on #{host}, did the container boot?" if endpoint.empty?
           execute *KAMAL.proxy.deploy(role.container_prefix, target: endpoint)
         else
