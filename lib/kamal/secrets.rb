@@ -30,17 +30,9 @@ class Kamal::Secrets
 
     def parse_secrets
       if secrets_file
-        interrupting_parent_on_error { ::Dotenv.parse(secrets_file) }
+        ::Dotenv.parse(secrets_file)
       else
         {}
       end
-    end
-
-    def interrupting_parent_on_error
-      # Make any `kamal secrets` calls in dotenv interpolation interrupt this process if there are errors
-      ENV["KAMAL_SECRETS_INT_PARENT"] = "1"
-      yield
-    ensure
-      ENV.delete("KAMAL_SECRETS_INT_PARENT")
     end
 end
