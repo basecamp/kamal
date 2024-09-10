@@ -4,6 +4,6 @@ while [ ! -f /root/.ssh/authorized_keys ]; do echo "Waiting for ssh keys"; sleep
 
 service ssh restart
 
-dockerd --max-concurrent-downloads 1 --insecure-registry registry:4443 &
+dockerd --max-concurrent-downloads 1 &
 
 exec sleep infinity
