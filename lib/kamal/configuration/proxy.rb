@@ -10,7 +10,7 @@ class Kamal::Configuration::Proxy
 
   def initialize(config:)
     @proxy_config = config.raw_config.proxy || {}
-    validate! proxy_config
+    validate! proxy_config, with: Kamal::Configuration::Validator::Proxy
   end
 
   def enabled?
@@ -37,9 +37,14 @@ class Kamal::Configuration::Proxy
     argumentize "--publish", [ "#{DEFAULT_HTTP_PORT}:#{DEFAULT_HTTP_PORT}", "#{DEFAULT_HTTPS_PORT}:#{DEFAULT_HTTPS_PORT}" ]
   end
 
+  def ssl?
+    proxy_config.fetch("ssl", false)
+  end
+
   def deploy_options
     {
       host: proxy_config["host"],
+      tls: proxy_config["ssl"],
       "deploy-timeout": proxy_config["deploy_timeout"],
       "drain-timeout": proxy_config["drain_timeout"],
       "health-check-interval": proxy_config.dig("health_check", "interval"),

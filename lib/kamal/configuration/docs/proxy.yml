@@ -56,6 +56,13 @@ proxy:
   # requests for other apps that do have a host set.
   host: foo.example.com
 
+  # SSL
+  #
+  # Kamal Proxy can automatically obtain and renew TLS certificates for your applications.
+  # To ensure this set, the ssl flag. This only works if we are deploying to one server and
+  # the host flag is set.
+  ssl: true
+
   # Deploy timeout
   #
   # How long to wait for the app to boot when deploying, defaults to 30 seconds
