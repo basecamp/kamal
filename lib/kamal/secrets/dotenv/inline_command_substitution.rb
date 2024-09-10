@@ -16,7 +16,7 @@ class Kamal::Secrets::Dotenv::InlineCommandSubstitution
         else
           if command =~ /\A\s*kamal\s*secrets\s+/
             # Inline the command
-            capture_stdout { Kamal::Cli::Main.start(command.shellsplit[1..]) }.chomp
+            inline_secrets_command(command)
           else
             # Execute the command and return the value
             `#{command}`.chomp
@@ -25,13 +25,8 @@ class Kamal::Secrets::Dotenv::InlineCommandSubstitution
       end
     end
 
-    def capture_stdout
-      old_stdout = $stdout
-      $stdout = StringIO.new
-      yield
-      $stdout.string
-    ensure
-      $stdout = old_stdout
+    def inline_secrets_command(command)
+      Kamal::Cli::Main.start(command.shellsplit[1..] + [ "--inline" ]).chomp
     end
   end
 end
