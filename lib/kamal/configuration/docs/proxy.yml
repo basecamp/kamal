@@ -56,6 +56,12 @@ proxy:
   # requests for other apps that do have a host set.
   host: foo.example.com
 
+  # Port
+  #
+  # The port the application is exposed on
+  # Defaults to 80
+  port: 3000
+
   # SSL
   #
   # Kamal Proxy can automatically obtain and renew TLS certificates for your applications.

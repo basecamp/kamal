@@ -363,7 +363,7 @@ class CliAppTest < CliTestCase
       assert_match /Renaming container .* to .* as already deployed on 1.1.1.1/, output # Rename
       assert_match /docker rename app-web-latest app-web-latest_replaced_[0-9a-f]{16}/, output
       assert_match /docker run --detach --restart unless-stopped --name app-web-latest --network kamal --hostname 1.1.1.1-[0-9a-f]{12} -e KAMAL_CONTAINER_NAME="app-web-latest" -e KAMAL_VERSION="latest" --env-file .kamal\/env\/roles\/app-web.env --log-opt max-size="10m" --label service="app" --label role="web" --label destination dhh\/app:latest/, output
-      assert_match /docker exec kamal-proxy kamal-proxy deploy app-web --target "123"/, output
+      assert_match /docker exec kamal-proxy kamal-proxy deploy app-web --target "123:3000"/, output
       assert_match "docker container ls --all --filter name=^app-web-123$ --quiet | xargs docker stop", output
     end
   end

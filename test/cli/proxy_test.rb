@@ -10,8 +10,8 @@ class CliProxyTest < CliTestCase
 
   test "reboot" do
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-123$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{index .NetworkSettings.Networks.kamal.Aliases 0}}{{range $k, $v := .NetworkSettings.Ports}}{{printf \":%s\" $k}}{{break}}{{end}}'", "|", :sed, "-e", "'s/\\/tcp$//'")
-      .returns("172.1.0.2:80")
+      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-123$", "--quiet")
+      .returns("abcdefabcdef")
       .at_least_once
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
@@ -25,7 +25,7 @@ class CliProxyTest < CliTestCase
       assert_match "docker container prune --force --filter label=org.opencontainers.image.title=kamal-proxy on 1.1.1.1", output
       assert_match "docker container prune --force --filter label=org.opencontainers.image.title=Traefik on 1.1.1.1", output
       assert_match "docker run --name kamal-proxy --network kamal --detach --restart unless-stopped --publish 80:80 --publish 443:443 --volume /var/run/docker.sock:/var/run/docker.sock --volume kamal-proxy:/root/.config/kamal-proxy --log-opt max-size=\"10m\" #{Kamal::Configuration::Proxy::DEFAULT_IMAGE} on 1.1.1.1", output
-      assert_match "docker exec kamal-proxy kamal-proxy deploy app-web --target \"172.1.0.2:80\" --deploy-timeout \"6s\" --buffer-requests --buffer-responses --log-request-header \"Cache-Control\" --log-request-header \"Last-Modified\" on 1.1.1.1", output
+      assert_match "docker exec kamal-proxy kamal-proxy deploy app-web --target \"abcdefabcdef:3000\" --deploy-timeout \"6s\" --buffer-requests --buffer-responses --log-request-header \"Cache-Control\" --log-request-header \"Last-Modified\" on 1.1.1.1", output
 
       assert_match "docker container stop kamal-proxy on 1.1.1.2", output
       assert_match "docker container stop traefik on 1.1.1.2", output
@@ -37,8 +37,8 @@ class CliProxyTest < CliTestCase
 
   test "reboot --rolling" do
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-123$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{index .NetworkSettings.Networks.kamal.Aliases 0}}{{range $k, $v := .NetworkSettings.Ports}}{{printf \":%s\" $k}}{{break}}{{end}}'", "|", :sed, "-e", "'s/\\/tcp$//'")
-      .returns("172.1.0.2:80")
+      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-123$", "--quiet")
+      .returns("abcdefabcdef")
       .at_least_once
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)

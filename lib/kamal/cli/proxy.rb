@@ -52,7 +52,7 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
                 app = KAMAL.app(role: role, host: host)
 
                 version = capture_with_info(*app.current_running_version, raise_on_non_zero_exit: false).strip
-                endpoint = capture_with_info(*app.container_endpoint(version: version)).strip
+                endpoint = capture_with_info(*app.container_id_for_version(version)).strip
 
                 if endpoint.present?
                   info "Deploying #{endpoint} for role `#{role}` on #{host}..."
