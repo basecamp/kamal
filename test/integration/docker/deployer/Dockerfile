@@ -26,8 +26,8 @@ RUN mkdir -p /etc/docker/certs.d/registry:4443 && ln -s /shared/certs/domain.crt
 
 RUN git config --global user.email "deployer@example.com"
 RUN git config --global user.name "Deployer"
-RUN cd app && git init && echo ".env" >> .gitignore && git add . && git commit -am "Initial version"
-RUN cd app_with_roles && git init && echo ".env" >> .gitignore && git add . && git commit -am "Initial version"
+RUN cd app && git init && git add . && git commit -am "Initial version"
+RUN cd app_with_roles && git init && git add . && git commit -am "Initial version"
 
 HEALTHCHECK --interval=1s CMD pgrep sleep
 

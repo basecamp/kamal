@@ -152,12 +152,6 @@ class Kamal::Cli::Main < Kamal::Cli::Base
       FileUtils.mkdir_p secrets_file.dirname
       FileUtils.cp_r Pathname.new(File.expand_path("templates/secrets", __dir__)), secrets_file
       puts "Created .kamal/secrets file"
-
-      gitignore = Pathname.new(File.expand_path(".gitignore"))
-      if gitignore.exist? && !gitignore.read.include?(".kamal/secrets")
-        gitignore.open("a") { |f| f.puts "\n.kamal/secrets*" }
-        puts "Added .kamal/secrets* to .gitignore"
-      end
     end
 
     unless (hooks_dir = Pathname.new(File.expand_path(".kamal/hooks"))).exist?

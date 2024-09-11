@@ -388,12 +388,10 @@ class CliMainTest < CliTestCase
       run_command("init").tap do |output|
         assert_match "Created configuration file in config/deploy.yml", output
         assert_match "Created .kamal/secrets file", output
-        assert_match "Added .kamal/secrets* to .gitignore", output
       end
 
       assert_file "config/deploy.yml", "service: my-app"
-      assert_file ".kamal/secrets", "KAMAL_REGISTRY_PASSWORD=change-this"
-      assert_file ".gitignore", %r{\n.kamal/secrets\*\n}
+      assert_file ".kamal/secrets", "KAMAL_REGISTRY_PASSWORD=$KAMAL_REGISTRY_PASSWORD"
     end
   end
 
@@ -528,7 +526,6 @@ class CliMainTest < CliTestCase
       Dir.mktmpdir do |tmpdir|
         Dir.chdir(tmpdir) do
           `git init`
-          `echo '/.bundle\n/log/*\n/tmp/*' > .gitignore`
           yield
         end
       end
