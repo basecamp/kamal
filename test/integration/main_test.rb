@@ -2,17 +2,11 @@ require_relative "integration_test"
 
 class MainTest < IntegrationTest
   test "deploy, redeploy, rollback, details and audit" do
-    first_version = latest_app_version
+    first_version = update_app_rev
 
     assert_app_is_down
 
-    mock = Minitest::Mock.new
-    mock.expect(:manifest, false, [ first_version ])
-    mock.expect(:installed?, true)
-    mock.expect(:running?, true)
-    Kamal::Commands::Docker.stub(:new, mock) do
-      kamal :deploy
-    end
+    kamal :deploy
     assert_app_is_up version: first_version
     assert_hooks_ran "pre-connect", "pre-build", "pre-deploy", "pre-app-boot", "post-app-boot", "post-deploy"
     assert_envs version: first_version
@@ -44,7 +38,7 @@ class MainTest < IntegrationTest
   test "app with roles" do
     @app = "app_with_roles"
 
-    version = latest_app_version
+    version = update_app_rev
 
     assert_app_is_down
 
