@@ -1,6 +1,6 @@
 class Kamal::Commands::Proxy < Kamal::Commands::Base
   delegate :argumentize, :optionize, to: Kamal::Utils
-  delegate :container_name, :port, to: :proxy_config
+  delegate :container_name, :app_port, to: :proxy_config
 
   attr_reader :proxy_config
 
@@ -35,11 +35,11 @@ class Kamal::Commands::Proxy < Kamal::Commands::Base
   end
 
   def deploy(service, target:)
-    docker :exec, container_name, "kamal-proxy", :deploy, service, *optionize({ target: "#{target}:#{port}" }), *proxy_config.deploy_command_args
+    docker :exec, container_name, "kamal-proxy", :deploy, service, *optionize({ target: "#{target}:#{app_port}" }), *proxy_config.deploy_command_args
   end
 
   def remove(service, target:)
-    docker :exec, container_name, "kamal-proxy", :remove, service, *optionize({ target: "#{target}:#{port}" })
+    docker :exec, container_name, "kamal-proxy", :remove, service, *optionize({ target: "#{target}:#{app_port}" })
   end
 
   def info

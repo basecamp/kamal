@@ -25,8 +25,8 @@ class Kamal::Configuration::Proxy
     end
   end
 
-  def port
-    proxy_config.fetch("port", 80)
+  def app_port
+    proxy_config.fetch("app_port", 80)
   end
 
   def image

@@ -56,11 +56,11 @@ proxy:
   # requests for other apps that do have a host set.
   host: foo.example.com
 
-  # Port
+  # App port
   #
-  # The port the application is exposed on
+  # The port the application container is exposed on
   # Defaults to 80
-  port: 3000
+  app_port: 3000
 
   # SSL
   #
