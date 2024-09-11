@@ -11,7 +11,7 @@ class Kamal::Secrets::Adapters::OnePassword < Kamal::Secrets::Adapters::Base
     end
 
     def loggedin?(account)
-      `op account get --account #{account.shellescape}`
+      `op account get --account #{account.shellescape} 2> /dev/null`
       $?.success?
     end
 

@@ -2,7 +2,7 @@ require "test_helper"
 
 class SecretsOnePasswordAdapterTest < SecretAdapterTestCase
   test "fetch" do
-    stub_ticks.with("op account get --account myaccount")
+    stub_ticks.with("op account get --account myaccount 2> /dev/null")
 
     stub_ticks
       .with("op item get myitem --vault \"myvault\" --fields \"label=section.SECRET1,label=section.SECRET2,label=section2.SECRET3\" --format \"json\" --account \"myaccount\"")
@@ -56,7 +56,7 @@ class SecretsOnePasswordAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch with multiple items" do
-    stub_ticks.with("op account get --account myaccount")
+    stub_ticks.with("op account get --account myaccount 2> /dev/null")
 
     stub_ticks
       .with("op item get myitem --vault \"myvault\" --fields \"label=section.SECRET1,label=section.SECRET2\" --format \"json\" --account \"myaccount\"")
@@ -115,7 +115,7 @@ class SecretsOnePasswordAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch with signin, no session" do
-    stub_ticks_with("op account get --account myaccount", succeed: false)
+    stub_ticks_with("op account get --account myaccount 2> /dev/null", succeed: false)
     stub_ticks_with("op signin --account \"myaccount\" --force --raw", succeed: true).returns("")
 
     stub_ticks
@@ -132,7 +132,7 @@ class SecretsOnePasswordAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch with signin and session" do
-    stub_ticks_with("op account get --account myaccount", succeed: false)
+    stub_ticks_with("op account get --account myaccount 2> /dev/null", succeed: false)
     stub_ticks_with("op signin --account \"myaccount\" --force --raw", succeed: true).returns("1234567890")
 
     stub_ticks
