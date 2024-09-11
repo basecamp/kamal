@@ -204,15 +204,11 @@ class Kamal::Configuration
 
 
   def run_directory
-    raw_config.run_directory || ".kamal"
+    ".kamal"
   end
 
   def run_directory_as_docker_volume
-    if Pathname.new(run_directory).absolute?
-      run_directory
-    else
-      File.join "$(pwd)", run_directory
-    end
+    File.join "$(pwd)", run_directory
   end
 
   def hooks_path

@@ -294,17 +294,11 @@ class ConfigurationTest < ActiveSupport::TestCase
   test "run directory" do
     config = Kamal::Configuration.new(@deploy)
     assert_equal ".kamal", config.run_directory
-
-    config = Kamal::Configuration.new(@deploy.merge!(run_directory: "/root/kamal"))
-    assert_equal "/root/kamal", config.run_directory
   end
 
   test "run directory as docker volume" do
     config = Kamal::Configuration.new(@deploy)
     assert_equal "$(pwd)/.kamal", config.run_directory_as_docker_volume
-
-    config = Kamal::Configuration.new(@deploy.merge!(run_directory: "/root/kamal"))
-    assert_equal "/root/kamal", config.run_directory_as_docker_volume
   end
 
   test "run id" do
