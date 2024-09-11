@@ -9,6 +9,7 @@ class Kamal::Configuration::Proxy
   delegate :argumentize, :optionize, to: Kamal::Utils
 
   def initialize(config:)
+    @config = config
     @proxy_config = config.raw_config.proxy || {}
     validate! proxy_config, with: Kamal::Configuration::Validator::Proxy
   end
@@ -70,6 +71,10 @@ class Kamal::Configuration::Proxy
     optionize deploy_options
   end
 
+  def config_directory_as_docker_volume
+    File.join config.run_directory_as_docker_volume, "proxy", "config"
+  end
+
   private
-    attr_accessor :proxy_config
+    attr_reader :config, :proxy_config
 end
