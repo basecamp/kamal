@@ -12,10 +12,6 @@ class CommandsServerTest < ActiveSupport::TestCase
     assert_equal "mkdir -p .kamal", new_command.ensure_run_directory.join(" ")
   end
 
-  test "ensure non default run directory" do
-    assert_equal "mkdir -p /var/run/kamal", new_command(run_directory: "/var/run/kamal").ensure_run_directory.join(" ")
-  end
-
   private
     def new_command(extra_config = {})
       Kamal::Commands::Server.new(Kamal::Configuration.new(@config.merge(extra_config)))
