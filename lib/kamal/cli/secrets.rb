@@ -5,24 +5,20 @@ class Kamal::Cli::Secrets < Kamal::Cli::Base
   option :from, type: :string, required: false, desc: "A vault or folder to fetch the secrets from"
   option :inline, type: :boolean, required: false, hidden: true
   def fetch(*secrets)
-    handle_output(inline: options[:inline]) do
-      results = adapter(options[:adapter]).fetch(secrets, **options.slice(:account, :from).symbolize_keys)
-      JSON.dump(results).shellescape
-    end
+    results = adapter(options[:adapter]).fetch(secrets, **options.slice(:account, :from).symbolize_keys)
+
+    return_or_puts JSON.dump(results).shellescape, inline: options[:inline]
   end
 
   desc "extract", "Extract a single secret from the results of a fetch call"
   option :inline, type: :boolean, required: false, hidden: true
   def extract(name, secrets)
-    handle_output(inline: options[:inline]) do
-      parsed_secrets = JSON.parse(secrets)
+    parsed_secrets = JSON.parse(secrets)
+    value = parsed_secrets[name] || parsed_secrets.find { |k, v| k.end_with?("/#{name}") }&.last
 
-      value = parsed_secrets[name] || parsed_secrets.find { |k, v| k.end_with?("/#{name}") }&.last
+    raise "Could not find secret #{name}" if value.nil?
 
-      raise "Could not find secret #{name}" if value.nil?
-
-      value
-    end
+    return_or_puts value, inline: options[:inline]
   end
 
   private
@@ -30,18 +26,11 @@ class Kamal::Cli::Secrets < Kamal::Cli::Base
       Kamal::Secrets::Adapters.lookup(adapter)
     end
 
-    def handle_output(inline: nil)
-      yield.tap do |output|
-        puts output unless inline
+    def return_or_puts(value, inline: nil)
+      if inline
+        value
+      else
+        puts value
       end
-    rescue => e
-      handle_error(e)
-    end
-
-    def handle_error(e)
-      $stderr.puts "  \e[31mERROR (#{e.class}): #{e.message}\e[0m"
-      $stderr.puts e.backtrace if ENV["VERBOSE"]
-
-      exit 1
     end
 end
