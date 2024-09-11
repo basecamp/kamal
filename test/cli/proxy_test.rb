@@ -4,7 +4,7 @@ class CliProxyTest < CliTestCase
   test "boot" do
     run_command("boot").tap do |output|
       assert_match "docker login", output
-      assert_match "docker run --name kamal-proxy --network kamal --detach --restart unless-stopped --publish 80:80 --publish 443:443 --volume /var/run/docker.sock:/var/run/docker.sock --volume kamal-proxy:/root/.config/kamal-proxy --log-opt max-size=\"10m\" #{Kamal::Configuration::Proxy::DEFAULT_IMAGE}", output
+      assert_match "docker run --name kamal-proxy --network kamal --detach --restart unless-stopped --publish 80:80 --publish 443:443 --volume /var/run/docker.sock:/var/run/docker.sock --volume $(pwd)/.kamal/proxy/config:/root/.config/kamal-proxy --log-opt max-size=\"10m\" #{Kamal::Configuration::Proxy::DEFAULT_IMAGE}", output
     end
   end
 
@@ -24,7 +24,7 @@ class CliProxyTest < CliTestCase
       assert_match "docker container stop traefik on 1.1.1.1", output
       assert_match "docker container prune --force --filter label=org.opencontainers.image.title=kamal-proxy on 1.1.1.1", output
       assert_match "docker container prune --force --filter label=org.opencontainers.image.title=Traefik on 1.1.1.1", output
-      assert_match "docker run --name kamal-proxy --network kamal --detach --restart unless-stopped --publish 80:80 --publish 443:443 --volume /var/run/docker.sock:/var/run/docker.sock --volume kamal-proxy:/root/.config/kamal-proxy --log-opt max-size=\"10m\" #{Kamal::Configuration::Proxy::DEFAULT_IMAGE} on 1.1.1.1", output
+      assert_match "docker run --name kamal-proxy --network kamal --detach --restart unless-stopped --publish 80:80 --publish 443:443 --volume /var/run/docker.sock:/var/run/docker.sock --volume $(pwd)/.kamal/proxy/config:/root/.config/kamal-proxy --log-opt max-size=\"10m\" #{Kamal::Configuration::Proxy::DEFAULT_IMAGE} on 1.1.1.1", output
       assert_match "docker exec kamal-proxy kamal-proxy deploy app-web --target \"abcdefabcdef:80\" --deploy-timeout \"6s\" --buffer-requests --buffer-responses --log-request-header \"Cache-Control\" --log-request-header \"Last-Modified\" on 1.1.1.1", output
 
       assert_match "docker container stop kamal-proxy on 1.1.1.2", output

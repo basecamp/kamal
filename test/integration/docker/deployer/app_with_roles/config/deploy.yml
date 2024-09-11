@@ -13,7 +13,6 @@ proxy:
   enabled: true
   hosts:
     - vm2
-  port: 80
   deploy_timeout: 2s
 
 asset_path: /usr/share/nginx/html/versions
