@@ -148,4 +148,16 @@ class IntegrationTest < ActiveSupport::TestCase
     def container_running?(host:, name:)
       docker_compose("exec #{host} docker ps --filter=name=#{name} | tail -n+2", capture: true).strip.present?
     end
+
+    def assert_app_directory_removed
+      assert_directory_removed("./kamal/apps/#{@app}")
+    end
+
+    def assert_proxy_directory_removed
+      assert_directory_removed("./kamal/proxy")
+    end
+
+    def assert_directory_removed(directory)
+      assert docker_compose("exec vm1 ls #{directory} | wc -l", capture: true).strip == "0"
+    end
 end

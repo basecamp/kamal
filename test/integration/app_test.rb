@@ -49,5 +49,6 @@ class AppTest < IntegrationTest
     kamal :app, :remove
 
     assert_app_is_down
+    assert_app_directory_removed
   end
 end

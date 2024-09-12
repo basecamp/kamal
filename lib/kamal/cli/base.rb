@@ -176,7 +176,7 @@ module Kamal::Cli
 
       def ensure_service_and_locks_directory
         on(KAMAL.hosts) do
-          execute(*KAMAL.server.ensure_service_directory)
+          execute(*KAMAL.server.ensure_app_directory)
         end
 
         on(KAMAL.primary_host) do

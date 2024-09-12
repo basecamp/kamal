@@ -1,9 +1,15 @@
 class Kamal::Commands::Server < Kamal::Commands::Base
-  def ensure_service_directory
-    make_directory config.service_directory
+  def ensure_app_directory
+    make_directory config.app_directory
   end
 
-  def remove_service_directory
-    remove_directory config.service_directory
+  def remove_app_directory
+    remove_directory config.app_directory
+  end
+
+  def app_directory_count
+    pipe \
+      [ :ls, config.apps_directory ],
+      [ :wc, "-l" ]
   end
 end

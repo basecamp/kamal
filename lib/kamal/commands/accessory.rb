@@ -90,7 +90,7 @@ class Kamal::Commands::Accessory < Kamal::Commands::Base
     end
   end
 
-  def remove_service_directory
+  def remove_app_directory
     [ :rm, "-rf", service_name ]
   end
 

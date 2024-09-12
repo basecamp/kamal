@@ -150,11 +150,15 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
   end
 
   desc "remove", "Remove proxy container and image from servers"
+  option :force, type: :boolean, default: false, desc: "Force removing proxy when apps are still installed"
   def remove
     with_lock do
-      stop
-      remove_container
-      remove_image
+      if removal_allowed?(options[:force])
+        stop
+        remove_container
+        remove_image
+        remove_host_directory
+      end
     end
   end
 
@@ -178,8 +182,37 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
     end
   end
 
+  desc "remove_host_directory", "Remove proxy directory from servers", hide: true
+  def remove_host_directory
+    with_lock do
+      on(KAMAL.proxy_hosts) do
+        execute *KAMAL.auditor.record("Removed #{KAMAL.config.proxy_directory}"), verbosity: :debug
+        execute *KAMAL.proxy.remove_host_directory
+      end
+    end
+  end
+
   private
     def reset_invocation(cli_class)
       instance_variable_get("@_invocations")[cli_class].pop
+    end
+
+    def removal_allowed?(force)
+      on(KAMAL.proxy_hosts) do |host|
+        app_count = capture_with_info(*KAMAL.server.app_directory_count).chomp.to_i
+        raise "The are other applications installed on #{host}" if app_count > 0
+      end
+
+      true
+    rescue SSHKit::Runner::ExecuteError => e
+      raise unless e.message.include?("The are other applications installed on")
+
+      if force
+        say "Forcing, so removing the proxy, even though other apps are installed", :magenta
+      else
+        say "Not removing the proxy, as other apps are installed, ignore this check with kamal proxy remove --force", :magenta
+      end
+
+      force
     end
 end

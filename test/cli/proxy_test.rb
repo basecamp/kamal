@@ -98,11 +98,36 @@ class CliProxyTest < CliTestCase
   end
 
   test "remove" do
-    Kamal::Cli::Proxy.any_instance.expects(:stop)
-    Kamal::Cli::Proxy.any_instance.expects(:remove_container)
-    Kamal::Cli::Proxy.any_instance.expects(:remove_image)
+    run_command("remove").tap do |output|
+      assert_match "/usr/bin/env ls .kamal/apps | wc -l", output
+      assert_match "docker container prune --force --filter label=org.opencontainers.image.title=kamal-proxy", output
+      assert_match "docker image prune --all --force --filter label=org.opencontainers.image.title=kamal-proxy", output
+      assert_match "/usr/bin/env rm -r .kamal/proxy", output
+    end
+  end
 
-    run_command("remove")
+  test "remove with other apps" do
+    Thread.report_on_exception = false
+
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info).with(:ls, ".kamal/apps", "|", :wc, "-l").returns("1\n").twice
+
+    run_command("remove").tap do |output|
+      assert_match "Not removing the proxy, as other apps are installed, ignore this check with kamal proxy remove --force", output
+    end
+  ensure
+    Thread.report_on_exception = true
+  end
+
+  test "force remove with other apps" do
+    Thread.report_on_exception = false
+
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info).with(:ls, ".kamal/apps", "|", :wc, "-l").returns("1\n").twice
+
+    run_command("remove").tap do |output|
+      assert_match "Not removing the proxy, as other apps are installed, ignore this check with kamal proxy remove --force", output
+    end
+  ensure
+    Thread.report_on_exception = true
   end
 
   test "remove_container" do
@@ -114,6 +139,12 @@ class CliProxyTest < CliTestCase
   test "remove_image" do
     run_command("remove_image").tap do |output|
       assert_match "docker image prune --all --force --filter label=org.opencontainers.image.title=kamal-proxy", output
+    end
+  end
+
+  test "remove_host_directory" do
+    run_command("remove_host_directory").tap do |output|
+      assert_match "/usr/bin/env rm -r .kamal/proxy", output
     end
   end
 

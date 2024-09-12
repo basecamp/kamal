@@ -67,6 +67,10 @@ class Kamal::Commands::Proxy < Kamal::Commands::Base
     docker :image, :prune, "--all", "--force", "--filter", "label=org.opencontainers.image.title=kamal-proxy"
   end
 
+  def remove_host_directory
+    remove_directory config.proxy_directory
+  end
+
   def cleanup_traefik
     chain \
       docker(:container, :stop, "traefik"),

@@ -9,7 +9,7 @@ class CommandsServerTest < ActiveSupport::TestCase
   end
 
   test "ensure service directory" do
-    assert_equal "mkdir -p .kamal/apps/app", new_command.ensure_service_directory.join(" ")
+    assert_equal "mkdir -p .kamal/apps/app", new_command.ensure_app_directory.join(" ")
   end
 
   private

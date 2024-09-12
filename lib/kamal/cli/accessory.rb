@@ -207,12 +207,12 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
     end
   end
 
-  desc "remove_service_directory [NAME]", "Remove accessory directory used for uploaded files and data directories from host", hide: true
-  def remove_service_directory(name)
+  desc "remove_app_directory [NAME]", "Remove accessory directory used for uploaded files and data directories from host", hide: true
+  def remove_app_directory(name)
     with_lock do
       with_accessory(name) do |accessory, hosts|
         on(hosts) do
-          execute *accessory.remove_service_directory
+          execute *accessory.remove_app_directory
         end
       end
     end
@@ -248,7 +248,7 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
       stop(name)
       remove_container(name)
       remove_image(name)
-      remove_service_directory(name)
+      remove_app_directory(name)
     end
 
     def prepare(name)

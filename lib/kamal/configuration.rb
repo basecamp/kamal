@@ -194,16 +194,24 @@ class Kamal::Configuration
     ".kamal"
   end
 
-  def service_directory
-    File.join run_directory, "apps", [ service, destination ].compact.join("-")
+  def apps_directory
+    File.join run_directory, "apps"
+  end
+
+  def app_directory
+    File.join apps_directory, [ service, destination ].compact.join("-")
+  end
+
+  def proxy_directory
+    File.join run_directory, "proxy"
   end
 
   def env_directory
-    File.join service_directory, "env"
+    File.join app_directory, "env"
   end
 
   def assets_directory
-    File.join service_directory, "assets"
+    File.join app_directory, "assets"
   end
 
 

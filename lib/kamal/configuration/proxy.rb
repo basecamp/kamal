@@ -61,7 +61,7 @@ class Kamal::Configuration::Proxy
 
   def config_volume
     Kamal::Configuration::Volume.new \
-      host_path: File.join(config.run_directory, "proxy", "config"),
+      host_path: File.join(config.proxy_directory, "config"),
       container_path: "/root/.config/kamal-proxy"
   end
 
