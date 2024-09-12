@@ -430,7 +430,7 @@ class CommandsAppTest < ActiveSupport::TestCase
     assert_equal [
       :mkdir, "-p", ".kamal/assets/extracted/app-web-999", "&&",
       :docker, :stop, "-t 1", "app-web-assets", "2> /dev/null", "|| true", "&&",
-      :docker, :run, "--name", "app-web-assets", "--detach", "--rm", "dhh/app:999", "sleep 1000000", "&&",
+      :docker, :run, "--name", "app-web-assets", "--detach", "--rm", "--entrypoint", "sleep", "dhh/app:999", "1000000", "&&",
       :docker, :cp, "-L", "app-web-assets:/public/assets/.", ".kamal/assets/extracted/app-web-999", "&&",
       :docker, :stop, "-t 1", "app-web-assets"
     ], new_command(asset_path: "/public/assets").extract_assets
