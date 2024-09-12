@@ -24,11 +24,11 @@ class MainTest < IntegrationTest
     assert_app_is_up version: first_version
 
     details = kamal :details, capture: true
-    assert_match /Traefik Host: vm1/, details
-    assert_match /Traefik Host: vm2/, details
+    assert_match /Proxy Host: vm1/, details
+    assert_match /Proxy Host: vm2/, details
     assert_match /App Host: vm1/, details
     assert_match /App Host: vm2/, details
-    assert_match /traefik:v2.10/, details
+    assert_match /basecamp\/kamal-proxy:latest/, details
     assert_match /registry:4443\/app:#{first_version}/, details
 
     audit = kamal :audit, capture: true
@@ -70,7 +70,6 @@ class MainTest < IntegrationTest
     assert_equal({ user: "root", port: 22, keepalive: true, keepalive_interval: 30, log_level: :fatal }, config[:ssh_options])
     assert_equal({ "driver" => "docker", "arch" => "#{Kamal::Utils.docker_arch}", "args" => { "COMMIT_SHA" => version } }, config[:builder])
     assert_equal [ "--log-opt", "max-size=\"10m\"" ], config[:logging]
-    assert_equal({ "cmd"=>"wget -qO- http://localhost > /dev/null || exit 1", "interval"=>"1s", "max_attempts"=>3, "port"=>3000, "path"=>"/up", "cord"=>"/tmp/kamal-cord", "log_lines"=>50 }, config[:healthcheck])
   end
 
   test "aliases" do

@@ -1,5 +1,5 @@
 class Kamal::Commands::App < Kamal::Commands::Base
-  include Assets, Containers, Cord, Execution, Images, Logging
+  include Assets, Containers, Execution, Images, Logging
 
   ACTIVE_DOCKER_STATUSES = [ :running, :restarting ]
 
@@ -18,25 +18,6 @@ class Kamal::Commands::App < Kamal::Commands::Base
       "--detach",
       "--restart unless-stopped",
       "--name", container_name,
-      *([ "--hostname", hostname ] if hostname),
-      "-e", "KAMAL_CONTAINER_NAME=\"#{container_name}\"",
-      "-e", "KAMAL_VERSION=\"#{config.version}\"",
-      *role.env_args(host),
-      *role.health_check_args,
-      *role.logging_args,
-      *config.volume_args,
-      *role.asset_volume_args,
-      *role.label_args,
-      *role.option_args,
-      config.absolute_image,
-      role.cmd
-  end
-
-  def run_for_proxy(hostname: nil)
-    docker :run,
-      "--detach",
-      "--restart unless-stopped",
-      "--name", container_name,
       "--network", "kamal",
       *([ "--hostname", hostname ] if hostname),
       "-e", "KAMAL_CONTAINER_NAME=\"#{container_name}\"",
@@ -45,7 +26,7 @@ class Kamal::Commands::App < Kamal::Commands::Base
       *role.logging_args,
       *config.volume_args,
       *role.asset_volume_args,
-      *role.label_args_for_proxy,
+      *role.label_args,
       *role.option_args,
       config.absolute_image,
       role.cmd

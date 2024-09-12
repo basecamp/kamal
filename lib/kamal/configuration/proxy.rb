@@ -14,18 +14,6 @@ class Kamal::Configuration::Proxy
     validate! proxy_config, with: Kamal::Configuration::Validator::Proxy
   end
 
-  def enabled?
-    !!proxy_config.fetch("enabled", false)
-  end
-
-  def hosts
-    if enabled?
-      proxy_config.fetch("hosts", [])
-    else
-      []
-    end
-  end
-
   def app_port
     proxy_config.fetch("app_port", 80)
   end
@@ -52,9 +40,9 @@ class Kamal::Configuration::Proxy
       tls: proxy_config["ssl"],
       "deploy-timeout": proxy_config["deploy_timeout"],
       "drain-timeout": proxy_config["drain_timeout"],
-      "health-check-interval": proxy_config.dig("health_check", "interval"),
-      "health-check-timeout": proxy_config.dig("health_check", "timeout"),
-      "health-check-path": proxy_config.dig("health_check", "path"),
+      "health-check-interval": proxy_config.dig("healthcheck", "interval"),
+      "health-check-timeout": proxy_config.dig("healthcheck", "timeout"),
+      "health-check-path": proxy_config.dig("healthcheck", "path"),
       "target-timeout": proxy_config["response_timeout"],
       "buffer-requests": proxy_config.fetch("buffering", { "requests": true }).fetch("requests", true),
       "buffer-responses": proxy_config.fetch("buffering", { "responses": true }).fetch("responses", true),

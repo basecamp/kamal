@@ -14,9 +14,6 @@ builder:
   arch: amd64
 
 proxy:
-  enabled: true
-  hosts:
-    - "1.1.1.1"
   deploy_timeout: 6s
 
 accessories:

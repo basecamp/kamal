@@ -137,15 +137,9 @@ builder:
 accessories:
   ...
 
-# Traefik
-#
-# The Traefik proxy is used for zero-downtime deployments, see kamal docs traefik
-traefik:
-  ...
-
 # Proxy
 #
-# **Experimental** Configuration for kamal-proxy the replacement for Traefik, see kamal docs proxy
+# Configuration for kamal-proxy, see kamal docs proxy
 proxy:
   ...
 
@@ -159,12 +153,6 @@ sshkit:
 #
 # See kamal docs boot
 boot:
-  ...
-
-# Healthcheck
-#
-# Configuring healthcheck commands, intervals and timeouts, see kamal docs healthcheck
-healthcheck:
   ...
 
 # Logging

@@ -66,4 +66,13 @@ class Kamal::Commands::Proxy < Kamal::Commands::Base
   def remove_image
     docker :image, :prune, "--all", "--force", "--filter", "label=org.opencontainers.image.title=kamal-proxy"
   end
+
+  def cleanup_traefik
+    chain \
+      docker(:container, :stop, "traefik"),
+      combine(
+        docker(:container, :prune, "--force", "--filter", "label=org.opencontainers.image.title=Traefik"),
+        docker(:image, :prune, "--all", "--force", "--filter", "label=org.opencontainers.image.title=Traefik")
+      )
+  end
 end

@@ -10,7 +10,7 @@ class Kamal::Configuration
   delegate :argumentize, :optionize, to: Kamal::Utils
 
   attr_reader :destination, :raw_config, :secrets
-  attr_reader :accessories, :aliases, :boot, :builder, :env, :healthcheck, :logging, :proxy, :traefik, :servers, :ssh, :sshkit, :registry
+  attr_reader :accessories, :aliases, :boot, :builder, :env, :logging, :proxy, :servers, :ssh, :sshkit, :registry
 
   include Validation
 
@@ -58,10 +58,8 @@ class Kamal::Configuration
     @builder = Builder.new(config: self)
     @env = Env.new(config: @raw_config.env || {}, secrets: secrets)
 
-    @healthcheck = Healthcheck.new(healthcheck_config: @raw_config.healthcheck)
     @logging = Logging.new(logging_config: @raw_config.logging)
     @proxy = Proxy.new(config: self)
-    @traefik = Traefik.new(config: self)
     @ssh = Ssh.new(config: self)
     @sshkit = Sshkit.new(config: self)
 
@@ -132,20 +130,16 @@ class Kamal::Configuration
     raw_config.allow_empty_roles
   end
 
-  def traefik_roles
-    roles.select(&:running_traefik?)
+  def proxy_roles
+    roles.select(&:running_proxy?)
   end
 
-  def traefik_role_names
-    traefik_roles.flat_map(&:name)
-  end
-
-  def traefik_hosts
-    traefik_roles.flat_map(&:hosts).uniq
+  def proxy_role_names
+    proxy_roles.flat_map(&:name)
   end
 
   def proxy_hosts
-    proxy.hosts
+    proxy_roles.flat_map(&:hosts).uniq
   end
 
   def repository
@@ -189,10 +183,6 @@ class Kamal::Configuration
     logging.args
   end
 
-
-  def healthcheck_service
-    [ "healthcheck", service, destination ].compact.join("-")
-  end
 
   def readiness_delay
     raw_config.readiness_delay || 7
@@ -251,8 +241,7 @@ class Kamal::Configuration
       sshkit: sshkit.to_h,
       builder: builder.to_h,
       accessories: raw_config.accessories,
-      logging: logging_args,
-      healthcheck: healthcheck.to_h
+      logging: logging_args
     }.compact
   end
 

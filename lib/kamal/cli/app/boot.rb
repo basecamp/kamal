@@ -1,7 +1,7 @@
 class Kamal::Cli::App::Boot
   attr_reader :host, :role, :version, :barrier, :sshkit
   delegate :execute, :capture_with_info, :capture_with_pretty_json, :info, :error, :upload!, to: :sshkit
-  delegate :uses_cord?, :assets?, :running_traefik?, to: :role
+  delegate :assets?, :running_proxy?, to: :role
 
   def initialize(host, role, sshkit, version, barrier)
     @host = host
@@ -50,18 +50,12 @@ class Kamal::Cli::App::Boot
       execute *app.ensure_env_directory
       upload! role.secrets_io(host), role.secrets_path, mode: "0600"
 
-      if proxy_host?
-        execute *app.run_for_proxy(hostname: hostname)
-        if running_traefik?
-          endpoint = capture_with_info(*app.container_id_for_version(version)).strip
-          raise Kamal::Cli::BootError, "Failed to get endpoint for #{role} on #{host}, did the container boot?" if endpoint.empty?
-          execute *KAMAL.proxy.deploy(role.container_prefix, target: endpoint)
-        else
-          Kamal::Cli::Healthcheck::Poller.wait_for_healthy(pause_after_ready: true) { capture_with_info(*app.status(version: version)) }
-        end
+      execute *app.run(hostname: hostname)
+      if running_proxy?
+        endpoint = capture_with_info(*app.container_id_for_version(version)).strip
+        raise Kamal::Cli::BootError, "Failed to get endpoint for #{role} on #{host}, did the container boot?" if endpoint.empty?
+        execute *KAMAL.proxy.deploy(role.container_prefix, target: endpoint)
       else
-        execute *app.tie_cord(role.cord_host_file) if uses_cord?
-        execute *app.run(hostname: hostname)
         Kamal::Cli::Healthcheck::Poller.wait_for_healthy(pause_after_ready: true) { capture_with_info(*app.status(version: version)) }
       end
     end
@@ -71,16 +65,7 @@ class Kamal::Cli::App::Boot
     end
 
     def stop_old_version(version)
-      if uses_cord? && !proxy_host?
-        cord = capture_with_info(*app.cord(version: version), raise_on_non_zero_exit: false).strip
-        if cord.present?
-          execute *app.cut_cord(cord)
-          Kamal::Cli::Healthcheck::Poller.wait_for_unhealthy(pause_after_ready: true) { capture_with_info(*app.status(version: version)) }
-        end
-      end
-
       execute *app.stop(version: version), raise_on_non_zero_exit: false
-
       execute *app.clean_up_assets if assets?
     end
 
@@ -133,9 +118,5 @@ class Kamal::Cli::App::Boot
 
     def queuer?
       barrier && !barrier_role?
-    end
-
-    def proxy_host?
-      KAMAL.proxy_host?(host)
     end
 end

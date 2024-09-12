@@ -10,9 +10,6 @@ servers:
       - vm3
     cmd: sleep infinity
 proxy:
-  enabled: true
-  hosts:
-    - vm2
   deploy_timeout: 2s
 
 asset_path: /usr/share/nginx/html/versions
@@ -26,14 +23,6 @@ builder:
   arch: <%= Kamal::Utils.docker_arch %>
   args:
     COMMIT_SHA: <%= `git rev-parse HEAD` %>
-healthcheck:
-  cmd: wget -qO- http://localhost > /dev/null || exit 1
-  max_attempts: 3
-traefik:
-  args:
-    accesslog: true
-    accesslog.format: json
-  image: registry:4443/traefik:v2.10
 accessories:
   busybox:
     service: custom-busybox

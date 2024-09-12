@@ -2,7 +2,7 @@ service: app
 image: dhh/app
 servers:
   workers:
-    traefik: false
+    proxy: false
     hosts:
       - 1.1.1.1
       - 1.1.1.2
