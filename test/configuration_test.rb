@@ -296,11 +296,6 @@ class ConfigurationTest < ActiveSupport::TestCase
     assert_equal "$(pwd)/.kamal", config.run_directory_as_docker_volume
   end
 
-  test "run id" do
-    SecureRandom.expects(:hex).with(16).returns("09876543211234567890098765432112")
-    assert_equal "09876543211234567890098765432112", @config.run_id
-  end
-
   test "asset path" do
     assert_nil @config.asset_path
     assert_equal "foo", Kamal::Configuration.new(@deploy.merge!(asset_path: "foo")).asset_path

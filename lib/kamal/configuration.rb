@@ -189,10 +189,6 @@ class Kamal::Configuration
     raw_config.readiness_delay || 7
   end
 
-  def run_id
-    @run_id ||= SecureRandom.hex(16)
-  end
-
 
   def run_directory
     ".kamal"
