@@ -101,7 +101,7 @@ module Kamal::Cli
       end
 
       def acquire_lock
-        ensure_run_and_locks_directory
+        ensure_service_and_locks_directory
 
         raise_if_locked do
           say "Acquiring the deploy lock...", :magenta
@@ -174,9 +174,9 @@ module Kamal::Cli
         instance_variable_get("@_invocations").first
       end
 
-      def ensure_run_and_locks_directory
+      def ensure_service_and_locks_directory
         on(KAMAL.hosts) do
-          execute(*KAMAL.server.ensure_run_directory)
+          execute(*KAMAL.server.ensure_service_directory)
         end
 
         on(KAMAL.primary_host) do

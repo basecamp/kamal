@@ -29,7 +29,7 @@ class CliTestCase < ActiveSupport::TestCase
 
     def stub_setup
       SSHKit::Backend::Abstract.any_instance.stubs(:execute)
-        .with { |*args| args == [ :mkdir, "-p", ".kamal" ] }
+        .with { |*args| args == [ :mkdir, "-p", ".kamal/apps/app" ] }
       SSHKit::Backend::Abstract.any_instance.stubs(:execute)
         .with { |arg1, arg2, arg3| arg1 == :mkdir && arg2 == "-p" && arg3 == ".kamal/locks" }
       SSHKit::Backend::Abstract.any_instance.stubs(:execute)

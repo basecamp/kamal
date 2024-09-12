@@ -194,6 +194,19 @@ class Kamal::Configuration
     ".kamal"
   end
 
+  def service_directory
+    File.join run_directory, "apps", [ service, destination ].compact.join("-")
+  end
+
+  def env_directory
+    File.join service_directory, "env"
+  end
+
+  def assets_directory
+    File.join service_directory, "assets"
+  end
+
+
   def run_directory_as_docker_volume
     File.join "$(pwd)", run_directory
   end
@@ -206,10 +219,6 @@ class Kamal::Configuration
     raw_config.asset_path
   end
 
-
-  def env_directory
-    File.join(run_directory, "env")
-  end
 
   def env_tags
     @env_tags ||= if (tags = raw_config.env["tags"])

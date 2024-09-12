@@ -84,7 +84,7 @@ class Kamal::Configuration::Role
   end
 
   def secrets_path
-    File.join(config.env_directory, "roles", "#{container_prefix}.env")
+    File.join(config.env_directory, "roles", "#{name}.env")
   end
 
   def asset_volume_args
@@ -122,19 +122,19 @@ class Kamal::Configuration::Role
     asset_path.present? && running_proxy?
   end
 
-  def asset_volume(version = nil)
+  def asset_volume(version = config.version)
     if assets?
       Kamal::Configuration::Volume.new \
-        host_path: asset_volume_path(version), container_path: asset_path
+        host_path: asset_volume_directory(version), container_path: asset_path
     end
   end
 
-  def asset_extracted_path(version = nil)
-    File.join config.run_directory, "assets", "extracted", container_name(version)
+  def asset_extracted_directory(version = config.version)
+    File.join config.assets_directory, "extracted", [ name, version ].join("-")
   end
 
-  def asset_volume_path(version = nil)
-    File.join config.run_directory, "assets", "volumes", container_name(version)
+  def asset_volume_directory(version = config.version)
+    File.join config.assets_directory, "volumes", [ name, version ].join("-")
   end
 
   private
