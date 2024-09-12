@@ -58,6 +58,9 @@ class Kamal::Cli::App::Boot
       else
         Kamal::Cli::Healthcheck::Poller.wait_for_healthy(pause_after_ready: true) { capture_with_info(*app.status(version: version)) }
       end
+    rescue => e
+      error "Failed to boot #{role} on #{host}"
+      raise e
     end
 
     def stop_new_version

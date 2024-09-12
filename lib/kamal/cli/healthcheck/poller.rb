@@ -1,22 +1,30 @@
 module Kamal::Cli::Healthcheck::Poller
   extend self
 
-  def wait_for_healthy(pause_after_ready: false, &block)
+  def wait_for_healthy(role, &block)
     attempt = 1
-    max_attempts = 7
+    timeout_at = Time.now + KAMAL.config.readiness_timeout
+    readiness_delay = KAMAL.config.readiness_delay
 
     begin
-      case status = block.call
-      when "healthy"
-      when "running" # No health check configured
-        sleep KAMAL.config.readiness_delay if pause_after_ready
-      else
-        raise Kamal::Cli::Healthcheck::Error, "container not ready (#{status})"
+      status = block.call
+
+      if status == "running"
+        # Wait for the readiness delay and confirm it is still running
+        if readiness_delay > 0
+          info "Container is running, waiting for readiness delay of #{readiness_delay} seconds"
+          sleep readiness_delay
+          status = block.call
+        end
+      end
+
+      unless %w[ running healthy ].include?(status)
+        raise Kamal::Cli::Healthcheck::Error, "container not ready after #{KAMAL.config.readiness_timeout} seconds (#{status})"
       end
     rescue Kamal::Cli::Healthcheck::Error => e
-      if attempt <= max_attempts
-        info "#{e.message}, retrying in #{attempt}s (attempt #{attempt}/#{max_attempts})..."
-        sleep attempt
+      time_left = timeout_at - Time.now
+      if time_left > 0
+        sleep [ attempt, time_left ].min
         attempt += 1
         retry
       else

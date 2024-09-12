@@ -4,7 +4,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
     with_lock do
       say "Get most recent version available as an image...", :magenta unless options[:version]
       using_version(version_or_latest) do |version|
-        say "Start container with version #{version} using a #{KAMAL.config.readiness_delay}s readiness delay (or reboot if already running)...", :magenta
+        say "Start container with version #{version} (or reboot if already running)...", :magenta
 
         # Assets are prepared in a separate step to ensure they are on all hosts before booting
         on(KAMAL.hosts) do

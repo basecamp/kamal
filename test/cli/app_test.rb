@@ -116,7 +116,7 @@ class CliAppTest < CliTestCase
       assert_match "Waiting for the first healthy web container before booting workers on 1.1.1.4...", output
       assert_match "First web container is healthy, booting workers on 1.1.1.3", output
       assert_match "First web container is healthy, booting workers on 1.1.1.4", output
-  end
+    end
   end
 
   test "boot with web barrier closed" do
@@ -139,6 +139,47 @@ class CliAppTest < CliTestCase
         assert_match "First web container is unhealthy, not booting workers on 1.1.1.3", output
         assert_match "First web container is unhealthy, not booting workers on 1.1.1.4", output
       end
+    end
+  ensure
+    Thread.report_on_exception = true
+  end
+
+  test "boot with worker errors" do
+    Thread.report_on_exception = false
+
+    Object.any_instance.stubs(:sleep)
+
+    SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info).returns("123") # old version
+
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-workers-latest$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
+      .returns("unhealthy").at_least_once # workers health check
+
+    run_command("boot", config: :with_roles, host: nil, allow_execute_error: true).tap do |output|
+      assert_match "Waiting for the first healthy web container before booting workers on 1.1.1.3...", output
+      assert_match "Waiting for the first healthy web container before booting workers on 1.1.1.4...", output
+      assert_match "First web container is healthy, booting workers on 1.1.1.3", output
+      assert_match "First web container is healthy, booting workers on 1.1.1.4", output
+      assert_match "ERROR Failed to boot workers on 1.1.1.3", output
+      assert_match "ERROR Failed to boot workers on 1.1.1.4", output
+    end
+  ensure
+    Thread.report_on_exception = true
+  end
+
+  test "boot with worker ready then not" do
+    Thread.report_on_exception = false
+
+    Object.any_instance.stubs(:sleep)
+
+    SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info).returns("123") # old version
+
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-workers-latest$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
+      .returns("running", "stopped").at_least_once # workers health check
+
+    run_command("boot", config: :with_roles, host: "1.1.1.3", allow_execute_error: true).tap do |output|
+      assert_match "ERROR Failed to boot workers on 1.1.1.3", output
     end
   ensure
     Thread.report_on_exception = true

@@ -189,6 +189,10 @@ class Kamal::Configuration
     raw_config.readiness_delay || 7
   end
 
+  def readiness_timeout
+    raw_config.readiness_timeout || 30
+  end
+
 
   def run_directory
     ".kamal"
