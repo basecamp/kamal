@@ -31,31 +31,6 @@ module Kamal::Cli::Healthcheck::Poller
     info "Container is healthy!"
   end
 
-  def wait_for_unhealthy(pause_after_ready: false, &block)
-    attempt = 1
-    max_attempts = 7
-
-    begin
-      case status = block.call
-      when "unhealthy"
-        sleep TRAEFIK_UPDATE_DELAY if pause_after_ready
-      else
-        raise Kamal::Cli::Healthcheck::Error, "container not unhealthy (#{status})"
-      end
-    rescue Kamal::Cli::Healthcheck::Error => e
-      if attempt <= max_attempts
-        info "#{e.message}, retrying in #{attempt}s (attempt #{attempt}/#{max_attempts})..."
-        sleep attempt
-        attempt += 1
-        retry
-      else
-        raise
-      end
-    end
-
-    info "Container is unhealthy!"
-  end
-
   private
     def info(message)
       SSHKit.config.output.info(message)
