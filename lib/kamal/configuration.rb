@@ -70,6 +70,7 @@ class Kamal::Configuration
     ensure_valid_kamal_version
     ensure_retain_containers_valid
     ensure_valid_service_name
+    ensure_no_traefik_reboot_hooks
   end
 
 
@@ -299,6 +300,16 @@ class Kamal::Configuration
 
     def ensure_retain_containers_valid
       raise Kamal::ConfigurationError, "Must retain at least 1 container" if retain_containers < 1
+
+      true
+    end
+
+    def ensure_no_traefik_reboot_hooks
+      hooks = %w[ pre-traefik-reboot post-traefik-reboot ].select { |hook_file| File.exist?(File.join(hooks_path, hook_file)) }
+
+      if hooks.any?
+        raise Kamal::ConfigurationError, "Found #{hooks.join(", ")}, these should be renamed to (pre|post)-proxy-reboot"
+      end
 
       true
     end

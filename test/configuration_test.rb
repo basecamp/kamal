@@ -342,4 +342,18 @@ class ConfigurationTest < ActiveSupport::TestCase
     assert_equal config.role(:web_tokyo).running_proxy?, true
     assert_equal config.role(:web_chicago).running_proxy?, true
   end
+
+  test "traefik hooks raise error" do
+    Dir.mktmpdir do |dir|
+      Dir.chdir(dir) do
+        FileUtils.mkdir_p ".kamal/hooks"
+        FileUtils.touch ".kamal/hooks/post-traefik-reboot"
+        FileUtils.touch ".kamal/hooks/pre-traefik-reboot"
+        exception = assert_raises(Kamal::ConfigurationError) do
+          Kamal::Configuration.new(@deploy)
+        end
+        assert_equal "Found pre-traefik-reboot, post-traefik-reboot, these should be renamed to (pre|post)-proxy-reboot", exception.message
+      end
+    end
+  end
 end

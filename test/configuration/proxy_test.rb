@@ -9,7 +9,7 @@ class ConfigurationEnvTest < ActiveSupport::TestCase
   end
 
   test "ssl with host" do
-    @deploy[:proxy] = { "ssl" => true, "host" => "example.com" }
+    @deploy[:proxy] = { "ssl" => true, "hosts" => [ "example.com" ] }
     assert_equal true, config.proxy.ssl?
   end
 
