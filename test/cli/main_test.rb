@@ -305,7 +305,7 @@ class CliMainTest < CliTestCase
 
   test "audit" do
     run_command("audit").tap do |output|
-      assert_match %r{tail -n 50 \.kamal/apps/app/audit.log on 1.1.1.1}, output
+      assert_match %r{tail -n 50 \.kamal/app-audit.log on 1.1.1.1}, output
       assert_match /App Host: 1.1.1.1/, output
     end
   end

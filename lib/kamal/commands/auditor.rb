@@ -9,7 +9,7 @@ class Kamal::Commands::Auditor < Kamal::Commands::Base
   # Runs remotely
   def record(line, **details)
     combine \
-      [ :mkdir, "-p", config.service_directory ],
+      [ :mkdir, "-p", config.run_directory ],
       append(
         [ :echo, audit_tags(**details).except(:version, :service_version, :service).to_s, line ],
         audit_log_file
@@ -22,7 +22,9 @@ class Kamal::Commands::Auditor < Kamal::Commands::Base
 
   private
     def audit_log_file
-      File.join config.service_directory, "audit.log"
+      file = [ config.service, config.destination, "audit.log" ].compact.join("-")
+
+      File.join(config.run_directory, file)
     end
 
     def audit_tags(**details)
