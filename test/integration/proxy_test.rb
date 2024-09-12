@@ -49,8 +49,6 @@ class ProxyTest < IntegrationTest
     kamal :proxy, :remove
     assert_proxy_not_running
     assert_proxy_directory_removed
-
-    kamal :env, :delete
   end
 
   private
