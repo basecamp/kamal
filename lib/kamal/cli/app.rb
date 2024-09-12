@@ -231,6 +231,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
       stop
       remove_containers
       remove_images
+      remove_service_directory
     end
   end
 
@@ -268,6 +269,20 @@ class Kamal::Cli::App < Kamal::Cli::Base
       on(KAMAL.hosts) do
         execute *KAMAL.auditor.record("Removed all app images"), verbosity: :debug
         execute *KAMAL.app.remove_images
+      end
+    end
+  end
+
+  desc "remove_service_directory", "Remove the service directory from servers", hide: true
+  def remove_service_directory
+    with_lock do
+      on(KAMAL.hosts) do |host|
+        roles = KAMAL.roles_on(host)
+
+        roles.each do |role|
+          execute *KAMAL.auditor.record("Removed #{KAMAL.config.service_directory} on all servers", role: role), verbosity: :debug
+          execute *KAMAL.server.remove_service_directory
+        end
       end
     end
   end

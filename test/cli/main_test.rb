@@ -417,6 +417,7 @@ class CliMainTest < CliTestCase
       assert_match /docker ps --quiet --filter label=service=app | xargs docker stop/, output
       assert_match /docker container prune --force --filter label=service=app/, output
       assert_match /docker image prune --all --force --filter label=service=app/, output
+      assert_match "/usr/bin/env rm -r .kamal/apps/app", output
 
       assert_match /docker container stop app-mysql/, output
       assert_match /docker container prune --force --filter label=service=app-mysql/, output

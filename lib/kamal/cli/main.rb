@@ -181,8 +181,8 @@ class Kamal::Cli::Main < Kamal::Cli::Base
   def remove
     confirming "This will remove all containers and images. Are you sure?" do
       with_lock do
-        invoke "kamal:cli:proxy:remove", [], options.without(:confirmed)
         invoke "kamal:cli:app:remove", [], options.without(:confirmed)
+        invoke "kamal:cli:proxy:remove", [], options.without(:confirmed)
         invoke "kamal:cli:accessory:remove", [ "all" ], options
         invoke "kamal:cli:registry:logout", [], options.without(:confirmed).merge(skip_local: true)
       end
