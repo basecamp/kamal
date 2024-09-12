@@ -36,7 +36,7 @@ class Kamal::Configuration::Proxy
 
   def deploy_options
     {
-      host: proxy_config["host"],
+      host: proxy_config.fetch("hosts", []).first,
       tls: proxy_config["ssl"],
       "deploy-timeout": proxy_config["deploy_timeout"],
       "drain-timeout": proxy_config["drain_timeout"],

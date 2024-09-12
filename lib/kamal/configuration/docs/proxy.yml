@@ -7,15 +7,16 @@
 # run on the same proxy.
 proxy:
 
-  # Host
+  # Hosts
   #
-  # This is the host that will be used to serve the app. By setting this you can run
-  # multiple apps on the same server sharing the same instance of the proxy.
+  # These are the hosts that will be used to serve the app. If you deploy more
+  # than one application to a single host, the proxy will route requests based
+  # these hosts
   #
-  # If this is set only requests that match this host will be forwarded by the proxy.
-  # if this is not set, then all requests will be forwarded, except for matching
+  # If no hosts are set, then all requests will be forwarded, except for matching
   # requests for other apps that do have a host set.
-  host: foo.example.com
+  hosts:
+    - foo.example.com
 
   # App port
   #
