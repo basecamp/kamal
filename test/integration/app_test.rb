@@ -8,7 +8,6 @@ class AppTest < IntegrationTest
 
     kamal :app, :stop
 
-    exit!
     assert_app_is_down
 
     kamal :app, :start
