@@ -17,7 +17,7 @@ class Kamal::Commands::Proxy < Kamal::Commands::Base
       "--restart", "unless-stopped",
       *proxy_config.publish_args,
       "--volume", "/var/run/docker.sock:/var/run/docker.sock",
-      "--volume", "#{proxy_config.config_directory_as_docker_volume}:/root/.config/kamal-proxy",
+      *proxy_config.config_volume.docker_args,
       *config.logging_args,
       proxy_config.image
   end

@@ -291,11 +291,6 @@ class ConfigurationTest < ActiveSupport::TestCase
     assert_equal ".kamal", config.run_directory
   end
 
-  test "run directory as docker volume" do
-    config = Kamal::Configuration.new(@deploy)
-    assert_equal "$(pwd)/.kamal", config.run_directory_as_docker_volume
-  end
-
   test "asset path" do
     assert_nil @config.asset_path
     assert_equal "foo", Kamal::Configuration.new(@deploy.merge!(asset_path: "foo")).asset_path

@@ -59,8 +59,10 @@ class Kamal::Configuration::Proxy
     optionize deploy_options
   end
 
-  def config_directory_as_docker_volume
-    File.join config.run_directory_as_docker_volume, "proxy", "config"
+  def config_volume
+    Kamal::Configuration::Volume.new \
+      host_path: File.join(config.run_directory, "proxy", "config"),
+      container_path: "/root/.config/kamal-proxy"
   end
 
   private

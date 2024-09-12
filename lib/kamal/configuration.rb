@@ -207,10 +207,6 @@ class Kamal::Configuration
   end
 
 
-  def run_directory_as_docker_volume
-    File.join "$(pwd)", run_directory
-  end
-
   def hooks_path
     raw_config.hooks_path || ".kamal/hooks"
   end
