@@ -206,7 +206,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
   desc "lock", "Manage the deploy lock"
   subcommand "lock", Kamal::Cli::Lock
 
-  desc "proxy", "Prune old application images and containers"
+  desc "proxy", "Manage kamal-proxy"
   subcommand "proxy", Kamal::Cli::Proxy
 
   desc "prune", "Prune old application images and containers"
