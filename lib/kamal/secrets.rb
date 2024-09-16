@@ -8,10 +8,14 @@ class Kamal::Secrets
   def initialize(destination: nil)
     @secrets_files = \
       [ ".kamal/secrets-common", ".kamal/secrets#{(".#{destination}" if destination)}" ].select { |f| File.exist?(f) }
+    @mutex = Mutex.new
   end
 
   def [](key)
-    secrets.fetch(key)
+    # Fetching secrets may ask the user for input, so ensure only one thread does that
+    @mutex.synchronize do
+      secrets.fetch(key)
+    end
   rescue KeyError
     if secrets_files
       raise Kamal::ConfigurationError, "Secret '#{key}' not found in #{secrets_files.join(", ")}"
