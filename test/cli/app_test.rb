@@ -130,7 +130,7 @@ class CliAppTest < CliTestCase
     SSHKit::Backend::Abstract.any_instance.stubs(:execute)
       .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-latest$", "--quiet", "|", :xargs, :docker, :stop, raise_on_non_zero_exit: false).twice
     SSHKit::Backend::Abstract.any_instance.stubs(:execute)
-      .with(:docker, :exec, "kamal-proxy", "kamal-proxy", :deploy, "app-web", "--target", "\"123:80\"", "--buffer-requests", "--buffer-responses", "--log-request-header", "\"Cache-Control\"", "--log-request-header", "\"Last-Modified\"").raises(SSHKit::Command::Failed.new("Failed to deploy"))
+      .with(:docker, :exec, "kamal-proxy", "kamal-proxy", :deploy, "app-web", "--target", "\"123:80\"", "--buffer-requests", "--buffer-responses", "--log-request-header", "\"Cache-Control\"", "--log-request-header", "\"Last-Modified\"", "--log-request-header", "\"User-Agent\"").raises(SSHKit::Command::Failed.new("Failed to deploy"))
 
     stderred do
       run_command("boot", config: :with_roles, host: nil, allow_execute_error: true).tap do |output|
