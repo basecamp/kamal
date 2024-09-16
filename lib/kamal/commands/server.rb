@@ -1,6 +1,6 @@
 class Kamal::Commands::Server < Kamal::Commands::Base
-  def ensure_app_directory
-    make_directory config.app_directory
+  def ensure_run_directory
+    make_directory config.run_directory
   end
 
   def remove_app_directory

@@ -44,14 +44,10 @@ class Kamal::Commands::Lock < Kamal::Commands::Base
         "/dev/null"
     end
 
-    def locks_dir
-      File.join(config.run_directory, "locks")
-    end
-
     def lock_dir
-      dir_name = [ config.service, config.destination ].compact.join("-")
+      dir_name = [ "lock", config.service, config.destination ].compact.join("-")
 
-      File.join(locks_dir, dir_name)
+      File.join(config.run_directory, dir_name)
     end
 
     def lock_details_file

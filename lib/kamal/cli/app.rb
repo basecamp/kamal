@@ -281,7 +281,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
 
         roles.each do |role|
           execute *KAMAL.auditor.record("Removed #{KAMAL.config.app_directory} on all servers", role: role), verbosity: :debug
-          execute *KAMAL.server.remove_app_directory
+          execute *KAMAL.server.remove_app_directory, raise_on_non_zero_exit: false
         end
       end
     end

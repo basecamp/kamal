@@ -192,7 +192,7 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
     with_lock do
       on(KAMAL.proxy_hosts) do
         execute *KAMAL.auditor.record("Removed #{KAMAL.config.proxy_directory}"), verbosity: :debug
-        execute *KAMAL.proxy.remove_host_directory
+        execute *KAMAL.proxy.remove_host_directory, raise_on_non_zero_exit: false
       end
     end
   end

@@ -12,7 +12,7 @@ class Kamal::Cli::Lock < Kamal::Cli::Base
   option :message, aliases: "-m", type: :string, desc: "A lock message", required: true
   def acquire
     message = options[:message]
-    ensure_app_and_locks_directory
+    ensure_run_directory
 
     raise_if_locked do
       on(KAMAL.primary_host) do

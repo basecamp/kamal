@@ -37,7 +37,7 @@ class CliAppTest < CliTestCase
   end
 
   test "boot uses group strategy when specified" do
-    Kamal::Cli::App.any_instance.stubs(:on).with("1.1.1.1").times(3) # ensure locks dir, acquire & release lock
+    Kamal::Cli::App.any_instance.stubs(:on).with("1.1.1.1").times(2) # ensure locks dir, acquire & release lock
     Kamal::Cli::App.any_instance.stubs(:on).with([ "1.1.1.1" ]) # tag container
 
     # Strategy is used when booting the containers
