@@ -23,7 +23,7 @@ class Kamal::Commander::Specifics
   end
 
   def proxy_hosts
-    traefik_hosts & config.proxy_hosts
+    config.proxy_hosts
   end
 
   def proxy_host?(host)
