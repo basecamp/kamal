@@ -132,6 +132,42 @@ class CliBuildTest < CliTestCase
     end
   end
 
+  test "push without builder for local registry" do
+    with_build_directory do |build_directory|
+      stub_setup
+
+      SSHKit::Backend::Abstract.any_instance.expects(:execute)
+        .with(:docker, "--version", "&&", :docker, :buildx, "version")
+
+      SSHKit::Backend::Abstract.any_instance.expects(:execute)
+        .with(:docker, :buildx, :rm, "kamal-local-registry-docker-container")
+
+      SSHKit::Backend::Abstract.any_instance.expects(:execute)
+        .with(:docker, :buildx, :create, "--name", "kamal-local-registry-docker-container", "--driver=docker-container --driver-opt network=host")
+
+      SSHKit::Backend::Abstract.any_instance.expects(:execute)
+        .with(:docker, :buildx, :inspect, "kamal-local-registry-docker-container")
+        .raises(SSHKit::Command::Failed.new("no builder"))
+
+      SSHKit::Backend::Abstract.any_instance.expects(:execute).with { |*args| args.first.start_with?("git") }
+
+      SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+        .with(:git, "-C", anything, :"rev-parse", :HEAD)
+        .returns(Kamal::Git.revision)
+
+      SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+        .with(:git, "-C", anything, :status, "--porcelain")
+        .returns("")
+
+      SSHKit::Backend::Abstract.any_instance.expects(:execute)
+        .with(:docker, :buildx, :build, "--push", "--platform", "linux/amd64", "--builder", "kamal-local-registry-docker-container", "-t", "localhost:5000/dhh/app:999", "-t", "localhost:5000/dhh/app:latest", "--label", "service=\"app\"", "--file", "Dockerfile", ".")
+
+      run_command("push", fixture: :with_local_registry_and_accessories).tap do |output|
+        assert_match /WARN Missing compatible builder, so creating a new one first/, output
+      end
+    end
+  end
+
   test "push without builder" do
     with_build_directory do |build_directory|
       stub_setup

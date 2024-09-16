@@ -85,6 +85,15 @@ class CommandsRegistryTest < ActiveSupport::TestCase
       registry.logout(registry_config: accessory_registry_config).join(" ")
   end
 
+  test "registry setup" do
+    @config[:registry] = { "server" => "localhost:5000" }
+    assert_equal "docker start kamal-docker-registry || docker run --detach -p 127.0.0.1:5000:5000 --name kamal-docker-registry registry:2", registry.setup.join(" ")
+  end
+
+  test "registry remove" do
+    assert_equal "docker stop kamal-docker-registry && docker rm kamal-docker-registry", registry.remove.join(" ")
+  end
+
   private
     def registry
       Kamal::Commands::Registry.new main_config
