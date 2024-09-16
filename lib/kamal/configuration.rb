@@ -9,7 +9,7 @@ class Kamal::Configuration
   delegate :service, :image, :labels, :stop_wait_time, :hooks_path, to: :raw_config, allow_nil: true
   delegate :argumentize, :optionize, to: Kamal::Utils
 
-  attr_reader :destination, :raw_config
+  attr_reader :destination, :raw_config, :secrets
   attr_reader :accessories, :aliases, :boot, :builder, :env, :healthcheck, :logging, :traefik, :servers, :ssh, :sshkit, :registry
 
   include Validation
@@ -63,6 +63,8 @@ class Kamal::Configuration
     @traefik = Traefik.new(config: self)
     @ssh = Ssh.new(config: self)
     @sshkit = Sshkit.new(config: self)
+
+    @secrets = Kamal::Secrets.new(destination: destination)
 
     ensure_destination_if_required
     ensure_required_keys_present
