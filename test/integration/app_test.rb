@@ -27,14 +27,14 @@ class AppTest < IntegrationTest
     images = kamal :app, :images, capture: true
     assert_match "App Host: vm1", images
     assert_match "App Host: vm2", images
-    assert_match /registry:4443\/app\s+#{latest_app_version}/, images
-    assert_match /registry:4443\/app\s+latest/, images
+    assert_match /localhost:5000\/app\s+#{latest_app_version}/, images
+    assert_match /localhost:5000\/app\s+latest/, images
 
     containers = kamal :app, :containers, capture: true
     assert_match "App Host: vm1", containers
     assert_match "App Host: vm2", containers
-    assert_match "registry:4443/app:#{latest_app_version}", containers
-    assert_match "registry:4443/app:latest", containers
+    assert_match "localhost:5000/app:#{latest_app_version}", containers
+    assert_match "localhost:5000/app:latest", containers
 
     exec_output = kamal :app, :exec, :ps, capture: true
     assert_match "App Host: vm1", exec_output

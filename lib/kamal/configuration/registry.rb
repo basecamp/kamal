@@ -21,6 +21,14 @@ class Kamal::Configuration::Registry
     lookup("password")
   end
 
+  def local?
+    server&.match?("^localhost[:$]")
+  end
+
+  def local_port
+    local? ? (server.split(":").last.to_i || 80) : nil
+  end
+
   private
     def lookup(key)
       if registry_config[key].is_a?(Array)

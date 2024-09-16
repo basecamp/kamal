@@ -9,7 +9,7 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
       end
 
       on(KAMAL.proxy_hosts) do |host|
-        execute *KAMAL.registry.login
+        execute *KAMAL.registry.login unless KAMAL.config.registry.local?
 
         version = capture_with_info(*KAMAL.proxy.version).strip.presence
 
@@ -33,7 +33,7 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
           run_hook "pre-proxy-reboot", hosts: host_list
           on(hosts) do |host|
             execute *KAMAL.auditor.record("Rebooted proxy"), verbosity: :debug
-            execute *KAMAL.registry.login
+            execute *KAMAL.registry.login unless KAMAL.config.registry.local?
 
             "Stopping and removing Traefik on #{host}, if running..."
             execute *KAMAL.proxy.cleanup_traefik
@@ -76,7 +76,7 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
         run_hook "pre-proxy-reboot", hosts: host_list
         on(hosts) do |host|
           execute *KAMAL.auditor.record("Rebooted proxy"), verbosity: :debug
-          execute *KAMAL.registry.login
+          execute *KAMAL.registry.login unless KAMAL.config.registry.local?
 
           "Stopping and removing Traefik on #{host}, if running..."
           execute *KAMAL.proxy.cleanup_traefik

@@ -15,10 +15,12 @@ class Kamal::Configuration::Validator::Registry < Kamal::Configuration::Validato
       with_context(key) do
         value = config[key]
 
-        error "is required" unless value.present?
+        unless config["server"]&.match?("^localhost[:$]")
+          error "is required" unless value.present?
 
-        unless value.is_a?(String) || (value.is_a?(Array) && value.size == 1 && value.first.is_a?(String))
-          error "should be a string or an array with one string (for secret lookup)"
+          unless value.is_a?(String) || (value.is_a?(Array) && value.size == 1 && value.first.is_a?(String))
+            error "should be a string or an array with one string (for secret lookup)"
+          end
         end
       end
     end

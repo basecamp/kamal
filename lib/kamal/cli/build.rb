@@ -1,4 +1,5 @@
 require "uri"
+require "net/ssh"
 
 class Kamal::Cli::Build < Kamal::Cli::Base
   class BuildError < StandardError; end
@@ -60,6 +61,8 @@ class Kamal::Cli::Build < Kamal::Cli::Base
 
   desc "pull", "Pull app image from registry onto servers"
   def pull
+    tunnels = Kamal::Cli::Tunnel::RemotePorts.new(KAMAL.hosts, KAMAL.config.registry.local_port).tap(&:open) if KAMAL.config.registry.local?
+
     if (first_hosts = mirror_hosts).any?
       #  Pull on a single host per mirror first to seed them
       say "Pulling image on #{first_hosts.join(", ")} to seed the #{"mirror".pluralize(first_hosts.count)}...", :magenta
@@ -69,6 +72,8 @@ class Kamal::Cli::Build < Kamal::Cli::Base
     else
       pull_on_hosts(KAMAL.hosts)
     end
+  ensure
+    tunnels&.close
   end
 
   desc "create", "Create a build setup"
@@ -152,7 +157,7 @@ class Kamal::Cli::Build < Kamal::Cli::Base
     end
 
     def pull_on_hosts(hosts)
-      on(hosts) do
+      on(hosts) do |host|
         execute *KAMAL.auditor.record("Pulled image with version #{KAMAL.config.version}"), verbosity: :debug
         execute *KAMAL.builder.clean, raise_on_non_zero_exit: false
         execute *KAMAL.builder.pull
