@@ -72,7 +72,6 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
           execute *KAMAL.registry.login
 
           "Stopping and removing Traefik on #{host}, if running..."
-          execute *KAMAL.proxy.stop_traefik, raise_on_non_zero_exit: false
           execute *KAMAL.proxy.cleanup_traefik
 
           "Stopping and removing kamal-proxy on #{host}, if running..."

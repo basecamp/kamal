@@ -4,7 +4,7 @@ class Kamal::Configuration::Proxy
   DEFAULT_HTTP_PORT = 80
   DEFAULT_HTTPS_PORT = 443
   DEFAULT_IMAGE = "basecamp/kamal-proxy:latest"
-  DEFAULT_LOG_REQUEST_HEADERS = [ "Cache-Control", "Last-Modified" ]
+  DEFAULT_LOG_REQUEST_HEADERS = [ "Cache-Control", "Last-Modified", "User-Agent" ]
 
   delegate :argumentize, :optionize, to: Kamal::Utils
 
