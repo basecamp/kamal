@@ -10,6 +10,12 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
 
       on(KAMAL.proxy_hosts) do |host|
         execute *KAMAL.registry.login
+
+        version = capture_with_info(*KAMAL.proxy.version).strip.presence
+
+        if version && Kamal::Utils.older_version?(version, Kamal::Configuration::Proxy::MINIMUM_VERSION)
+          raise "kamal-proxy version #{version} is too old, please reboot to update to at least #{Kamal::Configuration::Proxy::MINIMUM_VERSION}"
+        end
         execute *KAMAL.proxy.start_or_run
       end
     end

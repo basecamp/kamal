@@ -46,6 +46,12 @@ class Kamal::Commands::Proxy < Kamal::Commands::Base
     docker :ps, "--filter", "name=^#{container_name}$"
   end
 
+  def version
+    pipe \
+      docker(:inspect, container_name, "--format '{{.Config.Image}}'"),
+      [ :cut, "-d:", "-f2" ]
+  end
+
   def logs(since: nil, lines: nil, grep: nil, grep_options: nil)
     pipe \
       docker(:logs, container_name, (" --since #{since}" if since), (" --tail #{lines}" if lines), "--timestamps", "2>&1"),

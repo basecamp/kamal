@@ -1,9 +1,10 @@
 class Kamal::Configuration::Proxy
   include Kamal::Configuration::Validation
 
+  MINIMUM_VERSION = "v0.1.0"
   DEFAULT_HTTP_PORT = 80
   DEFAULT_HTTPS_PORT = 443
-  DEFAULT_IMAGE = "basecamp/kamal-proxy:latest"
+  DEFAULT_IMAGE = "basecamp/kamal-proxy:#{MINIMUM_VERSION}"
   DEFAULT_LOG_REQUEST_HEADERS = [ "Cache-Control", "Last-Modified", "User-Agent" ]
 
   delegate :argumentize, :optionize, to: Kamal::Utils
@@ -62,7 +63,7 @@ class Kamal::Configuration::Proxy
   def config_volume
     Kamal::Configuration::Volume.new \
       host_path: File.join(config.proxy_directory, "config"),
-      container_path: "/root/.config/kamal-proxy"
+      container_path: "/home/kamal-proxy/.config/kamal-proxy"
   end
 
   private
