@@ -60,7 +60,7 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
   option :rolling, type: :boolean, default: false, desc: "Reboot proxy on hosts in sequence, rather than in parallel"
   option :confirmed, aliases: "-y", type: :boolean, default: false, desc: "Proceed without confirmation question"
   def upgrade
-    invoke_options = { "version" => KAMAL.config.version }.merge(options)
+    invoke_options = { "version" => KAMAL.config.latest_tag }.merge(options)
 
     confirming "This will cause a brief outage on each host. Are you sure?" do
       host_groups = options[:rolling] ? KAMAL.hosts : [ KAMAL.hosts ]
@@ -77,14 +77,20 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
           "Stopping and removing kamal-proxy on #{host}, if running..."
           execute *KAMAL.proxy.stop, raise_on_non_zero_exit: false
           execute *KAMAL.proxy.remove_container
+          execute *KAMAL.proxy.remove_image
         end
 
-        invoke "kamal:cli:proxy:boot", [], invoke_options.merge("hosts" => host_list)
-        reset_invocation(Kamal::Cli::Proxy)
-        invoke "kamal:cli:app:boot", [], invoke_options.merge("hosts" => host_list, version: KAMAL.config.latest_tag)
-        reset_invocation(Kamal::Cli::App)
-        invoke "kamal:cli:prune:all", [], invoke_options.merge("hosts" => host_list)
-        reset_invocation(Kamal::Cli::Prune)
+        begin
+          old_hosts, KAMAL.specific_hosts = KAMAL.specific_hosts, hosts
+          invoke "kamal:cli:proxy:boot", [], invoke_options
+          reset_invocation(Kamal::Cli::Proxy)
+          invoke "kamal:cli:app:boot", [], invoke_options
+          reset_invocation(Kamal::Cli::App)
+          invoke "kamal:cli:prune:all", [], invoke_options
+          reset_invocation(Kamal::Cli::Prune)
+        ensure
+          KAMAL.specific_hosts = old_hosts
+        end
 
         run_hook "post-proxy-reboot", hosts: host_list
       end
