@@ -39,3 +39,4 @@ accessories:
       - data:/data
 
 readiness_delay: 0
+readiness_timeout: 1

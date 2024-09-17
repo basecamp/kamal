@@ -189,6 +189,37 @@ class Kamal::Cli::Main < Kamal::Cli::Base
     end
   end
 
+  desc "upgrade", "Upgrade from Kamal 1.x to 2.0"
+  option :confirmed, aliases: "-y", type: :boolean, default: false, desc: "Proceed without confirmation question"
+  option :rolling, type: :boolean, default: false, desc: "Upgrade one host at a time"
+  def upgrade
+    confirming "This will replace Traefik with kamal-proxy and restart all accessories" do
+      with_lock do
+        if options[:rolling]
+          (KAMAL.hosts | KAMAL.accessory_hosts).each do |host|
+            KAMAL.with_specific_hosts(host) do
+              say "Upgrading #{host}...", :magenta
+              if KAMAL.hosts.include?(host)
+                invoke "kamal:cli:proxy:upgrade", [], options.merge(confirmed: true, rolling: false)
+                reset_invocation(Kamal::Cli::Proxy)
+              end
+              if KAMAL.accessory_hosts.include?(host)
+                invoke "kamal:cli:accessory:upgrade", [ "all" ], options.merge(confirmed: true, rolling: false)
+                reset_invocation(Kamal::Cli::Accessory)
+              end
+              say "Upgraded #{host}", :magenta
+            end
+          end
+        else
+          say "Upgrading all hosts...", :magenta
+          invoke "kamal:cli:proxy:upgrade", [], options.merge(confirmed: true)
+          invoke "kamal:cli:accessory:upgrade", [ "all" ], options.merge(confirmed: true)
+          say "Upgraded all hosts", :magenta
+        end
+      end
+    end
+  end
+
   desc "version", "Show Kamal version"
   def version
     puts Kamal::VERSION

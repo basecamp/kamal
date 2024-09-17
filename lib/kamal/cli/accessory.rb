@@ -218,6 +218,29 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
     end
   end
 
+  desc "upgrade", "Upgrade accessories from Kamal 1.x to 2.0 (restart them in 'kamal' network)"
+  option :rolling, type: :boolean, default: false, desc: "Upgrade one host at a time"
+  option :confirmed, aliases: "-y", type: :boolean, default: false, desc: "Proceed without confirmation question"
+  def upgrade(name)
+    confirming "This will restart all accessories" do
+      with_lock do
+        if options[:rolling]
+          KAMAL.accessory_hosts.each do |host|
+            say "Upgrading accessories on #{host}...", :magenta
+            KAMAL.with_specific_hosts(host) do
+              reboot name
+            end
+            say "Upgraded accessories on #{host}...", :magenta
+          end
+        else
+          say "Upgrading accessories on all hosts...", :magenta
+          reboot name
+          say "Upgraded accessories on all hosts", :magenta
+        end
+      end
+    end
+  end
+
   private
     def with_accessory(name)
       if KAMAL.config.accessory(name)

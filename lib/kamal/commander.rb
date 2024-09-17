@@ -65,6 +65,13 @@ class Kamal::Commander
     end
   end
 
+  def with_specific_hosts(hosts)
+    original_hosts, self.specific_hosts = specific_hosts, hosts
+    yield
+  ensure
+    self.specific_hosts = original_hosts
+  end
+
   def accessory_names
     config.accessories&.collect(&:name) || []
   end

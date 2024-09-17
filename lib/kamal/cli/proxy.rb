@@ -62,7 +62,7 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
     end
   end
 
-  desc "upgrade", "Upgrade to correct proxy on servers (stop container, remove container, start new container)"
+  desc "upgrade", "Upgrade to kamal-proxy on servers (stop container, remove container, start new container, reboot app)"
   option :rolling, type: :boolean, default: false, desc: "Reboot proxy on hosts in sequence, rather than in parallel"
   option :confirmed, aliases: "-y", type: :boolean, default: false, desc: "Proceed without confirmation question"
   def upgrade
@@ -72,6 +72,7 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
       host_groups = options[:rolling] ? KAMAL.hosts : [ KAMAL.hosts ]
       host_groups.each do |hosts|
         host_list = Array(hosts).join(",")
+        say "Upgrading proxy on #{host_list}..."
         run_hook "pre-proxy-reboot", hosts: host_list
         on(hosts) do |host|
           execute *KAMAL.auditor.record("Rebooted proxy"), verbosity: :debug
@@ -86,19 +87,17 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
           execute *KAMAL.proxy.remove_image
         end
 
-        begin
-          old_hosts, KAMAL.specific_hosts = KAMAL.specific_hosts, hosts
+        KAMAL.with_specific_hosts(hosts) do
           invoke "kamal:cli:proxy:boot", [], invoke_options
           reset_invocation(Kamal::Cli::Proxy)
           invoke "kamal:cli:app:boot", [], invoke_options
           reset_invocation(Kamal::Cli::App)
           invoke "kamal:cli:prune:all", [], invoke_options
           reset_invocation(Kamal::Cli::Prune)
-        ensure
-          KAMAL.specific_hosts = old_hosts
         end
 
         run_hook "post-proxy-reboot", hosts: host_list
+        say "Upgraded proxy on #{host_list}"
       end
     end
   end
@@ -204,10 +203,6 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
   end
 
   private
-    def reset_invocation(cli_class)
-      instance_variable_get("@_invocations")[cli_class].pop
-    end
-
     def removal_allowed?(force)
       on(KAMAL.proxy_hosts) do |host|
         app_count = capture_with_info(*KAMAL.server.app_directory_count).chomp.to_i
