@@ -4,6 +4,8 @@ class Kamal::Cli::Traefik < Kamal::Cli::Base
     with_lock do
       on(KAMAL.traefik_hosts) do
         execute *KAMAL.registry.login
+        execute *KAMAL.traefik.ensure_env_directory
+        upload! KAMAL.traefik.secrets_io, KAMAL.traefik.secrets_path, mode: "0600"
         execute *KAMAL.traefik.start_or_run
       end
     end

@@ -9,11 +9,11 @@ class CommandsTraefikTest < ActiveSupport::TestCase
       traefik: { "image" => @image, "args" => { "accesslog.format" => "json", "api.insecure" => true, "metrics.prometheus.buckets" => "0.1,0.3,1.2,5.0" } }
     }
 
-    ENV["EXAMPLE_API_KEY"] = "456"
+    setup_test_secrets("secrets" => "EXAMPLE_API_KEY=456")
   end
 
   teardown do
-    ENV.delete("EXAMPLE_API_KEY")
+    teardown_test_secrets
   end
 
   test "run" do
@@ -81,9 +81,9 @@ class CommandsTraefikTest < ActiveSupport::TestCase
       "docker run --name traefik --detach --restart unless-stopped --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock --env-file .kamal/env/traefik/traefik.env --log-opt max-size=\"10m\" --label traefik.http.routers.catchall.entryPoints=\"http\" --label traefik.http.routers.catchall.rule=\"PathPrefix(\\`/\\`)\" --label traefik.http.routers.catchall.service=\"unavailable\" --label traefik.http.routers.catchall.priority=\"1\" --label traefik.http.services.unavailable.loadbalancer.server.port=\"0\" #{@image} --providers.docker --log.level=\"DEBUG\" --accesslog.format=\"json\" --api.insecure --metrics.prometheus.buckets=\"0.1,0.3,1.2,5.0\"",
       new_command.run.join(" ")
 
-    @config[:traefik]["env"] = { "secret" => %w[EXAMPLE_API_KEY] }
+    @config[:traefik]["env"] = { "EXAMPLE_API_KEY" => "456" }
     assert_equal \
-      "docker run --name traefik --detach --restart unless-stopped --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock --env-file .kamal/env/traefik/traefik.env --log-opt max-size=\"10m\" --label traefik.http.routers.catchall.entryPoints=\"http\" --label traefik.http.routers.catchall.rule=\"PathPrefix(\\`/\\`)\" --label traefik.http.routers.catchall.service=\"unavailable\" --label traefik.http.routers.catchall.priority=\"1\" --label traefik.http.services.unavailable.loadbalancer.server.port=\"0\" #{@image} --providers.docker --log.level=\"DEBUG\" --accesslog.format=\"json\" --api.insecure --metrics.prometheus.buckets=\"0.1,0.3,1.2,5.0\"",
+      "docker run --name traefik --detach --restart unless-stopped --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock --env EXAMPLE_API_KEY=\"456\" --env-file .kamal/env/traefik/traefik.env --log-opt max-size=\"10m\" --label traefik.http.routers.catchall.entryPoints=\"http\" --label traefik.http.routers.catchall.rule=\"PathPrefix(\\`/\\`)\" --label traefik.http.routers.catchall.service=\"unavailable\" --label traefik.http.routers.catchall.priority=\"1\" --label traefik.http.services.unavailable.loadbalancer.server.port=\"0\" #{@image} --providers.docker --log.level=\"DEBUG\" --accesslog.format=\"json\" --api.insecure --metrics.prometheus.buckets=\"0.1,0.3,1.2,5.0\"",
       new_command.run.join(" ")
   end
 
@@ -186,20 +186,6 @@ class CommandsTraefikTest < ActiveSupport::TestCase
     assert_equal \
       "ssh -t root@1.1.1.1 -p 22 'docker logs traefik --timestamps --tail 10 --follow 2>&1 | grep \"hello!\"'",
       new_command.follow_logs(host: @config[:servers].first, grep: "hello!")
-  end
-
-  test "secrets io" do
-    @config[:traefik]["env"] = { "secret" => %w[EXAMPLE_API_KEY] }
-
-    assert_equal "EXAMPLE_API_KEY=456\n", new_command.env.secrets_io.string
-  end
-
-  test "make_env_directory" do
-    assert_equal "mkdir -p .kamal/env/traefik", new_command.make_env_directory.join(" ")
-  end
-
-  test "remove_env_file" do
-    assert_equal "rm -f .kamal/env/traefik/traefik.env", new_command.remove_env_file.join(" ")
   end
 
   private

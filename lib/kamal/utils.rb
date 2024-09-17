@@ -1,3 +1,5 @@
+require "active_support/core_ext/object/try"
+
 module Kamal::Utils
   extend self
 
@@ -54,6 +56,12 @@ module Kamal::Utils
 
   # Escape a value to make it safe for shell use.
   def escape_shell_value(value)
+    value.to_s.scan(/[\x00-\x7F]+|[^\x00-\x7F]+/) \
+      .map { |part| part.ascii_only? ? escape_ascii_shell_value(part) : part }
+      .join
+  end
+
+  def escape_ascii_shell_value(value)
     value.to_s.dump
       .gsub(/`/, '\\\\`')
       .gsub(DOLLAR_SIGN_WITHOUT_SHELL_EXPANSION_REGEX, '\$')

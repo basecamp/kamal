@@ -2,7 +2,6 @@ require "active_support/ordered_options"
 require "active_support/core_ext/string/inquiry"
 require "active_support/core_ext/module/delegation"
 require "active_support/core_ext/hash/keys"
-require "pathname"
 require "erb"
 require "net/ssh/proxy/jump"
 
@@ -10,7 +9,7 @@ class Kamal::Configuration
   delegate :service, :image, :labels, :stop_wait_time, :hooks_path, to: :raw_config, allow_nil: true
   delegate :argumentize, :optionize, to: Kamal::Utils
 
-  attr_reader :destination, :raw_config
+  attr_reader :destination, :raw_config, :secrets
   attr_reader :accessories, :aliases, :boot, :builder, :env, :healthcheck, :logging, :traefik, :servers, :ssh, :sshkit, :registry
 
   include Validation
@@ -57,13 +56,15 @@ class Kamal::Configuration
     @aliases = @raw_config.aliases&.keys&.to_h { |name| [ name, Alias.new(name, config: self) ] } || {}
     @boot = Boot.new(config: self)
     @builder = Builder.new(config: self)
-    @env = Env.new(config: @raw_config.env || {})
+    @env = Env.new(config: @raw_config.env || {}, secrets: secrets)
 
     @healthcheck = Healthcheck.new(healthcheck_config: @raw_config.healthcheck)
     @logging = Logging.new(logging_config: @raw_config.logging)
     @traefik = Traefik.new(config: self)
     @ssh = Ssh.new(config: self)
     @sshkit = Sshkit.new(config: self)
+
+    @secrets = Kamal::Secrets.new(destination: destination)
 
     ensure_destination_if_required
     ensure_required_keys_present
@@ -218,13 +219,13 @@ class Kamal::Configuration
   end
 
 
-  def host_env_directory
+  def env_directory
     File.join(run_directory, "env")
   end
 
   def env_tags
     @env_tags ||= if (tags = raw_config.env["tags"])
-      tags.collect { |name, config| Env::Tag.new(name, config: config) }
+      tags.collect { |name, config| Env::Tag.new(name, config: config, secrets: secrets) }
     else
       []
     end
@@ -252,6 +253,10 @@ class Kamal::Configuration
       logging: logging_args,
       healthcheck: healthcheck.to_h
     }.compact
+  end
+
+  def secrets
+    @secrets ||= Kamal::Secrets.new(destination: destination)
   end
 
   private

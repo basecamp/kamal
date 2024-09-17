@@ -8,14 +8,11 @@ class CliMainTest < CliTestCase
     invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false }
 
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:server:bootstrap", [], invoke_options)
-    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:main:envify", [], invoke_options)
-    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:env:push", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:accessory:boot", [ "all" ], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:deploy)
 
     run_command("setup").tap do |output|
       assert_match /Ensure Docker is installed.../, output
-      assert_match /Evaluate and push env files.../, output
     end
   end
 
@@ -23,8 +20,6 @@ class CliMainTest < CliTestCase
     invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false }
 
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:server:bootstrap", [], invoke_options)
-    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:env:push", [], invoke_options)
-    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:main:envify", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:accessory:boot", [ "all" ], invoke_options)
     # deploy
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:registry:login", [], invoke_options.merge(skip_local: true))
@@ -36,7 +31,6 @@ class CliMainTest < CliTestCase
 
     run_command("setup", "--skip_push").tap do |output|
       assert_match /Ensure Docker is installed.../, output
-      assert_match /Evaluate and push env files.../, output
       # deploy
       assert_match /Acquiring the deploy lock/, output
       assert_match /Log into image registry/, output
@@ -49,27 +43,29 @@ class CliMainTest < CliTestCase
   end
 
   test "deploy" do
-    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false, "verbose" => true }
+    with_test_secrets("secrets" => "DB_PASSWORD=secret") do
+      invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false, "verbose" => true }
 
-    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:registry:login", [], invoke_options.merge(skip_local: false))
-    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:deliver", [], invoke_options)
-    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:traefik:boot", [], invoke_options)
-    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true))
-    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:boot", [], invoke_options)
-    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:prune:all", [], invoke_options)
+      Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:registry:login", [], invoke_options.merge(skip_local: false))
+      Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:deliver", [], invoke_options)
+      Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:traefik:boot", [], invoke_options)
+      Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true))
+      Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:boot", [], invoke_options)
+      Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:prune:all", [], invoke_options)
 
-    Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
-    hook_variables = { version: 999, service_version: "app@999", hosts: "1.1.1.1,1.1.1.2", command: "deploy" }
+      Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
+      hook_variables = { version: 999, service_version: "app@999", hosts: "1.1.1.1,1.1.1.2", command: "deploy" }
 
-    run_command("deploy", "--verbose").tap do |output|
-      assert_hook_ran "pre-connect", output, **hook_variables
-      assert_match /Log into image registry/, output
-      assert_match /Build and push app image/, output
-      assert_hook_ran "pre-deploy", output, **hook_variables
-      assert_match /Ensure Traefik is running/, output
-      assert_match /Detect stale containers/, output
-      assert_match /Prune old containers and images/, output
-      assert_hook_ran "post-deploy", output, **hook_variables, runtime: true
+      run_command("deploy", "--verbose").tap do |output|
+        assert_hook_ran "pre-connect", output, **hook_variables
+        assert_match /Log into image registry/, output
+        assert_match /Build and push app image/, output
+        assert_hook_ran "pre-deploy", output, **hook_variables, secrets: true
+        assert_match /Ensure Traefik is running/, output
+        assert_match /Detect stale containers/, output
+        assert_match /Prune old containers and images/, output
+        assert_hook_ran "post-deploy", output, **hook_variables, runtime: true, secrets: true
+      end
     end
   end
 
@@ -388,40 +384,38 @@ class CliMainTest < CliTestCase
   end
 
   test "init" do
-    Pathname.any_instance.expects(:exist?).returns(false).times(3)
-    Pathname.any_instance.stubs(:mkpath)
-    FileUtils.stubs(:mkdir_p)
-    FileUtils.stubs(:cp_r)
-    FileUtils.stubs(:cp)
+    in_dummy_git_repo do
+      run_command("init").tap do |output|
+        assert_match "Created configuration file in config/deploy.yml", output
+        assert_match "Created .kamal/secrets file", output
+      end
 
-    run_command("init").tap do |output|
-      assert_match /Created configuration file in config\/deploy.yml/, output
-      assert_match /Created \.env file/, output
+      assert_file "config/deploy.yml", "service: my-app"
+      assert_file ".kamal/secrets", "KAMAL_REGISTRY_PASSWORD=$KAMAL_REGISTRY_PASSWORD"
     end
   end
 
   test "init with existing config" do
-    Pathname.any_instance.expects(:exist?).returns(true).times(3)
+    in_dummy_git_repo do
+      run_command("init")
 
-    run_command("init").tap do |output|
-      assert_match /Config file already exists in config\/deploy.yml \(remove first to create a new one\)/, output
+      run_command("init").tap do |output|
+        assert_match /Config file already exists in config\/deploy.yml \(remove first to create a new one\)/, output
+        assert_no_match /Added .kamal\/secrets/, output
+      end
     end
   end
 
   test "init with bundle option" do
-    Pathname.any_instance.expects(:exist?).returns(false).times(4)
-    Pathname.any_instance.stubs(:mkpath)
-    FileUtils.stubs(:mkdir_p)
-    FileUtils.stubs(:cp_r)
-    FileUtils.stubs(:cp)
-
-    run_command("init", "--bundle").tap do |output|
-      assert_match /Created configuration file in config\/deploy.yml/, output
-      assert_match /Created \.env file/, output
-      assert_match /Adding Kamal to Gemfile and bundle/, output
-      assert_match /bundle add kamal/, output
-      assert_match /bundle binstubs kamal/, output
-      assert_match /Created binstub file in bin\/kamal/, output
+    in_dummy_git_repo do
+      run_command("init", "--bundle").tap do |output|
+        assert_match "Created configuration file in config/deploy.yml", output
+        assert_match "Created .kamal/secrets file", output
+        assert_match /Adding Kamal to Gemfile and bundle/, output
+        assert_match /bundle add kamal/, output
+        assert_match /bundle binstubs kamal/, output
+        assert_match /Created binstub file in bin\/kamal/, output
+      end
     end
   end
 
@@ -435,50 +429,6 @@ class CliMainTest < CliTestCase
     run_command("init", "--bundle").tap do |output|
       assert_match /Config file already exists in config\/deploy.yml \(remove first to create a new one\)/, output
       assert_match /Binstub already exists in bin\/kamal \(remove first to create a new one\)/, output
-    end
-  end
-
-  test "envify" do
-    with_test_dotenv(".env.erb": "HELLO=<%= 'world' %>") do
-      run_command("envify")
-      assert_equal("HELLO=world", File.read(".env"))
-    end
-  end
-
-  test "envify with blank line trimming" do
-    file = <<~EOF
-      HELLO=<%= 'world' %>
-      <% if true -%>
-      KEY=value
-      <% end -%>
-    EOF
-
-    with_test_dotenv(".env.erb": file) do
-      run_command("envify")
-      assert_equal("HELLO=world\nKEY=value\n", File.read(".env"))
-    end
-  end
-
-  test "envify with destination" do
-    with_test_dotenv(".env.world.erb": "HELLO=<%= 'world' %>") do
-      run_command("envify", "-d", "world", config_file: "deploy_for_dest")
-      assert_equal "HELLO=world", File.read(".env.world")
-    end
-  end
-
-  test "envify with skip_push" do
-    Pathname.any_instance.expects(:exist?).returns(true).times(1)
-    File.expects(:read).with(".env.erb").returns("HELLO=<%= 'world' %>")
-    File.expects(:write).with(".env", "HELLO=world", perm: 0600)
-
-    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:env:push").never
-    run_command("envify", "--skip-push")
-  end
-
-  test "envify with clean env" do
-    with_test_dotenv(".env": "HELLO=already", ".env.erb": "HELLO=<%= ENV.fetch 'HELLO', 'never' %>") do
-      run_command("envify", "--skip-push")
-      assert_equal "HELLO=never", File.read(".env")
     end
   end
 
@@ -572,18 +522,16 @@ class CliMainTest < CliTestCase
       end
     end
 
-    def with_test_dotenv(**files)
-      Dir.mktmpdir do |dir|
-        fixtures_dup = File.join(dir, "test")
-        FileUtils.mkdir_p(fixtures_dup)
-        FileUtils.cp_r("test/fixtures/", fixtures_dup)
-
-        Dir.chdir(dir) do
-          files.each do |filename, contents|
-            File.binwrite(filename.to_s, contents)
-          end
+    def in_dummy_git_repo
+      Dir.mktmpdir do |tmpdir|
+        Dir.chdir(tmpdir) do
+          `git init`
           yield
         end
       end
+    end
+
+    def assert_file(file, content)
+      assert_match content, File.read(file)
     end
 end

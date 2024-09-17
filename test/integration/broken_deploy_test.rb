@@ -4,8 +4,6 @@ class BrokenDeployTest < IntegrationTest
   test "deploying a bad image" do
     @app = "app_with_roles"
 
-    kamal :envify
-
     first_version = latest_app_version
 
     kamal :deploy

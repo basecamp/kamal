@@ -1,6 +1,6 @@
 class Kamal::Commands::Traefik < Kamal::Commands::Base
   delegate :argumentize, :optionize, to: Kamal::Utils
-  delegate :port, :publish?, :labels, :env, :image, :options, :args, to: :"config.traefik"
+  delegate :port, :publish?, :labels, :env, :image, :options, :args, :env_args, :secrets_io, :env_directory, :secrets_path, to: :"config.traefik"
 
   def run
     docker :run, "--name traefik",
@@ -54,12 +54,8 @@ class Kamal::Commands::Traefik < Kamal::Commands::Base
     docker :image, :prune, "--all", "--force", "--filter", "label=org.opencontainers.image.title=Traefik"
   end
 
-  def make_env_directory
-    make_directory(env.secrets_directory)
-  end
-
-  def remove_env_file
-    [ :rm, "-f", env.secrets_file ]
+  def ensure_env_directory
+    make_directory env_directory
   end
 
   private
@@ -69,10 +65,6 @@ class Kamal::Commands::Traefik < Kamal::Commands::Base
 
     def label_args
       argumentize "--label", labels
-    end
-
-    def env_args
-      env.args
     end
 
     def docker_options_args

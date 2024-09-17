@@ -18,7 +18,7 @@ class Kamal::Configuration::Role
 
     @specialized_env = Kamal::Configuration::Env.new \
       config: specializations.fetch("env", {}),
-      secrets_file: File.join(config.host_env_directory, "roles", "#{container_prefix}.env"),
+      secrets: config.secrets,
       context: "servers/#{name}/env"
 
     @specialized_logging = Kamal::Configuration::Logging.new \
@@ -77,7 +77,19 @@ class Kamal::Configuration::Role
   end
 
   def env_args(host)
-    env(host).args
+    [ *env(host).clear_args, *argumentize("--env-file", secrets_path) ]
+  end
+
+  def env_directory
+    File.join(config.env_directory, "roles")
+  end
+
+  def secrets_io(host)
+    env(host).secrets_io
+  end
+
+  def secrets_path
+    File.join(config.env_directory, "roles", "#{container_prefix}.env")
   end
 
   def asset_volume_args

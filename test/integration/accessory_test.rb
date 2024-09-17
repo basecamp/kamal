@@ -2,8 +2,6 @@ require_relative "integration_test"
 
 class AccessoryTest < IntegrationTest
   test "boot, stop, start, restart, logs, remove" do
-    kamal :envify
-
     kamal :accessory, :boot, :busybox
     assert_accessory_running :busybox
 
@@ -21,8 +19,6 @@ class AccessoryTest < IntegrationTest
 
     kamal :accessory, :remove, :busybox, "-y"
     assert_accessory_not_running :busybox
-
-    kamal :env, :delete
   end
 
   private
