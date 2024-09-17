@@ -35,8 +35,8 @@ class Kamal::Cli::Main < Kamal::Cli::Base
       with_lock do
         run_hook "pre-deploy", secrets: true
 
-        say "Ensure Traefik is running...", :magenta
-        invoke "kamal:cli:traefik:boot", [], invoke_options
+        say "Ensure kamal-proxy is running...", :magenta
+        invoke "kamal:cli:proxy:boot", [], invoke_options
 
         say "Detect stale containers...", :magenta
         invoke "kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true)
@@ -51,7 +51,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
     run_hook "post-deploy", secrets: true, runtime: runtime.round
   end
 
-  desc "redeploy", "Deploy app to servers without bootstrapping servers, starting Traefik, pruning, and registry login"
+  desc "redeploy", "Deploy app to servers without bootstrapping servers, starting kamal-proxy, pruning, and registry login"
   option :skip_push, aliases: "-P", type: :boolean, default: false, desc: "Skip image build and push"
   def redeploy
     runtime = print_runtime do
@@ -104,7 +104,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
 
   desc "details", "Show details about all containers"
   def details
-    invoke "kamal:cli:traefik:details"
+    invoke "kamal:cli:proxy:details"
     invoke "kamal:cli:app:details"
     invoke "kamal:cli:accessory:details", [ "all" ]
   end
@@ -176,13 +176,13 @@ class Kamal::Cli::Main < Kamal::Cli::Base
     end
   end
 
-  desc "remove", "Remove Traefik, app, accessories, and registry session from servers"
+  desc "remove", "Remove kamal-proxy, app, accessories, and registry session from servers"
   option :confirmed, aliases: "-y", type: :boolean, default: false, desc: "Proceed without confirmation question"
   def remove
     confirming "This will remove all containers and images. Are you sure?" do
       with_lock do
-        invoke "kamal:cli:traefik:remove", [], options.without(:confirmed)
         invoke "kamal:cli:app:remove", [], options.without(:confirmed)
+        invoke "kamal:cli:proxy:remove", [], options.without(:confirmed)
         invoke "kamal:cli:accessory:remove", [ "all" ], options
         invoke "kamal:cli:registry:logout", [], options.without(:confirmed).merge(skip_local: true)
       end
@@ -206,6 +206,9 @@ class Kamal::Cli::Main < Kamal::Cli::Base
   desc "lock", "Manage the deploy lock"
   subcommand "lock", Kamal::Cli::Lock
 
+  desc "proxy", "Manage kamal-proxy"
+  subcommand "proxy", Kamal::Cli::Proxy
+
   desc "prune", "Prune old application images and containers"
   subcommand "prune", Kamal::Cli::Prune
 
@@ -217,9 +220,6 @@ class Kamal::Cli::Main < Kamal::Cli::Base
 
   desc "server", "Bootstrap servers with curl and Docker"
   subcommand "server", Kamal::Cli::Server
-
-  desc "traefik", "Manage Traefik load balancer"
-  subcommand "traefik", Kamal::Cli::Traefik
 
   private
     def container_available?(version)

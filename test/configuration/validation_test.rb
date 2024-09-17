@@ -22,7 +22,7 @@ class ConfigurationValidationTest < ActiveSupport::TestCase
 
     assert_error "servers: should be an array or a hash", servers: "foo"
 
-    [ :labels, :registry, :accessories, :env, :ssh, :sshkit, :builder, :traefik, :boot, :healthcheck, :logging ].each do |key|
+    [ :labels, :registry, :accessories, :env, :ssh, :sshkit, :builder, :proxy, :boot, :logging ].each do |key|
       assert_error "#{key}: should be a hash", **{ key =>[] }
     end
   end

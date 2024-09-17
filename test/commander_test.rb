@@ -136,18 +136,18 @@ class CommanderTest < ActiveSupport::TestCase
     assert_equal [ "1.1.1.3", "1.1.1.4", "1.1.1.1", "1.1.1.2" ], @kamal.hosts
   end
 
-  test "traefik hosts should observe filtered roles" do
-    configure_with(:deploy_with_multiple_traefik_roles)
+  test "proxy hosts should observe filtered roles" do
+    configure_with(:deploy_with_multiple_proxy_roles)
 
     @kamal.specific_roles = [ "web_tokyo" ]
-    assert_equal [ "1.1.1.3", "1.1.1.4" ], @kamal.traefik_hosts
+    assert_equal [ "1.1.1.3", "1.1.1.4" ], @kamal.proxy_hosts
   end
 
-  test "traefik hosts should observe filtered hosts" do
-    configure_with(:deploy_with_multiple_traefik_roles)
+  test "proxy hosts should observe filtered hosts" do
+    configure_with(:deploy_with_multiple_proxy_roles)
 
     @kamal.specific_hosts = [ "1.1.1.2" ]
-    assert_equal [ "1.1.1.2" ], @kamal.traefik_hosts
+    assert_equal [ "1.1.1.2" ], @kamal.proxy_hosts
   end
 
   private

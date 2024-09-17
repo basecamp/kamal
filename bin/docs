@@ -22,14 +22,13 @@ DOCS = {
   "builder" => "Builders",
   "configuration" => "Configuration overview",
   "env" => "Environment variables",
-  "healthcheck" => "Healthchecks",
   "logging" => "Logging",
+  "proxy" => "Proxy",
   "registry" => "Docker Registry",
   "role" => "Roles",
   "servers" => "Servers",
   "ssh" => "SSH",
-  "sshkit" => "SSHKit",
-  "traefik" => "Traefik"
+  "sshkit" => "SSHKit"
 }
 
 class DocWriter

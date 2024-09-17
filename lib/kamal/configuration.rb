@@ -10,7 +10,7 @@ class Kamal::Configuration
   delegate :argumentize, :optionize, to: Kamal::Utils
 
   attr_reader :destination, :raw_config, :secrets
-  attr_reader :accessories, :aliases, :boot, :builder, :env, :healthcheck, :logging, :traefik, :servers, :ssh, :sshkit, :registry
+  attr_reader :accessories, :aliases, :boot, :builder, :env, :logging, :proxy, :servers, :ssh, :sshkit, :registry
 
   include Validation
 
@@ -58,9 +58,8 @@ class Kamal::Configuration
     @builder = Builder.new(config: self)
     @env = Env.new(config: @raw_config.env || {}, secrets: secrets)
 
-    @healthcheck = Healthcheck.new(healthcheck_config: @raw_config.healthcheck)
     @logging = Logging.new(logging_config: @raw_config.logging)
-    @traefik = Traefik.new(config: self)
+    @proxy = Proxy.new(config: self)
     @ssh = Ssh.new(config: self)
     @sshkit = Sshkit.new(config: self)
 
@@ -71,6 +70,7 @@ class Kamal::Configuration
     ensure_valid_kamal_version
     ensure_retain_containers_valid
     ensure_valid_service_name
+    ensure_no_traefik_reboot_hooks
   end
 
 
@@ -131,16 +131,16 @@ class Kamal::Configuration
     raw_config.allow_empty_roles
   end
 
-  def traefik_roles
-    roles.select(&:running_traefik?)
+  def proxy_roles
+    roles.select(&:running_proxy?)
   end
 
-  def traefik_role_names
-    traefik_roles.flat_map(&:name)
+  def proxy_role_names
+    proxy_roles.flat_map(&:name)
   end
 
-  def traefik_hosts
-    traefik_roles.flat_map(&:hosts).uniq
+  def proxy_hosts
+    proxy_roles.flat_map(&:hosts).uniq
   end
 
   def repository
@@ -185,30 +185,39 @@ class Kamal::Configuration
   end
 
 
-  def healthcheck_service
-    [ "healthcheck", service, destination ].compact.join("-")
-  end
-
   def readiness_delay
     raw_config.readiness_delay || 7
   end
 
-  def run_id
-    @run_id ||= SecureRandom.hex(16)
+  def readiness_timeout
+    raw_config.readiness_timeout || 30
   end
 
 
   def run_directory
-    raw_config.run_directory || ".kamal"
+    ".kamal"
   end
 
-  def run_directory_as_docker_volume
-    if Pathname.new(run_directory).absolute?
-      run_directory
-    else
-      File.join "$(pwd)", run_directory
-    end
+  def apps_directory
+    File.join run_directory, "apps"
   end
+
+  def app_directory
+    File.join apps_directory, [ service, destination ].compact.join("-")
+  end
+
+  def proxy_directory
+    File.join run_directory, "proxy"
+  end
+
+  def env_directory
+    File.join app_directory, "env"
+  end
+
+  def assets_directory
+    File.join app_directory, "assets"
+  end
+
 
   def hooks_path
     raw_config.hooks_path || ".kamal/hooks"
@@ -218,10 +227,6 @@ class Kamal::Configuration
     raw_config.asset_path
   end
 
-
-  def env_directory
-    File.join(run_directory, "env")
-  end
 
   def env_tags
     @env_tags ||= if (tags = raw_config.env["tags"])
@@ -250,8 +255,7 @@ class Kamal::Configuration
       sshkit: sshkit.to_h,
       builder: builder.to_h,
       accessories: raw_config.accessories,
-      logging: logging_args,
-      healthcheck: healthcheck.to_h
+      logging: logging_args
     }.compact
   end
 
@@ -309,6 +313,16 @@ class Kamal::Configuration
 
     def ensure_retain_containers_valid
       raise Kamal::ConfigurationError, "Must retain at least 1 container" if retain_containers < 1
+
+      true
+    end
+
+    def ensure_no_traefik_reboot_hooks
+      hooks = %w[ pre-traefik-reboot post-traefik-reboot ].select { |hook_file| File.exist?(File.join(hooks_path, hook_file)) }
+
+      if hooks.any?
+        raise Kamal::ConfigurationError, "Found #{hooks.join(", ")}, these should be renamed to (pre|post)-proxy-reboot"
+      end
 
       true
     end

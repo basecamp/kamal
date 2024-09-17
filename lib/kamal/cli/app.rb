@@ -4,7 +4,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
     with_lock do
       say "Get most recent version available as an image...", :magenta unless options[:version]
       using_version(version_or_latest) do |version|
-        say "Start container with version #{version} using a #{KAMAL.config.readiness_delay}s readiness delay (or reboot if already running)...", :magenta
+        say "Start container with version #{version} (or reboot if already running)...", :magenta
 
         # Assets are prepared in a separate step to ensure they are on all hosts before booting
         on(KAMAL.hosts) do
@@ -38,8 +38,17 @@ class Kamal::Cli::App < Kamal::Cli::Base
         roles = KAMAL.roles_on(host)
 
         roles.each do |role|
+          app = KAMAL.app(role: role, host: host)
           execute *KAMAL.auditor.record("Started app version #{KAMAL.config.version}"), verbosity: :debug
-          execute *KAMAL.app(role: role, host: host).start, raise_on_non_zero_exit: false
+          execute *app.start, raise_on_non_zero_exit: false
+
+          if role.running_proxy?
+            version = capture_with_info(*app.current_running_version, raise_on_non_zero_exit: false).strip
+            endpoint = capture_with_info(*app.container_id_for_version(version)).strip
+            raise Kamal::Cli::BootError, "Failed to get endpoint for #{role} on #{host}, did the container boot?" if endpoint.empty?
+
+            execute *KAMAL.proxy.deploy(role.container_prefix, target: endpoint)
+          end
         end
       end
     end
@@ -52,8 +61,18 @@ class Kamal::Cli::App < Kamal::Cli::Base
         roles = KAMAL.roles_on(host)
 
         roles.each do |role|
+          app = KAMAL.app(role: role, host: host)
           execute *KAMAL.auditor.record("Stopped app", role: role), verbosity: :debug
-          execute *KAMAL.app(role: role, host: host).stop, raise_on_non_zero_exit: false
+
+          if role.running_proxy?
+            version = capture_with_info(*app.current_running_version, raise_on_non_zero_exit: false).strip
+            endpoint = capture_with_info(*app.container_id_for_version(version)).strip
+            if endpoint.present?
+              execute *KAMAL.proxy.remove(role.container_prefix, target: endpoint), raise_on_non_zero_exit: false
+            end
+          end
+
+          execute *app.stop, raise_on_non_zero_exit: false
         end
       end
     end
@@ -212,6 +231,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
       stop
       remove_containers
       remove_images
+      remove_app_directory
     end
   end
 
@@ -249,6 +269,20 @@ class Kamal::Cli::App < Kamal::Cli::Base
       on(KAMAL.hosts) do
         execute *KAMAL.auditor.record("Removed all app images"), verbosity: :debug
         execute *KAMAL.app.remove_images
+      end
+    end
+  end
+
+  desc "remove_app_directory", "Remove the service directory from servers", hide: true
+  def remove_app_directory
+    with_lock do
+      on(KAMAL.hosts) do |host|
+        roles = KAMAL.roles_on(host)
+
+        roles.each do |role|
+          execute *KAMAL.auditor.record("Removed #{KAMAL.config.app_directory} on all servers", role: role), verbosity: :debug
+          execute *KAMAL.server.remove_app_directory, raise_on_non_zero_exit: false
+        end
       end
     end
   end

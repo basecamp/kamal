@@ -1,3 +1,0 @@
-#!/bin/sh
-echo "Rebooting Traefik on ${KAMAL_HOSTS}..."
-mkdir -p /tmp/${TEST_ID} && touch /tmp/${TEST_ID}/pre-traefik-reboot

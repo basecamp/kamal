@@ -31,7 +31,7 @@ class IntegrationTest < ActiveSupport::TestCase
         succeeded = system("cd test/integration && #{command}")
       end
 
-      raise "Command `#{command}` failed with error code `#{$?}`" if !succeeded && raise_on_error
+      raise "Command `#{command}` failed with error code `#{$?}`, and output:\n#{result}" if !succeeded && raise_on_error
       result
     end
 
@@ -101,8 +101,8 @@ class IntegrationTest < ActiveSupport::TestCase
     def assert_200(response)
       code = response.code
       if code != "200"
-        puts "Got response code #{code}, here are the traefik logs:"
-        kamal :traefik, :logs
+        puts "Got response code #{code}, here are the proxy logs:"
+        kamal :proxy, :logs
         puts "And here are the load balancer logs"
         docker_compose :logs, :load_balancer
         puts "Tried to get the response code again and got #{app_response.code}"
@@ -129,8 +129,8 @@ class IntegrationTest < ActiveSupport::TestCase
     def debug_response_code(app_response, expected_code)
       code = app_response.code
       if code != expected_code
-        puts "Got response code #{code}, here are the traefik logs:"
-        kamal :traefik, :logs
+        puts "Got response code #{code}, here are the proxy logs:"
+        kamal :proxy, :logs
         puts "And here are the load balancer logs"
         docker_compose :logs, :load_balancer
         puts "Tried to get the response code again and got #{app_response.code}"
@@ -147,5 +147,17 @@ class IntegrationTest < ActiveSupport::TestCase
 
     def container_running?(host:, name:)
       docker_compose("exec #{host} docker ps --filter=name=#{name} | tail -n+2", capture: true).strip.present?
+    end
+
+    def assert_app_directory_removed
+      assert_directory_removed("./kamal/apps/#{@app}")
+    end
+
+    def assert_proxy_directory_removed
+      assert_directory_removed("./kamal/proxy")
+    end
+
+    def assert_directory_removed(directory)
+      assert docker_compose("exec vm1 ls #{directory} | wc -l", capture: true).strip == "0"
     end
 end
