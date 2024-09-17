@@ -222,6 +222,25 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
     end
   end
 
+  desc "downgrade", "Downgrade accessories from Kamal 2 to 1.9"
+  option :rolling, type: :boolean, default: false, desc: "Upgrade one host at a time"
+  option :confirmed, aliases: "-y", type: :boolean, default: false, desc: "Proceed without confirmation question"
+  def downgrade(name)
+    confirming "This will restart all accessories" do
+      with_lock do
+        host_groups = options[:rolling] ? KAMAL.accessory_hosts : [ KAMAL.accessory_hosts ]
+        host_groups.each do |hosts|
+          host_list = Array(hosts).join(",")
+          KAMAL.with_specific_hosts(hosts) do
+            say "Downgrading #{name} accessories on #{host_list}...", :magenta
+            reboot name
+            say "Downgraded #{name} accessories on #{host_list}...", :magenta
+          end
+        end
+      end
+    end
+  end
+
   private
     def with_accessory(name)
       if KAMAL.config.accessory(name)

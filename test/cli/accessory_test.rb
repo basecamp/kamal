@@ -209,6 +209,24 @@ class CliAccessoryTest < CliTestCase
     end
   end
 
+  test "downgrade" do
+    run_command("downgrade", "-y", "all").tap do |output|
+      assert_match "Downgrading all accessories on 1.1.1.3,1.1.1.1,1.1.1.2...", output
+      assert_match "docker container stop app-mysql on 1.1.1.3", output
+      assert_match "docker run --name app-mysql --detach --restart unless-stopped --log-opt max-size=\"10m\" --publish 3306:3306 --env-file .kamal/env/accessories/app-mysql.env --env MYSQL_ROOT_HOST=\"%\" --volume $PWD/app-mysql/etc/mysql/my.cnf:/etc/mysql/my.cnf --volume $PWD/app-mysql/data:/var/lib/mysql --label service=\"app-mysql\" mysql:5.7 on 1.1.1.3", output
+      assert_match "Downgraded all accessories on 1.1.1.3,1.1.1.1,1.1.1.2", output
+    end
+  end
+
+  test "downgrade rolling" do
+    run_command("downgrade", "--rolling", "-y", "all").tap do |output|
+      assert_match "Downgrading all accessories on 1.1.1.3...", output
+      assert_match "docker container stop app-mysql on 1.1.1.3", output
+      assert_match "docker run --name app-mysql --detach --restart unless-stopped --log-opt max-size=\"10m\" --publish 3306:3306 --env-file .kamal/env/accessories/app-mysql.env --env MYSQL_ROOT_HOST=\"%\" --volume $PWD/app-mysql/etc/mysql/my.cnf:/etc/mysql/my.cnf --volume $PWD/app-mysql/data:/var/lib/mysql --label service=\"app-mysql\" mysql:5.7 on 1.1.1.3", output
+      assert_match "Downgraded all accessories on 1.1.1.3", output
+    end
+  end
+
   private
     def run_command(*command)
       stdouted { Kamal::Cli::Accessory.start([ *command, "-c", "test/fixtures/deploy_with_accessories.yml" ]) }

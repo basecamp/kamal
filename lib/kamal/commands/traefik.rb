@@ -62,6 +62,15 @@ class Kamal::Commands::Traefik < Kamal::Commands::Base
     [ :rm, "-f", env.secrets_file ]
   end
 
+  def cleanup_kamal_proxy
+    chain \
+      docker(:container, :stop, "kamal-proxy"),
+      combine(
+        docker(:container, :prune, "--force", "--filter", "label=org.opencontainers.image.title=kamal-proxy"),
+        docker(:image, :prune, "--all", "--force", "--filter", "label=org.opencontainers.image.title=kamal-proxy")
+      )
+  end
+
   private
     def publish_args
       argumentize "--publish", port if publish?

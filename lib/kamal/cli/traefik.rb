@@ -119,4 +119,44 @@ class Kamal::Cli::Traefik < Kamal::Cli::Base
       end
     end
   end
+
+  desc "downgrade", "Downgrade to Traefik on servers (stop container, remove container, start new container, reboot app)"
+  option :rolling, type: :boolean, default: false, desc: "Reboot proxy on hosts in sequence, rather than in parallel"
+  option :confirmed, aliases: "-y", type: :boolean, default: false, desc: "Proceed without confirmation question"
+  def downgrade
+    invoke_options = { "version" => KAMAL.config.latest_tag }.merge(options)
+
+    confirming "This will cause a brief outage on each host. Are you sure?" do
+      host_groups = options[:rolling] ? KAMAL.hosts : [ KAMAL.hosts ]
+      host_groups.each do |hosts|
+        host_list = Array(hosts).join(",")
+        say "Downgrading to Traefik on #{host_list}...", :magenta
+        run_hook "pre-traefik-reboot", hosts: host_list
+        on(hosts) do |host|
+          execute *KAMAL.auditor.record("Rebooted Traefik"), verbosity: :debug
+          execute *KAMAL.registry.login
+
+          "Stopping and removing kamal-proxy on #{host}, if running..."
+          execute *KAMAL.traefik.cleanup_kamal_proxy
+
+          "Stopping and removing Traefik on #{host}, if running..."
+          execute *KAMAL.traefik.stop, raise_on_non_zero_exit: false
+          execute *KAMAL.traefik.remove_container
+          execute *KAMAL.traefik.remove_image
+        end
+
+        KAMAL.with_specific_hosts(hosts) do
+          invoke "kamal:cli:traefik:boot", [], invoke_options
+          reset_invocation(Kamal::Cli::Traefik)
+          invoke "kamal:cli:app:boot", [], invoke_options
+          reset_invocation(Kamal::Cli::App)
+          invoke "kamal:cli:prune:all", [], invoke_options
+          reset_invocation(Kamal::Cli::Prune)
+        end
+
+        run_hook "post-traefik-reboot", hosts: host_list
+        say "Downgraded to Traefik on #{host_list}", :magenta
+      end
+    end
+  end
 end
