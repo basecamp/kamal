@@ -486,6 +486,34 @@ class CliMainTest < CliTestCase
     end
   end
 
+  test "upgrade" do
+    invoke_options = { "config_file" => "test/fixtures/deploy_with_accessories.yml", "skip_hooks" => false, "confirmed" => true, "rolling" => false }
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:proxy:upgrade", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:accessory:upgrade", [ "all" ], invoke_options)
+
+    run_command("upgrade", "-y", config_file: "deploy_with_accessories").tap do |output|
+      assert_match "Upgrading all hosts...", output
+      assert_match "Upgraded all hosts", output
+    end
+  end
+
+  test "upgrade rolling" do
+    invoke_options = { "config_file" => "test/fixtures/deploy_with_accessories.yml", "skip_hooks" => false, "confirmed" => true, "rolling" => false }
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:proxy:upgrade", [], invoke_options).times(4)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:accessory:upgrade", [ "all" ], invoke_options).times(4)
+
+    run_command("upgrade", "--rolling", "-y", config_file: "deploy_with_accessories").tap do |output|
+      assert_match "Upgrading 1.1.1.1...", output
+      assert_match "Upgraded 1.1.1.1", output
+      assert_match "Upgrading 1.1.1.2...", output
+      assert_match "Upgraded 1.1.1.2", output
+      assert_match "Upgrading 1.1.1.3...", output
+      assert_match "Upgraded 1.1.1.3", output
+      assert_match "Upgrading 1.1.1.4...", output
+      assert_match "Upgraded 1.1.1.4", output
+    end
+  end
+
   private
     def run_command(*command, config_file: "deploy_simple")
       with_argv([ *command, "-c", "test/fixtures/#{config_file}.yml" ]) do
