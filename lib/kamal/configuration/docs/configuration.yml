@@ -70,7 +70,7 @@ env:
 # volume containing both sets of files.
 # This requires that file names change when the contents change
 # (e.g. by including a hash of the contents in the name).
-
+#
 # To configure this, set the path to the assets:
 asset_path: /path/to/assets
 
@@ -106,6 +106,7 @@ minimum_version: 1.3.0
 # Readiness delay
 #
 # Seconds to wait for a container to boot after is running, default 7
+#
 # This only applies to containers that do not run a proxy or specify a healthcheck
 readiness_delay: 4
 
