@@ -23,7 +23,7 @@ class Kamal::Commander::Specifics
   end
 
   def accessory_hosts
-    specific_hosts || config.accessories.flat_map(&:hosts)
+    config.accessories.flat_map(&:hosts) & specified_hosts
   end
 
   private

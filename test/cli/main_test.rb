@@ -500,7 +500,7 @@ class CliMainTest < CliTestCase
   test "upgrade rolling" do
     invoke_options = { "config_file" => "test/fixtures/deploy_with_accessories.yml", "skip_hooks" => false, "confirmed" => true, "rolling" => false }
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:proxy:upgrade", [], invoke_options).times(4)
-    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:accessory:upgrade", [ "all" ], invoke_options).times(4)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:accessory:upgrade", [ "all" ], invoke_options).times(3)
 
     run_command("upgrade", "--rolling", "-y", config_file: "deploy_with_accessories").tap do |output|
       assert_match "Upgrading 1.1.1.1...", output

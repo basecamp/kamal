@@ -222,21 +222,21 @@ class CliAccessoryTest < CliTestCase
 
   test "upgrade" do
     run_command("upgrade", "-y", "all").tap do |output|
-      assert_match "Upgrading accessories on all hosts...", output
+      assert_match "Upgrading all accessories on 1.1.1.3,1.1.1.1,1.1.1.2...", output
       assert_match "docker network create kamal on 1.1.1.3", output
       assert_match "docker container stop app-mysql on 1.1.1.3", output
       assert_match "docker run --name app-mysql --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 3306:3306 --env MYSQL_ROOT_HOST="%" --env-file .kamal/apps/app/env/accessories/mysql.env --volume $PWD/app-mysql/etc/mysql/my.cnf:/etc/mysql/my.cnf --volume $PWD/app-mysql/data:/var/lib/mysql --label service=\"app-mysql\" mysql:5.7 on 1.1.1.3", output
-      assert_match "Upgraded accessories on all hosts", output
+      assert_match "Upgraded all accessories on 1.1.1.3,1.1.1.1,1.1.1.2...", output
     end
   end
 
   test "upgrade rolling" do
     run_command("upgrade", "--rolling", "-y", "all").tap do |output|
-      assert_match "Upgrading accessories on 1.1.1.3...", output
+      assert_match "Upgrading all accessories on 1.1.1.3...", output
       assert_match "docker network create kamal on 1.1.1.3", output
       assert_match "docker container stop app-mysql on 1.1.1.3", output
       assert_match "docker run --name app-mysql --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 3306:3306 --env MYSQL_ROOT_HOST="%" --env-file .kamal/apps/app/env/accessories/mysql.env --volume $PWD/app-mysql/etc/mysql/my.cnf:/etc/mysql/my.cnf --volume $PWD/app-mysql/data:/var/lib/mysql --label service=\"app-mysql\" mysql:5.7 on 1.1.1.3", output
-      assert_match "Upgraded accessories on 1.1.1.3", output
+      assert_match "Upgraded all accessories on 1.1.1.3", output
     end
   end
 
