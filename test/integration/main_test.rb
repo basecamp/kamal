@@ -28,7 +28,7 @@ class MainTest < IntegrationTest
     assert_match /Proxy Host: vm2/, details
     assert_match /App Host: vm1/, details
     assert_match /App Host: vm2/, details
-    assert_match /basecamp\/kamal-proxy:v0.1.0/, details
+    assert_match /basecamp\/kamal-proxy:#{Kamal::Configuration::Proxy::MINIMUM_VERSION}/, details
     assert_match /registry:4443\/app:#{first_version}/, details
 
     audit = kamal :audit, capture: true

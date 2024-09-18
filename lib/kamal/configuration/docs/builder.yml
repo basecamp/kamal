@@ -12,25 +12,25 @@
 #
 # Options go under the builder key in the root configuration.
 builder:
-  # Driver
-  #
-  # The build driver to use, defaults to `docker-container`
-  driver: docker
 
   # Arch
   #
-  # The architectures to build for, defaults to `[ amd64, arm64 ]`
-  # Unless you are using the docker driver, when it defaults to the local architecture
-  # You can set an array or just a single value
+  # The architectures to build for - you can set an array or just a single value.
+  #
+  # Allowed values are `amd64` and `arm64`
   arch:
     - amd64
 
-  # Remote configuration
+  # Remote
   #
-  # If you have a remote builder, you can configure it here
+  # The connection string for a remote builder. If supplied Kamal will use this
+  # for builds that do not match the local architecture of the deployment host.
   remote: ssh://docker@docker-builder
 
-  # Whether to allow local builds
+  # Local
+  #
+  # If set to false, Kamal will always use the remote builder even when building
+  # the local architecture.
   #
   # Defaults to true
   local: true
@@ -78,7 +78,7 @@ builder:
 
   # Build secrets
   #
-  # Values are read from the environment.
+  # Values are read from the .kamal/secrets.
   #
   secrets:
     - SECRET1
@@ -103,3 +103,8 @@ builder:
   #
   # SSH agent socket or keys to expose to the build
   ssh: default=$SSH_AUTH_SOCK
+
+  # Driver
+  #
+  # The build driver to use, defaults to `docker-container`
+  driver: docker

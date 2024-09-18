@@ -27,11 +27,13 @@ registry:
 # and [set up roles and permissions](https://cloud.google.com/artifact-registry/docs/access-control#permissions).
 # Normally, assigning a roles/artifactregistry.writer role should be sufficient.
 #
-# Once the service account is ready, you need to generate and download a JSON key, base64 encode it and add to .env:
+# Once the service account is ready, you need to generate and download a JSON key and base64 encode it:
 #
 # ```shell
-# echo "KAMAL_REGISTRY_PASSWORD=$(base64 -i /path/to/key.json)" | tr -d "\\n"  >> .env
+# base64 -i /path/to/key.json | tr -d "\\n")
 # ```
+# You'll then need to set the KAMAL_REGISTRY_PASSWORD secret to that value.
+#
 # Use the env variable as password along with _json_key_base64 as username.
 # Here’s the final configuration:
 
