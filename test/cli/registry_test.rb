@@ -45,7 +45,7 @@ class CliRegistryTest < CliTestCase
 
   test "setup local registry" do
     run_command("setup", fixture: :with_local_registry).tap do |output|
-      assert_match /docker start kamal-docker-registry || docker run --detach -p 5000:5000 --name kamal-docker-registry registry:2 as .*@localhost/, output
+      assert_match /docker start kamal-docker-registry || docker run --detach -p 127.0.0.1:5000:5000 --name kamal-docker-registry registry:2 as .*@localhost/, output
     end
   end
 

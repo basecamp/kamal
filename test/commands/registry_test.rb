@@ -56,7 +56,8 @@ class CommandsRegistryTest < ActiveSupport::TestCase
   end
 
   test "registry setup" do
-    assert_equal "docker start kamal-docker-registry || docker run --detach -p :5000 --name kamal-docker-registry registry:2", registry.setup.join(" ")
+    @config[:registry] = { "server" => "localhost:5000" }
+    assert_equal "docker start kamal-docker-registry || docker run --detach -p 5000:5000 --name kamal-docker-registry registry:2", registry.setup.join(" ")
   end
 
   test "registry remove" do
