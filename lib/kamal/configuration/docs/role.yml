@@ -35,12 +35,13 @@ servers:
     hosts:
       - 172.1.0.3
       - 172.1.0.4: experiment1
-    proxy: true
     cmd: "bin/jobs"
     options:
       memory: 2g
       cpus: 4
     logging:
+      ...
+    proxy:
       ...
     labels:
       my-label: workers

@@ -14,6 +14,10 @@ class Kamal::Configuration
 
   include Validation
 
+  PROXY_MINIMUM_VERSION = "v0.3.0"
+  PROXY_HTTP_PORT = 80
+  PROXY_HTTPS_PORT = 443
+
   class << self
     def create_from(config_file:, destination: nil, version: nil)
       raw_config = load_config_files(config_file, *destination_config_file(config_file, destination))
@@ -61,7 +65,7 @@ class Kamal::Configuration
     @env = Env.new(config: @raw_config.env || {}, secrets: secrets)
 
     @logging = Logging.new(logging_config: @raw_config.logging)
-    @proxy = Proxy.new(config: self)
+    @proxy = Proxy.new(config: self, proxy_config: @raw_config.proxy || {})
     @ssh = Ssh.new(config: self)
     @sshkit = Sshkit.new(config: self)
 
@@ -71,6 +75,8 @@ class Kamal::Configuration
     ensure_retain_containers_valid
     ensure_valid_service_name
     ensure_no_traefik_reboot_hooks
+    ensure_one_host_for_ssl_roles
+    ensure_unique_hosts_for_ssl_roles
   end
 
 
@@ -244,6 +250,24 @@ class Kamal::Configuration
     env_tags.detect { |t| t.name == name.to_s }
   end
 
+  def proxy_publish_args
+    argumentize "--publish", [ "#{PROXY_HTTP_PORT}:#{PROXY_HTTP_PORT}", "#{PROXY_HTTPS_PORT}:#{PROXY_HTTPS_PORT}" ]
+  end
+
+  def proxy_image
+    "basecamp/kamal-proxy:#{PROXY_MINIMUM_VERSION}"
+  end
+
+  def proxy_container_name
+    "kamal-proxy"
+  end
+
+  def proxy_config_volume
+    Kamal::Configuration::Volume.new \
+      host_path: File.join(proxy_directory, "config"),
+      container_path: "/home/kamal-proxy/.config/kamal-proxy"
+  end
+
 
   def to_h
     {
@@ -327,6 +351,20 @@ class Kamal::Configuration
       true
     end
 
+    def ensure_one_host_for_ssl_roles
+      roles.each(&:ensure_one_host_for_ssl)
+
+      true
+    end
+
+    def ensure_unique_hosts_for_ssl_roles
+      hosts = roles.select(&:ssl?).map { |role| role.proxy.host }
+      duplicates = hosts.tally.filter_map { |host, count| host if count > 1 }
+
+      raise Kamal::ConfigurationError, "Different roles can't share the same host for SSL: #{duplicates.join(", ")}" if duplicates.any?
+
+      true
+    end
 
     def role_names
       raw_config.servers.is_a?(Array) ? [ "web" ] : raw_config.servers.keys.sort

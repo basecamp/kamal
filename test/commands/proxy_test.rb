@@ -15,13 +15,13 @@ class CommandsProxyTest < ActiveSupport::TestCase
 
   test "run" do
     assert_equal \
-      "docker run --name kamal-proxy --network kamal --detach --restart unless-stopped --publish 80:80 --publish 443:443 --volume /var/run/docker.sock:/var/run/docker.sock --volume $(pwd)/.kamal/proxy/config:/home/kamal-proxy/.config/kamal-proxy --log-opt max-size=\"10m\" #{Kamal::Configuration::Proxy::DEFAULT_IMAGE}",
+      "docker run --name kamal-proxy --network kamal --detach --restart unless-stopped --publish 80:80 --publish 443:443 --volume /var/run/docker.sock:/var/run/docker.sock --volume $(pwd)/.kamal/proxy/config:/home/kamal-proxy/.config/kamal-proxy --log-opt max-size=\"10m\" #{KAMAL.config.proxy_image}",
       new_command.run.join(" ")
   end
 
   test "run with ports configured" do
     assert_equal \
-      "docker run --name kamal-proxy --network kamal --detach --restart unless-stopped --publish 80:80 --publish 443:443 --volume /var/run/docker.sock:/var/run/docker.sock --volume $(pwd)/.kamal/proxy/config:/home/kamal-proxy/.config/kamal-proxy --log-opt max-size=\"10m\" #{Kamal::Configuration::Proxy::DEFAULT_IMAGE}",
+      "docker run --name kamal-proxy --network kamal --detach --restart unless-stopped --publish 80:80 --publish 443:443 --volume /var/run/docker.sock:/var/run/docker.sock --volume $(pwd)/.kamal/proxy/config:/home/kamal-proxy/.config/kamal-proxy --log-opt max-size=\"10m\" #{KAMAL.config.proxy_image}",
       new_command.run.join(" ")
   end
 
@@ -29,7 +29,7 @@ class CommandsProxyTest < ActiveSupport::TestCase
     @config.delete(:proxy)
 
     assert_equal \
-      "docker run --name kamal-proxy --network kamal --detach --restart unless-stopped --publish 80:80 --publish 443:443 --volume /var/run/docker.sock:/var/run/docker.sock --volume $(pwd)/.kamal/proxy/config:/home/kamal-proxy/.config/kamal-proxy --log-opt max-size=\"10m\" #{Kamal::Configuration::Proxy::DEFAULT_IMAGE}",
+      "docker run --name kamal-proxy --network kamal --detach --restart unless-stopped --publish 80:80 --publish 443:443 --volume /var/run/docker.sock:/var/run/docker.sock --volume $(pwd)/.kamal/proxy/config:/home/kamal-proxy/.config/kamal-proxy --log-opt max-size=\"10m\" #{KAMAL.config.proxy_image}",
       new_command.run.join(" ")
   end
 
@@ -37,7 +37,7 @@ class CommandsProxyTest < ActiveSupport::TestCase
     @config[:logging] = { "driver" => "local", "options" => { "max-size" => "100m", "max-file" => "3" } }
 
     assert_equal \
-      "docker run --name kamal-proxy --network kamal --detach --restart unless-stopped --publish 80:80 --publish 443:443 --volume /var/run/docker.sock:/var/run/docker.sock --volume $(pwd)/.kamal/proxy/config:/home/kamal-proxy/.config/kamal-proxy --log-driver \"local\" --log-opt max-size=\"100m\" --log-opt max-file=\"3\" #{Kamal::Configuration::Proxy::DEFAULT_IMAGE}",
+      "docker run --name kamal-proxy --network kamal --detach --restart unless-stopped --publish 80:80 --publish 443:443 --volume /var/run/docker.sock:/var/run/docker.sock --volume $(pwd)/.kamal/proxy/config:/home/kamal-proxy/.config/kamal-proxy --log-driver \"local\" --log-opt max-size=\"100m\" --log-opt max-file=\"3\" #{KAMAL.config.proxy_image}",
       new_command.run.join(" ")
   end
 
@@ -105,18 +105,6 @@ class CommandsProxyTest < ActiveSupport::TestCase
     assert_equal \
       "ssh -t root@1.1.1.1 -p 22 'docker logs kamal-proxy --timestamps --tail 10 --follow 2>&1 | grep \"hello!\"'",
       new_command.follow_logs(host: @config[:servers].first, grep: "hello!")
-  end
-
-  test "deploy" do
-    assert_equal \
-      "docker exec kamal-proxy kamal-proxy deploy service --target \"172.1.0.2:80\" --deploy-timeout \"30s\" --drain-timeout \"30s\" --buffer-requests --buffer-responses --log-request-header \"Cache-Control\" --log-request-header \"Last-Modified\" --log-request-header \"User-Agent\"",
-      new_command.deploy("service", target: "172.1.0.2").join(" ")
-  end
-
-  test "remove" do
-    assert_equal \
-      "docker exec kamal-proxy kamal-proxy remove service --target \"172.1.0.2:80\"",
-      new_command.remove("service", target: "172.1.0.2").join(" ")
   end
 
   test "version" do

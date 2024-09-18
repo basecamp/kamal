@@ -9,6 +9,12 @@
 #
 # They are application specific, so are not shared when multiple applications
 # run on the same proxy.
+#
+# The proxy is enabled by default on the primary role, but can be disabled by
+# setting `proxy: false`.
+#
+# It is disabled by default on all other roles, but can be enabled by setting
+# `proxy: true`, or providing a proxy configuration.
 proxy:
 
   # Host

@@ -13,8 +13,8 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
 
         version = capture_with_info(*KAMAL.proxy.version).strip.presence
 
-        if version && Kamal::Utils.older_version?(version, Kamal::Configuration::Proxy::MINIMUM_VERSION)
-          raise "kamal-proxy version #{version} is too old, please reboot to update to at least #{Kamal::Configuration::Proxy::MINIMUM_VERSION}"
+        if version && Kamal::Utils.older_version?(version, Kamal::Configuration::PROXY_MINIMUM_VERSION)
+          raise "kamal-proxy version #{version} is too old, please reboot to update to at least #{Kamal::Configuration::PROXY_MINIMUM_VERSION}"
         end
         execute *KAMAL.proxy.start_or_run
       end
@@ -52,7 +52,7 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
 
               if endpoint.present?
                 info "Deploying #{endpoint} for role `#{role}` on #{host}..."
-                execute *KAMAL.proxy.deploy(role.container_prefix, target: endpoint)
+                execute *app.deploy(target: endpoint)
               end
             end
           end

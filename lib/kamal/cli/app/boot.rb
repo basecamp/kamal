@@ -54,7 +54,7 @@ class Kamal::Cli::App::Boot
       if running_proxy?
         endpoint = capture_with_info(*app.container_id_for_version(version)).strip
         raise Kamal::Cli::BootError, "Failed to get endpoint for #{role} on #{host}, did the container boot?" if endpoint.empty?
-        execute *KAMAL.proxy.deploy(role.container_prefix, target: endpoint)
+        execute *app.deploy(target: endpoint)
       else
         Kamal::Cli::Healthcheck::Poller.wait_for_healthy(pause_after_ready: true) { capture_with_info(*app.status(version: version)) }
       end

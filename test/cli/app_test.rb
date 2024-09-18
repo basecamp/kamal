@@ -388,6 +388,15 @@ class CliAppTest < CliTestCase
     end
   end
 
+  test "boot proxy with role specific config" do
+    SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info).returns("123") # old version
+
+    run_command("boot", config: :with_proxy_roles, host: nil).tap do |output|
+      assert_match "docker exec kamal-proxy kamal-proxy deploy app-web --target \"123:80\" --deploy-timeout \"6s\" --drain-timeout \"30s\" --target-timeout \"10s\" --buffer-requests --buffer-responses --log-request-header \"Cache-Control\" --log-request-header \"Last-Modified\" --log-request-header \"User-Agent\"", output
+      assert_match "docker exec kamal-proxy kamal-proxy deploy app-web2 --target \"123:80\" --deploy-timeout \"6s\" --drain-timeout \"30s\" --target-timeout \"15s\" --buffer-requests --buffer-responses --log-request-header \"Cache-Control\" --log-request-header \"Last-Modified\" --log-request-header \"User-Agent\"", output
+    end
+  end
+
   private
     def run_command(*command, config: :with_accessories, host: "1.1.1.1", allow_execute_error: false)
       stdouted do

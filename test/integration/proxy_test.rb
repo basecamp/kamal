@@ -53,11 +53,11 @@ class ProxyTest < IntegrationTest
 
   private
     def assert_proxy_running
-      assert_match /basecamp\/kamal-proxy:#{Kamal::Configuration::Proxy::MINIMUM_VERSION}   \"kamal-proxy run\"/, proxy_details
+      assert_match /basecamp\/kamal-proxy:#{Kamal::Configuration::PROXY_MINIMUM_VERSION}   \"kamal-proxy run\"/, proxy_details
     end
 
     def assert_proxy_not_running
-      assert_no_match /basecamp\/kamal-proxy:#{Kamal::Configuration::Proxy::MINIMUM_VERSION}   \"kamal-proxy run\"/, proxy_details
+      assert_no_match /basecamp\/kamal-proxy:#{Kamal::Configuration::PROXY_MINIMUM_VERSION}   \"kamal-proxy run\"/, proxy_details
     end
 
     def proxy_details

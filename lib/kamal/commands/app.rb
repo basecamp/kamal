@@ -1,5 +1,5 @@
 class Kamal::Commands::App < Kamal::Commands::Base
-  include Assets, Containers, Execution, Images, Logging
+  include Assets, Containers, Execution, Images, Logging, Proxy
 
   ACTIVE_DOCKER_STATUSES = [ :running, :restarting ]
 

@@ -1,38 +1,29 @@
 class Kamal::Configuration::Proxy
   include Kamal::Configuration::Validation
 
-  MINIMUM_VERSION = "v0.3.0"
-  DEFAULT_HTTP_PORT = 80
-  DEFAULT_HTTPS_PORT = 443
-  DEFAULT_IMAGE = "basecamp/kamal-proxy:#{MINIMUM_VERSION}"
   DEFAULT_LOG_REQUEST_HEADERS = [ "Cache-Control", "Last-Modified", "User-Agent" ]
+  CONTAINER_NAME = "kamal-proxy"
 
   delegate :argumentize, :optionize, to: Kamal::Utils
 
-  def initialize(config:)
+  attr_reader :config, :proxy_config
+
+  def initialize(config:, proxy_config:, context: "proxy")
     @config = config
-    @proxy_config = config.raw_config.proxy || {}
-    validate! proxy_config, with: Kamal::Configuration::Validator::Proxy
+    @proxy_config = proxy_config
+    validate! @proxy_config, with: Kamal::Configuration::Validator::Proxy, context: context
   end
 
   def app_port
     proxy_config.fetch("app_port", 80)
   end
 
-  def image
-    proxy_config.fetch("image", DEFAULT_IMAGE)
-  end
-
-  def container_name
-    "kamal-proxy"
-  end
-
-  def publish_args
-    argumentize "--publish", [ "#{DEFAULT_HTTP_PORT}:#{DEFAULT_HTTP_PORT}", "#{DEFAULT_HTTPS_PORT}:#{DEFAULT_HTTPS_PORT}" ]
-  end
-
   def ssl?
     proxy_config.fetch("ssl", false)
+  end
+
+  def host
+    proxy_config["host"]
   end
 
   def deploy_options
@@ -56,19 +47,19 @@ class Kamal::Configuration::Proxy
     }.compact
   end
 
-  def deploy_command_args
-    optionize deploy_options
+  def deploy_command_args(target:)
+    optionize ({ target: "#{target}:#{app_port}" }).merge(deploy_options)
   end
 
-  def config_volume
-    Kamal::Configuration::Volume.new \
-      host_path: File.join(config.proxy_directory, "config"),
-      container_path: "/home/kamal-proxy/.config/kamal-proxy"
+  def remove_command_args(target:)
+    optionize({ target: "#{target}:#{app_port}" })
+  end
+
+  def merge(other)
+    self.class.new config: config, proxy_config: proxy_config.deep_merge(other.proxy_config)
   end
 
   private
-    attr_reader :config, :proxy_config
-
     def seconds_duration(value)
       value ? "#{value}s" : nil
     end
