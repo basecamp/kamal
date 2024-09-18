@@ -346,4 +346,35 @@ class ConfigurationTest < ActiveSupport::TestCase
       end
     end
   end
+
+  test "proxy ssl roles with no host" do
+    @deploy_with_roles[:servers]["workers"]["proxy"] = { "ssl" => true }
+
+    exception = assert_raises(Kamal::ConfigurationError) do
+      Kamal::Configuration.new(@deploy_with_roles)
+    end
+
+    assert_equal "servers/workers/proxy: Must set a host to enable automatic SSL", exception.message
+  end
+
+  test "proxy ssl roles with multiple servers" do
+    @deploy_with_roles[:servers]["workers"]["proxy"] = { "ssl" => true, "host" => "foo.example.com" }
+
+    exception = assert_raises(Kamal::ConfigurationError) do
+      Kamal::Configuration.new(@deploy_with_roles)
+    end
+
+    assert_equal "SSL is only supported on a single server, found 2 servers for role workers", exception.message
+  end
+
+  test "two proxy ssl roles with same host" do
+    @deploy_with_roles[:servers]["web"] = { "hosts" => [ "1.1.1.1" ], "proxy" => { "ssl" => true, "host" => "foo.example.com" } }
+    @deploy_with_roles[:servers]["workers"] = { "hosts" => [ "1.1.1.1" ], "proxy" => { "ssl" => true, "host" => "foo.example.com" } }
+
+    exception = assert_raises(Kamal::ConfigurationError) do
+      Kamal::Configuration.new(@deploy_with_roles)
+    end
+
+    assert_equal "Different roles can't share the same host for SSL: foo.example.com", exception.message
+  end
 end

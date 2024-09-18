@@ -75,6 +75,8 @@ class Kamal::Configuration
     ensure_retain_containers_valid
     ensure_valid_service_name
     ensure_no_traefik_reboot_hooks
+    ensure_one_host_for_ssl_roles
+    ensure_unique_hosts_for_ssl_roles
   end
 
 
@@ -349,6 +351,20 @@ class Kamal::Configuration
       true
     end
 
+    def ensure_one_host_for_ssl_roles
+      roles.each(&:ensure_one_host_for_ssl)
+
+      true
+    end
+
+    def ensure_unique_hosts_for_ssl_roles
+      hosts = roles.select(&:ssl?).map { |role| role.proxy.host }
+      duplicates = hosts.tally.filter_map { |host, count| host if count > 1 }
+
+      raise Kamal::ConfigurationError, "Different roles can't share the same host for SSL: #{duplicates.join(", ")}" if duplicates.any?
+
+      true
+    end
 
     def role_names
       raw_config.servers.is_a?(Array) ? [ "web" ] : raw_config.servers.keys.sort

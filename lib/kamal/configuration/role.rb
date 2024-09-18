@@ -75,6 +75,10 @@ class Kamal::Configuration::Role
     @running_proxy
   end
 
+  def ssl?
+    running_proxy? && proxy.ssl?
+  end
+
   def stop_args
     # When deploying with the proxy, kamal-proxy will drain request before returning so we don't need to wait.
     timeout = running_proxy? ? nil : config.drain_timeout
@@ -143,6 +147,12 @@ class Kamal::Configuration::Role
 
   def asset_volume_directory(version = config.version)
     File.join config.assets_directory, "volumes", [ name, version ].join("-")
+  end
+
+  def ensure_one_host_for_ssl
+    if running_proxy? && proxy.ssl? && hosts.size > 1
+      raise Kamal::ConfigurationError, "SSL is only supported on a single server, found #{hosts.size} servers for role #{name}"
+    end
   end
 
   private

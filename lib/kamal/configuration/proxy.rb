@@ -22,6 +22,10 @@ class Kamal::Configuration::Proxy
     proxy_config.fetch("ssl", false)
   end
 
+  def host
+    proxy_config["host"]
+  end
+
   def deploy_options
     {
       host: proxy_config["host"],
