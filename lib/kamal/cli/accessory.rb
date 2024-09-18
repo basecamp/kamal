@@ -224,18 +224,14 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
   def upgrade(name)
     confirming "This will restart all accessories" do
       with_lock do
-        if options[:rolling]
-          KAMAL.accessory_hosts.each do |host|
-            say "Upgrading accessories on #{host}...", :magenta
-            KAMAL.with_specific_hosts(host) do
-              reboot name
-            end
-            say "Upgraded accessories on #{host}...", :magenta
+        host_groups = options[:rolling] ? KAMAL.accessory_hosts : [ KAMAL.accessory_hosts ]
+        host_groups.each do |hosts|
+          host_list = Array(hosts).join(",")
+          KAMAL.with_specific_hosts(hosts) do
+            say "Upgrading #{name} accessories on #{host_list}...", :magenta
+            reboot name
+            say "Upgraded #{name} accessories on #{host_list}...", :magenta
           end
-        else
-          say "Upgrading accessories on all hosts...", :magenta
-          reboot name
-          say "Upgraded accessories on all hosts", :magenta
         end
       end
     end

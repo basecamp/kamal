@@ -72,7 +72,7 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
       host_groups = options[:rolling] ? KAMAL.hosts : [ KAMAL.hosts ]
       host_groups.each do |hosts|
         host_list = Array(hosts).join(",")
-        say "Upgrading proxy on #{host_list}..."
+        say "Upgrading proxy on #{host_list}...", :magenta
         run_hook "pre-proxy-reboot", hosts: host_list
         on(hosts) do |host|
           execute *KAMAL.auditor.record("Rebooted proxy"), verbosity: :debug
@@ -97,7 +97,7 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
         end
 
         run_hook "post-proxy-reboot", hosts: host_list
-        say "Upgraded proxy on #{host_list}"
+        say "Upgraded proxy on #{host_list}", :magenta
       end
     end
   end
