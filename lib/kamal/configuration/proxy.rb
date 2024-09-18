@@ -1,7 +1,7 @@
 class Kamal::Configuration::Proxy
   include Kamal::Configuration::Validation
 
-  MINIMUM_VERSION = "v0.1.0"
+  MINIMUM_VERSION = "v0.3.0"
   DEFAULT_HTTP_PORT = 80
   DEFAULT_HTTPS_PORT = 443
   DEFAULT_IMAGE = "basecamp/kamal-proxy:#{MINIMUM_VERSION}"

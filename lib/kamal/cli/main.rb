@@ -123,7 +123,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
     end
   end
 
-  desc "docs", "Show Kamal documentation for configuration setting"
+  desc "docs [SECTION]", "Show Kamal configuration documentation"
   def docs(section = nil)
     case section
     when NilClass

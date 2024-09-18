@@ -47,4 +47,3 @@ servers:
     env:
       ...
     asset_path: /public
-

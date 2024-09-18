@@ -62,7 +62,7 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
     end
   end
 
-  desc "upgrade", "Upgrade to kamal-proxy on servers (stop container, remove container, start new container, reboot app)"
+  desc "upgrade", "Upgrade to kamal-proxy on servers (stop container, remove container, start new container, reboot app)", hide: true
   option :rolling, type: :boolean, default: false, desc: "Reboot proxy on hosts in sequence, rather than in parallel"
   option :confirmed, aliases: "-y", type: :boolean, default: false, desc: "Proceed without confirmation question"
   def upgrade

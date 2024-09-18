@@ -22,7 +22,7 @@ class CliProxyTest < CliTestCase
       end
     end
 
-    assert_includes exception.message, "kamal-proxy version v0.0.1 is too old, please reboot to update to at least v0.1.0"
+    assert_includes exception.message, "kamal-proxy version v0.0.1 is too old, please reboot to update to at least #{Kamal::Configuration::Proxy::MINIMUM_VERSION}"
   ensure
     Thread.report_on_exception = false
   end
@@ -31,7 +31,7 @@ class CliProxyTest < CliTestCase
     Thread.report_on_exception = false
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
       .with(:docker, :inspect, "kamal-proxy", "--format '{{.Config.Image}}'", "|", :cut, "-d:", "-f2")
-      .returns("v0.1.0")
+      .returns(Kamal::Configuration::Proxy::MINIMUM_VERSION)
       .at_least_once
 
     run_command("boot").tap do |output|
@@ -189,7 +189,7 @@ class CliProxyTest < CliTestCase
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
       .with(:docker, :inspect, "kamal-proxy", "--format '{{.Config.Image}}'", "|", :cut, "-d:", "-f2")
-      .returns("v0.1.0")
+      .returns(Kamal::Configuration::Proxy::MINIMUM_VERSION)
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
       .with(:docker, :container, :ls, "--all", "--filter", "name=^app-workers-latest$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
@@ -205,7 +205,7 @@ class CliProxyTest < CliTestCase
       assert_match "/usr/bin/env mkdir -p .kamal", output
       assert_match "docker network create kamal", output
       assert_match "docker login -u [REDACTED] -p [REDACTED]", output
-      assert_match "docker container start kamal-proxy || docker run --name kamal-proxy --network kamal --detach --restart unless-stopped --publish 80:80 --publish 443:443 --volume /var/run/docker.sock:/var/run/docker.sock --volume $(pwd)/.kamal/proxy/config:/home/kamal-proxy/.config/kamal-proxy --log-opt max-size=\"10m\" basecamp/kamal-proxy:v0.1.0", output
+      assert_match "docker container start kamal-proxy || docker run --name kamal-proxy --network kamal --detach --restart unless-stopped --publish 80:80 --publish 443:443 --volume /var/run/docker.sock:/var/run/docker.sock --volume $(pwd)/.kamal/proxy/config:/home/kamal-proxy/.config/kamal-proxy --log-opt max-size=\"10m\" basecamp/kamal-proxy:#{Kamal::Configuration::Proxy::MINIMUM_VERSION}", output
       assert_match "/usr/bin/env mkdir -p .kamal", output
       assert_match %r{docker rename app-web-latest app-web-latest_replaced_.*}, output
       assert_match "/usr/bin/env mkdir -p .kamal/apps/app/env/roles", output
@@ -228,7 +228,7 @@ class CliProxyTest < CliTestCase
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
       .with(:docker, :inspect, "kamal-proxy", "--format '{{.Config.Image}}'", "|", :cut, "-d:", "-f2")
-      .returns("v0.1.0")
+      .returns(Kamal::Configuration::Proxy::MINIMUM_VERSION)
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
       .with(:docker, :container, :ls, "--all", "--filter", "name=^app-workers-latest$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
