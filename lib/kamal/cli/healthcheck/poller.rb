@@ -3,7 +3,7 @@ module Kamal::Cli::Healthcheck::Poller
 
   def wait_for_healthy(role, &block)
     attempt = 1
-    timeout_at = Time.now + KAMAL.config.readiness_timeout
+    timeout_at = Time.now + KAMAL.config.deploy_timeout
     readiness_delay = KAMAL.config.readiness_delay
 
     begin
@@ -19,7 +19,7 @@ module Kamal::Cli::Healthcheck::Poller
       end
 
       unless %w[ running healthy ].include?(status)
-        raise Kamal::Cli::Healthcheck::Error, "container not ready after #{KAMAL.config.readiness_timeout} seconds (#{status})"
+        raise Kamal::Cli::Healthcheck::Error, "container not ready after #{KAMAL.config.deploy_timeout} seconds (#{status})"
       end
     rescue Kamal::Cli::Healthcheck::Error => e
       time_left = timeout_at - Time.now

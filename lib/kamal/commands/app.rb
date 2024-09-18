@@ -43,7 +43,7 @@ class Kamal::Commands::App < Kamal::Commands::Base
   def stop(version: nil)
     pipe \
       version ? container_id_for_version(version) : current_running_container_id,
-      xargs(config.stop_wait_time ? docker(:stop, "-t", config.stop_wait_time) : docker(:stop))
+      xargs(docker(:stop, *role.stop_args))
   end
 
   def info

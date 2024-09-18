@@ -93,11 +93,6 @@ primary_role: workers
 # Whether roles with no servers are allowed. Defaults to `false`.
 allow_empty_roles: false
 
-# Stop wait time
-#
-# How long we wait for a container to stop before killing it, defaults to 30 seconds
-stop_wait_time: 60
-
 # Retain containers
 #
 # How many old containers and images we retain, defaults to 5
@@ -114,11 +109,15 @@ minimum_version: 1.3.0
 # This only applies to containers that do not run a proxy or specify a healthcheck
 readiness_delay: 4
 
-# Readiness timeout
+# Deploy timeout
 #
 # How long to wait for a container to become ready, default 30
-# This only applies to containers that do not run a proxy
-readiness_timeout: 4
+deploy_timeout: 10
+
+# Drain timeout
+#
+# How long to wait for a containers to drain, default 30
+drain_timeout: 10
 
 # Run directory
 #

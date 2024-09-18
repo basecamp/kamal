@@ -65,6 +65,12 @@ class Kamal::Configuration::Role
     @logging ||= config.logging.merge(specialized_logging)
   end
 
+  def stop_args
+    # When deploying with the proxy, kamal-proxy will drain request before returning so we don't need to wait.
+    timeout = running_proxy? ? nil : config.drain_timeout
+
+    [ *argumentize("-t", timeout) ]
+  end
 
   def env(host)
     @envs ||= {}

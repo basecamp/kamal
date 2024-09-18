@@ -13,8 +13,6 @@ registry:
 builder:
   arch: amd64
 
-proxy:
-  deploy_timeout: 6s
 
 accessories:
   mysql:
@@ -39,4 +37,4 @@ accessories:
       - data:/data
 
 readiness_delay: 0
-readiness_timeout: 1
+deploy_timeout: 6
