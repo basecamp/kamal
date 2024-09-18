@@ -1,13 +1,5 @@
 class Kamal::Commands::Proxy < Kamal::Commands::Base
   delegate :argumentize, :optionize, to: Kamal::Utils
-  delegate :container_name, :app_port, to: :proxy_config
-
-  attr_reader :proxy_config
-
-  def initialize(config)
-    super
-    @proxy_config = config.proxy
-  end
 
   def run
     docker :run,
@@ -15,11 +7,11 @@ class Kamal::Commands::Proxy < Kamal::Commands::Base
       "--network", "kamal",
       "--detach",
       "--restart", "unless-stopped",
-      *proxy_config.publish_args,
+      *config.proxy_publish_args,
       "--volume", "/var/run/docker.sock:/var/run/docker.sock",
-      *proxy_config.config_volume.docker_args,
+      *config.proxy_config_volume.docker_args,
       *config.logging_args,
-      proxy_config.image
+      config.proxy_image
   end
 
   def start
@@ -32,14 +24,6 @@ class Kamal::Commands::Proxy < Kamal::Commands::Base
 
   def start_or_run
     combine start, run, by: "||"
-  end
-
-  def deploy(service, target:)
-    docker :exec, container_name, "kamal-proxy", :deploy, service, *optionize({ target: "#{target}:#{app_port}" }), *proxy_config.deploy_command_args
-  end
-
-  def remove(service, target:)
-    docker :exec, container_name, "kamal-proxy", :remove, service, *optionize({ target: "#{target}:#{app_port}" })
   end
 
   def info
@@ -85,4 +69,9 @@ class Kamal::Commands::Proxy < Kamal::Commands::Base
         docker(:image, :prune, "--all", "--force", "--filter", "label=org.opencontainers.image.title=Traefik")
       )
   end
+
+  private
+    def container_name
+      config.proxy_container_name
+    end
 end

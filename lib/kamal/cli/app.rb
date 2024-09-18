@@ -47,7 +47,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
             endpoint = capture_with_info(*app.container_id_for_version(version)).strip
             raise Kamal::Cli::BootError, "Failed to get endpoint for #{role} on #{host}, did the container boot?" if endpoint.empty?
 
-            execute *KAMAL.proxy.deploy(role.container_prefix, target: endpoint)
+            execute *app.deploy(target: endpoint)
           end
         end
       end
@@ -68,7 +68,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
             version = capture_with_info(*app.current_running_version, raise_on_non_zero_exit: false).strip
             endpoint = capture_with_info(*app.container_id_for_version(version)).strip
             if endpoint.present?
-              execute *KAMAL.proxy.remove(role.container_prefix, target: endpoint), raise_on_non_zero_exit: false
+              execute *app.remove(target: endpoint), raise_on_non_zero_exit: false
             end
           end
 

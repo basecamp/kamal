@@ -1,6 +1,6 @@
 
 x-web: &web
-  proxy: true
+  proxy: {}
 
 service: app
 image: dhh/app

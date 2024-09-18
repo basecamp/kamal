@@ -3,7 +3,7 @@ class Kamal::Configuration::Role
 
   delegate :argumentize, :optionize, to: Kamal::Utils
 
-  attr_reader :name, :config, :specialized_env, :specialized_logging
+  attr_reader :name, :config, :specialized_env, :specialized_logging, :specialized_proxy
 
   alias to_s name
 
@@ -23,6 +23,8 @@ class Kamal::Configuration::Role
     @specialized_logging = Kamal::Configuration::Logging.new \
       logging_config: specializations.fetch("logging", {}),
       context: "servers/#{name}/logging"
+
+    initialize_specialized_proxy
   end
 
   def primary_host
@@ -65,6 +67,14 @@ class Kamal::Configuration::Role
     @logging ||= config.logging.merge(specialized_logging)
   end
 
+  def proxy
+    @proxy ||= config.proxy.merge(specialized_proxy) if running_proxy?
+  end
+
+  def running_proxy?
+    @running_proxy
+  end
+
   def stop_args
     # When deploying with the proxy, kamal-proxy will drain request before returning so we don't need to wait.
     timeout = running_proxy? ? nil : config.drain_timeout
@@ -98,16 +108,8 @@ class Kamal::Configuration::Role
   end
 
 
-  def running_proxy?
-    if specializations["proxy"].nil?
-      primary?
-    else
-      specializations["proxy"]
-    end
-  end
-
   def primary?
-    self == @config.primary_role
+    name == @config.primary_role_name
   end
 
 
@@ -144,6 +146,27 @@ class Kamal::Configuration::Role
   end
 
   private
+    def initialize_specialized_proxy
+      proxy_specializations = specializations["proxy"]
+
+      if primary?
+        # only false means no proxy for non-primary roles
+        @running_proxy = proxy_specializations != false
+      else
+        # false and nil both mean no proxy for non-primary roles
+        @running_proxy = !!proxy_specializations
+      end
+
+      if running_proxy?
+        proxy_config = proxy_specializations == true || proxy_specializations.nil? ? {} : proxy_specializations
+
+        @specialized_proxy = Kamal::Configuration::Proxy.new \
+          config: config,
+          proxy_config: proxy_config,
+          context: "servers/#{name}/proxy"
+      end
+    end
+
     def tagged_hosts
       {}.tap do |tagged_hosts|
         extract_hosts_from_config.map do |host_config|

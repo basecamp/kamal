@@ -250,6 +250,14 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
     assert_equal [ "-t", 30 ], config_with_roles.role(:workers).stop_args
   end
 
+  test "role specific proxy config" do
+    @deploy_with_roles[:proxy] = { "response_timeout" => 15 }
+    @deploy_with_roles[:servers]["workers"]["proxy"] = { "response_timeout" => 18 }
+
+    assert_equal "15s", config_with_roles.role(:web).proxy.deploy_options[:"target-timeout"]
+    assert_equal "18s", config_with_roles.role(:workers).proxy.deploy_options[:"target-timeout"]
+  end
+
   private
     def config
       Kamal::Configuration.new(@deploy)
