@@ -9,8 +9,30 @@ servers:
     hosts:
       - vm3
     cmd: sleep infinity
+deploy_timeout: 2
+drain_timeout: 2
+readiness_delay: 0
+
 proxy:
-  deploy_timeout: 2s
+  healthcheck:
+    interval: 1
+    timeout: 1
+    path: "/up"
+  response_timeout: 2
+  buffering:
+    requests: true
+    responses: true
+    memory: 400_000
+    max_request_body: 40_000_000
+    max_response_body: 40_000_000
+  forward_headers: true
+  logging:
+    request_headers:
+      - Cache-Control
+      - X-Forwarded-Proto
+    response_headers:
+      - X-Request-ID
+      - X-Request-Start
 
 asset_path: /usr/share/nginx/html/versions
 
@@ -30,8 +52,6 @@ accessories:
     cmd: sh -c 'echo "Starting busybox..."; trap exit term; while true; do sleep 1; done'
     roles:
       - web
-stop_wait_time: 1
-readiness_delay: 0
 aliases:
   whome: version
   worker_hostname: app exec -r workers -q --reuse hostname

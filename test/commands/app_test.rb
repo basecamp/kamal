@@ -4,7 +4,7 @@ class CommandsAppTest < ActiveSupport::TestCase
   setup do
     setup_test_secrets("secrets" => "RAILS_MASTER_KEY=456")
 
-    @config = { service: "app", image: "dhh/app", registry: { "username" => "dhh", "password" => "secret" }, servers: [ "1.1.1.1" ], env: { "secret" => [ "RAILS_MASTER_KEY" ] }, builder: { "arch" => "amd64" } }
+    @config = { service: "app", image: "dhh/app", registry: { "username" => "dhh", "password" => "secret" }, servers: { "web" => [ "1.1.1.1" ], "workers" => [ "1.1.1.2" ] }, env: { "secret" => [ "RAILS_MASTER_KEY" ] }, builder: { "arch" => "amd64" } }
   end
 
   teardown do
@@ -83,11 +83,15 @@ class CommandsAppTest < ActiveSupport::TestCase
       new_command.stop.join(" ")
   end
 
-  test "stop with custom stop wait time" do
-    @config[:stop_wait_time] = 30
+  test "stop with custom drain timeout" do
+    @config[:drain_timeout] = 20
     assert_equal \
-      "sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting' | head -1 | xargs docker stop -t 30",
+      "sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting' | head -1 | xargs docker stop",
       new_command.stop.join(" ")
+
+    assert_equal \
+      "sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=role=workers --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=role=workers --filter status=running --filter status=restarting' | head -1 | xargs docker stop -t 20",
+      new_command(role: "workers").stop.join(" ")
   end
 
   test "stop with version" do

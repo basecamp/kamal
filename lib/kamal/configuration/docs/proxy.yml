@@ -38,11 +38,6 @@ proxy:
   # Defaults to false
   ssl: true
 
-  # Deploy timeout
-  #
-  # How long to wait for the app to boot when deploying, defaults to 30 seconds
-  deploy_timeout: 10s
-
   # Response timeout
   #
   # How long to wait for requests to complete before timing out, defaults to 30 seconds

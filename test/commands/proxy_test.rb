@@ -109,7 +109,7 @@ class CommandsProxyTest < ActiveSupport::TestCase
 
   test "deploy" do
     assert_equal \
-      "docker exec kamal-proxy kamal-proxy deploy service --target \"172.1.0.2:80\" --buffer-requests --buffer-responses --log-request-header \"Cache-Control\" --log-request-header \"Last-Modified\" --log-request-header \"User-Agent\"",
+      "docker exec kamal-proxy kamal-proxy deploy service --target \"172.1.0.2:80\" --deploy-timeout \"30s\" --drain-timeout \"30s\" --buffer-requests --buffer-responses --log-request-header \"Cache-Control\" --log-request-header \"Last-Modified\" --log-request-header \"User-Agent\"",
       new_command.deploy("service", target: "172.1.0.2").join(" ")
   end
 

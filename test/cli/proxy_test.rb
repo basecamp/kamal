@@ -58,13 +58,13 @@ class CliProxyTest < CliTestCase
       assert_match "Running docker container stop traefik ; docker container prune --force --filter label=org.opencontainers.image.title=Traefik && docker image prune --all --force --filter label=org.opencontainers.image.title=Traefik on 1.1.1.1", output
       assert_match "docker container prune --force --filter label=org.opencontainers.image.title=kamal-proxy on 1.1.1.1", output
       assert_match "docker run --name kamal-proxy --network kamal --detach --restart unless-stopped --publish 80:80 --publish 443:443 --volume /var/run/docker.sock:/var/run/docker.sock --volume $(pwd)/.kamal/proxy/config:/home/kamal-proxy/.config/kamal-proxy --log-opt max-size=\"10m\" #{Kamal::Configuration::Proxy::DEFAULT_IMAGE} on 1.1.1.1", output
-      assert_match "docker exec kamal-proxy kamal-proxy deploy app-web --target \"abcdefabcdef:80\" --deploy-timeout \"6s\" --buffer-requests --buffer-responses --log-request-header \"Cache-Control\" --log-request-header \"Last-Modified\" --log-request-header \"User-Agent\" on 1.1.1.1", output
+      assert_match "docker exec kamal-proxy kamal-proxy deploy app-web --target \"abcdefabcdef:80\" --deploy-timeout \"6s\" --drain-timeout \"30s\" --buffer-requests --buffer-responses --log-request-header \"Cache-Control\" --log-request-header \"Last-Modified\" --log-request-header \"User-Agent\" on 1.1.1.1", output
 
       assert_match "docker container stop kamal-proxy on 1.1.1.2", output
       assert_match "Running docker container stop traefik ; docker container prune --force --filter label=org.opencontainers.image.title=Traefik && docker image prune --all --force --filter label=org.opencontainers.image.title=Traefik on 1.1.1.2", output
       assert_match "docker container prune --force --filter label=org.opencontainers.image.title=kamal-proxy on 1.1.1.2", output
       assert_match "docker run --name kamal-proxy --network kamal --detach --restart unless-stopped --publish 80:80 --publish 443:443 --volume /var/run/docker.sock:/var/run/docker.sock --volume $(pwd)/.kamal/proxy/config:/home/kamal-proxy/.config/kamal-proxy --log-opt max-size=\"10m\" #{Kamal::Configuration::Proxy::DEFAULT_IMAGE} on 1.1.1.2", output
-      assert_match "docker exec kamal-proxy kamal-proxy deploy app-web --target \"abcdefabcdef:80\" --deploy-timeout \"6s\" --buffer-requests --buffer-responses --log-request-header \"Cache-Control\" --log-request-header \"Last-Modified\" --log-request-header \"User-Agent\" on 1.1.1.2", output
+      assert_match "docker exec kamal-proxy kamal-proxy deploy app-web --target \"abcdefabcdef:80\" --deploy-timeout \"6s\" --drain-timeout \"30s\" --buffer-requests --buffer-responses --log-request-header \"Cache-Control\" --log-request-header \"Last-Modified\" --log-request-header \"User-Agent\" on 1.1.1.2", output
     end
   end
 
@@ -211,7 +211,7 @@ class CliProxyTest < CliTestCase
       assert_match "/usr/bin/env mkdir -p .kamal/apps/app/env/roles", output
       assert_match %r{/usr/bin/env .* .kamal/apps/app/env/roles/web.env}, output
       assert_match %r{docker run --detach --restart unless-stopped --name app-web-latest --network kamal --hostname 1.1.1.1-.* -e KAMAL_CONTAINER_NAME="app-web-latest" -e KAMAL_VERSION="latest" --env-file .kamal/apps/app/env/roles/web.env --log-opt max-size="10m" --label service="app" --label role="web" --label destination dhh/app:latest}, output
-      assert_match "docker exec kamal-proxy kamal-proxy deploy app-web --target \"12345678:80\" --deploy-timeout \"6s\" --buffer-requests --buffer-responses --log-request-header \"Cache-Control\" --log-request-header \"Last-Modified\" --log-request-header \"User-Agent\"", output
+      assert_match "docker exec kamal-proxy kamal-proxy deploy app-web --target \"12345678:80\" --deploy-timeout \"6s\" --drain-timeout \"30s\" --buffer-requests --buffer-responses --log-request-header \"Cache-Control\" --log-request-header \"Last-Modified\" --log-request-header \"User-Agent\"", output
       assert_match "docker container ls --all --filter name=^app-web-12345678$ --quiet | xargs docker stop", output
       assert_match "docker tag dhh/app:latest dhh/app:latest", output
       assert_match "/usr/bin/env mkdir -p .kamal", output

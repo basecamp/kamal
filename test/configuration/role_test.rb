@@ -242,6 +242,14 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
     ENV.delete("VERSION")
   end
 
+  test "stop args with proxy" do
+    assert_equal [], config_with_roles.role(:web).stop_args
+  end
+
+  test "stop args with no proxy" do
+    assert_equal [ "-t", 30 ], config_with_roles.role(:workers).stop_args
+  end
+
   private
     def config
       Kamal::Configuration.new(@deploy)

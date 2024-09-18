@@ -39,12 +39,12 @@ class Kamal::Configuration::Proxy
     {
       host: proxy_config["host"],
       tls: proxy_config["ssl"],
-      "deploy-timeout": proxy_config["deploy_timeout"],
-      "drain-timeout": proxy_config["drain_timeout"],
-      "health-check-interval": proxy_config.dig("healthcheck", "interval"),
-      "health-check-timeout": proxy_config.dig("healthcheck", "timeout"),
+      "deploy-timeout": seconds_duration(config.deploy_timeout),
+      "drain-timeout": seconds_duration(config.drain_timeout),
+      "health-check-interval": seconds_duration(proxy_config.dig("healthcheck", "interval")),
+      "health-check-timeout": seconds_duration(proxy_config.dig("healthcheck", "timeout")),
       "health-check-path": proxy_config.dig("healthcheck", "path"),
-      "target-timeout": proxy_config["response_timeout"],
+      "target-timeout": seconds_duration(proxy_config["response_timeout"]),
       "buffer-requests": proxy_config.fetch("buffering", { "requests": true }).fetch("requests", true),
       "buffer-responses": proxy_config.fetch("buffering", { "responses": true }).fetch("responses", true),
       "buffer-memory": proxy_config.dig("buffering", "memory"),
@@ -68,4 +68,8 @@ class Kamal::Configuration::Proxy
 
   private
     attr_reader :config, :proxy_config
+
+    def seconds_duration(value)
+      value ? "#{value}s" : nil
+    end
 end

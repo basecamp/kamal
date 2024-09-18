@@ -6,7 +6,7 @@ require "erb"
 require "net/ssh/proxy/jump"
 
 class Kamal::Configuration
-  delegate :service, :image, :labels, :stop_wait_time, :hooks_path, to: :raw_config, allow_nil: true
+  delegate :service, :image, :labels, :hooks_path, to: :raw_config, allow_nil: true
   delegate :argumentize, :optionize, to: Kamal::Utils
 
   attr_reader :destination, :raw_config, :secrets
@@ -189,8 +189,12 @@ class Kamal::Configuration
     raw_config.readiness_delay || 7
   end
 
-  def readiness_timeout
-    raw_config.readiness_timeout || 30
+  def deploy_timeout
+    raw_config.deploy_timeout || 30
+  end
+
+  def drain_timeout
+    raw_config.drain_timeout || 30
   end
 
 
