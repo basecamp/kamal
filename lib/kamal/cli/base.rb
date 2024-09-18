@@ -206,6 +206,10 @@ module Kamal::Cli
         instance_variable_get("@_invocations").first
       end
 
+      def reset_invocation(cli_class)
+        instance_variable_get("@_invocations")[cli_class].pop
+      end
+
       def ensure_run_and_locks_directory
         on(KAMAL.hosts) do
           execute(*KAMAL.server.ensure_run_directory)

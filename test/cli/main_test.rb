@@ -537,6 +537,34 @@ class CliMainTest < CliTestCase
     assert_equal Kamal::VERSION, version
   end
 
+  test "downgrade" do
+    invoke_options = { "config_file" => "test/fixtures/deploy_with_accessories.yml", "skip_hooks" => false, "confirmed" => true, "rolling" => false }
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:traefik:downgrade", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:accessory:downgrade", [ "all" ], invoke_options)
+
+    run_command("downgrade", "-y", config_file: "deploy_with_accessories").tap do |output|
+      assert_match "Downgrading all hosts...", output
+      assert_match "Downgraded all hosts", output
+    end
+  end
+
+  test "downgrade rolling" do
+    invoke_options = { "config_file" => "test/fixtures/deploy_with_accessories.yml", "skip_hooks" => false, "confirmed" => true, "rolling" => false }
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:traefik:downgrade", [], invoke_options).times(4)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:accessory:downgrade", [ "all" ], invoke_options).times(3)
+
+    run_command("downgrade", "--rolling", "-y", config_file: "deploy_with_accessories").tap do |output|
+      assert_match "Downgrading 1.1.1.1...", output
+      assert_match "Downgraded 1.1.1.1", output
+      assert_match "Downgrading 1.1.1.2...", output
+      assert_match "Downgraded 1.1.1.2", output
+      assert_match "Downgrading 1.1.1.3...", output
+      assert_match "Downgraded 1.1.1.3", output
+      assert_match "Downgrading 1.1.1.4...", output
+      assert_match "Downgraded 1.1.1.4", output
+    end
+  end
+
   private
     def run_command(*command, config_file: "deploy_simple")
       stdouted { Kamal::Cli::Main.start([ *command, "-c", "test/fixtures/#{config_file}.yml" ]) }

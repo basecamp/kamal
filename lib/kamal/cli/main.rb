@@ -217,6 +217,37 @@ class Kamal::Cli::Main < Kamal::Cli::Base
     end
   end
 
+  desc "downgrade", "Downgrade from Kamal 2 to 1.9"
+  option :confirmed, aliases: "-y", type: :boolean, default: false, desc: "Proceed without confirmation question"
+  option :rolling, type: :boolean, default: false, desc: "Downgrade one host at a time"
+  def downgrade
+    confirming "This will replace Traefik with kamal-proxy and restart all accessories" do
+      with_lock do
+        if options[:rolling]
+          (KAMAL.hosts | KAMAL.accessory_hosts).each do |host|
+            KAMAL.with_specific_hosts(host) do
+              say "Downgrading #{host}...", :magenta
+              if KAMAL.hosts.include?(host)
+                invoke "kamal:cli:traefik:downgrade", [], options.merge(confirmed: true, rolling: false)
+                reset_invocation(Kamal::Cli::Traefik)
+              end
+              if KAMAL.accessory_hosts.include?(host)
+                invoke "kamal:cli:accessory:downgrade", [ "all" ], options.merge(confirmed: true, rolling: false)
+                reset_invocation(Kamal::Cli::Accessory)
+              end
+              say "Downgraded #{host}", :magenta
+            end
+          end
+        else
+          say "Downgrading all hosts...", :magenta
+          invoke "kamal:cli:traefik:downgrade", [], options.merge(confirmed: true)
+          invoke "kamal:cli:accessory:downgrade", [ "all" ], options.merge(confirmed: true)
+          say "Downgraded all hosts", :magenta
+        end
+      end
+    end
+  end
+
   desc "version", "Show Kamal version"
   def version
     puts Kamal::VERSION
