@@ -8,8 +8,7 @@ class Kamal::Commands::Proxy < Kamal::Commands::Base
       "--detach",
       "--restart", "unless-stopped",
       *config.proxy_publish_args,
-      "--volume", "/var/run/docker.sock:/var/run/docker.sock",
-      *config.proxy_config_volume.docker_args,
+      "--volume", "kamal-proxy-config:/home/kamal-proxy/.config/kamal-proxy",
       *config.logging_args,
       config.proxy_image
   end
@@ -55,10 +54,6 @@ class Kamal::Commands::Proxy < Kamal::Commands::Base
 
   def remove_image
     docker :image, :prune, "--all", "--force", "--filter", "label=org.opencontainers.image.title=kamal-proxy"
-  end
-
-  def remove_host_directory
-    remove_directory config.proxy_directory
   end
 
   def cleanup_traefik

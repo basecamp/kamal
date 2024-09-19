@@ -14,7 +14,7 @@ class Kamal::Configuration
 
   include Validation
 
-  PROXY_MINIMUM_VERSION = "v0.3.0"
+  PROXY_MINIMUM_VERSION = "v0.4.0"
   PROXY_HTTP_PORT = 80
   PROXY_HTTPS_PORT = 443
 
@@ -216,10 +216,6 @@ class Kamal::Configuration
     File.join apps_directory, [ service, destination ].compact.join("-")
   end
 
-  def proxy_directory
-    File.join run_directory, "proxy"
-  end
-
   def env_directory
     File.join app_directory, "env"
   end
@@ -260,12 +256,6 @@ class Kamal::Configuration
 
   def proxy_container_name
     "kamal-proxy"
-  end
-
-  def proxy_config_volume
-    Kamal::Configuration::Volume.new \
-      host_path: File.join(proxy_directory, "config"),
-      container_path: "/home/kamal-proxy/.config/kamal-proxy"
   end
 
 

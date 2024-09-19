@@ -15,13 +15,13 @@ class CommandsProxyTest < ActiveSupport::TestCase
 
   test "run" do
     assert_equal \
-      "docker run --name kamal-proxy --network kamal --detach --restart unless-stopped --publish 80:80 --publish 443:443 --volume /var/run/docker.sock:/var/run/docker.sock --volume $(pwd)/.kamal/proxy/config:/home/kamal-proxy/.config/kamal-proxy --log-opt max-size=\"10m\" #{KAMAL.config.proxy_image}",
+      "docker run --name kamal-proxy --network kamal --detach --restart unless-stopped --publish 80:80 --publish 443:443 --volume kamal-proxy-config:/home/kamal-proxy/.config/kamal-proxy --log-opt max-size=\"10m\" basecamp/kamal-proxy:#{Kamal::Configuration::PROXY_MINIMUM_VERSION}",
       new_command.run.join(" ")
   end
 
   test "run with ports configured" do
     assert_equal \
-      "docker run --name kamal-proxy --network kamal --detach --restart unless-stopped --publish 80:80 --publish 443:443 --volume /var/run/docker.sock:/var/run/docker.sock --volume $(pwd)/.kamal/proxy/config:/home/kamal-proxy/.config/kamal-proxy --log-opt max-size=\"10m\" #{KAMAL.config.proxy_image}",
+      "docker run --name kamal-proxy --network kamal --detach --restart unless-stopped --publish 80:80 --publish 443:443 --volume kamal-proxy-config:/home/kamal-proxy/.config/kamal-proxy --log-opt max-size=\"10m\" basecamp/kamal-proxy:#{Kamal::Configuration::PROXY_MINIMUM_VERSION}",
       new_command.run.join(" ")
   end
 
@@ -29,7 +29,7 @@ class CommandsProxyTest < ActiveSupport::TestCase
     @config.delete(:proxy)
 
     assert_equal \
-      "docker run --name kamal-proxy --network kamal --detach --restart unless-stopped --publish 80:80 --publish 443:443 --volume /var/run/docker.sock:/var/run/docker.sock --volume $(pwd)/.kamal/proxy/config:/home/kamal-proxy/.config/kamal-proxy --log-opt max-size=\"10m\" #{KAMAL.config.proxy_image}",
+      "docker run --name kamal-proxy --network kamal --detach --restart unless-stopped --publish 80:80 --publish 443:443 --volume kamal-proxy-config:/home/kamal-proxy/.config/kamal-proxy --log-opt max-size=\"10m\" basecamp/kamal-proxy:#{Kamal::Configuration::PROXY_MINIMUM_VERSION}",
       new_command.run.join(" ")
   end
 
@@ -37,7 +37,7 @@ class CommandsProxyTest < ActiveSupport::TestCase
     @config[:logging] = { "driver" => "local", "options" => { "max-size" => "100m", "max-file" => "3" } }
 
     assert_equal \
-      "docker run --name kamal-proxy --network kamal --detach --restart unless-stopped --publish 80:80 --publish 443:443 --volume /var/run/docker.sock:/var/run/docker.sock --volume $(pwd)/.kamal/proxy/config:/home/kamal-proxy/.config/kamal-proxy --log-driver \"local\" --log-opt max-size=\"100m\" --log-opt max-file=\"3\" #{KAMAL.config.proxy_image}",
+      "docker run --name kamal-proxy --network kamal --detach --restart unless-stopped --publish 80:80 --publish 443:443 --volume kamal-proxy-config:/home/kamal-proxy/.config/kamal-proxy --log-driver \"local\" --log-opt max-size=\"100m\" --log-opt max-file=\"3\" basecamp/kamal-proxy:#{Kamal::Configuration::PROXY_MINIMUM_VERSION}",
       new_command.run.join(" ")
   end
 

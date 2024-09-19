@@ -167,7 +167,6 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
         stop
         remove_container
         remove_image
-        remove_host_directory
       end
     end
   end
@@ -188,16 +187,6 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
       on(KAMAL.proxy_hosts) do
         execute *KAMAL.auditor.record("Removed proxy image"), verbosity: :debug
         execute *KAMAL.proxy.remove_image
-      end
-    end
-  end
-
-  desc "remove_host_directory", "Remove proxy directory from servers", hide: true
-  def remove_host_directory
-    with_lock do
-      on(KAMAL.proxy_hosts) do
-        execute *KAMAL.auditor.record("Removed #{KAMAL.config.proxy_directory}"), verbosity: :debug
-        execute *KAMAL.proxy.remove_host_directory, raise_on_non_zero_exit: false
       end
     end
   end
