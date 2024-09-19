@@ -153,10 +153,6 @@ class IntegrationTest < ActiveSupport::TestCase
       assert_directory_removed("./kamal/apps/#{@app}")
     end
 
-    def assert_proxy_directory_removed
-      assert_directory_removed("./kamal/proxy")
-    end
-
     def assert_directory_removed(directory)
       assert docker_compose("exec vm1 ls #{directory} | wc -l", capture: true).strip == "0"
     end

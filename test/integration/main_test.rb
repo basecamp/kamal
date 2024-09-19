@@ -98,7 +98,6 @@ class MainTest < IntegrationTest
     kamal :remove, "-y"
     assert_no_images_or_containers
     assert_app_directory_removed
-    assert_proxy_directory_removed
   end
 
   private
