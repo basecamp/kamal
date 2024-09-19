@@ -135,8 +135,10 @@ module Kamal::Cli
           details = { hosts: KAMAL.hosts.join(","), command: command, subcommand: subcommand }
 
           say "Running the #{hook} hook...", :magenta
-          run_locally do
-            execute *KAMAL.hook.run(hook, **details, **extra_details)
+          with_env KAMAL.hook.env(**details, **extra_details) do
+            run_locally do
+              execute *KAMAL.hook.run(hook)
+            end
           rescue SSHKit::Command::Failed => e
             raise HookError.new("Hook `#{hook}` failed:\n#{e.message}")
           end
@@ -182,6 +184,15 @@ module Kamal::Cli
         on(KAMAL.hosts) do
           execute(*KAMAL.server.ensure_run_directory)
         end
+      end
+
+      def with_env(env)
+        current_env = ENV.to_h.dup
+        ENV.update(env)
+        yield
+      ensure
+        ENV.clear
+        ENV.update(current_env)
       end
   end
 end

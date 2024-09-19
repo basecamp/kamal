@@ -1,9 +1,12 @@
 class Kamal::Commands::Hook < Kamal::Commands::Base
-  def run(hook, secrets: false, **details)
-    env = tags(**details).env
-    env.merge!(config.secrets.to_h) if secrets
+  def run(hook)
+    [ hook_file(hook) ]
+  end
 
-    [ hook_file(hook), env: env ]
+  def env(secrets: false, **details)
+    tags(**details).env.tap do |env|
+      env.merge!(config.secrets.to_h) if secrets
+    end
   end
 
   def hook_exists?(hook)
