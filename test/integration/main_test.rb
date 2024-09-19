@@ -46,13 +46,13 @@ class MainTest < IntegrationTest
 
     assert_app_is_up version: version
     assert_hooks_ran "pre-connect", "pre-build", "pre-deploy", "post-deploy"
-    assert_container_running host: :vm3, name: "app-workers-#{version}"
+    assert_container_running host: :vm3, name: "app_with_roles-workers-#{version}"
 
     second_version = update_app_rev
 
     kamal :redeploy
     assert_app_is_up version: second_version
-    assert_container_running host: :vm3, name: "app-workers-#{second_version}"
+    assert_container_running host: :vm3, name: "app_with_roles-workers-#{second_version}"
   end
 
   test "config" do
@@ -100,6 +100,29 @@ class MainTest < IntegrationTest
     assert_app_directory_removed
   end
 
+  test "two apps" do
+    @app = "app"
+    kamal :deploy
+    app1_version = latest_app_version
+
+    @app = "app_with_roles"
+    kamal :deploy
+    app2_version = latest_app_version
+
+    assert_app_is_up version: app1_version, app: "app"
+    assert_app_is_up version: app2_version, app: "app_with_roles"
+
+    @app = "app"
+    kamal :remove, "-y"
+    assert_app_directory_removed
+    assert_proxy_running
+
+    @app = "app_with_roles"
+    kamal :remove, "-y"
+    assert_app_directory_removed
+    assert_proxy_not_running
+  end
+
   private
     def assert_envs(version:)
       assert_env :CLEAR_TOKEN, "4321", version: version, vm: :vm1
@@ -115,21 +138,21 @@ class MainTest < IntegrationTest
     end
 
     def assert_env(key, value, vm:, version:)
-      assert_equal "#{key}=#{value}", docker_compose("exec #{vm} docker exec app-web-#{version} env | grep #{key}", capture: true)
+      assert_equal "#{key}=#{value}", docker_compose("exec #{vm} docker exec #{@app}-web-#{version} env | grep #{key}", capture: true)
     end
 
     def assert_no_env(key, vm:, version:)
       assert_raises(RuntimeError, /exit 1/) do
-        docker_compose("exec #{vm} docker exec app-web-#{version} env | grep #{key}", capture: true)
+        docker_compose("exec #{vm} docker exec #{@app}-web-#{version} env | grep #{key}", capture: true)
       end
     end
 
     def assert_accumulated_assets(*versions)
       versions.each do |version|
-        assert_equal "200", Net::HTTP.get_response(URI.parse("http://localhost:12345/versions/#{version}")).code
+        assert_equal "200", Net::HTTP.get_response(URI.parse("http://#{app_host}:12345/versions/#{version}")).code
       end
 
-      assert_equal "200", Net::HTTP.get_response(URI.parse("http://localhost:12345/versions/.hidden")).code
+      assert_equal "200", Net::HTTP.get_response(URI.parse("http://#{app_host}:12345/versions/.hidden")).code
     end
 
     def vm1_image_ids

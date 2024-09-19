@@ -23,7 +23,8 @@ asset_path: /usr/share/nginx/html/versions
 deploy_timeout: 2
 drain_timeout: 2
 readiness_delay: 0
-
+proxy:
+  host: 127.0.0.1
 registry:
   server: registry:4443
   username: root
