@@ -48,7 +48,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
       end
     end
 
-    run_hook "post-deploy", secrets: true, runtime: runtime.round
+    run_hook "post-deploy", secrets: true, runtime: runtime.round.to_s
   end
 
   desc "redeploy", "Deploy app to servers without bootstrapping servers, starting kamal-proxy, pruning, and registry login"
@@ -75,7 +75,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
       end
     end
 
-    run_hook "post-deploy", secrets: true, runtime: runtime.round
+    run_hook "post-deploy", secrets: true, runtime: runtime.round.to_s
   end
 
   desc "rollback [VERSION]", "Rollback app to VERSION"
@@ -99,7 +99,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
       end
     end
 
-    run_hook "post-deploy", secrets: true, runtime: runtime.round if rolled_back
+    run_hook "post-deploy", secrets: true, runtime: runtime.round.to_s if rolled_back
   end
 
   desc "details", "Show details about all containers"

@@ -30,28 +30,30 @@ class Kamal::Cli::Build < Kamal::Cli::Base
       say "Building with uncommitted changes:\n #{uncommitted_changes}", :yellow
     end
 
-    run_locally do
-      begin
-        execute *KAMAL.builder.inspect_builder
-      rescue SSHKit::Command::Failed => e
-        if e.message =~ /(context not found|no builder|no compatible builder|does not exist)/
-          warn "Missing compatible builder, so creating a new one first"
-          begin
-            cli.remove
-          rescue SSHKit::Command::Failed
-            raise unless e.message =~ /(context not found|no builder|does not exist)/
+    with_env(KAMAL.config.builder.secrets) do
+      run_locally do
+        begin
+          execute *KAMAL.builder.inspect_builder
+        rescue SSHKit::Command::Failed => e
+          if e.message =~ /(context not found|no builder|no compatible builder|does not exist)/
+            warn "Missing compatible builder, so creating a new one first"
+            begin
+              cli.remove
+            rescue SSHKit::Command::Failed
+              raise unless e.message =~ /(context not found|no builder|does not exist)/
+            end
+            cli.create
+          else
+            raise
           end
-          cli.create
-        else
-          raise
         end
-      end
 
-      # Get the command here to ensure the Dir.chdir doesn't interfere with it
-      push = KAMAL.builder.push
+        # Get the command here to ensure the Dir.chdir doesn't interfere with it
+        push = KAMAL.builder.push
 
-      KAMAL.with_verbosity(:debug) do
-        Dir.chdir(KAMAL.config.builder.build_directory) { execute *push, env: KAMAL.config.builder.secrets }
+        KAMAL.with_verbosity(:debug) do
+          Dir.chdir(KAMAL.config.builder.build_directory) { execute *push }
+        end
       end
     end
   end
