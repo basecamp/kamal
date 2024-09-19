@@ -196,13 +196,13 @@ class CommandsAppTest < ActiveSupport::TestCase
 
   test "execute in new container" do
     assert_equal \
-      "docker run --rm --env-file .kamal/apps/app/env/roles/web.env dhh/app:999 bin/rails db:setup",
+      "docker run --rm --network kamal --env-file .kamal/apps/app/env/roles/web.env dhh/app:999 bin/rails db:setup",
       new_command.execute_in_new_container("bin/rails", "db:setup", env: {}).join(" ")
   end
 
   test "execute in new container with env" do
     assert_equal \
-      "docker run --rm --env-file .kamal/apps/app/env/roles/web.env --env foo=\"bar\" dhh/app:999 bin/rails db:setup",
+      "docker run --rm --network kamal --env-file .kamal/apps/app/env/roles/web.env --env foo=\"bar\" dhh/app:999 bin/rails db:setup",
       new_command.execute_in_new_container("bin/rails", "db:setup", env: { "foo" => "bar" }).join(" ")
   end
 
@@ -211,14 +211,14 @@ class CommandsAppTest < ActiveSupport::TestCase
     @config[:env]["tags"] = { "tag1" => { "ENV1" => "value1" } }
 
     assert_equal \
-      "docker run --rm --env ENV1=\"value1\" --env-file .kamal/apps/app/env/roles/web.env dhh/app:999 bin/rails db:setup",
+      "docker run --rm --network kamal --env ENV1=\"value1\" --env-file .kamal/apps/app/env/roles/web.env dhh/app:999 bin/rails db:setup",
       new_command.execute_in_new_container("bin/rails", "db:setup", env: {}).join(" ")
   end
 
   test "execute in new container with custom options" do
     @config[:servers] = { "web" => { "hosts" => [ "1.1.1.1" ], "options" => { "mount" => "somewhere", "cap-add" => true } } }
     assert_equal \
-      "docker run --rm --env-file .kamal/apps/app/env/roles/web.env --mount \"somewhere\" --cap-add dhh/app:999 bin/rails db:setup",
+      "docker run --rm --network kamal --env-file .kamal/apps/app/env/roles/web.env --mount \"somewhere\" --cap-add dhh/app:999 bin/rails db:setup",
       new_command.execute_in_new_container("bin/rails", "db:setup", env: {}).join(" ")
   end
 
@@ -235,7 +235,7 @@ class CommandsAppTest < ActiveSupport::TestCase
   end
 
   test "execute in new container over ssh" do
-    assert_match %r{docker run -it --rm --env-file .kamal/apps/app/env/roles/web.env dhh/app:999 bin/rails c},
+    assert_match %r{docker run -it --rm --network kamal --env-file .kamal/apps/app/env/roles/web.env dhh/app:999 bin/rails c},
       new_command.execute_in_new_container_over_ssh("bin/rails", "c", env: {})
   end
 
@@ -243,13 +243,13 @@ class CommandsAppTest < ActiveSupport::TestCase
     @config[:servers] = [ { "1.1.1.1" => "tag1" } ]
     @config[:env]["tags"] = { "tag1" => { "ENV1" => "value1" } }
 
-    assert_equal "ssh -t root@1.1.1.1 -p 22 'docker run -it --rm --env ENV1=\"value1\" --env-file .kamal/apps/app/env/roles/web.env dhh/app:999 bin/rails c'",
+    assert_equal "ssh -t root@1.1.1.1 -p 22 'docker run -it --rm --network kamal --env ENV1=\"value1\" --env-file .kamal/apps/app/env/roles/web.env dhh/app:999 bin/rails c'",
       new_command.execute_in_new_container_over_ssh("bin/rails", "c", env: {})
   end
 
   test "execute in new container with custom options over ssh" do
     @config[:servers] = { "web" => { "hosts" => [ "1.1.1.1" ], "options" => { "mount" => "somewhere", "cap-add" => true } } }
-    assert_match %r{docker run -it --rm --env-file .kamal/apps/app/env/roles/web.env --mount \"somewhere\" --cap-add dhh/app:999 bin/rails c},
+    assert_match %r{docker run -it --rm --network kamal --env-file .kamal/apps/app/env/roles/web.env --mount \"somewhere\" --cap-add dhh/app:999 bin/rails c},
       new_command.execute_in_new_container_over_ssh("bin/rails", "c", env: {})
   end
 
