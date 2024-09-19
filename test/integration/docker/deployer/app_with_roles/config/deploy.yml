@@ -1,5 +1,5 @@
-service: app
-image: app
+service: app_with_roles
+image: app_with_roles
 servers:
   web:
     hosts:
@@ -14,6 +14,7 @@ drain_timeout: 2
 readiness_delay: 0
 
 proxy:
+  host: localhost
   healthcheck:
     interval: 1
     timeout: 1

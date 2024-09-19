@@ -50,8 +50,8 @@ class IntegrationTest < ActiveSupport::TestCase
       assert_equal "502", response.code
     end
 
-    def assert_app_is_up(version: nil)
-      response = app_response
+    def assert_app_is_up(version: nil, app: @app)
+      response = app_response(app: app)
       debug_response_code(response, "200")
       assert_equal "200", response.code
       assert_app_version(version, response) if version
@@ -69,8 +69,8 @@ class IntegrationTest < ActiveSupport::TestCase
       assert_equal up_times, up_count
     end
 
-    def app_response
-      Net::HTTP.get_response(URI.parse("http://localhost:12345/version"))
+    def app_response(app: @app)
+      Net::HTTP.get_response(URI.parse("http://#{app_host(app)}:12345/version"))
     end
 
     def update_app_rev
@@ -155,5 +155,24 @@ class IntegrationTest < ActiveSupport::TestCase
 
     def assert_directory_removed(directory)
       assert docker_compose("exec vm1 ls #{directory} | wc -l", capture: true).strip == "0"
+    end
+
+    def assert_proxy_running
+      assert_container_running(host: "vm1", name: "kamal-proxy")
+    end
+
+    def assert_proxy_not_running
+      assert_container_not_running(host: "vm1", name: "kamal-proxy")
+    end
+
+    def app_host(app = @app)
+      case app
+      when "app"
+        "127.0.0.1"
+      when "app_with_roles"
+        "localhost"
+      else
+        raise "Unknown app: #{app}"
+      end
     end
 end
