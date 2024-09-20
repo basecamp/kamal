@@ -140,21 +140,23 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
   option :lines, type: :numeric, aliases: "-n", desc: "Number of log lines to pull from each server"
   option :grep, aliases: "-g", desc: "Show lines with grep match only (use this to fetch specific requests by id)"
   option :follow, aliases: "-f", desc: "Follow logs on primary server (or specific host set by --hosts)"
+  option :skip_timestamps, aliases: "-T", desc: "Skip appending timestamps to logging output"
   def logs
     grep = options[:grep]
+    timestamps = !options[:skip_timestamps]
 
     if options[:follow]
       run_locally do
         info "Following logs on #{KAMAL.primary_host}..."
-        info KAMAL.proxy.follow_logs(host: KAMAL.primary_host, grep: grep)
-        exec KAMAL.proxy.follow_logs(host: KAMAL.primary_host, grep: grep)
+        info KAMAL.proxy.follow_logs(host: KAMAL.primary_host, timestamps: timestamps, grep: grep)
+        exec KAMAL.proxy.follow_logs(host: KAMAL.primary_host, timestamps: timestamps, grep: grep)
       end
     else
       since = options[:since]
       lines = options[:lines].presence || ((since || grep) ? nil : 100) # Default to 100 lines if since or grep isn't set
 
       on(KAMAL.proxy_hosts) do |host|
-        puts_by_host host, capture(*KAMAL.proxy.logs(since: since, lines: lines, grep: grep)), type: "Proxy"
+        puts_by_host host, capture(*KAMAL.proxy.logs(timestamps: timestamps, since: since, lines: lines, grep: grep)), type: "Proxy"
       end
     end
   end

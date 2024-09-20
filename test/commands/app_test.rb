@@ -129,49 +129,49 @@ class CommandsAppTest < ActiveSupport::TestCase
 
   test "logs" do
     assert_equal \
-      "sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting' | head -1 | xargs docker logs 2>&1",
+      "sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting' | head -1 | xargs docker logs --timestamps 2>&1",
       new_command.logs.join(" ")
   end
 
   test "logs with since" do
     assert_equal \
-      "sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting' | head -1 | xargs docker logs --since 5m 2>&1",
+      "sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting' | head -1 | xargs docker logs --timestamps --since 5m 2>&1",
       new_command.logs(since: "5m").join(" ")
   end
 
   test "logs with lines" do
     assert_equal \
-      "sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting' | head -1 | xargs docker logs --tail 100 2>&1",
+      "sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting' | head -1 | xargs docker logs --timestamps --tail 100 2>&1",
       new_command.logs(lines: "100").join(" ")
   end
 
   test "logs with since and lines" do
     assert_equal \
-      "sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting' | head -1 | xargs docker logs --since 5m --tail 100 2>&1",
+      "sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting' | head -1 | xargs docker logs --timestamps --since 5m --tail 100 2>&1",
       new_command.logs(since: "5m", lines: "100").join(" ")
   end
 
   test "logs with grep" do
     assert_equal \
-      "sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting' | head -1 | xargs docker logs 2>&1 | grep 'my-id'",
+      "sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting' | head -1 | xargs docker logs --timestamps 2>&1 | grep 'my-id'",
       new_command.logs(grep: "my-id").join(" ")
   end
 
   test "logs with grep and grep options" do
     assert_equal \
-      "sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting' | head -1 | xargs docker logs 2>&1 | grep 'my-id' -C 2",
+      "sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting' | head -1 | xargs docker logs --timestamps 2>&1 | grep 'my-id' -C 2",
       new_command.logs(grep: "my-id", grep_options: "-C 2").join(" ")
   end
 
   test "logs with since, grep and grep options" do
     assert_equal \
-      "sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting' | head -1 | xargs docker logs --since 5m 2>&1 | grep 'my-id' -C 2",
+      "sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting' | head -1 | xargs docker logs --timestamps --since 5m 2>&1 | grep 'my-id' -C 2",
       new_command.logs(since: "5m", grep: "my-id", grep_options: "-C 2").join(" ")
   end
 
   test "logs with since and grep" do
     assert_equal \
-      "sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting' | head -1 | xargs docker logs --since 5m 2>&1 | grep 'my-id'",
+      "sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting' | head -1 | xargs docker logs --timestamps --since 5m 2>&1 | grep 'my-id'",
       new_command.logs(since: "5m", grep: "my-id").join(" ")
   end
 
@@ -191,6 +191,10 @@ class CommandsAppTest < ActiveSupport::TestCase
     assert_equal \
       "ssh -t root@app-1 -p 22 'sh -c '\\''docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''\\'\\'''\\''{{.ID}}'\\''\\'\\'''\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting'\\'' | head -1 | xargs docker logs --timestamps --tail 123 --follow 2>&1 | grep \"Completed\"'",
       new_command.follow_logs(host: "app-1", lines: 123, grep: "Completed")
+
+    assert_equal \
+      "ssh -t root@app-1 -p 22 'sh -c '\\''docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''\\'\\'''\\''{{.ID}}'\\''\\'\\'''\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting'\\'' | head -1 | xargs docker logs --tail 123 --follow 2>&1 | grep \"Completed\"'",
+      new_command.follow_logs(host: "app-1", timestamps: false, lines: 123, grep: "Completed")
   end
 
 
