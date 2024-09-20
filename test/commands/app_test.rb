@@ -307,6 +307,16 @@ class CommandsAppTest < ActiveSupport::TestCase
     assert_equal "ssh -J root@2.2.2.2 -t app@1.1.1.1 -p 22 'ls'", new_command.run_over_ssh("ls", host: "1.1.1.1")
   end
 
+  test "run over ssh with keys config" do
+    @config[:ssh] = { "keys" => [ "path_to_key.pem" ] }
+    assert_equal "ssh -i path_to_key.pem -t root@1.1.1.1 -p 22 'ls'", new_command.run_over_ssh("ls", host: "1.1.1.1")
+  end
+
+  test "run over ssh with keys config with keys_only" do
+    @config[:ssh] = { "keys" => [ "path_to_key.pem" ], "keys_only" => true }
+    assert_equal "ssh -i path_to_key.pem -o IdentitiesOnly=yes -t root@1.1.1.1 -p 22 'ls'", new_command.run_over_ssh("ls", host: "1.1.1.1")
+  end
+
   test "run over ssh with proxy_command" do
     @config[:ssh] = { "proxy_command" => "ssh -W %h:%p user@proxy-server" }
     assert_equal "ssh -o ProxyCommand='ssh -W %h:%p user@proxy-server' -t root@1.1.1.1 -p 22 'ls'", new_command.run_over_ssh("ls", host: "1.1.1.1")
