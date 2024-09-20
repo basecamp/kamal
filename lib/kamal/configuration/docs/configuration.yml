@@ -36,6 +36,8 @@ image: my-image
 labels:
   my-label: my-value
 
+# Volumes
+#
 # Additional volumes to mount into the container
 volumes:
   - /path/on/host:/path/in/container:ro
@@ -58,7 +60,7 @@ servers:
 env:
   ...
 
-# Asset Bridging
+# Asset Path
 #
 # Used for asset bridging across deployments, default to `nil`
 #
@@ -74,6 +76,8 @@ env:
 # To configure this, set the path to the assets:
 asset_path: /path/to/assets
 
+# Hooks path
+#
 # Path to hooks, defaults to `.kamal/hooks`
 # See https://kamal-deploy.org/docs/hooks for more information
 hooks_path: /user_home/kamal/hooks
@@ -83,7 +87,7 @@ hooks_path: /user_home/kamal/hooks
 # Whether deployments require a destination to be specified, defaults to `false`
 require_destination: true
 
-# The primary role
+# Primary role
 #
 # This defaults to `web`, but if you have no web role, you can change this
 primary_role: workers
