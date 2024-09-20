@@ -147,7 +147,7 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
   option :grep, aliases: "-g", desc: "Show lines with grep match only (use this to fetch specific requests by id)"
   option :grep_options, aliases: "-o", desc: "Additional options supplied to grep"
   option :follow, aliases: "-f", desc: "Follow logs on primary server (or specific host set by --hosts)"
-  option :skip_timestamps, aliases: "-T", desc: "Skip appending timestamps to logging output"
+  option :skip_timestamps, type: :boolean, aliases: "-T", desc: "Skip appending timestamps to logging output"
   def logs(name)
     with_accessory(name) do |accessory, hosts|
       grep = options[:grep]

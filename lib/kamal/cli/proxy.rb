@@ -140,7 +140,7 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
   option :lines, type: :numeric, aliases: "-n", desc: "Number of log lines to pull from each server"
   option :grep, aliases: "-g", desc: "Show lines with grep match only (use this to fetch specific requests by id)"
   option :follow, aliases: "-f", desc: "Follow logs on primary server (or specific host set by --hosts)"
-  option :skip_timestamps, aliases: "-T", desc: "Skip appending timestamps to logging output"
+  option :skip_timestamps, type: :boolean, aliases: "-T", desc: "Skip appending timestamps to logging output"
   def logs
     grep = options[:grep]
     timestamps = !options[:skip_timestamps]
