@@ -37,7 +37,7 @@ class Kamal::Commands::Proxy < Kamal::Commands::Base
 
   def logs(timestamps: true, since: nil, lines: nil, grep: nil, grep_options: nil)
     pipe \
-      docker(:logs, container_name, (" --since #{since}" if since), (" --tail #{lines}" if lines), ("--timestamps" if timestamps), "2>&1"),
+      docker(:logs, container_name, ("--since #{since}" if since), ("--tail #{lines}" if lines), ("--timestamps" if timestamps), "2>&1"),
       ("grep '#{grep}'#{" #{grep_options}" if grep_options}" if grep)
   end
 

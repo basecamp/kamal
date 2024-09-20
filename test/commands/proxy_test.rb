@@ -67,19 +67,19 @@ class CommandsProxyTest < ActiveSupport::TestCase
 
   test "proxy logs since 2h" do
     assert_equal \
-      "docker logs kamal-proxy  --since 2h --timestamps 2>&1",
+      "docker logs kamal-proxy --since 2h --timestamps 2>&1",
       new_command.logs(since: "2h").join(" ")
   end
 
   test "proxy logs last 10 lines" do
     assert_equal \
-      "docker logs kamal-proxy  --tail 10 --timestamps 2>&1",
+      "docker logs kamal-proxy --tail 10 --timestamps 2>&1",
       new_command.logs(lines: 10).join(" ")
   end
 
   test "proxy logs without timestamps" do
     assert_equal \
-      "docker logs kamal-proxy  2>&1",
+      "docker logs kamal-proxy 2>&1",
       new_command.logs(timestamps: false).join(" ")
   end
 
