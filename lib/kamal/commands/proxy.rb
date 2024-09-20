@@ -35,15 +35,17 @@ class Kamal::Commands::Proxy < Kamal::Commands::Base
       [ :cut, "-d:", "-f2" ]
   end
 
-  def logs(since: nil, lines: nil, grep: nil, grep_options: nil)
+  def logs(timestamps: true, since: nil, lines: nil, grep: nil, grep_options: nil)
     pipe \
-      docker(:logs, container_name, (" --since #{since}" if since), (" --tail #{lines}" if lines), "--timestamps", "2>&1"),
+      docker(:logs, container_name, (" --since #{since}" if since), (" --tail #{lines}" if lines), ("--timestamps" if timestamps), "2>&1"),
       ("grep '#{grep}'#{" #{grep_options}" if grep_options}" if grep)
   end
 
-  def follow_logs(host:, grep: nil, grep_options: nil)
+  def follow_logs(host:, timestamps: true, grep: nil, grep_options: nil)
     run_over_ssh pipe(
-      docker(:logs, container_name, "--timestamps", "--tail", "10", "--follow", "2>&1"),
+      docker(:logs, container_name),
+      ("--timestamps" if timestamps),
+      "--tail", "10", "--follow", "2>&1"),
       (%(grep "#{grep}"#{" #{grep_options}" if grep_options}) if grep)
     ).join(" "), host: host
   end

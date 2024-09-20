@@ -130,12 +130,20 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
     assert_equal \
       "docker logs app-mysql  --since 5m  --tail 100 --timestamps 2>&1 | grep 'thing' -C 2",
       new_command(:mysql).logs(since: "5m", lines: 100, grep: "thing", grep_options: "-C 2").join(" ")
+
+    assert_equal \
+      "docker logs app-mysql  --since 5m  --tail 100 2>&1 | grep 'thing' -C 2",
+      new_command(:mysql).logs(timestamps: false, since: "5m", lines: 100, grep: "thing", grep_options: "-C 2").join(" ")
   end
 
   test "follow logs" do
     assert_equal \
       "ssh -t root@1.1.1.5 -p 22 'docker logs app-mysql --timestamps --tail 10 --follow 2>&1'",
       new_command(:mysql).follow_logs
+
+    assert_equal \
+      "ssh -t root@1.1.1.5 -p 22 'docker logs app-mysql --tail 10 --follow 2>&1'",
+      new_command(:mysql).follow_logs(timestamps: false)
   end
 
   test "remove container" do

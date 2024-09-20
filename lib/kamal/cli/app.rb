@@ -188,12 +188,14 @@ class Kamal::Cli::App < Kamal::Cli::Base
   option :grep, aliases: "-g", desc: "Show lines with grep match only (use this to fetch specific requests by id)"
   option :grep_options, aliases: "-o", desc: "Additional options supplied to grep"
   option :follow, aliases: "-f", desc: "Follow log on primary server (or specific host set by --hosts)"
+  option :skip_timestamps, aliases: "-T", desc: "Skip appending timestamps to logging output"
   def logs
     # FIXME: Catch when app containers aren't running
 
     grep = options[:grep]
     grep_options = options[:grep_options]
     since = options[:since]
+    timestamps = !options[:skip_timestamps]
 
     if options[:follow]
       lines = options[:lines].presence || ((since || grep) ? nil : 10) # Default to 10 lines if since or grep isn't set
@@ -205,8 +207,8 @@ class Kamal::Cli::App < Kamal::Cli::Base
         role = KAMAL.roles_on(KAMAL.primary_host).first
 
         app = KAMAL.app(role: role, host: host)
-        info app.follow_logs(host: KAMAL.primary_host, lines: lines, grep: grep, grep_options: grep_options)
-        exec app.follow_logs(host: KAMAL.primary_host, lines: lines, grep: grep, grep_options: grep_options)
+        info app.follow_logs(host: KAMAL.primary_host, timestamps: timestamps, lines: lines, grep: grep, grep_options: grep_options)
+        exec app.follow_logs(host: KAMAL.primary_host, timestamps: timestamps, lines: lines, grep: grep, grep_options: grep_options)
       end
     else
       lines = options[:lines].presence || ((since || grep) ? nil : 100) # Default to 100 lines if since or grep isn't set
@@ -216,7 +218,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
 
         roles.each do |role|
           begin
-            puts_by_host host, capture_with_info(*KAMAL.app(role: role, host: host).logs(since: since, lines: lines, grep: grep, grep_options: grep_options))
+            puts_by_host host, capture_with_info(*KAMAL.app(role: role, host: host).logs(timestamps: timestamps, since: since, lines: lines, grep: grep, grep_options: grep_options))
           rescue SSHKit::Command::Failed
             puts_by_host host, "Nothing found"
           end

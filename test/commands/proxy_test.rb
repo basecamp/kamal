@@ -77,6 +77,12 @@ class CommandsProxyTest < ActiveSupport::TestCase
       new_command.logs(lines: 10).join(" ")
   end
 
+  test "proxy logs without timestamps" do
+    assert_equal \
+      "docker logs kamal-proxy  2>&1",
+      new_command.logs(timestamps: false).join(" ")
+  end
+
   test "proxy logs with grep hello!" do
     assert_equal \
       "docker logs kamal-proxy --timestamps 2>&1 | grep 'hello!'",

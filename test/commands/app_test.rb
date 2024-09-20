@@ -191,6 +191,10 @@ class CommandsAppTest < ActiveSupport::TestCase
     assert_equal \
       "ssh -t root@app-1 -p 22 'sh -c '\\''docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''\\'\\'''\\''{{.ID}}'\\''\\'\\'''\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting'\\'' | head -1 | xargs docker logs --timestamps --tail 123 --follow 2>&1 | grep \"Completed\"'",
       new_command.follow_logs(host: "app-1", lines: 123, grep: "Completed")
+
+    assert_equal \
+      "ssh -t root@app-1 -p 22 'sh -c '\\''docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''\\'\\'''\\''{{.ID}}'\\''\\'\\'''\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting'\\'' | head -1 | xargs docker logs --tail 123 --follow 2>&1 | grep \"Completed\"'",
+      new_command.follow_logs(host: "app-1", timestamps: false, lines: 123, grep: "Completed")
   end
 
 
