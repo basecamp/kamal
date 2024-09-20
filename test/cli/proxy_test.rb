@@ -111,11 +111,11 @@ class CliProxyTest < CliTestCase
 
   test "logs" do
     SSHKit::Backend::Abstract.any_instance.stubs(:capture)
-      .with(:docker, :logs, "kamal-proxy", " --tail 100", "--timestamps", "2>&1")
+      .with(:docker, :logs, "kamal-proxy", "--tail 100", "--timestamps", "2>&1")
       .returns("Log entry")
 
     SSHKit::Backend::Abstract.any_instance.stubs(:capture)
-      .with(:docker, :logs, "proxy", " --tail 100", "--timestamps", "2>&1")
+      .with(:docker, :logs, "proxy", "--tail 100", "--timestamps", "2>&1")
       .returns("Log entry")
 
     run_command("logs").tap do |output|
