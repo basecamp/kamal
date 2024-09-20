@@ -43,9 +43,7 @@ class Kamal::Commands::Proxy < Kamal::Commands::Base
 
   def follow_logs(host:, timestamps: true, grep: nil, grep_options: nil)
     run_over_ssh pipe(
-      docker(:logs, container_name),
-      ("--timestamps" if timestamps),
-      "--tail", "10", "--follow", "2>&1"),
+      docker(:logs, container_name, ("--timestamps" if timestamps), "--tail", "10", "--follow", "2>&1"),
       (%(grep "#{grep}"#{" #{grep_options}" if grep_options}) if grep)
     ).join(" "), host: host
   end
