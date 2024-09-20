@@ -47,7 +47,7 @@ proxy:
   # Response timeout
   #
   # How long to wait for requests to complete before timing out, defaults to 30 seconds
-  response_timeout: 10s
+  response_timeout: 10
 
   # Healthcheck
   #
