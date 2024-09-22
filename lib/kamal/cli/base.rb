@@ -101,7 +101,7 @@ module Kamal::Cli
       end
 
       def acquire_lock
-        ensure_run_and_locks_directory
+        ensure_run_directory
 
         raise_if_locked do
           say "Acquiring the deploy lock...", :magenta
@@ -135,8 +135,10 @@ module Kamal::Cli
           details = { hosts: KAMAL.hosts.join(","), command: command, subcommand: subcommand }
 
           say "Running the #{hook} hook...", :magenta
-          run_locally do
-            execute *KAMAL.hook.run(hook, **details, **extra_details)
+          with_env KAMAL.hook.env(**details, **extra_details) do
+            run_locally do
+              execute *KAMAL.hook.run(hook)
+            end
           rescue SSHKit::Command::Failed => e
             raise HookError.new("Hook `#{hook}` failed:\n#{e.message}")
           end
@@ -174,14 +176,23 @@ module Kamal::Cli
         instance_variable_get("@_invocations").first
       end
 
-      def ensure_run_and_locks_directory
+      def reset_invocation(cli_class)
+        instance_variable_get("@_invocations")[cli_class].pop
+      end
+
+      def ensure_run_directory
         on(KAMAL.hosts) do
           execute(*KAMAL.server.ensure_run_directory)
         end
+      end
 
-        on(KAMAL.primary_host) do
-          execute(*KAMAL.lock.ensure_locks_directory)
-        end
+      def with_env(env)
+        current_env = ENV.to_h.dup
+        ENV.update(env)
+        yield
+      ensure
+        ENV.clear
+        ENV.update(current_env)
       end
   end
 end

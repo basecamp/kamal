@@ -1,16 +1,17 @@
 class Kamal::Cli::Accessory < Kamal::Cli::Base
   desc "boot [NAME]", "Boot new accessory service on host (use NAME=all to boot all accessories)"
-  def boot(name, login: true)
+  def boot(name, prepare: true)
     with_lock do
       if name == "all"
         KAMAL.accessory_names.each { |accessory_name| boot(accessory_name) }
       else
+        prepare(name) if prepare
+
         with_accessory(name) do |accessory, hosts|
           directories(name)
           upload(name)
 
           on(hosts) do
-            execute *KAMAL.registry.login if login
             execute *KAMAL.auditor.record("Booted #{name} accessory"), verbosity: :debug
             execute *accessory.ensure_env_directory
             upload! accessory.secrets_io, accessory.secrets_path, mode: "0600"
@@ -57,15 +58,10 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
       if name == "all"
         KAMAL.accessory_names.each { |accessory_name| reboot(accessory_name) }
       else
-        with_accessory(name) do |accessory, hosts|
-          on(hosts) do
-            execute *KAMAL.registry.login
-          end
-
-          stop(name)
-          remove_container(name)
-          boot(name, login: false)
-        end
+        prepare(name)
+        stop(name)
+        remove_container(name)
+        boot(name, prepare: false)
       end
     end
   end
@@ -97,10 +93,8 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
   desc "restart [NAME]", "Restart existing accessory container on host"
   def restart(name)
     with_lock do
-      with_accessory(name) do
-        stop(name)
-        start(name)
-      end
+      stop(name)
+      start(name)
     end
   end
 
@@ -153,23 +147,25 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
   option :grep, aliases: "-g", desc: "Show lines with grep match only (use this to fetch specific requests by id)"
   option :grep_options, aliases: "-o", desc: "Additional options supplied to grep"
   option :follow, aliases: "-f", desc: "Follow logs on primary server (or specific host set by --hosts)"
+  option :skip_timestamps, type: :boolean, aliases: "-T", desc: "Skip appending timestamps to logging output"
   def logs(name)
     with_accessory(name) do |accessory, hosts|
       grep = options[:grep]
       grep_options = options[:grep_options]
+      timestamps = !options[:skip_timestamps]
 
       if options[:follow]
         run_locally do
           info "Following logs on #{hosts}..."
-          info accessory.follow_logs(grep: grep, grep_options: grep_options)
-          exec accessory.follow_logs(grep: grep, grep_options: grep_options)
+          info accessory.follow_logs(timestamps: timestamps, grep: grep, grep_options: grep_options)
+          exec accessory.follow_logs(timestamps: timestamps, grep: grep, grep_options: grep_options)
         end
       else
         since = options[:since]
         lines = options[:lines].presence || ((since || grep) ? nil : 100) # Default to 100 lines if since or grep isn't set
 
         on(hosts) do
-          puts capture_with_info(*accessory.logs(since: since, lines: lines, grep: grep, grep_options: grep_options))
+          puts capture_with_info(*accessory.logs(timestamps: timestamps, since: since, lines: lines, grep: grep, grep_options: grep_options))
         end
       end
     end
@@ -224,6 +220,25 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
     end
   end
 
+  desc "upgrade", "Upgrade accessories from Kamal 1.x to 2.0 (restart them in 'kamal' network)"
+  option :rolling, type: :boolean, default: false, desc: "Upgrade one host at a time"
+  option :confirmed, aliases: "-y", type: :boolean, default: false, desc: "Proceed without confirmation question"
+  def upgrade(name)
+    confirming "This will restart all accessories" do
+      with_lock do
+        host_groups = options[:rolling] ? KAMAL.accessory_hosts : [ KAMAL.accessory_hosts ]
+        host_groups.each do |hosts|
+          host_list = Array(hosts).join(",")
+          KAMAL.with_specific_hosts(hosts) do
+            say "Upgrading #{name} accessories on #{host_list}...", :magenta
+            reboot name
+            say "Upgraded #{name} accessories on #{host_list}...", :magenta
+          end
+        end
+      end
+    end
+  end
+
   private
     def with_accessory(name)
       if KAMAL.config.accessory(name)
@@ -251,11 +266,20 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
     end
 
     def remove_accessory(name)
-      with_accessory(name) do
-        stop(name)
-        remove_container(name)
-        remove_image(name)
-        remove_service_directory(name)
+      stop(name)
+      remove_container(name)
+      remove_image(name)
+      remove_service_directory(name)
+    end
+
+    def prepare(name)
+      with_accessory(name) do |accessory, hosts|
+        on(hosts) do
+          execute *KAMAL.registry.login
+          execute *KAMAL.docker.create_network
+        rescue SSHKit::Command::Failed => e
+          raise unless e.message.include?("already exists")
+        end
       end
     end
 end

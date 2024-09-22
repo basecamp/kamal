@@ -1,10 +1,9 @@
 class Kamal::Configuration::Role
   include Kamal::Configuration::Validation
 
-  CORD_FILE = "cord"
   delegate :argumentize, :optionize, to: Kamal::Utils
 
-  attr_reader :name, :config, :specialized_env, :specialized_logging, :specialized_healthcheck
+  attr_reader :name, :config, :specialized_env, :specialized_logging, :specialized_proxy
 
   alias to_s name
 
@@ -25,9 +24,7 @@ class Kamal::Configuration::Role
       logging_config: specializations.fetch("logging", {}),
       context: "servers/#{name}/logging"
 
-    @specialized_healthcheck = Kamal::Configuration::Healthcheck.new \
-      healthcheck_config: specializations.fetch("healthcheck", {}),
-      context: "servers/#{name}/healthcheck"
+    initialize_specialized_proxy
   end
 
   def primary_host
@@ -55,7 +52,7 @@ class Kamal::Configuration::Role
   end
 
   def labels
-    default_labels.merge(traefik_labels).merge(custom_labels)
+    default_labels.merge(custom_labels)
   end
 
   def label_args
@@ -70,6 +67,24 @@ class Kamal::Configuration::Role
     @logging ||= config.logging.merge(specialized_logging)
   end
 
+  def proxy
+    @proxy ||= config.proxy.merge(specialized_proxy) if running_proxy?
+  end
+
+  def running_proxy?
+    @running_proxy
+  end
+
+  def ssl?
+    running_proxy? && proxy.ssl?
+  end
+
+  def stop_args
+    # When deploying with the proxy, kamal-proxy will drain request before returning so we don't need to wait.
+    timeout = running_proxy? ? nil : config.drain_timeout
+
+    [ *argumentize("-t", timeout) ]
+  end
 
   def env(host)
     @envs ||= {}
@@ -89,7 +104,7 @@ class Kamal::Configuration::Role
   end
 
   def secrets_path
-    File.join(config.env_directory, "roles", "#{container_prefix}.env")
+    File.join(config.env_directory, "roles", "#{name}.env")
   end
 
   def asset_volume_args
@@ -97,72 +112,8 @@ class Kamal::Configuration::Role
   end
 
 
-  def health_check_args(cord: true)
-    if running_traefik? || healthcheck.set_port_or_path?
-      if cord && uses_cord?
-        optionize({ "health-cmd" => health_check_cmd_with_cord, "health-interval" => healthcheck.interval })
-          .concat(cord_volume.docker_args)
-      else
-        optionize({ "health-cmd" => healthcheck.cmd, "health-interval" => healthcheck.interval })
-      end
-    else
-      []
-    end
-  end
-
-  def healthcheck
-    @healthcheck ||=
-      if running_traefik?
-        config.healthcheck.merge(specialized_healthcheck)
-      else
-        specialized_healthcheck
-      end
-  end
-
-  def health_check_cmd_with_cord
-    "(#{healthcheck.cmd}) && (stat #{cord_container_file} > /dev/null || exit 1)"
-  end
-
-
-  def running_traefik?
-    if specializations["traefik"].nil?
-      primary?
-    else
-      specializations["traefik"]
-    end
-  end
-
   def primary?
-    self == @config.primary_role
-  end
-
-
-  def uses_cord?
-    running_traefik? && cord_volume && healthcheck.cmd.present?
-  end
-
-  def cord_host_directory
-    File.join config.run_directory_as_docker_volume, "cords", [ container_prefix, config.run_id ].join("-")
-  end
-
-  def cord_volume
-    if (cord = healthcheck.cord)
-      @cord_volume ||= Kamal::Configuration::Volume.new \
-        host_path: File.join(config.run_directory, "cords", [ container_prefix, config.run_id ].join("-")),
-        container_path: cord
-    end
-  end
-
-  def cord_host_file
-    File.join cord_volume.host_path, CORD_FILE
-  end
-
-  def cord_container_directory
-    health_check_options.fetch("cord", nil)
-  end
-
-  def cord_container_file
-    File.join cord_volume.container_path, CORD_FILE
+    name == @config.primary_role_name
   end
 
 
@@ -180,25 +131,52 @@ class Kamal::Configuration::Role
   end
 
   def assets?
-    asset_path.present? && running_traefik?
+    asset_path.present? && running_proxy?
   end
 
-  def asset_volume(version = nil)
+  def asset_volume(version = config.version)
     if assets?
       Kamal::Configuration::Volume.new \
-        host_path: asset_volume_path(version), container_path: asset_path
+        host_path: asset_volume_directory(version), container_path: asset_path
     end
   end
 
-  def asset_extracted_path(version = nil)
-    File.join config.run_directory, "assets", "extracted", container_name(version)
+  def asset_extracted_directory(version = config.version)
+    File.join config.assets_directory, "extracted", [ name, version ].join("-")
   end
 
-  def asset_volume_path(version = nil)
-    File.join config.run_directory, "assets", "volumes", container_name(version)
+  def asset_volume_directory(version = config.version)
+    File.join config.assets_directory, "volumes", [ name, version ].join("-")
+  end
+
+  def ensure_one_host_for_ssl
+    if running_proxy? && proxy.ssl? && hosts.size > 1
+      raise Kamal::ConfigurationError, "SSL is only supported on a single server, found #{hosts.size} servers for role #{name}"
+    end
   end
 
   private
+    def initialize_specialized_proxy
+      proxy_specializations = specializations["proxy"]
+
+      if primary?
+        # only false means no proxy for non-primary roles
+        @running_proxy = proxy_specializations != false
+      else
+        # false and nil both mean no proxy for non-primary roles
+        @running_proxy = !!proxy_specializations
+      end
+
+      if running_proxy?
+        proxy_config = proxy_specializations == true || proxy_specializations.nil? ? {} : proxy_specializations
+
+        @specialized_proxy = Kamal::Configuration::Proxy.new \
+          config: config,
+          proxy_config: proxy_config,
+          context: "servers/#{name}/proxy"
+      end
+    end
+
     def tagged_hosts
       {}.tap do |tagged_hosts|
         extract_hosts_from_config.map do |host_config|
@@ -231,27 +209,6 @@ class Kamal::Configuration::Role
       else
         config.raw_config.servers[name]
       end
-    end
-
-    def traefik_labels
-      if running_traefik?
-        {
-          # Setting a service property ensures that the generated service name will be consistent between versions
-          "traefik.http.services.#{traefik_service}.loadbalancer.server.scheme" => "http",
-
-          "traefik.http.routers.#{traefik_service}.rule" => "PathPrefix(`/`)",
-          "traefik.http.routers.#{traefik_service}.priority" => "2",
-          "traefik.http.middlewares.#{traefik_service}-retry.retry.attempts" => "5",
-          "traefik.http.middlewares.#{traefik_service}-retry.retry.initialinterval" => "500ms",
-          "traefik.http.routers.#{traefik_service}.middlewares" => "#{traefik_service}-retry@docker"
-        }
-      else
-        {}
-      end
-    end
-
-    def traefik_service
-      container_prefix
     end
 
     def custom_labels

@@ -1,3 +1,0 @@
-#!/bin/sh
-
-echo "Rebooted Traefik on $KAMAL_HOSTS"

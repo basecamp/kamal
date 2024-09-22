@@ -31,7 +31,7 @@ class IntegrationTest < ActiveSupport::TestCase
         succeeded = system("cd test/integration && #{command}")
       end
 
-      raise "Command `#{command}` failed with error code `#{$?}`" if !succeeded && raise_on_error
+      raise "Command `#{command}` failed with error code `#{$?}`, and output:\n#{result}" if !succeeded && raise_on_error
       result
     end
 
@@ -50,8 +50,8 @@ class IntegrationTest < ActiveSupport::TestCase
       assert_equal "502", response.code
     end
 
-    def assert_app_is_up(version: nil)
-      response = app_response
+    def assert_app_is_up(version: nil, app: @app)
+      response = app_response(app: app)
       debug_response_code(response, "200")
       assert_equal "200", response.code
       assert_app_version(version, response) if version
@@ -69,8 +69,8 @@ class IntegrationTest < ActiveSupport::TestCase
       assert_equal up_times, up_count
     end
 
-    def app_response
-      Net::HTTP.get_response(URI.parse("http://localhost:12345/version"))
+    def app_response(app: @app)
+      Net::HTTP.get_response(URI.parse("http://#{app_host(app)}:12345/version"))
     end
 
     def update_app_rev
@@ -101,8 +101,8 @@ class IntegrationTest < ActiveSupport::TestCase
     def assert_200(response)
       code = response.code
       if code != "200"
-        puts "Got response code #{code}, here are the traefik logs:"
-        kamal :traefik, :logs
+        puts "Got response code #{code}, here are the proxy logs:"
+        kamal :proxy, :logs
         puts "And here are the load balancer logs"
         docker_compose :logs, :load_balancer
         puts "Tried to get the response code again and got #{app_response.code}"
@@ -129,8 +129,8 @@ class IntegrationTest < ActiveSupport::TestCase
     def debug_response_code(app_response, expected_code)
       code = app_response.code
       if code != expected_code
-        puts "Got response code #{code}, here are the traefik logs:"
-        kamal :traefik, :logs
+        puts "Got response code #{code}, here are the proxy logs:"
+        kamal :proxy, :logs
         puts "And here are the load balancer logs"
         docker_compose :logs, :load_balancer
         puts "Tried to get the response code again and got #{app_response.code}"
@@ -147,5 +147,32 @@ class IntegrationTest < ActiveSupport::TestCase
 
     def container_running?(host:, name:)
       docker_compose("exec #{host} docker ps --filter=name=#{name} | tail -n+2", capture: true).strip.present?
+    end
+
+    def assert_app_directory_removed
+      assert_directory_removed("./kamal/apps/#{@app}")
+    end
+
+    def assert_directory_removed(directory)
+      assert docker_compose("exec vm1 ls #{directory} | wc -l", capture: true).strip == "0"
+    end
+
+    def assert_proxy_running
+      assert_container_running(host: "vm1", name: "kamal-proxy")
+    end
+
+    def assert_proxy_not_running
+      assert_container_not_running(host: "vm1", name: "kamal-proxy")
+    end
+
+    def app_host(app = @app)
+      case app
+      when "app"
+        "127.0.0.1"
+      when "app_with_roles"
+        "localhost"
+      else
+        raise "Unknown app: #{app}"
+      end
     end
 end

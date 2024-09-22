@@ -20,10 +20,6 @@ class Kamal::Commands::Prune < Kamal::Commands::Base
       "while read container_id; do docker rm $container_id; done"
   end
 
-  def healthcheck_containers
-    docker :container, :prune, "--force", *healthcheck_service_filter
-  end
-
   private
     def stopped_containers_filters
       [ "created", "exited", "dead" ].flat_map { |status| [ "--filter", "status=#{status}" ] }
@@ -38,9 +34,5 @@ class Kamal::Commands::Prune < Kamal::Commands::Base
 
     def service_filter
       [ "--filter", "label=service=#{config.service}" ]
-    end
-
-    def healthcheck_service_filter
-      [ "--filter", "label=service=#{config.healthcheck_service}" ]
     end
 end

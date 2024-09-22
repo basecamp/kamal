@@ -16,3 +16,4 @@ registry:
   password: pw
 builder:
   arch: amd64
+deploy_timeout: 1

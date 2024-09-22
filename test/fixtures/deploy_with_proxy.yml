@@ -1,0 +1,40 @@
+service: app
+image: dhh/app
+servers:
+  web:
+    - "1.1.1.1"
+    - "1.1.1.2"
+  workers:
+    - "1.1.1.3"
+    - "1.1.1.4"
+registry:
+  username: user
+  password: pw
+builder:
+  arch: amd64
+
+
+accessories:
+  mysql:
+    image: mysql:5.7
+    host: 1.1.1.3
+    port: 3306
+    env:
+      clear:
+        MYSQL_ROOT_HOST: '%'
+      secret:
+        - MYSQL_ROOT_PASSWORD
+    files:
+      - test/fixtures/files/my.cnf:/etc/mysql/my.cnf
+    directories:
+      - data:/var/lib/mysql
+  redis:
+    image: redis:latest
+    roles:
+      - web
+    port: 6379
+    directories:
+      - data:/data
+
+readiness_delay: 0
+deploy_timeout: 6

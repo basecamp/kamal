@@ -36,6 +36,8 @@ image: my-image
 labels:
   my-label: my-value
 
+# Volumes
+#
 # Additional volumes to mount into the container
 volumes:
   - /path/on/host:/path/in/container:ro
@@ -58,7 +60,7 @@ servers:
 env:
   ...
 
-# Asset Bridging
+# Asset Path
 #
 # Used for asset bridging across deployments, default to `nil`
 #
@@ -70,10 +72,12 @@ env:
 # volume containing both sets of files.
 # This requires that file names change when the contents change
 # (e.g. by including a hash of the contents in the name).
-
+#
 # To configure this, set the path to the assets:
 asset_path: /path/to/assets
 
+# Hooks path
+#
 # Path to hooks, defaults to `.kamal/hooks`
 # See https://kamal-deploy.org/docs/hooks for more information
 hooks_path: /user_home/kamal/hooks
@@ -83,7 +87,7 @@ hooks_path: /user_home/kamal/hooks
 # Whether deployments require a destination to be specified, defaults to `false`
 require_destination: true
 
-# The primary role
+# Primary role
 #
 # This defaults to `web`, but if you have no web role, you can change this
 primary_role: workers
@@ -92,11 +96,6 @@ primary_role: workers
 #
 # Whether roles with no servers are allowed. Defaults to `false`.
 allow_empty_roles: false
-
-# Stop wait time
-#
-# How long we wait for a container to stop before killing it, defaults to 30 seconds
-stop_wait_time: 60
 
 # Retain containers
 #
@@ -111,8 +110,19 @@ minimum_version: 1.3.0
 # Readiness delay
 #
 # Seconds to wait for a container to boot after is running, default 7
-# This only applies to containers that do not specify a healthcheck
+#
+# This only applies to containers that do not run a proxy or specify a healthcheck
 readiness_delay: 4
+
+# Deploy timeout
+#
+# How long to wait for a container to become ready, default 30
+deploy_timeout: 10
+
+# Drain timeout
+#
+# How long to wait for a containers to drain, default 30
+drain_timeout: 10
 
 # Run directory
 #
@@ -137,10 +147,10 @@ builder:
 accessories:
   ...
 
-# Traefik
+# Proxy
 #
-# The Traefik proxy is used for zero-downtime deployments, see kamal docs traefik
-traefik:
+# Configuration for kamal-proxy, see kamal docs proxy
+proxy:
   ...
 
 # SSHKit
@@ -153,12 +163,6 @@ sshkit:
 #
 # See kamal docs boot
 boot:
-  ...
-
-# Healthcheck
-#
-# Configuring healthcheck commands, intervals and timeouts, see kamal docs healthcheck
-healthcheck:
   ...
 
 # Logging

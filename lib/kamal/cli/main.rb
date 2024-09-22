@@ -35,8 +35,8 @@ class Kamal::Cli::Main < Kamal::Cli::Base
       with_lock do
         run_hook "pre-deploy", secrets: true
 
-        say "Ensure Traefik is running...", :magenta
-        invoke "kamal:cli:traefik:boot", [], invoke_options
+        say "Ensure kamal-proxy is running...", :magenta
+        invoke "kamal:cli:proxy:boot", [], invoke_options
 
         say "Detect stale containers...", :magenta
         invoke "kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true)
@@ -48,10 +48,10 @@ class Kamal::Cli::Main < Kamal::Cli::Base
       end
     end
 
-    run_hook "post-deploy", secrets: true, runtime: runtime.round
+    run_hook "post-deploy", secrets: true, runtime: runtime.round.to_s
   end
 
-  desc "redeploy", "Deploy app to servers without bootstrapping servers, starting Traefik, pruning, and registry login"
+  desc "redeploy", "Deploy app to servers without bootstrapping servers, starting kamal-proxy, pruning, and registry login"
   option :skip_push, aliases: "-P", type: :boolean, default: false, desc: "Skip image build and push"
   def redeploy
     runtime = print_runtime do
@@ -75,7 +75,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
       end
     end
 
-    run_hook "post-deploy", secrets: true, runtime: runtime.round
+    run_hook "post-deploy", secrets: true, runtime: runtime.round.to_s
   end
 
   desc "rollback [VERSION]", "Rollback app to VERSION"
@@ -99,12 +99,12 @@ class Kamal::Cli::Main < Kamal::Cli::Base
       end
     end
 
-    run_hook "post-deploy", secrets: true, runtime: runtime.round if rolled_back
+    run_hook "post-deploy", secrets: true, runtime: runtime.round.to_s if rolled_back
   end
 
   desc "details", "Show details about all containers"
   def details
-    invoke "kamal:cli:traefik:details"
+    invoke "kamal:cli:proxy:details"
     invoke "kamal:cli:app:details"
     invoke "kamal:cli:accessory:details", [ "all" ]
   end
@@ -123,7 +123,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
     end
   end
 
-  desc "docs", "Show Kamal documentation for configuration setting"
+  desc "docs [SECTION]", "Show Kamal configuration documentation"
   def docs(section = nil)
     case section
     when NilClass
@@ -176,15 +176,46 @@ class Kamal::Cli::Main < Kamal::Cli::Base
     end
   end
 
-  desc "remove", "Remove Traefik, app, accessories, and registry session from servers"
+  desc "remove", "Remove kamal-proxy, app, accessories, and registry session from servers"
   option :confirmed, aliases: "-y", type: :boolean, default: false, desc: "Proceed without confirmation question"
   def remove
     confirming "This will remove all containers and images. Are you sure?" do
       with_lock do
-        invoke "kamal:cli:traefik:remove", [], options.without(:confirmed)
         invoke "kamal:cli:app:remove", [], options.without(:confirmed)
+        invoke "kamal:cli:proxy:remove", [], options.without(:confirmed)
         invoke "kamal:cli:accessory:remove", [ "all" ], options
         invoke "kamal:cli:registry:logout", [], options.without(:confirmed).merge(skip_local: true)
+      end
+    end
+  end
+
+  desc "upgrade", "Upgrade from Kamal 1.x to 2.0"
+  option :confirmed, aliases: "-y", type: :boolean, default: false, desc: "Proceed without confirmation question"
+  option :rolling, type: :boolean, default: false, desc: "Upgrade one host at a time"
+  def upgrade
+    confirming "This will replace Traefik with kamal-proxy and restart all accessories" do
+      with_lock do
+        if options[:rolling]
+          (KAMAL.hosts | KAMAL.accessory_hosts).each do |host|
+            KAMAL.with_specific_hosts(host) do
+              say "Upgrading #{host}...", :magenta
+              if KAMAL.hosts.include?(host)
+                invoke "kamal:cli:proxy:upgrade", [], options.merge(confirmed: true, rolling: false)
+                reset_invocation(Kamal::Cli::Proxy)
+              end
+              if KAMAL.accessory_hosts.include?(host)
+                invoke "kamal:cli:accessory:upgrade", [ "all" ], options.merge(confirmed: true, rolling: false)
+                reset_invocation(Kamal::Cli::Accessory)
+              end
+              say "Upgraded #{host}", :magenta
+            end
+          end
+        else
+          say "Upgrading all hosts...", :magenta
+          invoke "kamal:cli:proxy:upgrade", [], options.merge(confirmed: true)
+          invoke "kamal:cli:accessory:upgrade", [ "all" ], options.merge(confirmed: true)
+          say "Upgraded all hosts", :magenta
+        end
       end
     end
   end
@@ -206,6 +237,9 @@ class Kamal::Cli::Main < Kamal::Cli::Base
   desc "lock", "Manage the deploy lock"
   subcommand "lock", Kamal::Cli::Lock
 
+  desc "proxy", "Manage kamal-proxy"
+  subcommand "proxy", Kamal::Cli::Proxy
+
   desc "prune", "Prune old application images and containers"
   subcommand "prune", Kamal::Cli::Prune
 
@@ -217,9 +251,6 @@ class Kamal::Cli::Main < Kamal::Cli::Base
 
   desc "server", "Bootstrap servers with curl and Docker"
   subcommand "server", Kamal::Cli::Server
-
-  desc "traefik", "Manage Traefik load balancer"
-  subcommand "traefik", Kamal::Cli::Traefik
 
   private
     def container_available?(version)

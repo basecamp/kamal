@@ -77,22 +77,22 @@ class ConfigurationTest < ActiveSupport::TestCase
     assert_equal "1.1.1.1", @config_with_roles.primary_host
   end
 
-  test "traefik hosts" do
-    assert_equal [ "1.1.1.1", "1.1.1.2" ], @config_with_roles.traefik_hosts
+  test "proxy hosts" do
+    assert_equal [ "1.1.1.1", "1.1.1.2" ], @config_with_roles.proxy_hosts
 
-    @deploy_with_roles[:servers]["workers"]["traefik"] = true
+    @deploy_with_roles[:servers]["workers"]["proxy"] = true
     config = Kamal::Configuration.new(@deploy_with_roles)
 
-    assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3" ], config.traefik_hosts
+    assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3" ], config.proxy_hosts
   end
 
-  test "filtered traefik hosts" do
-    assert_equal [ "1.1.1.1", "1.1.1.2" ], @config_with_roles.traefik_hosts
+  test "filtered proxy hosts" do
+    assert_equal [ "1.1.1.1", "1.1.1.2" ], @config_with_roles.proxy_hosts
 
-    @deploy_with_roles[:servers]["workers"]["traefik"] = true
+    @deploy_with_roles[:servers]["workers"]["proxy"] = true
     config = Kamal::Configuration.new(@deploy_with_roles)
 
-    assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3" ], config.traefik_hosts
+    assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3" ], config.proxy_hosts
   end
 
   test "version no git repo" do
@@ -155,10 +155,6 @@ class ConfigurationTest < ActiveSupport::TestCase
 
   test "service with version" do
     assert_equal "app-missing", @config.service_with_version
-  end
-
-  test "healthcheck service" do
-    assert_equal "healthcheck-app", @config.healthcheck_service
   end
 
   test "hosts required for all roles" do
@@ -269,8 +265,7 @@ class ConfigurationTest < ActiveSupport::TestCase
         sshkit: {},
         volume_args: [ "--volume", "/local/path:/container/path" ],
         builder: { "arch" => "amd64" },
-        logging: [ "--log-opt", "max-size=\"10m\"" ],
-        healthcheck: { "cmd"=>"curl -f http://localhost:3000/up || exit 1", "interval" => "1s", "path"=>"/up", "port"=>3000, "max_attempts" => 7, "cord" => "/tmp/kamal-cord", "log_lines" => 50 } }
+        logging: [ "--log-opt", "max-size=\"10m\"" ] }
 
     assert_equal expected_config, @config.to_h
   end
@@ -294,22 +289,6 @@ class ConfigurationTest < ActiveSupport::TestCase
   test "run directory" do
     config = Kamal::Configuration.new(@deploy)
     assert_equal ".kamal", config.run_directory
-
-    config = Kamal::Configuration.new(@deploy.merge!(run_directory: "/root/kamal"))
-    assert_equal "/root/kamal", config.run_directory
-  end
-
-  test "run directory as docker volume" do
-    config = Kamal::Configuration.new(@deploy)
-    assert_equal "$(pwd)/.kamal", config.run_directory_as_docker_volume
-
-    config = Kamal::Configuration.new(@deploy.merge!(run_directory: "/root/kamal"))
-    assert_equal "/root/kamal", config.run_directory_as_docker_volume
-  end
-
-  test "run id" do
-    SecureRandom.expects(:hex).with(16).returns("09876543211234567890098765432112")
-    assert_equal "09876543211234567890098765432112", @config.run_id
   end
 
   test "asset path" do
@@ -328,7 +307,7 @@ class ConfigurationTest < ActiveSupport::TestCase
     assert_equal "alternate_web", config.primary_role.name
     assert_equal "1.1.1.4", config.primary_host
     assert config.role(:alternate_web).primary?
-    assert config.role(:alternate_web).running_traefik?
+    assert config.role(:alternate_web).running_proxy?
   end
 
   test "primary role missing" do
@@ -350,7 +329,52 @@ class ConfigurationTest < ActiveSupport::TestCase
     dest_config_file = Pathname.new(File.expand_path("fixtures/deploy_with_extensions.yml", __dir__))
 
     config = Kamal::Configuration.create_from config_file: dest_config_file
-    assert_equal config.role(:web_tokyo).running_traefik?, true
-    assert_equal config.role(:web_chicago).running_traefik?, true
+    assert_equal config.role(:web_tokyo).running_proxy?, true
+    assert_equal config.role(:web_chicago).running_proxy?, true
+  end
+
+  test "traefik hooks raise error" do
+    Dir.mktmpdir do |dir|
+      Dir.chdir(dir) do
+        FileUtils.mkdir_p ".kamal/hooks"
+        FileUtils.touch ".kamal/hooks/post-traefik-reboot"
+        FileUtils.touch ".kamal/hooks/pre-traefik-reboot"
+        exception = assert_raises(Kamal::ConfigurationError) do
+          Kamal::Configuration.new(@deploy)
+        end
+        assert_equal "Found pre-traefik-reboot, post-traefik-reboot, these should be renamed to (pre|post)-proxy-reboot", exception.message
+      end
+    end
+  end
+
+  test "proxy ssl roles with no host" do
+    @deploy_with_roles[:servers]["workers"]["proxy"] = { "ssl" => true }
+
+    exception = assert_raises(Kamal::ConfigurationError) do
+      Kamal::Configuration.new(@deploy_with_roles)
+    end
+
+    assert_equal "servers/workers/proxy: Must set a host to enable automatic SSL", exception.message
+  end
+
+  test "proxy ssl roles with multiple servers" do
+    @deploy_with_roles[:servers]["workers"]["proxy"] = { "ssl" => true, "host" => "foo.example.com" }
+
+    exception = assert_raises(Kamal::ConfigurationError) do
+      Kamal::Configuration.new(@deploy_with_roles)
+    end
+
+    assert_equal "SSL is only supported on a single server, found 2 servers for role workers", exception.message
+  end
+
+  test "two proxy ssl roles with same host" do
+    @deploy_with_roles[:servers]["web"] = { "hosts" => [ "1.1.1.1" ], "proxy" => { "ssl" => true, "host" => "foo.example.com" } }
+    @deploy_with_roles[:servers]["workers"] = { "hosts" => [ "1.1.1.1" ], "proxy" => { "ssl" => true, "host" => "foo.example.com" } }
+
+    exception = assert_raises(Kamal::ConfigurationError) do
+      Kamal::Configuration.new(@deploy_with_roles)
+    end
+
+    assert_equal "Different roles can't share the same host for SSL: foo.example.com", exception.message
   end
 end

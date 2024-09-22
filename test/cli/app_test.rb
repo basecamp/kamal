@@ -5,7 +5,7 @@ class CliAppTest < CliTestCase
     stub_running
     run_command("boot").tap do |output|
       assert_match "docker tag dhh/app:latest dhh/app:latest", output
-      assert_match /docker run --detach --restart unless-stopped --name app-web-latest --hostname 1.1.1.1-[0-9a-f]{12} /, output
+      assert_match /docker run --detach --restart unless-stopped --name app-web-latest --network kamal --hostname 1.1.1.1-[0-9a-f]{12} /, output
       assert_match "docker container ls --all --filter name=^app-web-123$ --quiet | xargs docker stop", output
     end
   end
@@ -19,25 +19,17 @@ class CliAppTest < CliTestCase
       .returns("12345678") # running version
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-latest$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
-      .returns("running") # health check
-
-    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
       .with(:sh, "-c", "'docker ps --latest --format '\\''{{.Names}}'\\'' --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --format '\\''{{.Names}}'\\'' --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting'", "|", :head, "-1", "|", "while read line; do echo ${line#app-web-}; done", raise_on_non_zero_exit: false)
       .returns("123") # old version
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :inspect, "-f '{{ range .Mounts }}{{printf \"%s %s\\n\" .Source .Destination}}{{ end }}'", "app-web-123", "|", :awk, "'$2 == \"/tmp/kamal-cord\" {print $1}'", raise_on_non_zero_exit: false)
-      .returns("cordfile") # old version
-
-    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-123$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
-      .returns("unhealthy") # old version unhealthy
+      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-latest$", "--quiet")
+      .returns("12345678") # running version
 
     run_command("boot").tap do |output|
       assert_match /Renaming container .* to .* as already deployed on 1.1.1.1/, output # Rename
       assert_match /docker rename app-web-latest app-web-latest_replaced_[0-9a-f]{16}/, output
-      assert_match /docker run --detach --restart unless-stopped --name app-web-latest --hostname 1.1.1.1-[0-9a-f]{12} /, output
+      assert_match /docker run --detach --restart unless-stopped --name app-web-latest --network kamal --hostname 1.1.1.1-[0-9a-f]{12} /, output
       assert_match "docker container ls --all --filter name=^app-web-123$ --quiet | xargs docker stop", output
     end
   ensure
@@ -45,7 +37,7 @@ class CliAppTest < CliTestCase
   end
 
   test "boot uses group strategy when specified" do
-    Kamal::Cli::App.any_instance.stubs(:on).with("1.1.1.1").times(3) # ensure locks dir, acquire & release lock
+    Kamal::Cli::App.any_instance.stubs(:on).with("1.1.1.1").times(2) # ensure locks dir, acquire & release lock
     Kamal::Cli::App.any_instance.stubs(:on).with([ "1.1.1.1" ]) # tag container
 
     # Strategy is used when booting the containers
@@ -71,24 +63,20 @@ class CliAppTest < CliTestCase
       .returns("12345678") # running version
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-latest$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
-      .returns("running") # health check
-
-    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
       .with(:sh, "-c", "'docker ps --latest --format '\\''{{.Names}}'\\'' --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --format '\\''{{.Names}}'\\'' --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting'", "|", :head, "-1", "|", "while read line; do echo ${line#app-web-}; done", raise_on_non_zero_exit: false)
       .returns("123").twice # old version
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :inspect, "-f '{{ range .Mounts }}{{printf \"%s %s\\n\" .Source .Destination}}{{ end }}'", "app-web-123", "|", :awk, "'$2 == \"/tmp/kamal-cord\" {print $1}'", raise_on_non_zero_exit: false)
-      .returns("") # old version
+      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-latest$", "--quiet")
+      .returns("12345678") # running version
 
     run_command("boot", config: :with_assets).tap do |output|
       assert_match "docker tag dhh/app:latest dhh/app:latest", output
-      assert_match "/usr/bin/env mkdir -p .kamal/assets/volumes/app-web-latest ; cp -rnT .kamal/assets/extracted/app-web-latest .kamal/assets/volumes/app-web-latest ; cp -rnT .kamal/assets/extracted/app-web-latest .kamal/assets/volumes/app-web-123 || true ; cp -rnT .kamal/assets/extracted/app-web-123 .kamal/assets/volumes/app-web-latest || true", output
-      assert_match "/usr/bin/env mkdir -p .kamal/assets/extracted/app-web-latest && docker stop -t 1 app-web-assets 2> /dev/null || true && docker run --name app-web-assets --detach --rm --entrypoint sleep dhh/app:latest 1000000 && docker cp -L app-web-assets:/public/assets/. .kamal/assets/extracted/app-web-latest && docker stop -t 1 app-web-assets", output
-      assert_match /docker run --detach --restart unless-stopped --name app-web-latest --hostname 1.1.1.1-[0-9a-f]{12} /, output
+      assert_match "/usr/bin/env mkdir -p .kamal/apps/app/assets/volumes/web-latest ; cp -rnT .kamal/apps/app/assets/extracted/web-latest .kamal/apps/app/assets/volumes/web-latest ; cp -rnT .kamal/apps/app/assets/extracted/web-latest .kamal/apps/app/assets/volumes/web-123 || true ; cp -rnT .kamal/apps/app/assets/extracted/web-123 .kamal/apps/app/assets/volumes/web-latest || true", output
+      assert_match "/usr/bin/env mkdir -p .kamal/apps/app/assets/extracted/web-latest && docker stop -t 1 app-web-assets 2> /dev/null || true && docker run --name app-web-assets --detach --rm --entrypoint sleep dhh/app:latest 1000000 && docker cp -L app-web-assets:/public/assets/. .kamal/apps/app/assets/extracted/web-latest && docker stop -t 1 app-web-assets", output
+      assert_match /docker run --detach --restart unless-stopped --name app-web-latest --network kamal --hostname 1.1.1.1-[0-9a-f]{12} /, output
       assert_match "docker container ls --all --filter name=^app-web-123$ --quiet | xargs docker stop", output
-      assert_match "/usr/bin/env find .kamal/assets/extracted -maxdepth 1 -name 'app-web-*' ! -name app-web-latest -exec rm -rf \"{}\" + ; find .kamal/assets/volumes -maxdepth 1 -name 'app-web-*' ! -name app-web-latest -exec rm -rf \"{}\" +", output
+      assert_match "/usr/bin/env find .kamal/apps/app/assets/extracted -maxdepth 1 -name 'web-*' ! -name web-latest -exec rm -rf \"{}\" + ; find .kamal/apps/app/assets/volumes -maxdepth 1 -name 'web-*' ! -name web-latest -exec rm -rf \"{}\" +", output
     end
   end
 
@@ -96,24 +84,20 @@ class CliAppTest < CliTestCase
     Object.any_instance.stubs(:sleep)
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-    .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-latest$", "--quiet", raise_on_non_zero_exit: false)
-    .returns("12345678") # running version
+      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-latest$", "--quiet", raise_on_non_zero_exit: false)
+      .returns("12345678") # running version
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-latest$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
-      .returns("running") # health check
+      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-latest$", "--quiet")
+      .returns("12345678") # running version
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
       .with(:sh, "-c", "'docker ps --latest --format '\\''{{.Names}}'\\'' --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --format '\\''{{.Names}}'\\'' --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting'", "|", :head, "-1", "|", "while read line; do echo ${line#app-web-}; done", raise_on_non_zero_exit: false)
       .returns("123") # old version
 
-    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :inspect, "-f '{{ range .Mounts }}{{printf \"%s %s\\n\" .Source .Destination}}{{ end }}'", "app-web-123", "|", :awk, "'$2 == \"/tmp/kamal-cord\" {print $1}'", raise_on_non_zero_exit: false)
-      .returns("") # old version
-
     run_command("boot", config: :with_env_tags).tap do |output|
       assert_match "docker tag dhh/app:latest dhh/app:latest", output
-      assert_match %r{docker run --detach --restart unless-stopped --name app-web-latest --hostname 1.1.1.1-[0-9a-f]{12} -e KAMAL_CONTAINER_NAME="app-web-latest" -e KAMAL_VERSION="latest" --env TEST="root" --env EXPERIMENT="disabled" --env SITE="site1"}, output
+      assert_match %r{docker run --detach --restart unless-stopped --name app-web-latest --network kamal --hostname 1.1.1.1-[0-9a-f]{12} -e KAMAL_CONTAINER_NAME="app-web-latest" -e KAMAL_VERSION="latest" --env TEST="root" --env EXPERIMENT="disabled" --env SITE="site1"}, output
       assert_match "docker container ls --all --filter name=^app-web-123$ --quiet | xargs docker stop", output
     end
   end
@@ -124,14 +108,6 @@ class CliAppTest < CliTestCase
     SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info).returns("123") # old version
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-latest$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
-      .returns("running").at_least_once # web health check passing
-
-    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-123$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
-      .returns("unhealthy").at_least_once # web health check failing
-
-    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
       .with(:docker, :container, :ls, "--all", "--filter", "name=^app-workers-latest$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
       .returns("running").at_least_once # workers health check
 
@@ -140,7 +116,7 @@ class CliAppTest < CliTestCase
       assert_match "Waiting for the first healthy web container before booting workers on 1.1.1.4...", output
       assert_match "First web container is healthy, booting workers on 1.1.1.3", output
       assert_match "First web container is healthy, booting workers on 1.1.1.4", output
-  end
+    end
   end
 
   test "boot with web barrier closed" do
@@ -150,9 +126,11 @@ class CliAppTest < CliTestCase
 
     SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info).returns("123") # old version
 
-    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-latest$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
-      .returns("unhealthy").at_least_once # web health check failing
+    SSHKit::Backend::Abstract.any_instance.stubs(:execute).returns("")
+    SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-latest$", "--quiet", "|", :xargs, :docker, :stop, raise_on_non_zero_exit: false)
+    SSHKit::Backend::Abstract.any_instance.expects(:execute)
+      .with(:docker, :exec, "kamal-proxy", "kamal-proxy", :deploy, "app-web", "--target", "\"123:80\"", "--deploy-timeout", "\"1s\"", "--drain-timeout", "\"30s\"", "--buffer-requests", "--buffer-responses", "--log-request-header", "\"Cache-Control\"", "--log-request-header", "\"Last-Modified\"", "--log-request-header", "\"User-Agent\"").raises(SSHKit::Command::Failed.new("Failed to deploy"))
 
     stderred do
       run_command("boot", config: :with_roles, host: nil, allow_execute_error: true).tap do |output|
@@ -160,17 +138,59 @@ class CliAppTest < CliTestCase
         assert_match "Waiting for the first healthy web container before booting workers on 1.1.1.4...", output
         assert_match "First web container is unhealthy, not booting workers on 1.1.1.3", output
         assert_match "First web container is unhealthy, not booting workers on 1.1.1.4", output
-        assert_match "Running docker container ls --all --filter name=^app-web-latest$ --quiet | xargs docker stop on 1.1.1.1", output
-        assert_match "Running docker container ls --all --filter name=^app-web-latest$ --quiet | xargs docker stop on 1.1.1.2", output
       end
     end
   ensure
     Thread.report_on_exception = true
   end
 
+  test "boot with worker errors" do
+    Thread.report_on_exception = false
+
+    Object.any_instance.stubs(:sleep)
+
+    SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info).returns("123") # old version
+
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-workers-latest$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
+      .returns("unhealthy").at_least_once # workers health check
+
+    run_command("boot", config: :with_roles, host: nil, allow_execute_error: true).tap do |output|
+      assert_match "Waiting for the first healthy web container before booting workers on 1.1.1.3...", output
+      assert_match "Waiting for the first healthy web container before booting workers on 1.1.1.4...", output
+      assert_match "First web container is healthy, booting workers on 1.1.1.3", output
+      assert_match "First web container is healthy, booting workers on 1.1.1.4", output
+      assert_match "ERROR Failed to boot workers on 1.1.1.3", output
+      assert_match "ERROR Failed to boot workers on 1.1.1.4", output
+    end
+  ensure
+    Thread.report_on_exception = true
+  end
+
+  test "boot with worker ready then not" do
+    Thread.report_on_exception = false
+
+    Object.any_instance.stubs(:sleep)
+
+    SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info).returns("123") # old version
+
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-workers-latest$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
+      .returns("running", "stopped").at_least_once # workers health check
+
+    run_command("boot", config: :with_roles, host: "1.1.1.3", allow_execute_error: true).tap do |output|
+      assert_match "ERROR Failed to boot workers on 1.1.1.3", output
+    end
+  ensure
+    Thread.report_on_exception = true
+  end
+
   test "start" do
+    SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info).returns("999") # old version
+
     run_command("start").tap do |output|
       assert_match "docker start app-web-999", output
+      assert_match "docker exec kamal-proxy kamal-proxy deploy app-web --target \"999:80\" --deploy-timeout \"30s\" --drain-timeout \"30s\" --buffer-requests --buffer-responses --log-request-header \"Cache-Control\" --log-request-header \"Last-Modified\"", output
     end
   end
 
@@ -243,13 +263,13 @@ class CliAppTest < CliTestCase
 
   test "exec" do
     run_command("exec", "ruby -v").tap do |output|
-      assert_match "docker run --rm --env-file .kamal/env/roles/app-web.env dhh/app:latest ruby -v", output
+      assert_match "docker run --rm --network kamal --env-file .kamal/apps/app/env/roles/web.env dhh/app:latest ruby -v", output
     end
   end
 
   test "exec separate arguments" do
     run_command("exec", "ruby", " -v").tap do |output|
-      assert_match "docker run --rm --env-file .kamal/env/roles/app-web.env dhh/app:latest ruby -v", output
+      assert_match "docker run --rm --network kamal --env-file .kamal/apps/app/env/roles/web.env dhh/app:latest ruby -v", output
     end
   end
 
@@ -262,7 +282,7 @@ class CliAppTest < CliTestCase
 
   test "exec interactive" do
     SSHKit::Backend::Abstract.any_instance.expects(:exec)
-      .with("ssh -t root@1.1.1.1 -p 22 'docker run -it --rm --env-file .kamal/env/roles/app-web.env dhh/app:latest ruby -v'")
+      .with("ssh -t root@1.1.1.1 -p 22 'docker run -it --rm --network kamal --env-file .kamal/apps/app/env/roles/web.env dhh/app:latest ruby -v'")
     run_command("exec", "-i", "ruby -v").tap do |output|
       assert_match "Get most recent version available as an image...", output
       assert_match "Launching interactive command with version latest via SSH from new container on 1.1.1.1...", output
@@ -295,11 +315,11 @@ class CliAppTest < CliTestCase
     SSHKit::Backend::Abstract.any_instance.stubs(:exec)
       .with("ssh -t root@1.1.1.1 'sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting' | head -1| xargs docker logs --timestamps --tail 10 2>&1'")
 
-    assert_match "sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting' | head -1 | xargs docker logs --tail 100 2>&1", run_command("logs")
+    assert_match "sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting' | head -1 | xargs docker logs --timestamps --tail 100 2>&1", run_command("logs")
 
-    assert_match "sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting' | head -1 | xargs docker logs 2>&1 | grep 'hey'", run_command("logs", "--grep", "hey")
+    assert_match "sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting' | head -1 | xargs docker logs --timestamps 2>&1 | grep 'hey'", run_command("logs", "--grep", "hey")
 
-    assert_match "sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting' | head -1 | xargs docker logs 2>&1 | grep 'hey' -C 2", run_command("logs", "--grep", "hey", "--grep-options", "-C 2")
+    assert_match "sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting' | head -1 | xargs docker logs --timestamps 2>&1 | grep 'hey' -C 2", run_command("logs", "--grep", "hey", "--grep-options", "-C 2")
   end
 
   test "logs with follow" do
@@ -342,7 +362,7 @@ class CliAppTest < CliTestCase
     hostname = "this-hostname-is-really-unacceptably-long-to-be-honest.example.com"
 
     stdouted { Kamal::Cli::App.start([ "boot", "-c", "test/fixtures/deploy_with_uncommon_hostnames.yml", "--hosts", hostname ]) }.tap do |output|
-      assert_match /docker run --detach --restart unless-stopped --name app-web-latest --hostname this-hostname-is-really-unacceptably-long-to-be-hon-[0-9a-f]{12} /, output
+      assert_match /docker run --detach --restart unless-stopped --name app-web-latest --network kamal --hostname this-hostname-is-really-unacceptably-long-to-be-hon-[0-9a-f]{12} /, output
     end
   end
 
@@ -352,7 +372,28 @@ class CliAppTest < CliTestCase
     hostname = "this-hostname-with-random-part-is-too-long.example.com"
 
     stdouted { Kamal::Cli::App.start([ "boot", "-c", "test/fixtures/deploy_with_uncommon_hostnames.yml", "--hosts", hostname ]) }.tap do |output|
-      assert_match /docker run --detach --restart unless-stopped --name app-web-latest --hostname this-hostname-with-random-part-is-too-long.example-[0-9a-f]{12} /, output
+      assert_match /docker run --detach --restart unless-stopped --name app-web-latest --network kamal --hostname this-hostname-with-random-part-is-too-long.example-[0-9a-f]{12} /, output
+    end
+  end
+
+  test "boot proxy" do
+    SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info).returns("123") # old version
+
+    run_command("boot", config: :with_proxy).tap do |output|
+      assert_match /Renaming container .* to .* as already deployed on 1.1.1.1/, output # Rename
+      assert_match /docker rename app-web-latest app-web-latest_replaced_[0-9a-f]{16}/, output
+      assert_match /docker run --detach --restart unless-stopped --name app-web-latest --network kamal --hostname 1.1.1.1-[0-9a-f]{12} -e KAMAL_CONTAINER_NAME="app-web-latest" -e KAMAL_VERSION="latest" --env-file .kamal\/apps\/app\/env\/roles\/web.env --log-opt max-size="10m" --label service="app" --label role="web" --label destination dhh\/app:latest/, output
+      assert_match /docker exec kamal-proxy kamal-proxy deploy app-web --target "123:80"/, output
+      assert_match "docker container ls --all --filter name=^app-web-123$ --quiet | xargs docker stop", output
+    end
+  end
+
+  test "boot proxy with role specific config" do
+    SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info).returns("123") # old version
+
+    run_command("boot", config: :with_proxy_roles, host: nil).tap do |output|
+      assert_match "docker exec kamal-proxy kamal-proxy deploy app-web --target \"123:80\" --deploy-timeout \"6s\" --drain-timeout \"30s\" --target-timeout \"10s\" --buffer-requests --buffer-responses --log-request-header \"Cache-Control\" --log-request-header \"Last-Modified\" --log-request-header \"User-Agent\"", output
+      assert_match "docker exec kamal-proxy kamal-proxy deploy app-web2 --target \"123:80\" --deploy-timeout \"6s\" --drain-timeout \"30s\" --target-timeout \"15s\" --buffer-requests --buffer-responses --log-request-header \"Cache-Control\" --log-request-header \"Last-Modified\" --log-request-header \"User-Agent\"", output
     end
   end
 
@@ -369,13 +410,5 @@ class CliAppTest < CliTestCase
       Object.any_instance.stubs(:sleep)
 
       SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info).returns("123") # old version
-
-      SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-        .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-latest$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
-        .returns("running") # health check
-
-      SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-        .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-123$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
-        .returns("unhealthy") # health check
     end
 end

@@ -8,7 +8,7 @@ class CommandsHookTest < ActiveSupport::TestCase
 
     @config = {
       service: "app", image: "dhh/app", registry: { "username" => "dhh", "password" => "secret" }, servers: [ "1.1.1.1" ],
-      builder: { "arch" => "amd64" }, traefik: { "args" => { "accesslog.format" => "json", "metrics.prometheus.buckets" => "0.1,0.3,1.2,5.0" } }
+      builder: { "arch" => "amd64" }
     }
 
     @performer = Kamal::Git.email.presence || `whoami`.chomp
@@ -16,41 +16,34 @@ class CommandsHookTest < ActiveSupport::TestCase
   end
 
   test "run" do
-    assert_equal [
-      ".kamal/hooks/foo",
-      { env: {
-        "KAMAL_RECORDED_AT" => @recorded_at,
-        "KAMAL_PERFORMER" => @performer,
-        "KAMAL_VERSION" => "123",
-        "KAMAL_SERVICE_VERSION" => "app@123",
-        "KAMAL_SERVICE" => "app" } }
-    ], new_command.run("foo")
+    assert_equal [ ".kamal/hooks/foo" ], new_command.run("foo")
+  end
+
+  test "env" do
+    assert_equal ({
+      "KAMAL_RECORDED_AT" => @recorded_at,
+      "KAMAL_PERFORMER" => @performer,
+      "KAMAL_VERSION" => "123",
+      "KAMAL_SERVICE_VERSION" => "app@123",
+      "KAMAL_SERVICE" => "app"
+    }), new_command.env
   end
 
   test "run with custom hooks_path" do
-    assert_equal [
-      "custom/hooks/path/foo",
-      { env: {
-        "KAMAL_RECORDED_AT" => @recorded_at,
-        "KAMAL_PERFORMER" => @performer,
-        "KAMAL_VERSION" => "123",
-        "KAMAL_SERVICE_VERSION" => "app@123",
-        "KAMAL_SERVICE" => "app" } }
-    ], new_command(hooks_path: "custom/hooks/path").run("foo")
+    assert_equal [ "custom/hooks/path/foo" ], new_command(hooks_path: "custom/hooks/path").run("foo")
   end
 
-  test "hook with secrets" do
+  test "env with secrets" do
     with_test_secrets("secrets" => "DB_PASSWORD=secret") do
-      assert_equal [
-        ".kamal/hooks/foo",
-        { env: {
+      assert_equal (
+        {
           "KAMAL_RECORDED_AT" => @recorded_at,
           "KAMAL_PERFORMER" => @performer,
           "KAMAL_VERSION" => "123",
           "KAMAL_SERVICE_VERSION" => "app@123",
           "KAMAL_SERVICE" => "app",
-          "DB_PASSWORD" => "secret" } }
-      ], new_command(env: { "secret" => [ "DB_PASSWORD" ] }).run("foo", secrets: true)
+          "DB_PASSWORD" => "secret" }
+      ), new_command.env(secrets: true)
     end
   end
 

@@ -63,7 +63,7 @@ class Kamal::Configuration::Accessory
   end
 
   def secrets_path
-    File.join(config.env_directory, "accessories", "#{service_name}.env")
+    File.join(config.env_directory, "accessories", "#{name}.env")
   end
 
   def files

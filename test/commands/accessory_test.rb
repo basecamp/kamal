@@ -51,15 +51,15 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
 
   test "run" do
     assert_equal \
-      "docker run --name app-mysql --detach --restart unless-stopped --log-opt max-size=\"10m\" --publish 3306:3306 --env MYSQL_ROOT_HOST=\"%\" --env-file .kamal/env/accessories/app-mysql.env --label service=\"app-mysql\" private.registry/mysql:8.0",
+      "docker run --name app-mysql --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 3306:3306 --env MYSQL_ROOT_HOST=\"%\" --env-file .kamal/apps/app/env/accessories/mysql.env --label service=\"app-mysql\" private.registry/mysql:8.0",
       new_command(:mysql).run.join(" ")
 
     assert_equal \
-      "docker run --name app-redis --detach --restart unless-stopped --log-opt max-size=\"10m\" --publish 6379:6379 --env SOMETHING=\"else\" --env-file .kamal/env/accessories/app-redis.env --volume /var/lib/redis:/data --label service=\"app-redis\" --label cache=\"true\" redis:latest",
+      "docker run --name app-redis --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 6379:6379 --env SOMETHING=\"else\" --env-file .kamal/apps/app/env/accessories/redis.env --volume /var/lib/redis:/data --label service=\"app-redis\" --label cache=\"true\" redis:latest",
       new_command(:redis).run.join(" ")
 
     assert_equal \
-      "docker run --name custom-busybox --detach --restart unless-stopped --log-opt max-size=\"10m\" --env-file .kamal/env/accessories/custom-busybox.env --label service=\"custom-busybox\" busybox:latest",
+      "docker run --name custom-busybox --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --env-file .kamal/apps/app/env/accessories/busybox.env --label service=\"custom-busybox\" busybox:latest",
       new_command(:busybox).run.join(" ")
   end
 
@@ -67,7 +67,7 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
     @config[:logging] = { "driver" => "local", "options" => { "max-size" => "100m", "max-file" => "3" } }
 
     assert_equal \
-      "docker run --name custom-busybox --detach --restart unless-stopped --log-driver \"local\" --log-opt max-size=\"100m\" --log-opt max-file=\"3\" --env-file .kamal/env/accessories/custom-busybox.env --label service=\"custom-busybox\" busybox:latest",
+      "docker run --name custom-busybox --detach --restart unless-stopped --network kamal --log-driver \"local\" --log-opt max-size=\"100m\" --log-opt max-file=\"3\" --env-file .kamal/apps/app/env/accessories/busybox.env --label service=\"custom-busybox\" busybox:latest",
       new_command(:busybox).run.join(" ")
   end
 
@@ -92,7 +92,7 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
 
   test "execute in new container" do
     assert_equal \
-      "docker run --rm --env MYSQL_ROOT_HOST=\"%\" --env-file .kamal/env/accessories/app-mysql.env private.registry/mysql:8.0 mysql -u root",
+      "docker run --rm --network kamal --env MYSQL_ROOT_HOST=\"%\" --env-file .kamal/apps/app/env/accessories/mysql.env private.registry/mysql:8.0 mysql -u root",
       new_command(:mysql).execute_in_new_container("mysql", "-u", "root").join(" ")
   end
 
@@ -104,7 +104,7 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
 
   test "execute in new container over ssh" do
     new_command(:mysql).stub(:run_over_ssh, ->(cmd) { cmd.join(" ") }) do
-      assert_match %r{docker run -it --rm --env MYSQL_ROOT_HOST=\"%\" --env-file .kamal/env/accessories/app-mysql.env private.registry/mysql:8.0 mysql -u root},
+      assert_match %r{docker run -it --rm --network kamal --env MYSQL_ROOT_HOST=\"%\" --env-file .kamal/apps/app/env/accessories/mysql.env private.registry/mysql:8.0 mysql -u root},
         new_command(:mysql).execute_in_new_container_over_ssh("mysql", "-u", "root")
     end
   end
@@ -130,12 +130,20 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
     assert_equal \
       "docker logs app-mysql  --since 5m  --tail 100 --timestamps 2>&1 | grep 'thing' -C 2",
       new_command(:mysql).logs(since: "5m", lines: 100, grep: "thing", grep_options: "-C 2").join(" ")
+
+    assert_equal \
+      "docker logs app-mysql  --since 5m  --tail 100 2>&1 | grep 'thing' -C 2",
+      new_command(:mysql).logs(timestamps: false, since: "5m", lines: 100, grep: "thing", grep_options: "-C 2").join(" ")
   end
 
   test "follow logs" do
     assert_equal \
       "ssh -t root@1.1.1.5 -p 22 'docker logs app-mysql --timestamps --tail 10 --follow 2>&1'",
       new_command(:mysql).follow_logs
+
+    assert_equal \
+      "ssh -t root@1.1.1.5 -p 22 'docker logs app-mysql --tail 10 --follow 2>&1'",
+      new_command(:mysql).follow_logs(timestamps: false)
   end
 
   test "remove container" do

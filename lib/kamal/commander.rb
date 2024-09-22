@@ -4,7 +4,7 @@ require "active_support/core_ext/object/blank"
 
 class Kamal::Commander
   attr_accessor :verbosity, :holding_lock, :connected
-  delegate :hosts, :roles, :primary_host, :primary_role, :roles_on, :traefik_hosts, :accessory_hosts, to: :specifics
+  delegate :hosts, :roles, :primary_host, :primary_role, :roles_on, :proxy_hosts, :accessory_hosts, to: :specifics
 
   def initialize
     self.verbosity = :info
@@ -65,6 +65,13 @@ class Kamal::Commander
     end
   end
 
+  def with_specific_hosts(hosts)
+    original_hosts, self.specific_hosts = specific_hosts, hosts
+    yield
+  ensure
+    self.specific_hosts = original_hosts
+  end
+
   def accessory_names
     config.accessories&.collect(&:name) || []
   end
@@ -94,16 +101,16 @@ class Kamal::Commander
     @docker ||= Kamal::Commands::Docker.new(config)
   end
 
-  def healthcheck
-    @healthcheck ||= Kamal::Commands::Healthcheck.new(config)
-  end
-
   def hook
     @hook ||= Kamal::Commands::Hook.new(config)
   end
 
   def lock
     @lock ||= Kamal::Commands::Lock.new(config)
+  end
+
+  def proxy
+    @proxy ||= Kamal::Commands::Proxy.new(config)
   end
 
   def prune
@@ -116,10 +123,6 @@ class Kamal::Commander
 
   def server
     @server ||= Kamal::Commands::Server.new(config)
-  end
-
-  def traefik
-    @traefik ||= Kamal::Commands::Traefik.new(config)
   end
 
   def alias(name)

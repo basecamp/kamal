@@ -24,7 +24,9 @@ class Kamal::Configuration::Validator
             example_value = example[key]
 
             if example_value == "..."
-              validate_type! value, *(Array if key == :servers), Hash
+              unless key.to_s == "proxy" && boolean?(value.class)
+                validate_type! value, *(Array if key == :servers), Hash
+              end
             elsif key == "hosts"
               validate_servers! value
             elsif example_value.is_a?(Array)

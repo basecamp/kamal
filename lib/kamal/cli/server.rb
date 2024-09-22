@@ -36,8 +36,6 @@ class Kamal::Cli::Server < Kamal::Cli::Base
             missing << host
           end
         end
-
-        execute(*KAMAL.server.ensure_run_directory)
       end
 
       if missing.any?

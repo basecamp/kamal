@@ -8,14 +8,14 @@ servers:
       - 1.1.1.2
     env:
       ROLE: "web"
-    traefik: true
+    proxy: true
   web_tokyo:
     hosts:
       - 1.1.1.3
       - 1.1.1.4
     env:
       ROLE: "web"
-    traefik: true
+    proxy: true
   workers:
     cmd: bin/jobs
     hosts:

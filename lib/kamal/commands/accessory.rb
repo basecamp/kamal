@@ -15,6 +15,7 @@ class Kamal::Commands::Accessory < Kamal::Commands::Base
       "--name", service_name,
       "--detach",
       "--restart", "unless-stopped",
+      "--network", "kamal",
       *config.logging_args,
       *publish_args,
       *env_args,
@@ -38,16 +39,16 @@ class Kamal::Commands::Accessory < Kamal::Commands::Base
   end
 
 
-  def logs(since: nil, lines: nil, grep: nil, grep_options: nil)
+  def logs(timestamps: true, since: nil, lines: nil, grep: nil, grep_options: nil)
     pipe \
-      docker(:logs, service_name, (" --since #{since}" if since), (" --tail #{lines}" if lines), "--timestamps", "2>&1"),
+      docker(:logs, service_name, (" --since #{since}" if since), (" --tail #{lines}" if lines), ("--timestamps" if timestamps), "2>&1"),
       ("grep '#{grep}'#{" #{grep_options}" if grep_options}" if grep)
   end
 
-  def follow_logs(grep: nil, grep_options: nil)
+  def follow_logs(timestamps: true, grep: nil, grep_options: nil)
     run_over_ssh \
       pipe \
-        docker(:logs, service_name, "--timestamps", "--tail", "10", "--follow", "2>&1"),
+        docker(:logs, service_name, ("--timestamps" if timestamps), "--tail", "10", "--follow", "2>&1"),
         (%(grep "#{grep}"#{" #{grep_options}" if grep_options}) if grep)
   end
 
@@ -63,6 +64,7 @@ class Kamal::Commands::Accessory < Kamal::Commands::Base
     docker :run,
       ("-it" if interactive),
       "--rm",
+      "--network", "kamal",
       *env_args,
       *volume_args,
       image,

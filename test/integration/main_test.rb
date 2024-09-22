@@ -24,11 +24,11 @@ class MainTest < IntegrationTest
     assert_app_is_up version: first_version
 
     details = kamal :details, capture: true
-    assert_match /Traefik Host: vm1/, details
-    assert_match /Traefik Host: vm2/, details
+    assert_match /Proxy Host: vm1/, details
+    assert_match /Proxy Host: vm2/, details
     assert_match /App Host: vm1/, details
     assert_match /App Host: vm2/, details
-    assert_match /traefik:v2.10/, details
+    assert_match /basecamp\/kamal-proxy:#{Kamal::Configuration::PROXY_MINIMUM_VERSION}/, details
     assert_match /registry:4443\/app:#{first_version}/, details
 
     audit = kamal :audit, capture: true
@@ -46,13 +46,13 @@ class MainTest < IntegrationTest
 
     assert_app_is_up version: version
     assert_hooks_ran "pre-connect", "pre-build", "pre-deploy", "post-deploy"
-    assert_container_running host: :vm3, name: "app-workers-#{version}"
+    assert_container_running host: :vm3, name: "app_with_roles-workers-#{version}"
 
     second_version = update_app_rev
 
     kamal :redeploy
     assert_app_is_up version: second_version
-    assert_container_running host: :vm3, name: "app-workers-#{second_version}"
+    assert_container_running host: :vm3, name: "app_with_roles-workers-#{second_version}"
   end
 
   test "config" do
@@ -70,13 +70,11 @@ class MainTest < IntegrationTest
     assert_equal({ user: "root", port: 22, keepalive: true, keepalive_interval: 30, log_level: :fatal }, config[:ssh_options])
     assert_equal({ "driver" => "docker", "arch" => "#{Kamal::Utils.docker_arch}", "args" => { "COMMIT_SHA" => version } }, config[:builder])
     assert_equal [ "--log-opt", "max-size=\"10m\"" ], config[:logging]
-    assert_equal({ "cmd"=>"wget -qO- http://localhost > /dev/null || exit 1", "interval"=>"1s", "max_attempts"=>3, "port"=>3000, "path"=>"/up", "cord"=>"/tmp/kamal-cord", "log_lines"=>50 }, config[:healthcheck])
   end
 
   test "aliases" do
     @app = "app_with_roles"
 
-    kamal :envify
     kamal :deploy
 
     output = kamal :whome, capture: true
@@ -99,6 +97,30 @@ class MainTest < IntegrationTest
 
     kamal :remove, "-y"
     assert_no_images_or_containers
+    assert_app_directory_removed
+  end
+
+  test "two apps" do
+    @app = "app"
+    kamal :deploy
+    app1_version = latest_app_version
+
+    @app = "app_with_roles"
+    kamal :deploy
+    app2_version = latest_app_version
+
+    assert_app_is_up version: app1_version, app: "app"
+    assert_app_is_up version: app2_version, app: "app_with_roles"
+
+    @app = "app"
+    kamal :remove, "-y"
+    assert_app_directory_removed
+    assert_proxy_running
+
+    @app = "app_with_roles"
+    kamal :remove, "-y"
+    assert_app_directory_removed
+    assert_proxy_not_running
   end
 
   private
@@ -116,21 +138,21 @@ class MainTest < IntegrationTest
     end
 
     def assert_env(key, value, vm:, version:)
-      assert_equal "#{key}=#{value}", docker_compose("exec #{vm} docker exec app-web-#{version} env | grep #{key}", capture: true)
+      assert_equal "#{key}=#{value}", docker_compose("exec #{vm} docker exec #{@app}-web-#{version} env | grep #{key}", capture: true)
     end
 
     def assert_no_env(key, vm:, version:)
       assert_raises(RuntimeError, /exit 1/) do
-        docker_compose("exec #{vm} docker exec app-web-#{version} env | grep #{key}", capture: true)
+        docker_compose("exec #{vm} docker exec #{@app}-web-#{version} env | grep #{key}", capture: true)
       end
     end
 
     def assert_accumulated_assets(*versions)
       versions.each do |version|
-        assert_equal "200", Net::HTTP.get_response(URI.parse("http://localhost:12345/versions/#{version}")).code
+        assert_equal "200", Net::HTTP.get_response(URI.parse("http://#{app_host}:12345/versions/#{version}")).code
       end
 
-      assert_equal "200", Net::HTTP.get_response(URI.parse("http://localhost:12345/versions/.hidden")).code
+      assert_equal "200", Net::HTTP.get_response(URI.parse("http://#{app_host}:12345/versions/.hidden")).code
     end
 
     def vm1_image_ids

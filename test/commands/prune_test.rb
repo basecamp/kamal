@@ -4,7 +4,7 @@ class CommandsPruneTest < ActiveSupport::TestCase
   setup do
     @config = {
       service: "app", image: "dhh/app", registry: { "username" => "dhh", "password" => "secret" }, servers: [ "1.1.1.1" ],
-      builder: { "arch" => "amd64" }, traefik: { "args" => { "accesslog.format" => "json", "metrics.prometheus.buckets" => "0.1,0.3,1.2,5.0" } }
+      builder: { "arch" => "amd64" }
     }
   end
 
@@ -28,12 +28,6 @@ class CommandsPruneTest < ActiveSupport::TestCase
     assert_equal \
       "docker ps -q -a --filter label=service=app --filter status=created --filter status=exited --filter status=dead | tail -n +4 | while read container_id; do docker rm $container_id; done",
       new_command.app_containers(retain: 3).join(" ")
-  end
-
-  test "healthcheck containers" do
-    assert_equal \
-      "docker container prune --force --filter label=service=healthcheck-app",
-      new_command.healthcheck_containers.join(" ")
   end
 
   private

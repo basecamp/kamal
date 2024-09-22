@@ -1,9 +1,11 @@
 class Kamal::Commands::App < Kamal::Commands::Base
-  include Assets, Containers, Cord, Execution, Images, Logging
+  include Assets, Containers, Execution, Images, Logging, Proxy
 
   ACTIVE_DOCKER_STATUSES = [ :running, :restarting ]
 
   attr_reader :role, :host
+
+  delegate :container_name, to: :role
 
   def initialize(config, role: nil, host: nil)
     super(config)
@@ -16,11 +18,11 @@ class Kamal::Commands::App < Kamal::Commands::Base
       "--detach",
       "--restart unless-stopped",
       "--name", container_name,
+      "--network", "kamal",
       *([ "--hostname", hostname ] if hostname),
       "-e", "KAMAL_CONTAINER_NAME=\"#{container_name}\"",
       "-e", "KAMAL_VERSION=\"#{config.version}\"",
       *role.env_args(host),
-      *role.health_check_args,
       *role.logging_args,
       *config.volume_args,
       *role.asset_volume_args,
@@ -41,7 +43,7 @@ class Kamal::Commands::App < Kamal::Commands::Base
   def stop(version: nil)
     pipe \
       version ? container_id_for_version(version) : current_running_container_id,
-      xargs(config.stop_wait_time ? docker(:stop, "-t", config.stop_wait_time) : docker(:stop))
+      xargs(docker(:stop, *role.stop_args))
   end
 
   def info
@@ -74,10 +76,6 @@ class Kamal::Commands::App < Kamal::Commands::Base
   end
 
   private
-    def container_name(version = nil)
-      [ role.container_prefix, version || config.version ].compact.join("-")
-    end
-
     def latest_image_id
       docker :image, :ls, *argumentize("--filter", "reference=#{config.latest_image}"), "--format", "'{{.ID}}'"
     end

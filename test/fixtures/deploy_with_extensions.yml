@@ -1,6 +1,6 @@
 
 x-web: &web
-  traefik: true
+  proxy: {}
 
 service: app
 image: dhh/app

@@ -9,7 +9,7 @@ class BrokenDeployTest < IntegrationTest
     kamal :deploy
 
     assert_app_is_up version: first_version
-    assert_container_running host: :vm3, name: "app-workers-#{first_version}"
+    assert_container_running host: :vm3, name: "app_with_roles-workers-#{first_version}"
 
     second_version = break_app
 
@@ -17,8 +17,8 @@ class BrokenDeployTest < IntegrationTest
 
     assert_failed_deploy output
     assert_app_is_up version: first_version
-    assert_container_running host: :vm3, name: "app-workers-#{first_version}"
-    assert_container_not_running host: :vm3, name: "app-workers-#{second_version}"
+    assert_container_running host: :vm3, name: "app_with_roles-workers-#{first_version}"
+    assert_container_not_running host: :vm3, name: "app_with_roles-workers-#{second_version}"
   end
 
   private
@@ -27,6 +27,5 @@ class BrokenDeployTest < IntegrationTest
       assert_match /First web container is unhealthy on vm[12], not booting any other roles/, output
       assert_match "First web container is unhealthy, not booting workers on vm3", output
       assert_match "nginx: [emerg] unexpected end of file, expecting \";\" or \"}\" in /etc/nginx/conf.d/default.conf:2", output
-      assert_match 'ERROR {"Status":"unhealthy","FailingStreak":0,"Log":[]}', output
     end
 end

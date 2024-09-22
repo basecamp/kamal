@@ -1,5 +1,5 @@
-service: app
-image: app
+service: app_with_roles
+image: app_with_roles
 servers:
   web:
     hosts:
@@ -9,6 +9,31 @@ servers:
     hosts:
       - vm3
     cmd: sleep infinity
+deploy_timeout: 2
+drain_timeout: 2
+readiness_delay: 0
+
+proxy:
+  host: localhost
+  healthcheck:
+    interval: 1
+    timeout: 1
+    path: "/up"
+  response_timeout: 2
+  buffering:
+    requests: true
+    responses: true
+    memory: 400_000
+    max_request_body: 40_000_000
+    max_response_body: 40_000_000
+  forward_headers: true
+  logging:
+    request_headers:
+      - Cache-Control
+      - X-Forwarded-Proto
+    response_headers:
+      - X-Request-ID
+      - X-Request-Start
 
 asset_path: /usr/share/nginx/html/versions
 
@@ -21,14 +46,6 @@ builder:
   arch: <%= Kamal::Utils.docker_arch %>
   args:
     COMMIT_SHA: <%= `git rev-parse HEAD` %>
-healthcheck:
-  cmd: wget -qO- http://localhost > /dev/null || exit 1
-  max_attempts: 3
-traefik:
-  args:
-    accesslog: true
-    accesslog.format: json
-  image: registry:4443/traefik:v2.10
 accessories:
   busybox:
     service: custom-busybox
@@ -36,8 +53,6 @@ accessories:
     cmd: sh -c 'echo "Starting busybox..."; trap exit term; while true; do sleep 1; done'
     roles:
       - web
-stop_wait_time: 1
-readiness_delay: 0
 aliases:
   whome: version
   worker_hostname: app exec -r workers -q --reuse hostname

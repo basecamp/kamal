@@ -4,7 +4,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
     with_lock do
       say "Get most recent version available as an image...", :magenta unless options[:version]
       using_version(version_or_latest) do |version|
-        say "Start container with version #{version} using a #{KAMAL.config.readiness_delay}s readiness delay (or reboot if already running)...", :magenta
+        say "Start container with version #{version} (or reboot if already running)...", :magenta
 
         # Assets are prepared in a separate step to ensure they are on all hosts before booting
         on(KAMAL.hosts) do
@@ -38,8 +38,17 @@ class Kamal::Cli::App < Kamal::Cli::Base
         roles = KAMAL.roles_on(host)
 
         roles.each do |role|
+          app = KAMAL.app(role: role, host: host)
           execute *KAMAL.auditor.record("Started app version #{KAMAL.config.version}"), verbosity: :debug
-          execute *KAMAL.app(role: role, host: host).start, raise_on_non_zero_exit: false
+          execute *app.start, raise_on_non_zero_exit: false
+
+          if role.running_proxy?
+            version = capture_with_info(*app.current_running_version, raise_on_non_zero_exit: false).strip
+            endpoint = capture_with_info(*app.container_id_for_version(version)).strip
+            raise Kamal::Cli::BootError, "Failed to get endpoint for #{role} on #{host}, did the container boot?" if endpoint.empty?
+
+            execute *app.deploy(target: endpoint)
+          end
         end
       end
     end
@@ -52,8 +61,18 @@ class Kamal::Cli::App < Kamal::Cli::Base
         roles = KAMAL.roles_on(host)
 
         roles.each do |role|
+          app = KAMAL.app(role: role, host: host)
           execute *KAMAL.auditor.record("Stopped app", role: role), verbosity: :debug
-          execute *KAMAL.app(role: role, host: host).stop, raise_on_non_zero_exit: false
+
+          if role.running_proxy?
+            version = capture_with_info(*app.current_running_version, raise_on_non_zero_exit: false).strip
+            endpoint = capture_with_info(*app.container_id_for_version(version)).strip
+            if endpoint.present?
+              execute *app.remove(target: endpoint), raise_on_non_zero_exit: false
+            end
+          end
+
+          execute *app.stop, raise_on_non_zero_exit: false
         end
       end
     end
@@ -169,12 +188,14 @@ class Kamal::Cli::App < Kamal::Cli::Base
   option :grep, aliases: "-g", desc: "Show lines with grep match only (use this to fetch specific requests by id)"
   option :grep_options, aliases: "-o", desc: "Additional options supplied to grep"
   option :follow, aliases: "-f", desc: "Follow log on primary server (or specific host set by --hosts)"
+  option :skip_timestamps, type: :boolean, aliases: "-T", desc: "Skip appending timestamps to logging output"
   def logs
     # FIXME: Catch when app containers aren't running
 
     grep = options[:grep]
     grep_options = options[:grep_options]
     since = options[:since]
+    timestamps = !options[:skip_timestamps]
 
     if options[:follow]
       lines = options[:lines].presence || ((since || grep) ? nil : 10) # Default to 10 lines if since or grep isn't set
@@ -186,8 +207,8 @@ class Kamal::Cli::App < Kamal::Cli::Base
         role = KAMAL.roles_on(KAMAL.primary_host).first
 
         app = KAMAL.app(role: role, host: host)
-        info app.follow_logs(host: KAMAL.primary_host, lines: lines, grep: grep, grep_options: grep_options)
-        exec app.follow_logs(host: KAMAL.primary_host, lines: lines, grep: grep, grep_options: grep_options)
+        info app.follow_logs(host: KAMAL.primary_host, timestamps: timestamps, lines: lines, grep: grep, grep_options: grep_options)
+        exec app.follow_logs(host: KAMAL.primary_host, timestamps: timestamps, lines: lines, grep: grep, grep_options: grep_options)
       end
     else
       lines = options[:lines].presence || ((since || grep) ? nil : 100) # Default to 100 lines if since or grep isn't set
@@ -197,7 +218,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
 
         roles.each do |role|
           begin
-            puts_by_host host, capture_with_info(*KAMAL.app(role: role, host: host).logs(since: since, lines: lines, grep: grep, grep_options: grep_options))
+            puts_by_host host, capture_with_info(*KAMAL.app(role: role, host: host).logs(timestamps: timestamps, since: since, lines: lines, grep: grep, grep_options: grep_options))
           rescue SSHKit::Command::Failed
             puts_by_host host, "Nothing found"
           end
@@ -212,6 +233,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
       stop
       remove_containers
       remove_images
+      remove_app_directory
     end
   end
 
@@ -249,6 +271,20 @@ class Kamal::Cli::App < Kamal::Cli::Base
       on(KAMAL.hosts) do
         execute *KAMAL.auditor.record("Removed all app images"), verbosity: :debug
         execute *KAMAL.app.remove_images
+      end
+    end
+  end
+
+  desc "remove_app_directory", "Remove the service directory from servers", hide: true
+  def remove_app_directory
+    with_lock do
+      on(KAMAL.hosts) do |host|
+        roles = KAMAL.roles_on(host)
+
+        roles.each do |role|
+          execute *KAMAL.auditor.record("Removed #{KAMAL.config.app_directory} on all servers", role: role), verbosity: :debug
+          execute *KAMAL.server.remove_app_directory, raise_on_non_zero_exit: false
+        end
       end
     end
   end
