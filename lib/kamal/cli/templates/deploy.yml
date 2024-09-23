@@ -2,7 +2,7 @@
 service: my-app
 
 # Name of the container image.
-image: user/my-app
+image: my-user/my-app
 
 # Deploy to these servers.
 servers:
@@ -25,7 +25,7 @@ registry:
   # server: registry.digitalocean.com / ghcr.io / ...
   username: my-user
 
-  # Always use an access token rather than real password when possible.
+  # Always use an access token rather than real password (pulled from .kamal/secrets).
   password:
     - KAMAL_REGISTRY_PASSWORD
 
@@ -47,15 +47,27 @@ builder:
 # aliases:
 #   shell: app exec --interactive --reuse "bash"
 
-# Use a persistent storage volume.
-#
-# volumes:
-#   - "app_storage:/rails/storage"
-
 # Use a different ssh user than root
 #
 # ssh:
 #   user: app
+
+# Use a persistent storage volume.
+#
+# volumes:
+#   - "app_storage:/app/storage"
+
+# Bridge fingerprinted assets, like JS and CSS, between versions to avoid
+# hitting 404 on in-flight requests. Combines all files from new and old
+# version inside the asset_path.
+#
+# asset_path: /app/public/assets
+
+# Configure rolling deploys by setting a wait time between batches of restarts.
+#
+# boot:
+#   limit: 10 # Can also specify as a percentage of total hosts, such as "25%"
+#   wait: 2
 
 # Use accessory services (secrets come from .kamal/secrets).
 #
@@ -80,20 +92,3 @@ builder:
 #     port: 6379
 #     directories:
 #       - data:/data
-
-# Bridge fingerprinted assets, like JS and CSS, between versions to avoid
-# hitting 404 on in-flight requests. Combines all files from new and old
-# version inside the asset_path.
-#
-# asset_path: /rails/public/assets
-
-# Configure rolling deploys by setting a wait time between batches of restarts.
-#
-# boot:
-#   limit: 10 # Can also specify as a percentage of total hosts, such as "25%"
-#   wait: 2
-
-# Configure the role used to determine the primary_host. This host takes
-# deploy locks, runs health checks during the deploy, and follow logs, etc.
-#
-# primary_role: web
