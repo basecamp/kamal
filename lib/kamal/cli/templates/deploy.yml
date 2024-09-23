@@ -6,7 +6,18 @@ image: user/my-app
 
 # Deploy to these servers.
 servers:
-  - 192.168.0.1
+  web:
+    - 192.168.0.1
+  # job:
+  #   hosts:
+  #     - 192.168.0.1
+  #   cmd: bin/jobs
+
+# Enable SSL auto certification via Let's Encrypt (and allow for multiple apps on one server).
+# Set ssl: false if using something like Cloudflare to terminate SSL (but keep host!).
+proxy:
+  ssl: true
+  host: app.example.com
 
 # Credentials for your image host.
 registry:
@@ -18,23 +29,35 @@ registry:
   password:
     - KAMAL_REGISTRY_PASSWORD
 
-# Configure builder setup.
-builder:
-  arch: amd64
-
-# Inject ENV variables into containers (secrets come from .env).
-# Remember to run `kamal env push` after making changes!
+# Inject ENV variables into containers (secrets come from .kamal/secrets).
+#
 # env:
 #   clear:
 #     DB_HOST: 192.168.0.2
 #   secret:
 #     - RAILS_MASTER_KEY
 
+# Aliases are triggered with "bin/kamal <alias>". You can overwrite arguments on invocation:
+# "bin/kamal logs -r job" will tail logs from the first server in the job section.
+aliases:
+  shell: app exec --interactive --reuse "bash"
+
+# Use a persistent storage volume.
+#
+# volumes:
+#   - "app_storage:/rails/storage"
+
+# Configure builder setup.
+builder:
+  arch: amd64
+
 # Use a different ssh user than root
+#
 # ssh:
 #   user: app
 
-# Use accessory services (secrets come from .env).
+# Use accessory services (secrets come from .kamal/secrets).
+#
 # accessories:
 #   db:
 #     image: mysql:8.0
@@ -61,12 +84,10 @@ builder:
 # hitting 404 on in-flight requests. Combines all files from new and old
 # version inside the asset_path.
 #
-# If your app is using the Sprockets gem, ensure it sets `config.assets.manifest`.
-# See https://github.com/basecamp/kamal/issues/626 for details
-#
 # asset_path: /rails/public/assets
 
 # Configure rolling deploys by setting a wait time between batches of restarts.
+#
 # boot:
 #   limit: 10 # Can also specify as a percentage of total hosts, such as "25%"
 #   wait: 2
@@ -74,11 +95,4 @@ builder:
 # Configure the role used to determine the primary_host. This host takes
 # deploy locks, runs health checks during the deploy, and follow logs, etc.
 #
-# Caution: there's no support for role renaming yet, so be careful to cleanup
-#          the previous role on the deployed hosts.
 # primary_role: web
-
-# Controls if we abort when see a role with no hosts. Disabling this may be
-# useful for more complex deploy configurations.
-#
-# allow_empty_roles: false
