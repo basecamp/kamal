@@ -29,6 +29,10 @@ registry:
   password:
     - KAMAL_REGISTRY_PASSWORD
 
+# Configure builder setup.
+builder:
+  arch: amd64
+
 # Inject ENV variables into containers (secrets come from .kamal/secrets).
 #
 # env:
@@ -39,17 +43,14 @@ registry:
 
 # Aliases are triggered with "bin/kamal <alias>". You can overwrite arguments on invocation:
 # "bin/kamal logs -r job" will tail logs from the first server in the job section.
-aliases:
-  shell: app exec --interactive --reuse "bash"
+#
+# aliases:
+#   shell: app exec --interactive --reuse "bash"
 
 # Use a persistent storage volume.
 #
 # volumes:
 #   - "app_storage:/rails/storage"
-
-# Configure builder setup.
-builder:
-  arch: amd64
 
 # Use a different ssh user than root
 #
