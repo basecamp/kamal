@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    kamal (2.0.0.rc2)
+    kamal (2.0.0.rc3)
       activesupport (>= 7.0)
       base64 (~> 0.2)
       bcrypt_pbkdf (~> 1.0)
