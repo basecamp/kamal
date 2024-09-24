@@ -38,6 +38,16 @@ class ConfigurationProxyTest < ActiveSupport::TestCase
     assert_not config.proxy.ssl?
   end
 
+  test "ssl with certificate path and no private key path" do
+    @deploy[:proxy] = { "ssl" => true, "ssl_certificate_path" => "/path/to/cert.pem" }
+    assert_raises(Kamal::ConfigurationError) { config.proxy.ssl? }
+  end
+
+  test "ssl with private key path and no certificate path" do
+    @deploy[:proxy] = { "ssl" => true, "ssl_private_key_path" => "/path/to/key.pem" }
+    assert_raises(Kamal::ConfigurationError) { config.proxy.ssl? }
+  end
+
   private
     def config
       Kamal::Configuration.new(@deploy)
