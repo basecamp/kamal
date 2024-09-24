@@ -9,7 +9,7 @@ class Kamal::Commands::Builder::Pack < Kamal::Commands::Builder::Base
         "-t", config.absolute_image,
         "-t", config.latest_image,
         "--env", "BP_IMAGE_LABELS=service=#{config.service}",
-        secrets.map { |secret| [ "--env", Kamal::Utils.sensitive(ENV[secret]) ] },
+        *argumentize("--env", secrets, sensitive: true),
         "--path", build_context),
       docker(:push, config.absolute_image),
       docker(:push, config.latest_image)
