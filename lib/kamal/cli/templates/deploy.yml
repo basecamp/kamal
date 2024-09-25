@@ -18,6 +18,8 @@ servers:
 proxy:
   ssl: true
   host: app.example.com
+  # Change the default application port from 80 to 3000. Useful for non-Thruster apps.
+  # app_port: 3000
 
 # Credentials for your image host.
 registry:
@@ -32,7 +34,6 @@ registry:
 # Configure builder setup.
 builder:
   arch: amd64
-
 # Inject ENV variables into containers (secrets come from .kamal/secrets).
 #
 # env:
