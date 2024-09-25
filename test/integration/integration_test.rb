@@ -169,10 +169,8 @@ class IntegrationTest < ActiveSupport::TestCase
       case app
       when "app"
         "127.0.0.1"
-      when "app_with_roles"
-        "localhost"
       else
-        raise "Unknown app: #{app}"
+        "localhost"
       end
     end
 end

@@ -19,6 +19,7 @@ RUN apt-get update --fix-missing && apt-get install -y docker-ce docker-ce-cli c
 COPY *.sh .
 COPY app/ app/
 COPY app_with_roles/ app_with_roles/
+COPY app_with_traefik/ app_with_traefik/
 
 RUN rm -rf /root/.ssh
 RUN ln -s /shared/ssh /root/.ssh
@@ -28,6 +29,7 @@ RUN git config --global user.email "deployer@example.com"
 RUN git config --global user.name "Deployer"
 RUN cd app && git init && git add . && git commit -am "Initial version"
 RUN cd app_with_roles && git init && git add . && git commit -am "Initial version"
+RUN cd app_with_traefik && git init && git add . && git commit -am "Initial version"
 
 HEALTHCHECK --interval=1s CMD pgrep sleep
 

@@ -7,9 +7,8 @@ class Kamal::Commands::Proxy < Kamal::Commands::Base
       "--network", "kamal",
       "--detach",
       "--restart", "unless-stopped",
-      *config.proxy_publish_args,
       "--volume", "kamal-proxy-config:/home/kamal-proxy/.config/kamal-proxy",
-      *config.logging_args,
+      "\$\(#{get_boot_options.join(" ")}\)",
       config.proxy_image
   end
 
@@ -63,6 +62,22 @@ class Kamal::Commands::Proxy < Kamal::Commands::Base
         docker(:container, :prune, "--force", "--filter", "label=org.opencontainers.image.title=Traefik"),
         docker(:image, :prune, "--all", "--force", "--filter", "label=org.opencontainers.image.title=Traefik")
       )
+  end
+
+  def ensure_proxy_directory
+    make_directory config.proxy_directory
+  end
+
+  def remove_proxy_directory
+    remove_directory config.proxy_directory
+  end
+
+  def get_boot_options
+    combine [ :cat, config.proxy_options_file ], [ :echo, "\"#{config.proxy_options_default.join(" ")}\"" ], by: "||"
+  end
+
+  def reset_boot_options
+    remove_file config.proxy_options_file
   end
 
   private

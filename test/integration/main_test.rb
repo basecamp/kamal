@@ -88,6 +88,14 @@ class MainTest < IntegrationTest
   end
 
   test "setup and remove" do
+    @app = "app_with_roles"
+
+    kamal :proxy, :set_config,
+      "--publish=false",
+      "--options=label=traefik.http.services.kamal_proxy.loadbalancer.server.scheme=http",
+      "label=traefik.http.routers.kamal_proxy.rule=PathPrefix\\\(\\\`/\\\`\\\)",
+      "label=traefik.http.routers.kamal_proxy.priority=2"
+
     # Check remove completes when nothing has been setup yet
     kamal :remove, "-y"
     assert_no_images_or_containers
@@ -121,6 +129,15 @@ class MainTest < IntegrationTest
     kamal :remove, "-y"
     assert_app_directory_removed
     assert_proxy_not_running
+  end
+
+  test "deploy with traefik" do
+    @app = "app_with_traefik"
+
+    first_version = latest_app_version
+
+    kamal :setup
+    assert_app_is_up version: first_version
   end
 
   private

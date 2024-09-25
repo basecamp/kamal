@@ -41,7 +41,7 @@ class CliAccessoryTest < CliTestCase
   test "upload" do
     run_command("upload", "mysql").tap do |output|
       assert_match "mkdir -p app-mysql/etc/mysql", output
-      assert_match "test/fixtures/files/my.cnf app-mysql/etc/mysql/my.cnf", output
+      assert_match "test/fixtures/files/my.cnf to app-mysql/etc/mysql/my.cnf", output
       assert_match "chmod 755 app-mysql/etc/mysql/my.cnf", output
     end
   end
