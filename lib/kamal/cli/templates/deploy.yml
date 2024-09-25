@@ -18,7 +18,7 @@ servers:
 proxy:
   ssl: true
   host: app.example.com
-  # Change the default application port from 80 to 3000. Useful for non-Thruster apps.
+  # kamal-proxy connects to your container over port 80, use `app_port` to specify a different port.
   # app_port: 3000
 
 # Credentials for your image host.
