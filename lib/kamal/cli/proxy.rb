@@ -21,6 +21,36 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
     end
   end
 
+  desc "boot_config <set|get|clear>", "Mange kamal-proxy boot configuration"
+  option :publish, type: :boolean, default: true, desc: "Publish the proxy ports on the host"
+  option :http_port, type: :numeric, default: Kamal::Configuration::PROXY_HTTP_PORT, desc: "HTTP port to publish on the host"
+  option :https_port, type: :numeric, default: Kamal::Configuration::PROXY_HTTPS_PORT, desc: "HTTPS port to publish on the host"
+  option :docker_options, type: :array, default: [], desc: "Docker options to pass to the proxy container", banner: "option=value option2=value2"
+  def boot_config(subcommand)
+    case subcommand
+    when "set"
+      boot_options = [
+        *(KAMAL.config.proxy_publish_args(options[:http_port], options[:https_port]) if options[:publish]),
+        *options[:docker_options].map { |option| "--#{option}" }
+      ]
+
+      on(KAMAL.proxy_hosts) do |host|
+        execute(*KAMAL.proxy.ensure_proxy_directory)
+        upload! StringIO.new(boot_options.join(" ")), KAMAL.config.proxy_options_file
+      end
+    when "get"
+      on(KAMAL.proxy_hosts) do |host|
+        puts "Host #{host}: #{capture_with_info(*KAMAL.proxy.get_boot_options)}"
+      end
+    when "reset"
+      on(KAMAL.proxy_hosts) do |host|
+        execute *KAMAL.proxy.reset_boot_options
+      end
+    else
+      raise ArgumentError, "Unknown boot_config subcommand #{subcommand}"
+    end
+  end
+
   desc "reboot", "Reboot proxy on servers (stop container, remove container, start new container)"
   option :rolling, type: :boolean, default: false, desc: "Reboot proxy on hosts in sequence, rather than in parallel"
   option :confirmed, aliases: "-y", type: :boolean, default: false, desc: "Proceed without confirmation question"
@@ -169,6 +199,7 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
         stop
         remove_container
         remove_image
+        remove_proxy_directory
       end
     end
   end
@@ -189,6 +220,15 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
       on(KAMAL.proxy_hosts) do
         execute *KAMAL.auditor.record("Removed proxy image"), verbosity: :debug
         execute *KAMAL.proxy.remove_image
+      end
+    end
+  end
+
+  desc "remove_proxy_directory", "Remove the proxy directory from servers", hide: true
+  def remove_proxy_directory
+    with_lock do
+      on(KAMAL.proxy_hosts) do
+        execute *KAMAL.proxy.remove_proxy_directory, raise_on_non_zero_exit: false
       end
     end
   end
