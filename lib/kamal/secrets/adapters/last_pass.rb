@@ -3,7 +3,7 @@ class Kamal::Secrets::Adapters::LastPass < Kamal::Secrets::Adapters::Base
     def login(account)
       unless loggedin?(account)
         `lpass login #{account.shellescape}`
-        raise RuntimeError, "Failed to login to 1Password" unless $?.success?
+        raise RuntimeError, "Failed to login to LastPass" unless $?.success?
       end
     end
 
@@ -13,7 +13,7 @@ class Kamal::Secrets::Adapters::LastPass < Kamal::Secrets::Adapters::Base
 
     def fetch_secrets(secrets, account:, session:)
       items = `lpass show #{secrets.map(&:shellescape).join(" ")} --json`
-      raise RuntimeError, "Could not read #{secrets} from 1Password" unless $?.success?
+      raise RuntimeError, "Could not read #{secrets} from LastPass" unless $?.success?
 
       items = JSON.parse(items)
 
