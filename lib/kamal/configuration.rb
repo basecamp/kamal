@@ -266,7 +266,7 @@ class Kamal::Configuration
   end
 
   def proxy_container_name
-    "kamal-proxy"
+    proxy.container_name
   end
 
   def proxy_directory
