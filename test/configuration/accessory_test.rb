@@ -63,6 +63,9 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
           "options" => {
             "cpus" => "4",
             "memory" => "2GB"
+          },
+          "proxy" => {
+            "host" => "monitoring.example.com"
           }
         }
       }
@@ -151,5 +154,10 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
 
   test "options" do
     assert_equal [ "--cpus", "\"4\"", "--memory", "\"2GB\"" ], @config.accessory(:redis).option_args
+  end
+
+  test "proxy" do
+    assert @config.accessory(:monitoring).running_proxy?
+    assert_equal "monitoring.example.com", @config.accessory(:monitoring).proxy.host
   end
 end
