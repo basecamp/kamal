@@ -98,8 +98,8 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
           execute *accessory.stop, raise_on_non_zero_exit: false
 
           if accessory.running_proxy?
-            target = accessory.container_id_for(container_name: accessory.service_name, only_running: true)
-            execute *accessory.remove(target: target)
+            target = capture_with_info(*accessory.container_id_for(container_name: accessory.service_name, only_running: true)).strip
+            execute *accessory.remove if target
           end
         end
       end
