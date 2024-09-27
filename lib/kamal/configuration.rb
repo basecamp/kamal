@@ -14,7 +14,7 @@ class Kamal::Configuration
 
   include Validation
 
-  PROXY_MINIMUM_VERSION = "v0.4.0"
+  PROXY_MINIMUM_VERSION = "v0.6.0"
   PROXY_HTTP_PORT = 80
   PROXY_HTTPS_PORT = 443
 
@@ -246,8 +246,12 @@ class Kamal::Configuration
     env_tags.detect { |t| t.name == name.to_s }
   end
 
-  def proxy_publish_args
-    argumentize "--publish", [ "#{PROXY_HTTP_PORT}:#{PROXY_HTTP_PORT}", "#{PROXY_HTTPS_PORT}:#{PROXY_HTTPS_PORT}" ]
+  def proxy_publish_args(http_port, https_port)
+    argumentize "--publish", [ "#{http_port}:#{PROXY_HTTP_PORT}", "#{https_port}:#{PROXY_HTTPS_PORT}" ]
+  end
+
+  def proxy_options_default
+    proxy_publish_args PROXY_HTTP_PORT, PROXY_HTTPS_PORT
   end
 
   def proxy_image
@@ -256,6 +260,14 @@ class Kamal::Configuration
 
   def proxy_container_name
     "kamal-proxy"
+  end
+
+  def proxy_directory
+    File.join run_directory, "proxy"
+  end
+
+  def proxy_options_file
+    File.join proxy_directory, "options"
   end
 
 

@@ -1,6 +1,6 @@
 require "test_helper"
 
-class ConfigurationEnvTest < ActiveSupport::TestCase
+class ConfigurationProxyTest < ActiveSupport::TestCase
   setup do
     @deploy = {
       service: "app", image: "dhh/app", registry: { "username" => "dhh", "password" => "secret" },
@@ -16,6 +16,12 @@ class ConfigurationEnvTest < ActiveSupport::TestCase
   test "ssl with no host" do
     @deploy[:proxy] = { "ssl" => true }
     assert_raises(Kamal::ConfigurationError) { config.proxy.ssl? }
+  end
+
+  test "ssl false" do
+    @deploy[:proxy] = { "ssl" => false }
+    assert_not config.proxy.ssl?
+    assert_not config.proxy.deploy_options.has_key?(:tls)
   end
 
   private

@@ -1,0 +1,29 @@
+service: app_with_traefik
+image: app_with_traefik
+servers:
+  - vm1
+  - vm2
+deploy_timeout: 2
+drain_timeout: 2
+readiness_delay: 0
+
+registry:
+  server: registry:4443
+  username: root
+  password: root
+builder:
+  driver: docker
+  arch: <%= Kamal::Utils.docker_arch %>
+  args:
+    COMMIT_SHA: <%= `git rev-parse HEAD` %>
+accessories:
+  traefik:
+    service: traefik
+    image: traefik:v2.10
+    port: 80
+    cmd: "--providers.docker"
+    options:
+      volume:
+        - "/var/run/docker.sock:/var/run/docker.sock"
+    roles:
+      - web
