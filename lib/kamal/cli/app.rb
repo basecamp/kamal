@@ -68,7 +68,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
             version = capture_with_info(*app.current_running_version, raise_on_non_zero_exit: false).strip
             endpoint = capture_with_info(*app.container_id_for_version(version)).strip
             if endpoint.present?
-              execute *app.remove(target: endpoint), raise_on_non_zero_exit: false
+              execute *app.remove, raise_on_non_zero_exit: false
             end
           end
 
