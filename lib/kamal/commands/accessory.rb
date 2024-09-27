@@ -40,14 +40,12 @@ class Kamal::Commands::Accessory < Kamal::Commands::Base
     docker :ps, *service_filter
   end
 
-  def deploy
-    target = container_id_for(container_name: service_name, only_running: true)
-    proxy_exec :deploy, service_name, *accessory_config.proxy.deploy_command_args(target: target) if target
+  def deploy(target:)
+    proxy_exec :deploy, service_name, *accessory_config.proxy.deploy_command_args(target: target)
   end
 
-  def remove
-    target = container_id_for(container_name: service_name, only_running: true)
-    proxy_exec :remove, service_name, *accessory_config.proxy.remove_command_args(target: target) if target
+  def remove(target:)
+    proxy_exec :remove, service_name, *accessory_config.proxy.remove_command_args(target: target)
   end
 
 
