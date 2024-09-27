@@ -7,7 +7,7 @@ class Kamal::Secrets
 
   def initialize(destination: nil)
     @secrets_files = \
-      [ ".kamal/secrets-common", ".kamal/secrets#{(".#{destination}" if destination)}" ].select { |f| File.exist?(f) }
+      [ ".kamal/secrets-common", ".kamal/secrets#{("-#{destination}" if destination)}" ].select { |f| File.exist?(f) }
     @mutex = Mutex.new
   end
 

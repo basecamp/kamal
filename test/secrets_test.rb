@@ -21,7 +21,7 @@ class SecretsTest < ActiveSupport::TestCase
   end
 
   test "destinations" do
-    with_test_secrets("secrets.dest" => "SECRET=DEF", "secrets" => "SECRET=ABC", "secrets-common" => "SECRET=GHI\nSECRET2=JKL") do
+    with_test_secrets("secrets-dest" => "SECRET=DEF", "secrets" => "SECRET=ABC", "secrets-common" => "SECRET=GHI\nSECRET2=JKL") do
       assert_equal "ABC", Kamal::Secrets.new["SECRET"]
       assert_equal "DEF", Kamal::Secrets.new(destination: "dest")["SECRET"]
       assert_equal "GHI", Kamal::Secrets.new(destination: "nodest")["SECRET"]
