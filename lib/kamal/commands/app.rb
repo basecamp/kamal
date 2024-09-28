@@ -1,5 +1,5 @@
 class Kamal::Commands::App < Kamal::Commands::Base
-  include Assets, Containers, Execution, Images, Logging, Proxy
+  include Assets, Containers, Execution, Images, Logging, Kamal::Commands::Proxy::Exec
 
   ACTIVE_DOCKER_STATUSES = [ :running, :restarting ]
 
@@ -76,6 +76,14 @@ class Kamal::Commands::App < Kamal::Commands::Base
   end
 
   private
+    def service_name
+      role.container_prefix
+    end
+
+    def proxy_deploy_command_args(target:)
+      role.proxy.deploy_command_args(target: target)
+    end
+
     def latest_image_id
       docker :image, :ls, *argumentize("--filter", "reference=#{config.latest_image}"), "--format", "'{{.ID}}'"
     end

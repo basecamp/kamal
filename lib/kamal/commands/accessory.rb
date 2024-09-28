@@ -1,4 +1,6 @@
 class Kamal::Commands::Accessory < Kamal::Commands::Base
+  include Kamal::Commands::Proxy::Exec
+
   attr_reader :accessory_config
   delegate :service_name, :image, :hosts, :port, :files, :directories, :cmd,
            :network_args, :publish_args, :env_args, :volume_args, :label_args, :option_args,
@@ -38,14 +40,6 @@ class Kamal::Commands::Accessory < Kamal::Commands::Base
 
   def info
     docker :ps, *service_filter
-  end
-
-  def deploy(target:)
-    proxy_exec :deploy, service_name, *proxy.deploy_command_args(target: target)
-  end
-
-  def remove
-    proxy_exec :remove, service_name
   end
 
 
@@ -117,6 +111,10 @@ class Kamal::Commands::Accessory < Kamal::Commands::Base
   end
 
   private
+    def proxy_deploy_command_args(target:)
+      proxy.deploy_command_args(target: target)
+    end
+
     def service_filter
       [ "--filter", "label=service=#{service_name}" ]
     end
