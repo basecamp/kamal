@@ -35,8 +35,10 @@ class Kamal::Secrets::Adapters::Bitwarden < Kamal::Secrets::Adapters::Base
               value = item_field["value"]
               results["#{item}/#{field}"] = value
             end
+          elsif item_json.dig("login", "password")
+            results[item] = item_json.dig("login", "password")
           else
-            results[item] = item_json["login"]["password"]
+            raise RuntimeError, "Item #{item} is not a login type item and no fields were specified"
           end
         end
       end
