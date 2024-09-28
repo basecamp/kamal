@@ -52,11 +52,11 @@ class TraefikTest < IntegrationTest
 
   private
     def assert_traefik_running
-      assert_match /traefik:v2.10   "\/entrypoint.sh/, traefik_details
+      assert_match /traefik:v2.11   "\/entrypoint.sh/, traefik_details
     end
 
     def assert_traefik_not_running
-      assert_no_match /traefik:v2.10   "\/entrypoint.sh/, traefik_details
+      assert_no_match /traefik:v2.11   "\/entrypoint.sh/, traefik_details
     end
 
     def traefik_details
