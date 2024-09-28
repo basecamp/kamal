@@ -33,7 +33,7 @@ WORKDIR /workdir
 
 # Tell git it's safe to access /workdir/.git even if
 # the directory is owned by a different user
-RUN git config --global --add safe.directory /workdir
+RUN git config --global --add safe.directory /workdir/.git
 
 # Set the entrypoint to run the installed binary in /workdir
 # Example:  docker run -it -v "$PWD:/workdir" kamal init
