@@ -118,7 +118,11 @@ class DocWriter
     end
 
     def linkify(text)
-      text.downcase.gsub(" ", "-")
+      if text == "Configuration overview"
+        "overview"
+      else
+        text.downcase.gsub(" ", "-")
+      end
     end
 
     def titlify(text)
