@@ -98,7 +98,6 @@ class DocWriter
       output.puts "---"
       output.puts
       output.puts heading
-      output.puts
     end
 
     def generate_line(line, heading: false)
