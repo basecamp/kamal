@@ -377,4 +377,15 @@ class ConfigurationTest < ActiveSupport::TestCase
 
     assert_equal "Different roles can't share the same host for SSL: foo.example.com", exception.message
   end
+
+  test "two proxy ssl roles with same host in a hosts array" do
+    @deploy_with_roles[:servers]["web"] = { "hosts" => [ "1.1.1.1" ], "proxy" => { "ssl" => true, "hosts" => [ "foo.example.com", "bar.example.com" ] } }
+    @deploy_with_roles[:servers]["workers"] = { "hosts" => [ "1.1.1.1" ], "proxy" => { "ssl" => true, "hosts" => [ "www.example.com", "foo.example.com" ] } }
+
+    exception = assert_raises(Kamal::ConfigurationError) do
+      Kamal::Configuration.new(@deploy_with_roles)
+    end
+
+    assert_equal "Different roles can't share the same host for SSL: foo.example.com", exception.message
+  end
 end
