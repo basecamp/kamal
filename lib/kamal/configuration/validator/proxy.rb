@@ -7,8 +7,8 @@ class Kamal::Configuration::Validator::Proxy < Kamal::Configuration::Validator
         error "Must set a host to enable automatic SSL"
       end
 
-      if config["host"].present? && config["hosts"].present?
-        error "Must use either 'host' or 'hosts', not both"
+      if (config.keys & [ "host", "hosts" ]).size > 1
+        error "Specify one of 'host' or 'hosts', not both"
       end
     end
   end
