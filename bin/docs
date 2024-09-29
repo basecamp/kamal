@@ -70,6 +70,7 @@ class DocWriter
             generate_line(line, heading: place == :new_section)
             place = :in_section
           else
+            output.puts
             output.puts "```yaml"
             output.puts line
             place = :in_yaml
@@ -77,6 +78,7 @@ class DocWriter
         when :in_yaml, :in_empty_line_yaml
           if line =~ /^ *#/
             output.puts "```"
+            output.puts
             generate_line(line, heading: place == :in_empty_line_yaml)
             place = :in_section
           elsif line.empty?
