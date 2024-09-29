@@ -13,6 +13,16 @@ class ConfigurationProxyTest < ActiveSupport::TestCase
     assert_equal true, config.proxy.ssl?
   end
 
+  test "ssl with multiple hosts passed via host" do
+    @deploy[:proxy] = { "ssl" => true, "host" => "example.com,anotherexample.com" }
+    assert_equal true, config.proxy.ssl?
+  end
+
+  test "ssl with multiple hosts passed via hosts" do
+    @deploy[:proxy] = { "ssl" => true, "hosts" => [ "example.com", "anotherexample.com" ] }
+    assert_equal true, config.proxy.ssl?
+  end
+
   test "ssl with no host" do
     @deploy[:proxy] = { "ssl" => true }
     assert_raises(Kamal::ConfigurationError) { config.proxy.ssl? }

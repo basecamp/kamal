@@ -22,13 +22,13 @@ class Kamal::Configuration::Proxy
     proxy_config.fetch("ssl", false)
   end
 
-  def host
-    proxy_config["host"]
+  def hosts
+    proxy_config["hosts"] || proxy_config["host"]&.split(",") || []
   end
 
   def deploy_options
     {
-      host: proxy_config["host"],
+      host: hosts.present? ? hosts.join(",") : nil,
       tls: proxy_config["ssl"] ? true : nil,
       "deploy-timeout": seconds_duration(config.deploy_timeout),
       "drain-timeout": seconds_duration(config.drain_timeout),

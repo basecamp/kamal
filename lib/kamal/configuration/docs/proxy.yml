@@ -28,6 +28,17 @@ proxy:
   # If multiple hosts are needed, these can be specified by comma-separating the hosts.
   host: foo.example.com,bar.example.com
 
+  # Hosts
+  #
+  # The hosts that will be used to serve the app. The proxy will only route requests
+  # to this host to your app.
+  #
+  # If no hosts are set, then all requests will be forwarded, except for matching
+  # requests for other apps deployed on that server that do have a host set.
+  hosts:
+    - foo.example.com
+    - bar.example.com
+
   # App port
   #
   # The port the application container is exposed on.
