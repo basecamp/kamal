@@ -28,6 +28,11 @@ class ConfigurationProxyTest < ActiveSupport::TestCase
     assert_raises(Kamal::ConfigurationError) { config.proxy.ssl? }
   end
 
+  test "ssl with both host and hosts" do
+    @deploy[:proxy] = { "ssl" => true, host: "example.com", hosts: [ "anotherexample.com" ] }
+    assert_raises(Kamal::ConfigurationError) { config.proxy.ssl? }
+  end
+
   test "ssl false" do
     @deploy[:proxy] = { "ssl" => false }
     assert_not config.proxy.ssl?
