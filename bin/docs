@@ -30,6 +30,7 @@ DOCS = {
   "ssh" => "SSH",
   "sshkit" => "SSHKit"
 }
+DOCS_PATH = "lib/kamal/configuration/docs"
 
 class DocWriter
   attr_reader :from_file, :to_file, :key, :heading, :body, :output, :in_yaml
@@ -94,6 +95,8 @@ class DocWriter
 
     def generate_header
       output.puts "---"
+      output.puts "# This file has been generated from the Kamal source, do not edit directly."
+      output.puts "# Find the source of this file at #{DOCS_PATH}/#{key}.yml in the Kamal repository."
       output.puts "title: #{heading[2..-1]}"
       output.puts "---"
       output.puts
@@ -131,7 +134,7 @@ class DocWriter
     end
 end
 
-from_dir = File.join(File.dirname(__FILE__), "../lib/kamal/configuration/docs")
+from_dir = File.join(File.dirname(__FILE__), "../#{DOCS_PATH}")
 to_dir = File.join(kamal_site_repo, "docs/configuration")
 Dir.glob("#{from_dir}/*") do |from_file|
   DocWriter.new(from_file, to_dir).write
