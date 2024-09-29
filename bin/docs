@@ -129,7 +129,5 @@ end
 from_dir = File.join(File.dirname(__FILE__), "../lib/kamal/configuration/docs")
 to_dir = File.join(kamal_site_repo, "docs/configuration")
 Dir.glob("#{from_dir}/*") do |from_file|
-  key = File.basename(from_file, ".yml")
-
   DocWriter.new(from_file, to_dir).write
 end
