@@ -51,10 +51,6 @@ class Kamal::Configuration::Proxy
     optionize ({ target: "#{target}:#{app_port}" }).merge(deploy_options)
   end
 
-  def remove_command_args(target:)
-    optionize({ target: "#{target}:#{app_port}" })
-  end
-
   def merge(other)
     self.class.new config: config, proxy_config: proxy_config.deep_merge(other.proxy_config)
   end

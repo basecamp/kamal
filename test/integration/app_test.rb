@@ -8,7 +8,7 @@ class AppTest < IntegrationTest
 
     kamal :app, :stop
 
-    assert_app_is_down
+    assert_app_not_found
 
     kamal :app, :start
 
@@ -48,7 +48,7 @@ class AppTest < IntegrationTest
 
     kamal :app, :remove
 
-    assert_app_is_down
+    assert_app_not_found
     assert_app_directory_removed
   end
 end

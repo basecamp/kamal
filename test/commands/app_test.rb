@@ -121,8 +121,8 @@ class CommandsAppTest < ActiveSupport::TestCase
 
   test "remove" do
     assert_equal \
-      "docker exec kamal-proxy kamal-proxy remove app-web --target \"172.1.0.2:80\"",
-      new_command.remove(target: "172.1.0.2").join(" ")
+      "docker exec kamal-proxy kamal-proxy remove app-web",
+      new_command.remove.join(" ")
   end
 
 

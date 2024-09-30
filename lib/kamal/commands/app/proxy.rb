@@ -5,8 +5,8 @@ module Kamal::Commands::App::Proxy
     proxy_exec :deploy, role.container_prefix, *role.proxy.deploy_command_args(target: target)
   end
 
-  def remove(target:)
-    proxy_exec :remove, role.container_prefix, *role.proxy.remove_command_args(target: target)
+  def remove
+    proxy_exec :remove, role.container_prefix
   end
 
   private

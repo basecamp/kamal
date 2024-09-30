@@ -50,6 +50,12 @@ class IntegrationTest < ActiveSupport::TestCase
       assert_equal "502", response.code
     end
 
+    def assert_app_not_found
+      response = app_response
+      debug_response_code(response, "404")
+      assert_equal "404", response.code
+    end
+
     def assert_app_is_up(version: nil, app: @app)
       response = app_response(app: app)
       debug_response_code(response, "200")
