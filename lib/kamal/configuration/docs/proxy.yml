@@ -17,16 +17,19 @@
 # `proxy: true` or providing a proxy configuration.
 proxy:
 
-  # Host
+  # Hosts
   #
   # The hosts that will be used to serve the app. The proxy will only route requests
   # to this host to your app.
   #
   # If no hosts are set, then all requests will be forwarded, except for matching
   # requests for other apps deployed on that server that do have a host set.
+  #
+  # Specify one of `host` or `hosts`.
   host: foo.example.com
-  # If multiple hosts are needed, these can be specified by comma-separating the hosts.
-  host: foo.example.com,bar.example.com
+  hosts:
+    - foo.example.com
+    - bar.example.com
 
   # App port
   #

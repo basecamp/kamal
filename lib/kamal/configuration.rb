@@ -360,7 +360,7 @@ class Kamal::Configuration
     end
 
     def ensure_unique_hosts_for_ssl_roles
-      hosts = roles.select(&:ssl?).map { |role| role.proxy.host }
+      hosts = roles.select(&:ssl?).flat_map { |role| role.proxy.hosts }
       duplicates = hosts.tally.filter_map { |host, count| host if count > 1 }
 
       raise Kamal::ConfigurationError, "Different roles can't share the same host for SSL: #{duplicates.join(", ")}" if duplicates.any?
