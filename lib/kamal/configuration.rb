@@ -14,10 +14,6 @@ class Kamal::Configuration
 
   include Validation
 
-  PROXY_MINIMUM_VERSION = "v0.7.0"
-  PROXY_HTTP_PORT = 80
-  PROXY_HTTPS_PORT = 443
-
   class << self
     def create_from(config_file:, destination: nil, version: nil)
       raw_config = load_config_files(config_file, *destination_config_file(config_file, destination))
@@ -245,31 +241,6 @@ class Kamal::Configuration
   def env_tag(name)
     env_tags.detect { |t| t.name == name.to_s }
   end
-
-  def proxy_publish_args(http_port, https_port)
-    argumentize "--publish", [ "#{http_port}:#{PROXY_HTTP_PORT}", "#{https_port}:#{PROXY_HTTPS_PORT}" ]
-  end
-
-  def proxy_options_default
-    proxy_publish_args PROXY_HTTP_PORT, PROXY_HTTPS_PORT
-  end
-
-  def proxy_image
-    "basecamp/kamal-proxy:#{PROXY_MINIMUM_VERSION}"
-  end
-
-  def proxy_container_name
-    "kamal-proxy"
-  end
-
-  def proxy_directory
-    File.join run_directory, "proxy"
-  end
-
-  def proxy_options_file
-    File.join proxy_directory, "options"
-  end
-
 
   def to_h
     {

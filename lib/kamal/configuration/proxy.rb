@@ -4,6 +4,10 @@ class Kamal::Configuration::Proxy
   DEFAULT_LOG_REQUEST_HEADERS = [ "Cache-Control", "Last-Modified", "User-Agent" ]
   CONTAINER_NAME = "kamal-proxy"
 
+  MINIMUM_VERSION = "v0.7.0"
+  HTTP_PORT = 80
+  HTTPS_PORT = 443
+
   delegate :argumentize, :optionize, to: Kamal::Utils
 
   attr_reader :config, :proxy_config
@@ -24,6 +28,30 @@ class Kamal::Configuration::Proxy
 
   def hosts
     proxy_config["hosts"] || proxy_config["host"]&.split(",") || []
+  end
+
+  def publish_args(http_port, https_port)
+    argumentize "--publish", [ "#{http_port}:#{HTTP_PORT}", "#{https_port}:#{HTTPS_PORT}" ]
+  end
+
+  def default_options
+    publish_args HTTP_PORT, HTTPS_PORT
+  end
+
+  def image
+    "basecamp/kamal-proxy:#{MINIMUM_VERSION}"
+  end
+
+  def container_name
+    "kamal-proxy"
+  end
+
+  def directory
+    File.join config.run_directory, "proxy"
+  end
+
+  def options_file
+    File.join directory, "options"
   end
 
   def deploy_options
