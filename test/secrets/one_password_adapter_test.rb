@@ -44,7 +44,7 @@ class SecretsOnePasswordAdapterTest < SecretAdapterTestCase
         ]
       JSON
 
-    json = JSON.parse(shellunescape(run_command("fetch", "--from", "op://myvault/myitem", "section/SECRET1", "section/SECRET2", "section2/SECRET3")))
+    json = JSON.parse(run_command("fetch", "--from", "op://myvault/myitem", "section/SECRET1", "section/SECRET2", "section2/SECRET3"))
 
     expected_json = {
       "myvault/myitem/section/SECRET1"=>"VALUE1",
@@ -103,7 +103,7 @@ class SecretsOnePasswordAdapterTest < SecretAdapterTestCase
         }
       JSON
 
-    json = JSON.parse(shellunescape(run_command("fetch", "--from", "op://myvault", "myitem/section/SECRET1", "myitem/section/SECRET2", "myitem2/section2/SECRET3")))
+    json = JSON.parse(run_command("fetch", "--from", "op://myvault", "myitem/section/SECRET1", "myitem/section/SECRET2", "myitem2/section2/SECRET3"))
 
     expected_json = {
       "myvault/myitem/section/SECRET1"=>"VALUE1",
@@ -122,7 +122,7 @@ class SecretsOnePasswordAdapterTest < SecretAdapterTestCase
       .with("op item get myitem --vault \"myvault\" --fields \"label=section.SECRET1\" --format \"json\" --account \"myaccount\"")
       .returns(single_item_json)
 
-    json = JSON.parse(shellunescape(run_command("fetch", "--from", "op://myvault/myitem", "section/SECRET1")))
+    json = JSON.parse(run_command("fetch", "--from", "op://myvault/myitem", "section/SECRET1"))
 
     expected_json = {
       "myvault/myitem/section/SECRET1"=>"VALUE1"
@@ -139,7 +139,7 @@ class SecretsOnePasswordAdapterTest < SecretAdapterTestCase
       .with("op item get myitem --vault \"myvault\" --fields \"label=section.SECRET1\" --format \"json\" --account \"myaccount\" --session \"1234567890\"")
       .returns(single_item_json)
 
-    json = JSON.parse(shellunescape(run_command("fetch", "--from", "op://myvault/myitem", "section/SECRET1")))
+    json = JSON.parse(run_command("fetch", "--from", "op://myvault/myitem", "section/SECRET1"))
 
     expected_json = {
       "myvault/myitem/section/SECRET1"=>"VALUE1"

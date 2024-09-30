@@ -51,7 +51,7 @@ class LastPassAdapterTest < SecretAdapterTestCase
         ]
       JSON
 
-    json = JSON.parse(shellunescape(run_command("fetch", "SECRET1", "FOLDER1/FSECRET1", "FOLDER1/FSECRET2")))
+    json = JSON.parse(run_command("fetch", "SECRET1", "FOLDER1/FSECRET1", "FOLDER1/FSECRET2"))
 
     expected_json = {
       "SECRET1"=>"secret1",
@@ -96,7 +96,7 @@ class LastPassAdapterTest < SecretAdapterTestCase
         ]
       JSON
 
-    json = JSON.parse(shellunescape(run_command("fetch", "--from", "FOLDER1", "FSECRET1", "FSECRET2")))
+    json = JSON.parse(run_command("fetch", "--from", "FOLDER1", "FSECRET1", "FSECRET2"))
 
     expected_json = {
       "FOLDER1/FSECRET1"=>"fsecret1",
@@ -111,7 +111,7 @@ class LastPassAdapterTest < SecretAdapterTestCase
     stub_ticks_with("lpass login email@example.com", succeed: true).returns("")
     stub_ticks.with("lpass show SECRET1 --json").returns(single_item_json)
 
-    json = JSON.parse(shellunescape(run_command("fetch", "SECRET1")))
+    json = JSON.parse(run_command("fetch", "SECRET1"))
 
     expected_json = {
       "SECRET1"=>"secret1"

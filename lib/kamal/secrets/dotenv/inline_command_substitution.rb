@@ -16,7 +16,7 @@ class Kamal::Secrets::Dotenv::InlineCommandSubstitution
         else
           if command =~ /\A\s*kamal\s*secrets\s+/
             # Inline the command
-            inline_secrets_command(command)
+            inline_secrets_command(command).shellescape
           else
             # Execute the command and return the value
             `#{command}`.chomp

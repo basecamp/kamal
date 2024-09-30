@@ -6,7 +6,7 @@ class BitwardenAdapterTest < SecretAdapterTestCase
     stub_ticks.with("bw sync").returns("")
     stub_mypassword
 
-    json = JSON.parse(shellunescape(run_command("fetch", "mypassword")))
+    json = JSON.parse(run_command("fetch", "mypassword"))
 
     expected_json = { "mypassword"=>"secret123" }
 
@@ -18,7 +18,7 @@ class BitwardenAdapterTest < SecretAdapterTestCase
     stub_ticks.with("bw sync").returns("")
     stub_myitem
 
-    json = JSON.parse(shellunescape(run_command("fetch", "--from", "myitem", "field1", "field2", "field3")))
+    json = JSON.parse(run_command("fetch", "--from", "myitem", "field1", "field2", "field3"))
 
     expected_json = {
       "myitem/field1"=>"secret1", "myitem/field2"=>"blam", "myitem/field3"=>"fewgrwjgk"
@@ -59,7 +59,7 @@ class BitwardenAdapterTest < SecretAdapterTestCase
     JSON
 
 
-    json = JSON.parse(shellunescape(run_command("fetch", "mypassword", "myitem/field1", "myitem/field2", "myitem2/field3")))
+    json = JSON.parse(run_command("fetch", "mypassword", "myitem/field1", "myitem/field2", "myitem2/field3"))
 
     expected_json = {
       "mypassword"=>"secret123", "myitem/field1"=>"secret1", "myitem/field2"=>"blam", "myitem2/field3"=>"fewgrwjgk"
@@ -82,7 +82,7 @@ class BitwardenAdapterTest < SecretAdapterTestCase
     stub_ticks.with("bw sync").returns("")
     stub_mypassword
 
-    json = JSON.parse(shellunescape(run_command("fetch", "mypassword")))
+    json = JSON.parse(run_command("fetch", "mypassword"))
 
     expected_json = { "mypassword"=>"secret123" }
 
@@ -107,7 +107,7 @@ class BitwardenAdapterTest < SecretAdapterTestCase
     stub_ticks.with("bw sync").returns("")
     stub_mypassword
 
-    json = JSON.parse(shellunescape(run_command("fetch", "mypassword")))
+    json = JSON.parse(run_command("fetch", "mypassword"))
 
     expected_json = { "mypassword"=>"secret123" }
 
@@ -132,7 +132,7 @@ class BitwardenAdapterTest < SecretAdapterTestCase
     stub_ticks.with("BW_SESSION=0987654321 bw sync").returns("")
     stub_mypassword(session: "0987654321")
 
-    json = JSON.parse(shellunescape(run_command("fetch", "mypassword")))
+    json = JSON.parse(run_command("fetch", "mypassword"))
 
     expected_json = { "mypassword"=>"secret123" }
 

@@ -12,4 +12,10 @@ class SecretsInlineCommandSubstitution < SecretAdapterTestCase
     substituted = Kamal::Secrets::Dotenv::InlineCommandSubstitution.call("FOO=$(blah)", nil, overwrite: false)
     assert_equal "FOO=results", substituted
   end
+
+  test "escapes correctly" do
+    Kamal::Cli::Main.expects(:start).with { |command| command == [ "secrets", "fetch", "...", "--inline" ] }.returns("{ \"foo\" : \"bar\" }")
+    substituted = Kamal::Secrets::Dotenv::InlineCommandSubstitution.call("SECRETS=$(kamal secrets fetch ...)", nil, overwrite: false)
+    assert_equal "SECRETS=\\{\\ \\\"foo\\\"\\ :\\ \\\"bar\\\"\\ \\}", substituted
+  end
 end
