@@ -118,8 +118,4 @@ class Kamal::Commands::Accessory < Kamal::Commands::Base
     def service_filter
       [ "--filter", "label=service=#{service_name}" ]
     end
-
-    def proxy_exec(*command)
-      docker :exec, proxy_container_name, "kamal-proxy", *command
-    end
 end
