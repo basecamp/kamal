@@ -21,6 +21,13 @@ class Kamal::Cli::Secrets < Kamal::Cli::Base
     return_or_puts value, inline: options[:inline]
   end
 
+  desc "print", "Print the secrets (for debugging)"
+  def print
+    KAMAL.config.secrets.to_h.each do |key, value|
+      puts "#{key}=#{value}"
+    end
+  end
+
   private
     def adapter(adapter)
       Kamal::Secrets::Adapters.lookup(adapter)
