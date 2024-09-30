@@ -1,5 +1,5 @@
 class Kamal::Configuration::Traefik
-  DEFAULT_IMAGE = "traefik:v2.10"
+  DEFAULT_IMAGE = "traefik:v2.11"
   CONTAINER_PORT = 80
   DEFAULT_ARGS = {
     "log.level" => "DEBUG"

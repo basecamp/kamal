@@ -17,8 +17,8 @@ traefik:
 
   # Image
   #
-  # The Traefik image to use, defaults to `traefik:v2.10`
-  image: traefik:v2.9
+  # The Traefik image to use, defaults to `traefik:v2.11`
+  image: traefik:v2.11
 
   # Host port
   #

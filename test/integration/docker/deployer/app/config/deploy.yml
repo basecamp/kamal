@@ -33,7 +33,7 @@ traefik:
   args:
     accesslog: true
     accesslog.format: json
-  image: registry:4443/traefik:v2.10
+  image: registry:4443/traefik:v2.11
 accessories:
   busybox:
     service: custom-busybox
