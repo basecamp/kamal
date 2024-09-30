@@ -15,6 +15,12 @@ class CliSecretsTest < CliTestCase
     assert_equal "oof", run_command("extract", "foo", "{\"abc/foo\":\"oof\", \"bar\":\"rab\", \"baz\":\"zab\"}")
   end
 
+  test "print" do
+    with_test_secrets("secrets" => "SECRET1=ABC\nSECRET2=${SECRET1}DEF\n") do
+      assert_equal "SECRET1=ABC\nSECRET2=ABCDEF", run_command("print")
+    end
+  end
+
   private
     def run_command(*command)
       stdouted { Kamal::Cli::Secrets.start([ *command, "-c", "test/fixtures/deploy_with_accessories.yml" ]) }
