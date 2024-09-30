@@ -2,7 +2,7 @@
 #
 # Servers are split into different roles, with each role having its own configuration.
 #
-# For simpler deployments though where all servers are identical, you can just specify a list of servers
+# For simpler deployments, though, where all servers are identical, you can just specify a list of servers.
 # They will be implicitly assigned to the `web` role.
 servers:
   - 172.0.0.1
@@ -19,7 +19,7 @@ servers:
 
 # Roles
 #
-# For more complex deployments (e.g. if you are running job hosts), you can specify roles, and configure each separately (see kamal docs role)
+# For more complex deployments (e.g., if you are running job hosts), you can specify roles and configure each separately (see kamal docs role):
 servers:
   web:
     ...
