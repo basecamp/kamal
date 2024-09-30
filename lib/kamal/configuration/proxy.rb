@@ -43,7 +43,7 @@ class Kamal::Configuration::Proxy
   end
 
   def container_name
-    "kamal-proxy"
+    CONTAINER_NAME
   end
 
   def directory
