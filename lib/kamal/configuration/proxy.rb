@@ -28,7 +28,7 @@ class Kamal::Configuration::Proxy
 
   def deploy_options
     {
-      host: hosts.present? ? hosts.join(",") : nil,
+      host: hosts,
       tls: proxy_config["ssl"] ? true : nil,
       "deploy-timeout": seconds_duration(config.deploy_timeout),
       "drain-timeout": seconds_duration(config.drain_timeout),

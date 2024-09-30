@@ -131,7 +131,7 @@ class CommandsAppTest < ActiveSupport::TestCase
     @config[:proxy] = { "ssl" => true, "hosts" => [ "example.com", "anotherexample.com" ] }
 
     assert_equal \
-      "docker exec kamal-proxy kamal-proxy deploy app-web --target \"172.1.0.2:80\" --host \"example.com,anotherexample.com\" --tls --deploy-timeout \"30s\" --drain-timeout \"30s\" --buffer-requests --buffer-responses --log-request-header \"Cache-Control\" --log-request-header \"Last-Modified\" --log-request-header \"User-Agent\"",
+      "docker exec kamal-proxy kamal-proxy deploy app-web --target \"172.1.0.2:80\" --host \"example.com\" --host \"anotherexample.com\" --tls --deploy-timeout \"30s\" --drain-timeout \"30s\" --buffer-requests --buffer-responses --log-request-header \"Cache-Control\" --log-request-header \"Last-Modified\" --log-request-header \"User-Agent\"",
       new_command.deploy(target: "172.1.0.2").join(" ")
   end
 
