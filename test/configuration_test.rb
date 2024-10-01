@@ -226,7 +226,7 @@ class ConfigurationTest < ActiveSupport::TestCase
     dest_config_file = Pathname.new(File.expand_path("fixtures/deploy_for_dest.yml", __dir__))
 
     config = Kamal::Configuration.create_from config_file: dest_config_file, destination: "world"
-    assert_equal ENV['KAMAL_DESTINATION'], "world"
+    assert_equal ENV["KAMAL_DESTINATION"], "world"
   end
 
   test "destination yml config merge" do
