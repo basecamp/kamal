@@ -22,14 +22,14 @@ class Kamal::Configuration::Proxy
     proxy_config.fetch("ssl", false)
   end
 
-  def host
-    proxy_config["host"]
+  def hosts
+    proxy_config["hosts"] || proxy_config["host"]&.split(",") || []
   end
 
   def deploy_options
     {
-      host: proxy_config["host"],
-      tls: proxy_config["ssl"] ? true : nil,
+      host: hosts,
+      tls: proxy_config["ssl"],
       "deploy-timeout": seconds_duration(config.deploy_timeout),
       "drain-timeout": seconds_duration(config.drain_timeout),
       "health-check-interval": seconds_duration(proxy_config.dig("healthcheck", "interval")),
@@ -48,11 +48,7 @@ class Kamal::Configuration::Proxy
   end
 
   def deploy_command_args(target:)
-    optionize ({ target: "#{target}:#{app_port}" }).merge(deploy_options)
-  end
-
-  def remove_command_args(target:)
-    optionize({ target: "#{target}:#{app_port}" })
+    optionize ({ target: "#{target}:#{app_port}" }).merge(deploy_options), with: "="
   end
 
   def merge(other)

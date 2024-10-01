@@ -18,6 +18,8 @@ servers:
 proxy:
   ssl: true
   host: app.example.com
+  # kamal-proxy connects to your container over port 80, use `app_port` to specify a different port.
+  # app_port: 3000
 
 # Credentials for your image host.
 registry:

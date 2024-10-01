@@ -13,6 +13,17 @@ class BitwardenAdapterTest < SecretAdapterTestCase
     assert_equal expected_json, json
   end
 
+  test "fetch with no login" do
+    stub_unlocked
+    stub_ticks.with("bw sync").returns("")
+    stub_noteitem
+
+    error = assert_raises RuntimeError do
+      JSON.parse(shellunescape(run_command("fetch", "mynote")))
+    end
+    assert_match(/not a login type item/, error.message)
+  end
+
   test "fetch with from" do
     stub_unlocked
     stub_ticks.with("bw sync").returns("")
@@ -180,6 +191,30 @@ class BitwardenAdapterTest < SecretAdapterTestCase
           }
         JSON
     end
+
+  def stub_noteitem(session: nil)
+    stub_ticks
+      .with("#{"BW_SESSION=#{session} " if session}bw get item mynote")
+      .returns(<<~JSON)
+          {
+            "passwordHistory":null,
+            "revisionDate":"2024-09-28T09:07:27.461Z",
+            "creationDate":"2024-09-28T09:07:00.740Z",
+            "deletedDate":null,
+            "object":"item",
+            "id":"aaaaaaaa-cccc-eeee-0000-222222222222",
+            "organizationId":null,
+            "folderId":null,
+            "type":2,
+            "reprompt":0,
+            "name":"noteitem",
+            "notes":"NOTES",
+            "favorite":false,
+            "secureNote":{"type":0},
+            "collectionIds":[]
+          }
+        JSON
+  end
 
     def stub_myitem
       stub_ticks
