@@ -222,6 +222,13 @@ class ConfigurationTest < ActiveSupport::TestCase
     assert_equal "my-user", config.registry.username
   end
 
+  test "destination is loaded into env" do
+    dest_config_file = Pathname.new(File.expand_path("fixtures/deploy_for_dest.yml", __dir__))
+
+    config = Kamal::Configuration.create_from config_file: dest_config_file, destination: "world"
+    assert_equal ENV['KAMAL_DESTINATION'], "world"
+  end
+
   test "destination yml config merge" do
     dest_config_file = Pathname.new(File.expand_path("fixtures/deploy_for_dest.yml", __dir__))
 
