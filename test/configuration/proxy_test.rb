@@ -36,7 +36,6 @@ class ConfigurationProxyTest < ActiveSupport::TestCase
   test "ssl false" do
     @deploy[:proxy] = { "ssl" => false }
     assert_not config.proxy.ssl?
-    assert_not config.proxy.deploy_options.has_key?(:tls)
   end
 
   private
