@@ -15,14 +15,15 @@ readiness_delay: 0
 
 proxy:
   host: localhost
+  ssl: false
   healthcheck:
     interval: 1
     timeout: 1
     path: "/up"
   response_timeout: 2
   buffering:
-    requests: true
-    responses: true
+    requests: false
+    responses: false
     memory: 400_000
     max_request_body: 40_000_000
     max_response_body: 40_000_000

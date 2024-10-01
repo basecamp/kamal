@@ -130,7 +130,7 @@ class CliAppTest < CliTestCase
     SSHKit::Backend::Abstract.any_instance.stubs(:execute)
       .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-latest$", "--quiet", "|", :xargs, :docker, :stop, raise_on_non_zero_exit: false)
     SSHKit::Backend::Abstract.any_instance.expects(:execute)
-      .with(:docker, :exec, "kamal-proxy", "kamal-proxy", :deploy, "app-web", "--target", "\"123:80\"", "--deploy-timeout", "\"1s\"", "--drain-timeout", "\"30s\"", "--buffer-requests", "--buffer-responses", "--log-request-header", "\"Cache-Control\"", "--log-request-header", "\"Last-Modified\"", "--log-request-header", "\"User-Agent\"").raises(SSHKit::Command::Failed.new("Failed to deploy"))
+      .with(:docker, :exec, "kamal-proxy", "kamal-proxy", :deploy, "app-web", "--target=\"123:80\"", "--deploy-timeout=\"1s\"", "--drain-timeout=\"30s\"", "--buffer-requests", "--buffer-responses", "--log-request-header=\"Cache-Control\"", "--log-request-header=\"Last-Modified\"", "--log-request-header=\"User-Agent\"").raises(SSHKit::Command::Failed.new("Failed to deploy"))
 
     stderred do
       run_command("boot", config: :with_roles, host: nil, allow_execute_error: true).tap do |output|
@@ -190,7 +190,7 @@ class CliAppTest < CliTestCase
 
     run_command("start").tap do |output|
       assert_match "docker start app-web-999", output
-      assert_match "docker exec kamal-proxy kamal-proxy deploy app-web --target \"999:80\" --deploy-timeout \"30s\" --drain-timeout \"30s\" --buffer-requests --buffer-responses --log-request-header \"Cache-Control\" --log-request-header \"Last-Modified\"", output
+      assert_match "docker exec kamal-proxy kamal-proxy deploy app-web --target=\"999:80\" --deploy-timeout=\"30s\" --drain-timeout=\"30s\" --buffer-requests --buffer-responses --log-request-header=\"Cache-Control\" --log-request-header=\"Last-Modified\"", output
     end
   end
 
@@ -383,7 +383,7 @@ class CliAppTest < CliTestCase
       assert_match /Renaming container .* to .* as already deployed on 1.1.1.1/, output # Rename
       assert_match /docker rename app-web-latest app-web-latest_replaced_[0-9a-f]{16}/, output
       assert_match /docker run --detach --restart unless-stopped --name app-web-latest --network kamal --hostname 1.1.1.1-[0-9a-f]{12} -e KAMAL_CONTAINER_NAME="app-web-latest" -e KAMAL_VERSION="latest" --env-file .kamal\/apps\/app\/env\/roles\/web.env --log-opt max-size="10m" --label service="app" --label role="web" --label destination dhh\/app:latest/, output
-      assert_match /docker exec kamal-proxy kamal-proxy deploy app-web --target "123:80"/, output
+      assert_match /docker exec kamal-proxy kamal-proxy deploy app-web --target="123:80"/, output
       assert_match "docker container ls --all --filter name=^app-web-123$ --quiet | xargs docker stop", output
     end
   end
@@ -392,8 +392,8 @@ class CliAppTest < CliTestCase
     SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info).returns("123") # old version
 
     run_command("boot", config: :with_proxy_roles, host: nil).tap do |output|
-      assert_match "docker exec kamal-proxy kamal-proxy deploy app-web --target \"123:80\" --deploy-timeout \"6s\" --drain-timeout \"30s\" --target-timeout \"10s\" --buffer-requests --buffer-responses --log-request-header \"Cache-Control\" --log-request-header \"Last-Modified\" --log-request-header \"User-Agent\"", output
-      assert_match "docker exec kamal-proxy kamal-proxy deploy app-web2 --target \"123:80\" --deploy-timeout \"6s\" --drain-timeout \"30s\" --target-timeout \"15s\" --buffer-requests --buffer-responses --log-request-header \"Cache-Control\" --log-request-header \"Last-Modified\" --log-request-header \"User-Agent\"", output
+      assert_match "docker exec kamal-proxy kamal-proxy deploy app-web --target=\"123:80\" --deploy-timeout=\"6s\" --drain-timeout=\"30s\" --target-timeout=\"10s\" --buffer-requests --buffer-responses --log-request-header=\"Cache-Control\" --log-request-header=\"Last-Modified\" --log-request-header=\"User-Agent\"", output
+      assert_match "docker exec kamal-proxy kamal-proxy deploy app-web2 --target=\"123:80\" --deploy-timeout=\"6s\" --drain-timeout=\"30s\" --target-timeout=\"15s\" --buffer-requests --buffer-responses --log-request-header=\"Cache-Control\" --log-request-header=\"Last-Modified\" --log-request-header=\"User-Agent\"", output
     end
   end
 
