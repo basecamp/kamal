@@ -217,6 +217,15 @@ class ConfigurationTest < ActiveSupport::TestCase
     assert_equal [ "--log-driver", "\"local\"", "--log-opt", "max-size=\"100m\"", "--log-opt", "max-file=\"5\"" ], config.logging_args
   end
 
+  test "network_args default" do
+    assert_equal [ "--network", "kamal" ], @config.network_args
+  end
+
+  test "network_args with configured options" do
+    config = Kamal::Configuration.new(@deploy.tap { |c| c.merge!(network: "custom") })
+    assert_equal [ "--network", "custom" ], config.network_args
+  end
+
   test "erb evaluation of yml config" do
     config = Kamal::Configuration.create_from config_file: Pathname.new(File.expand_path("fixtures/deploy.erb.yml", __dir__))
     assert_equal "my-user", config.registry.username

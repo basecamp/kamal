@@ -176,3 +176,10 @@ logging:
 # Alias configuration, see kamal docs alias:
 aliases:
   ...
+
+# Network
+#
+# The network the application will be attached to.
+#
+# Defaults to kamal:
+network: custom
