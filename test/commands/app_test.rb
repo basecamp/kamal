@@ -64,6 +64,14 @@ class CommandsAppTest < ActiveSupport::TestCase
       new_command.run.join(" ")
   end
 
+  test "run in custom network" do
+    @config[:network] = "custom"
+
+    assert_equal \
+      "docker run --detach --restart unless-stopped --name app-web-999 --network custom -e KAMAL_CONTAINER_NAME=\"app-web-999\" -e KAMAL_VERSION=\"999\" --env-file .kamal/apps/app/env/roles/web.env --log-opt max-size=\"10m\" --label service=\"app\" --label role=\"web\" --label destination dhh/app:999",
+      new_command.run.join(" ")
+  end
+
   test "start" do
     assert_equal \
       "docker start app-web-999",
