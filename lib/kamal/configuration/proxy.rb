@@ -3,6 +3,7 @@ class Kamal::Configuration::Proxy
 
   DEFAULT_LOG_REQUEST_HEADERS = [ "Cache-Control", "Last-Modified", "User-Agent" ]
   CONTAINER_NAME = "kamal-proxy"
+  NETWORK = "kamal"
 
   delegate :argumentize, :optionize, to: Kamal::Utils
 
@@ -51,6 +52,10 @@ class Kamal::Configuration::Proxy
     optionize ({ target: "#{target}:#{app_port}" }).merge(deploy_options), with: "="
   end
 
+  def network_args
+    argumentize "--network", network
+  end
+
   def merge(other)
     self.class.new config: config, proxy_config: proxy_config.deep_merge(other.proxy_config)
   end
@@ -58,5 +63,9 @@ class Kamal::Configuration::Proxy
   private
     def seconds_duration(value)
       value ? "#{value}s" : nil
+    end
+
+    def network
+      proxy_config["network"] || NETWORK
     end
 end
