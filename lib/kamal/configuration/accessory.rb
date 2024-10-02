@@ -1,7 +1,7 @@
 class Kamal::Configuration::Accessory
   include Kamal::Configuration::Validation
 
-  NETWORK = "kamal"
+  DEFAULT_NETWORK = "kamal"
 
   delegate :argumentize, :optionize, to: Kamal::Utils
 
@@ -181,6 +181,6 @@ class Kamal::Configuration::Accessory
     end
 
     def network
-      accessory_config["network"] || NETWORK
+      accessory_config["network"] || DEFAULT_NETWORK
     end
 end
