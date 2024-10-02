@@ -61,3 +61,10 @@ ssh:
   # An array of strings, with each element of the array being
   # a raw private key in PEM format.
   key_data: [ "-----BEGIN OPENSSH PRIVATE KEY-----" ]
+
+  # Config
+  #
+  # Set to true to load the default OpenSSH config files (~/.ssh/config,
+  # /etc/ssh_config), to false ignore config files, or to a file path
+  # (or array of paths) to load specific configuration. Defaults to true.
+  config: true
