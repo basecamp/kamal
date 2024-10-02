@@ -69,6 +69,24 @@ class CommandsBuilderTest < ActiveSupport::TestCase
       builder.push.join(" ")
   end
 
+  test "pack build args passed as env" do
+    builder = new_builder_command(image: "dhh/app", builder: { "args" => { "a" => 1, "b" => 2 }, "arch" => "amd64", "pack" => { "builder" => "heroku/builder:24", "buildpacks" => [ "heroku/ruby", "heroku/procfile" ] } })
+
+    assert_equal \
+      "pack build dhh/app --platform linux/amd64 --builder heroku/builder:24 --buildpack heroku/ruby --buildpack heroku/procfile --buildpack paketo-buildpacks/image-labels -t dhh/app:123 -t dhh/app:latest --env BP_IMAGE_LABELS=service=app --env a=\"1\" --env b=\"2\" --path . && docker push dhh/app:123 && docker push dhh/app:latest",
+    builder.push.join(" ")
+  end
+
+  test "pack build secrets as env" do
+    with_test_secrets("secrets" => "token_a=foo\ntoken_b=bar") do
+      builder = new_builder_command(image: "dhh/app", builder: { "secrets" => [ "token_a", "token_b" ], "arch" => "amd64", "pack" => { "builder" => "heroku/builder:24", "buildpacks" => [ "heroku/ruby", "heroku/procfile" ] } })
+
+      assert_equal \
+        "pack build dhh/app --platform linux/amd64 --builder heroku/builder:24 --buildpack heroku/ruby --buildpack heroku/procfile --buildpack paketo-buildpacks/image-labels -t dhh/app:123 -t dhh/app:latest --env BP_IMAGE_LABELS=service=app --env token_a=\"foo\" --env token_b=\"bar\" --path . && docker push dhh/app:123 && docker push dhh/app:latest",
+      builder.push.join(" ")
+    end
+  end
+
   test "build args" do
     builder = new_builder_command(builder: { "args" => { "a" => 1, "b" => 2 } })
     assert_equal \
