@@ -460,6 +460,7 @@ class CliMainTest < CliTestCase
 
   test "run an alias for a console" do
     run_command("console", config_file: "deploy_with_aliases").tap do |output|
+      assert_no_match "App Host: 1.1.1.4", output
       assert_match "docker exec app-console-999 bin/console on 1.1.1.5", output
       assert_match "App Host: 1.1.1.5", output
     end
@@ -483,6 +484,33 @@ class CliMainTest < CliTestCase
     run_command("rails", "db:migrate:status", config_file: "deploy_with_aliases").tap do |output|
       assert_match "docker exec app-console-999 rails db:migrate:status on 1.1.1.5", output
       assert_match "App Host: 1.1.1.5", output
+    end
+  end
+
+  test "switch config file with an alias" do
+    with_config_files do
+      with_argv([ "other_config" ]) do
+        stdouted { Kamal::Cli::Main.start }.tap do |output|
+          assert_match ":service_with_version: app2-999", output
+        end
+      end
+    end
+  end
+
+  test "switch destination with an alias" do
+    with_config_files do
+      with_argv([ "other_destination_config" ]) do
+        stdouted { Kamal::Cli::Main.start }.tap do |output|
+          assert_match ":service_with_version: app3-999", output
+        end
+      end
+    end
+  end
+
+  test "run on primary via alias" do
+    run_command("primary_details", config_file: "deploy_with_aliases").tap do |output|
+      assert_match "App Host: 1.1.1.1", output
+      assert_no_match "App Host: 1.1.1.2", output
     end
   end
 
@@ -525,6 +553,20 @@ class CliMainTest < CliTestCase
       Dir.mktmpdir do |tmpdir|
         Dir.chdir(tmpdir) do
           `git init`
+          yield
+        end
+      end
+    end
+
+    def with_config_files
+      Dir.mktmpdir do |tmpdir|
+        config_dir = File.join(tmpdir, "config")
+        FileUtils.mkdir_p(config_dir)
+        FileUtils.cp "test/fixtures/deploy.yml", config_dir
+        FileUtils.cp "test/fixtures/deploy2.yml", config_dir
+        FileUtils.cp "test/fixtures/deploy.elsewhere.yml", config_dir
+
+        Dir.chdir(tmpdir) do
           yield
         end
       end
