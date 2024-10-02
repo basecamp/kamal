@@ -6,7 +6,7 @@ on:
       tagInput:
         description: 'Tag'
         required: true
-    
+
   release:
     types: [created]
     tags:
@@ -51,5 +51,4 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            ghcr.io/basecamp/kamal:latest
             ghcr.io/basecamp/kamal:${{ steps.version-tag.outputs.value }}
