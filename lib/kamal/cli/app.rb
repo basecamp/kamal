@@ -203,7 +203,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
       run_locally do
         info "Following logs on #{KAMAL.primary_host}..."
 
-        KAMAL.specific_roles ||= [ "web" ]
+        KAMAL.specific_roles ||= [ KAMAL.primary_role.name ]
         role = KAMAL.roles_on(KAMAL.primary_host).first
 
         app = KAMAL.app(role: role, host: host)
