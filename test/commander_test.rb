@@ -154,7 +154,7 @@ class CommanderTest < ActiveSupport::TestCase
     configure_with(:deploy_with_single_accessory)
     assert_equal [ "1.1.1.5" ], @kamal.accessory_hosts
 
-    configure_with(:deploy_with_accessories)
+    configure_with(:deploy_with_accessories_on_independent_server)
     assert_equal [ "1.1.1.5", "1.1.1.1", "1.1.1.2" ], @kamal.accessory_hosts
   end
 
@@ -163,7 +163,7 @@ class CommanderTest < ActiveSupport::TestCase
     @kamal.specific_roles = [ "web" ]
     assert_equal [], @kamal.accessory_hosts
 
-    configure_with(:deploy_with_accessories)
+    configure_with(:deploy_with_accessories_on_independent_server)
     @kamal.specific_roles = [ "web" ]
     assert_equal [ "1.1.1.1", "1.1.1.2" ], @kamal.accessory_hosts
 
