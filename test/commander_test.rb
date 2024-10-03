@@ -161,14 +161,14 @@ class CommanderTest < ActiveSupport::TestCase
   test "accessory hosts with role filtering" do
     configure_with(:deploy_with_single_accessory)
     @kamal.specific_roles = [ "web" ]
-    assert_equal [ ], @kamal.accessory_hosts
+    assert_equal [], @kamal.accessory_hosts
 
     configure_with(:deploy_with_accessories)
     @kamal.specific_roles = [ "web" ]
     assert_equal [ "1.1.1.1", "1.1.1.2" ], @kamal.accessory_hosts
 
     @kamal.specific_roles = [ "workers" ]
-    assert_equal [ ], @kamal.accessory_hosts
+    assert_equal [], @kamal.accessory_hosts
   end
 
   private
