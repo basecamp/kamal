@@ -12,6 +12,8 @@ module Kamal::Utils
         attr = "#{key}=#{escape_shell_value(value)}"
         attr = self.sensitive(attr, redaction: "#{key}=[REDACTED]") if sensitive
         [ argument, attr ]
+      elsif value == false
+        [ argument, "#{key}=false" ]
       else
         [ argument, key ]
       end
