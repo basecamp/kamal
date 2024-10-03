@@ -5,10 +5,13 @@ class Kamal::Secrets
 
   Kamal::Secrets::Dotenv::InlineCommandSubstitution.install!
 
+  attr_reader :secrets
   def initialize(destination: nil)
     @secrets_files = \
       [ ".kamal/secrets-common", ".kamal/secrets#{(".#{destination}" if destination)}" ].select { |f| File.exist?(f) }
     @mutex = Mutex.new
+    ::Dotenv.load
+    @secrets = set_secrets
   end
 
   def [](key)
@@ -29,7 +32,7 @@ class Kamal::Secrets
   end
 
   private
-    def secrets
+    def set_secrets
       @secrets ||= secrets_files.inject({}) do |secrets, secrets_file|
         secrets.merge!(::Dotenv.parse(secrets_file))
       end

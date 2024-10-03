@@ -31,4 +31,25 @@ class SecretsTest < ActiveSupport::TestCase
       assert_equal "JKL", Kamal::Secrets.new(destination: "nodest")["SECRET2"]
     end
   end
+
+  test "dotenv load" do
+    create_and_remove_secret_files do
+      secrets = Kamal::Secrets.new
+      assert_equal @value, secrets[@key]
+    end
+  end
+
+  private
+
+    def create_and_remove_secret_files
+      @key = "ABC"
+      @value = "SECRET"
+      File.write(".env", "#{ @key }=#{ @value }")
+      Dir.mkdir(".kamal") if !Dir.exist?(".kamal")
+      File.write(".kamal/secrets", "#{ @key }=$#{ @key }")
+      yield
+      File.delete(".env")
+      File.delete(".kamal/secrets")
+      Dir.delete(".kamal")
+    end
 end
