@@ -27,12 +27,3 @@ accessories:
       - test/fixtures/files/my.cnf:/etc/mysql/my.cnf
     directories:
       - data:/var/lib/mysql
-  redis:
-    image: redis:latest
-    roles:
-      - web
-    port: 6379
-    directories:
-      - data:/data
-
-readiness_delay: 0
