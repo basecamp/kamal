@@ -39,6 +39,18 @@ class CommandsProxyTest < ActiveSupport::TestCase
       new_command.stop.join(" ")
   end
 
+  test "proxy pause_app" do
+    assert_equal \
+      "docker exec kamal-proxy kamal-proxy pause app-web",
+      new_command.pause_app.join(" ")
+  end
+
+  test "proxy resume_app" do
+    assert_equal \
+      "docker exec kamal-proxy kamal-proxy resume app-web",
+      new_command.resume_app.join(" ")
+  end
+
   test "proxy info" do
     assert_equal \
       "docker ps --filter name=^kamal-proxy$",

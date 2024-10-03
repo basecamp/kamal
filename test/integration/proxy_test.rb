@@ -5,7 +5,7 @@ class ProxyTest < IntegrationTest
     @app = "app_with_roles"
   end
 
-  test "boot, reboot, stop, start, restart, logs, remove" do
+  test "boot, reboot, stop, start, pause_app, resume_app, restart, logs, remove" do
     kamal :proxy, :boot
     assert_proxy_running
 

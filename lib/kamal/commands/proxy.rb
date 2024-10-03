@@ -16,8 +16,16 @@ class Kamal::Commands::Proxy < Kamal::Commands::Base
     docker :container, :start, container_name
   end
 
-  def stop(name: container_name)
-    docker :container, :stop, name
+  def stop
+    docker :container, :stop, container_name
+  end
+
+  def pause_app
+    docker :exec, container_name, "kamal-proxy", "pause", "#{config.service}-web"
+  end
+
+  def resume_app
+    docker :exec, container_name, "kamal-proxy", "resume", "#{config.service}-web"
   end
 
   def start_or_run

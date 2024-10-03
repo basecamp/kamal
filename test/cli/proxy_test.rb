@@ -96,6 +96,18 @@ class CliProxyTest < CliTestCase
     end
   end
 
+  test "pause_app" do
+    run_command("pause_app").tap do |output|
+      assert_match "docker exec kamal-proxy kamal-proxy pause app-web", output
+    end
+  end
+
+  test "resume_app" do
+    run_command("resume_app").tap do |output|
+      assert_match "docker exec kamal-proxy kamal-proxy resume app-web", output
+    end
+  end
+
   test "restart" do
     Kamal::Cli::Proxy.any_instance.expects(:stop)
     Kamal::Cli::Proxy.any_instance.expects(:start)

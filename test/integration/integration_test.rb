@@ -167,6 +167,22 @@ class IntegrationTest < ActiveSupport::TestCase
       assert_container_running(host: "vm1", name: "kamal-proxy")
     end
 
+    def proxy_app_paused?(host:, name:)
+      docker_compose("exec #{host} docker exec #{name} kamal-proxy list | grep paused", capture: true).present?
+    end
+
+    def assert_proxy_app_paused
+      proxy_app_paused?(host: "vm1", name: "kamal-proxy")
+    end
+
+    def proxy_app_running?(host:, name:)
+      docker_compose("exec #{host} docker exec #{name} kamal-proxy list | grep running", capture: true).present?
+    end
+
+    def assert_proxy_app_running
+      proxy_app_running?(host: "vm1", name: "kamal-proxy")
+    end
+
     def assert_proxy_not_running
       assert_container_not_running(host: "vm1", name: "kamal-proxy")
     end

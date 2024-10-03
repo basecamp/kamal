@@ -152,6 +152,26 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
     end
   end
 
+  desc "pause_app", "Pause existing app on servers"
+  def pause_app
+    with_lock do
+      on(KAMAL.proxy_hosts) do |host|
+        execute *KAMAL.auditor.record("Paused app on proxy"), verbosity: :debug
+        execute *KAMAL.proxy.pause_app, raise_on_non_zero_exit: false
+      end
+    end
+  end
+
+  desc "resume_app", "Resume existing app on servers"
+  def resume_app
+    with_lock do
+      on(KAMAL.proxy_hosts) do |host|
+        execute *KAMAL.auditor.record("Resumed app on proxy"), verbosity: :debug
+        execute *KAMAL.proxy.resume_app, raise_on_non_zero_exit: false
+      end
+    end
+  end
+
   desc "restart", "Restart existing proxy container on servers"
   def restart
     with_lock do
