@@ -14,8 +14,9 @@ servers:
   #   cmd: bin/jobs
 
 # Enable SSL auto certification via Let's Encrypt (and allow for multiple apps on one server).
-# Set ssl: false if using something like Cloudflare to terminate SSL (but keep host!).
-proxy:
+# If using something like Cloudflare, it is recommended to set encryption mode 
+# in Cloudflare's SSL/TLS setting to "Full" to enable end-to-end encryption. 
+proxy: 
   ssl: true
   host: app.example.com
   # kamal-proxy connects to your container over port 80, use `app_port` to specify a different port.
