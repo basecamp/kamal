@@ -21,11 +21,11 @@ class Kamal::Commands::Proxy < Kamal::Commands::Base
   end
 
   def pause_app
-    docker :exec, container_name, "kamal-proxy", "pause", "#{config.service}-web"
+    docker :exec, container_name, "kamal-proxy", "pause", "#{config.service}-#{config.primary_role_name}"
   end
 
   def resume_app
-    docker :exec, container_name, "kamal-proxy", "resume", "#{config.service}-web"
+    docker :exec, container_name, "kamal-proxy", "resume", "#{config.service}-#{config.primary_role_name}"
   end
 
   def start_or_run
