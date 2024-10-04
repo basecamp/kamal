@@ -135,7 +135,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
     puts "No documentation found for #{section}"
   end
 
-  desc "init", "Create config stub in config/deploy.yml and env stub in .env"
+  desc "init", "Create config stub in config/deploy.yml and secrets stub in .kamal"
   option :bundle, type: :boolean, default: false, desc: "Add Kamal to the Gemfile and create a bin/kamal binstub"
   def init
     require "fileutils"
