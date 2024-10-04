@@ -150,6 +150,27 @@ class CommanderTest < ActiveSupport::TestCase
     assert_equal [ "1.1.1.2" ], @kamal.proxy_hosts
   end
 
+  test "accessory hosts without filtering" do
+    configure_with(:deploy_with_single_accessory)
+    assert_equal [ "1.1.1.5" ], @kamal.accessory_hosts
+
+    configure_with(:deploy_with_accessories_on_independent_server)
+    assert_equal [ "1.1.1.5", "1.1.1.1", "1.1.1.2" ], @kamal.accessory_hosts
+  end
+
+  test "accessory hosts with role filtering" do
+    configure_with(:deploy_with_single_accessory)
+    @kamal.specific_roles = [ "web" ]
+    assert_equal [], @kamal.accessory_hosts
+
+    configure_with(:deploy_with_accessories_on_independent_server)
+    @kamal.specific_roles = [ "web" ]
+    assert_equal [ "1.1.1.1", "1.1.1.2" ], @kamal.accessory_hosts
+
+    @kamal.specific_roles = [ "workers" ]
+    assert_equal [], @kamal.accessory_hosts
+  end
+
   private
     def configure_with(variant)
       @kamal = Kamal::Commander.new.tap do |kamal|
