@@ -37,7 +37,6 @@ builder:
   arch: amd64
 
 # Inject ENV variables into containers (secrets come from .kamal/secrets).
-#
 # env:
 #   clear:
 #     DB_HOST: 192.168.0.2
@@ -46,34 +45,28 @@ builder:
 
 # Aliases are triggered with "bin/kamal <alias>". You can overwrite arguments on invocation:
 # "bin/kamal logs -r job" will tail logs from the first server in the job section.
-#
 # aliases:
 #   shell: app exec --interactive --reuse "bash"
 
 # Use a different ssh user than root
-#
 # ssh:
 #   user: app
 
 # Use a persistent storage volume.
-#
 # volumes:
 #   - "app_storage:/app/storage"
 
 # Bridge fingerprinted assets, like JS and CSS, between versions to avoid
 # hitting 404 on in-flight requests. Combines all files from new and old
 # version inside the asset_path.
-#
 # asset_path: /app/public/assets
 
 # Configure rolling deploys by setting a wait time between batches of restarts.
-#
 # boot:
 #   limit: 10 # Can also specify as a percentage of total hosts, such as "25%"
 #   wait: 2
 
 # Use accessory services (secrets come from .kamal/secrets).
-#
 # accessories:
 #   db:
 #     image: mysql:8.0
