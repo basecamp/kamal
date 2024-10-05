@@ -25,22 +25,28 @@ class Kamal::Secrets::Adapters::Bitwarden < Kamal::Secrets::Adapters::Base
       {}.tap do |results|
         items_fields(secrets).each do |item, fields|
           item_json = run_command("get item #{item.shellescape}", session: session, raw: true)
-          raise RuntimeError, "Could not read #{secret} from Bitwarden" unless $?.success?
+          raise RuntimeError, "Could not read #{item} from Bitwarden" unless $?.success?
           item_json = JSON.parse(item_json)
-
           if fields.any?
-            fields.each do |field|
-              item_field = item_json["fields"].find { |f| f["name"] == field }
-              raise RuntimeError, "Could not find field #{field} in item #{item} in Bitwarden" unless item_field
-              value = item_field["value"]
-              results["#{item}/#{field}"] = value
-            end
+            results.merge! fetch_secrets_from_fields(fields, item, item_json)
           elsif item_json.dig("login", "password")
             results[item] = item_json.dig("login", "password")
+          elsif item_json["fields"]&.any?
+            fields = item_json["fields"].pluck("name")
+            results.merge! fetch_secrets_from_fields(fields, item, item_json)
           else
             raise RuntimeError, "Item #{item} is not a login type item and no fields were specified"
           end
         end
+      end
+    end
+
+    def fetch_secrets_from_fields(fields, item, item_json)
+      fields.to_h do |field|
+        item_field = item_json["fields"].find { |f| f["name"] == field }
+        raise RuntimeError, "Could not find field #{field} in item #{item} in Bitwarden" unless item_field
+        value = item_field["value"]
+        [ "#{item}/#{field}", value ]
       end
     end
 
