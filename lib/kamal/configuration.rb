@@ -14,7 +14,7 @@ class Kamal::Configuration
 
   include Validation
 
-  PROXY_MINIMUM_VERSION = "v0.7.0"
+  PROXY_MINIMUM_VERSION = "v0.8.0"
   PROXY_HTTP_PORT = 80
   PROXY_HTTPS_PORT = 443
 
