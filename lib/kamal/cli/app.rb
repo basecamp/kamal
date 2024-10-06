@@ -255,6 +255,24 @@ class Kamal::Cli::App < Kamal::Cli::Base
     end
   end
 
+  desc "open", "open app in a web browser"
+  def open
+    host = KAMAL.primary_role.proxy.hosts.first || KAMAL.primary_host
+    protocol = KAMAL.primary_role.ssl? ? "https" : "http"
+    cmd =
+      case RbConfig::CONFIG["host_os"]
+      when /mswin|mingw|cygwin/ then "start"
+      when /darwin/ then "open"
+      when /linux|bsd/ then "xdg-open"
+      end
+
+    if cmd
+      system(cmd, "#{protocol}://#{host}")
+    else
+      say "Could not detect OS browser"
+    end
+  end
+
   desc "remove", "Remove app containers and images from servers"
   def remove
     with_lock do
