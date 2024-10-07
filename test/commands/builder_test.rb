@@ -169,10 +169,6 @@ class CommandsBuilderTest < ActiveSupport::TestCase
       Kamal::Commands::Builder.new(Kamal::Configuration.new(@config.deep_merge(additional_config), version: "123"))
     end
 
-    def build_directory
-      "#{Dir.tmpdir}/kamal-clones/app/kamal/"
-    end
-
     def local_arch
       Kamal::Utils.docker_arch
     end
