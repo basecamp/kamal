@@ -25,12 +25,14 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
   option :publish, type: :boolean, default: true, desc: "Publish the proxy ports on the host"
   option :http_port, type: :numeric, default: Kamal::Configuration::PROXY_HTTP_PORT, desc: "HTTP port to publish on the host"
   option :https_port, type: :numeric, default: Kamal::Configuration::PROXY_HTTPS_PORT, desc: "HTTPS port to publish on the host"
+  option :log_max_size, type: :string, default: Kamal::Configuration::PROXY_LOG_MAX_SIZE, desc: "Max size of proxy logs"
   option :docker_options, type: :array, default: [], desc: "Docker options to pass to the proxy container", banner: "option=value option2=value2"
   def boot_config(subcommand)
     case subcommand
     when "set"
       boot_options = [
         *(KAMAL.config.proxy_publish_args(options[:http_port], options[:https_port]) if options[:publish]),
+        *(KAMAL.config.proxy_logging_args(options[:log_max_size])),
         *options[:docker_options].map { |option| "--#{option}" }
       ]
 
