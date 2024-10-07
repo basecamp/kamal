@@ -149,6 +149,21 @@ class CommandsBuilderTest < ActiveSupport::TestCase
     assert_equal "docker info --format '{{index .RegistryConfig.Mirrors 0}}'", command.first_mirror.join(" ")
   end
 
+  test "clone path with spaces" do
+    command = new_builder_command
+    Kamal::Git.stubs(:root).returns("/absolute/path with spaces")
+    clone_command = command.clone.join(" ")
+    clone_reset_commands = command.clone_reset_steps.map { |a| a.join(" ") }
+
+    assert_match(%r{path\\ with\\ space}, clone_command)
+    refute_match(%r{path with spaces}, clone_command)
+
+    clone_reset_commands.each do |command|
+      assert_match(%r{path\\ with\\ space}, command)
+      refute_match(%r{path with spaces}, command)
+    end
+  end
+
   private
     def new_builder_command(additional_config = {})
       Kamal::Commands::Builder.new(Kamal::Configuration.new(@config.deep_merge(additional_config), version: "123"))
