@@ -156,11 +156,11 @@ class CommandsBuilderTest < ActiveSupport::TestCase
     clone_reset_commands = command.clone_reset_steps.map { |a| a.join(" ") }
 
     assert_match(%r{path\\ with\\ space}, clone_command)
-    refute_match(%r{path with spaces}, clone_command)
+    assert_no_match(%r{path with spaces}, clone_command)
 
     clone_reset_commands.each do |command|
       assert_match(%r{path\\ with\\ space}, command)
-      refute_match(%r{path with spaces}, command)
+      assert_no_match(%r{path with spaces}, command)
     end
   end
 
