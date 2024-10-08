@@ -254,7 +254,7 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
 
       error \
         "No accessory by the name of '#{name}'" +
-        (options ? " (options: #{options.to_sentence})" : "")
+        (options ? " (options: #{options.join(', ')})" : "")
     end
 
     def accessory_hosts(accessory)
