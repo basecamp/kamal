@@ -11,13 +11,13 @@ module Kamal::Commands
     end
 
     def run_over_ssh(*command, host:)
-      "ssh".tap do |cmd|
+      "ssh".then do |cmd|
         if config.ssh.proxy && config.ssh.proxy.is_a?(Net::SSH::Proxy::Jump)
-          cmd << " -J #{config.ssh.proxy.jump_proxies}"
+          cmd = "#{cmd} -J #{config.ssh.proxy.jump_proxies}"
         elsif config.ssh.proxy && config.ssh.proxy.is_a?(Net::SSH::Proxy::Command)
-          cmd << " -o ProxyCommand='#{config.ssh.proxy.command_line_template}'"
+          cmd = "#{cmd} -o ProxyCommand='#{config.ssh.proxy.command_line_template}'"
         end
-        cmd << " -t #{config.ssh.user}@#{host} -p #{config.ssh.port} '#{command.join(" ").gsub("'", "'\\\\''")}'"
+        "#{cmd} -t #{config.ssh.user}@#{host} -p #{config.ssh.port} '#{command.join(" ").gsub("'", "'\\\\''")}'"
       end
     end
 
