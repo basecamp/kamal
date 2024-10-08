@@ -1,3 +1,5 @@
+require "active_support/core_ext/array/conversions"
+
 class Kamal::Cli::Accessory < Kamal::Cli::Base
   desc "boot [NAME]", "Boot new accessory service on host (use NAME=all to boot all accessories)"
   def boot(name, prepare: true)
