@@ -94,7 +94,7 @@ class CliAccessoryTest < CliTestCase
   end
 
   test "details with non-existent accessory" do
-    assert_equal "No accessory by the name of 'hello' (options: mysql and redis)", stderred { run_command("details", "hello") }
+    assert_equal "No accessory by the name of 'hello' (options: mysql, redis)", stderred { run_command("details", "hello") }
   end
 
   test "details with all" do
