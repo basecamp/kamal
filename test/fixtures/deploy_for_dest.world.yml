@@ -2,4 +2,4 @@ servers:
   - 1.1.1.1
   - 1.1.1.2
 env:
-  REDIS_URL: redis://x/y
+  VALKEY_URL: valkey://x/y

@@ -5,7 +5,7 @@ class ConfigurationSshkitTest < ActiveSupport::TestCase
     @deploy = {
       service: "app", image: "dhh/app",
       registry: { "username" => "dhh", "password" => "secret" },
-      env: { "REDIS_URL" => "redis://x/y" },
+      env: { "VALKEY_URL" => "valkey://x/y" },
       builder: { "arch" => "amd64" },
       servers: [ "1.1.1.1", "1.1.1.2" ],
       volumes: [ "/local/path:/container/path" ]

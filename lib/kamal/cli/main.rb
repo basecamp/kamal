@@ -225,7 +225,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
     puts Kamal::VERSION
   end
 
-  desc "accessory", "Manage accessories (db/redis/search)"
+  desc "accessory", "Manage accessories (db/valkey/search)"
   subcommand "accessory", Kamal::Cli::Accessory
 
   desc "app", "Manage application"

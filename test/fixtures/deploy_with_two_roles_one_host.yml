@@ -8,7 +8,7 @@ servers:
     hosts:
       - 1.1.1.1
 env:
-  REDIS_URL: redis://x/y
+  VALKEY_URL: valkey://x/y
 registry:
   server: registry.digitalocean.com
   username: user

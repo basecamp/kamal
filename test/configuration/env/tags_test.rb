@@ -7,7 +7,7 @@ class ConfigurationEnvTagsTest < ActiveSupport::TestCase
       servers: [ { "1.1.1.1" => "odd" }, { "1.1.1.2" => "even" }, { "1.1.1.3" => [ "odd", "three" ] } ],
       builder: { "arch" => "amd64" },
       env: {
-        "clear" => { "REDIS_URL" => "redis://x/y", "THREE" => "false" },
+        "clear" => { "VALKEY_URL" => "valkey://x/y", "THREE" => "false" },
         "tags" => {
           "odd" => { "TYPE" => "odd" },
           "even" => { "TYPE" => "even" },
@@ -25,7 +25,7 @@ class ConfigurationEnvTagsTest < ActiveSupport::TestCase
           "hosts" => [ { "1.1.1.3" => [ "odd", "oddjob" ] }, "1.1.1.4" ],
           "cmd" => "bin/jobs",
           "env" => {
-            "REDIS_URL" => "redis://a/b",
+            "VALKEY_URL" => "valkey://a/b",
             "WEB_CONCURRENCY" => 4
           }
         }

@@ -6,7 +6,7 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
       service: "app", image: "dhh/app", registry: { "username" => "dhh", "password" => "secret" },
       servers: [ "1.1.1.1", "1.1.1.2" ],
       builder: { "arch" => "amd64" },
-      env: { "REDIS_URL" => "redis://x/y" }
+      env: { "VALKEY_URL" => "valkey://x/y" }
     }
 
     @deploy_with_roles = @deploy.dup.merge({
@@ -16,7 +16,7 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
           "hosts" => [ "1.1.1.3", "1.1.1.4" ],
           "cmd" => "bin/jobs",
           "env" => {
-            "REDIS_URL" => "redis://a/b",
+            "VALKEY_URL" => "valkey://a/b",
             "WEB_CONCURRENCY" => "4"
           }
         }
@@ -62,10 +62,10 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
   end
 
   test "env overwritten by role" do
-    assert_equal "redis://a/b", config_with_roles.role(:workers).env("1.1.1.3").clear["REDIS_URL"]
+    assert_equal "valkey://a/b", config_with_roles.role(:workers).env("1.1.1.3").clear["VALKEY_URL"]
 
     assert_equal \
-      [ "--env", "REDIS_URL=\"redis://a/b\"", "--env", "WEB_CONCURRENCY=\"4\"", "--env-file", ".kamal/apps/app/env/roles/workers.env" ],
+      [ "--env", "VALKEY_URL=\"valkey://a/b\"", "--env", "WEB_CONCURRENCY=\"4\"", "--env-file", ".kamal/apps/app/env/roles/workers.env" ],
       config_with_roles.role(:workers).env_args("1.1.1.3").map(&:to_s)
 
     assert_equal \
@@ -84,7 +84,7 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
 
   test "env args" do
     assert_equal \
-      [ "--env", "REDIS_URL=\"redis://a/b\"", "--env", "WEB_CONCURRENCY=\"4\"", "--env-file", ".kamal/apps/app/env/roles/workers.env" ],
+      [ "--env", "VALKEY_URL=\"valkey://a/b\"", "--env", "WEB_CONCURRENCY=\"4\"", "--env-file", ".kamal/apps/app/env/roles/workers.env" ],
       config_with_roles.role(:workers).env_args("1.1.1.3").map(&:to_s)
 
     assert_equal \
@@ -93,19 +93,19 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
   end
 
   test "env secret overwritten by role" do
-    with_test_secrets("secrets" => "REDIS_PASSWORD=secret456\nDB_PASSWORD=secret&\"123") do
+    with_test_secrets("secrets" => "VALKEY_PASSWORD=secret456\nDB_PASSWORD=secret&\"123") do
       @deploy_with_roles[:env] = {
         "clear" => {
-          "REDIS_URL" => "redis://a/b"
+          "VALKEY_URL" => "valkey://a/b"
         },
         "secret" => [
-          "REDIS_PASSWORD"
+          "VALKEY_PASSWORD"
         ]
       }
 
       @deploy_with_roles[:servers]["workers"]["env"] = {
         "clear" => {
-          "REDIS_URL" => "redis://a/b",
+          "VALKEY_URL" => "valkey://a/b",
           "WEB_CONCURRENCY" => "4"
         },
         "secret" => [
@@ -114,11 +114,11 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
       }
 
       assert_equal \
-        [ "--env", "REDIS_URL=\"redis://a/b\"", "--env", "WEB_CONCURRENCY=\"4\"", "--env-file", ".kamal/apps/app/env/roles/workers.env" ],
+        [ "--env", "VALKEY_URL=\"valkey://a/b\"", "--env", "WEB_CONCURRENCY=\"4\"", "--env-file", ".kamal/apps/app/env/roles/workers.env" ],
         config_with_roles.role(:workers).env_args("1.1.1.3").map(&:to_s)
 
       assert_equal \
-        "REDIS_PASSWORD=secret456\nDB_PASSWORD=secret&\"123\n",
+        "VALKEY_PASSWORD=secret456\nDB_PASSWORD=secret&\"123\n",
         config_with_roles.role(:workers).secrets_io("1.1.1.3").read
     end
   end
@@ -127,7 +127,7 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
     with_test_secrets("secrets" => "DB_PASSWORD=secret123") do
       @deploy_with_roles[:servers]["workers"]["env"] = {
         "clear" => {
-          "REDIS_URL" => "redis://a/b",
+          "VALKEY_URL" => "valkey://a/b",
           "WEB_CONCURRENCY" => "4"
         },
         "secret" => [
@@ -136,7 +136,7 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
       }
 
       assert_equal \
-        [ "--env", "REDIS_URL=\"redis://a/b\"", "--env", "WEB_CONCURRENCY=\"4\"", "--env-file", ".kamal/apps/app/env/roles/workers.env" ],
+        [ "--env", "VALKEY_URL=\"valkey://a/b\"", "--env", "WEB_CONCURRENCY=\"4\"", "--env-file", ".kamal/apps/app/env/roles/workers.env" ],
         config_with_roles.role(:workers).env_args("1.1.1.3").map(&:to_s)
 
       assert_equal \
@@ -146,49 +146,49 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
   end
 
   test "env secrets only at top level" do
-    with_test_secrets("secrets" => "REDIS_PASSWORD=secret456") do
+    with_test_secrets("secrets" => "VALKEY_PASSWORD=secret456") do
       @deploy_with_roles[:env] = {
         "clear" => {
-          "REDIS_URL" => "redis://a/b"
+          "VALKEY_URL" => "valkey://a/b"
         },
         "secret" => [
-          "REDIS_PASSWORD"
+          "VALKEY_PASSWORD"
         ]
       }
 
       assert_equal \
-        [ "--env", "REDIS_URL=\"redis://a/b\"", "--env", "WEB_CONCURRENCY=\"4\"", "--env-file", ".kamal/apps/app/env/roles/workers.env" ],
+        [ "--env", "VALKEY_URL=\"valkey://a/b\"", "--env", "WEB_CONCURRENCY=\"4\"", "--env-file", ".kamal/apps/app/env/roles/workers.env" ],
         config_with_roles.role(:workers).env_args("1.1.1.3").map(&:to_s)
 
       assert_equal \
-        "REDIS_PASSWORD=secret456\n",
+        "VALKEY_PASSWORD=secret456\n",
         config_with_roles.role(:workers).secrets_io("1.1.1.3").read
     end
   end
 
   test "env overwritten by role with secrets" do
-    with_test_secrets("secrets" => "REDIS_PASSWORD=secret456") do
+    with_test_secrets("secrets" => "VALKEY_PASSWORD=secret456") do
       @deploy_with_roles[:env] = {
         "clear" => {
-          "REDIS_URL" => "redis://a/b"
+          "VALKEY_URL" => "valkey://a/b"
         },
         "secret" => [
-          "REDIS_PASSWORD"
+          "VALKEY_PASSWORD"
         ]
       }
 
       @deploy_with_roles[:servers]["workers"]["env"] = {
         "clear" => {
-          "REDIS_URL" => "redis://c/d"
+          "VALKEY_URL" => "valkey://c/d"
         }
       }
 
       assert_equal \
-        [ "--env", "REDIS_URL=\"redis://c/d\"", "--env-file", ".kamal/apps/app/env/roles/workers.env" ],
+        [ "--env", "VALKEY_URL=\"valkey://c/d\"", "--env-file", ".kamal/apps/app/env/roles/workers.env" ],
         config_with_roles.role(:workers).env_args("1.1.1.3").map(&:to_s)
 
       assert_equal \
-        "REDIS_PASSWORD=secret456\n",
+        "VALKEY_PASSWORD=secret456\n",
         config_with_roles.role(:workers).secrets_io("1.1.1.3").read
     end
   end
