@@ -15,7 +15,7 @@ class CommandsProxyTest < ActiveSupport::TestCase
 
   test "run" do
     assert_equal \
-      "docker run --name kamal-proxy --network kamal --detach --restart unless-stopped --volume kamal-proxy-config:/home/kamal-proxy/.config/kamal-proxy $(cat .kamal/proxy/options || echo \"--publish 80:80 --publish 443:443\") basecamp/kamal-proxy:#{Kamal::Configuration::PROXY_MINIMUM_VERSION}",
+      "docker run --name kamal-proxy --network kamal --detach --restart unless-stopped --volume kamal-proxy-config:/home/kamal-proxy/.config/kamal-proxy $(cat .kamal/proxy/options || echo \"--publish 80:80 --publish 443:443 --log-opt max-size=10m\") basecamp/kamal-proxy:#{Kamal::Configuration::PROXY_MINIMUM_VERSION}",
       new_command.run.join(" ")
   end
 
@@ -23,7 +23,7 @@ class CommandsProxyTest < ActiveSupport::TestCase
     @config.delete(:proxy)
 
     assert_equal \
-      "docker run --name kamal-proxy --network kamal --detach --restart unless-stopped --volume kamal-proxy-config:/home/kamal-proxy/.config/kamal-proxy $(cat .kamal/proxy/options || echo \"--publish 80:80 --publish 443:443\") basecamp/kamal-proxy:#{Kamal::Configuration::PROXY_MINIMUM_VERSION}",
+      "docker run --name kamal-proxy --network kamal --detach --restart unless-stopped --volume kamal-proxy-config:/home/kamal-proxy/.config/kamal-proxy $(cat .kamal/proxy/options || echo \"--publish 80:80 --publish 443:443 --log-opt max-size=10m\") basecamp/kamal-proxy:#{Kamal::Configuration::PROXY_MINIMUM_VERSION}",
       new_command.run.join(" ")
   end
 
@@ -113,7 +113,7 @@ class CommandsProxyTest < ActiveSupport::TestCase
 
   test "get_boot_options" do
     assert_equal \
-      "cat .kamal/proxy/options || echo \"--publish 80:80 --publish 443:443\"",
+      "cat .kamal/proxy/options || echo \"--publish 80:80 --publish 443:443 --log-opt max-size=10m\"",
       new_command.get_boot_options.join(" ")
   end
 
