@@ -20,8 +20,8 @@ module Kamal::Commands::App::Execution
       *command
   end
 
-  def execute_in_existing_container_over_ssh(*command,  env:)
-    run_over_ssh execute_in_existing_container(*command, interactive: true, env: env), host: host
+  def execute_in_existing_container_over_ssh(*command, env:)
+    run_over_ssh execute_in_existing_container(*command, interactive: true, env: env), host: host, interactive: true
   end
 
   def execute_in_new_container_over_ssh(*command, env:)
