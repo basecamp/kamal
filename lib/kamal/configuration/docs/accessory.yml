@@ -101,14 +101,19 @@ accessories:
     # Proxy
     #
     proxy:
-      # Host
+      # Hosts
       #
       # The hosts that will be used to serve the app. The proxy will only route requests
       # to this host to your app.
       #
       # If no hosts are set, then all requests will be forwarded, except for matching
       # requests for other apps deployed on that server that do have a host set.
+      #
+      # Specify one of `host` or `hosts`.
       host: foo.example.com
+      hosts:
+        - foo.example.com
+        - bar.example.com
 
       # App port
       #

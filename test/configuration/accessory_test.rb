@@ -167,6 +167,6 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
 
   test "proxy" do
     assert @config.accessory(:monitoring).running_proxy?
-    assert_equal "monitoring.example.com", @config.accessory(:monitoring).proxy.host
+    assert_equal [ "monitoring.example.com" ], @config.accessory(:monitoring).proxy.hosts
   end
 end
