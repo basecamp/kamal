@@ -18,6 +18,7 @@ class Kamal::Configuration
   PROXY_HTTP_PORT = 80
   PROXY_HTTPS_PORT = 443
   PROXY_LOG_MAX_SIZE = "10m"
+  NETWORK = "kamal"
 
   class << self
     def create_from(config_file:, destination: nil, version: nil)
@@ -193,6 +194,10 @@ class Kamal::Configuration
     logging.args
   end
 
+  def network_args
+    argumentize "--network", network
+  end
+
 
   def readiness_delay
     raw_config.readiness_delay || 7
@@ -297,6 +302,10 @@ class Kamal::Configuration
   end
 
   private
+    def network
+      raw_config["network"] || NETWORK
+    end
+
     # Will raise ArgumentError if any required config keys are missing
     def ensure_destination_if_required
       if require_destination? && destination.nil?
