@@ -87,9 +87,9 @@ module Kamal::Commands
       end
 
       def ssh_proxy_args
-        if config.ssh.proxy && config.ssh.proxy.is_a?(Net::SSH::Proxy::Jump)
-          "-J #{config.ssh.proxy.jump_proxies}"
-        elsif config.ssh.proxy && config.ssh.proxy.is_a?(Net::SSH::Proxy::Command)
+        case config.ssh.proxy
+        when Net::SSH::Proxy::Jump then "-J #{config.ssh.proxy.jump_proxies}"
+        when Net::SSH::Proxy::Command
           "-o ProxyCommand='#{config.ssh.proxy.command_line_template}'"
         end
       end
