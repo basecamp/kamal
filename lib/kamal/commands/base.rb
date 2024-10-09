@@ -10,14 +10,16 @@ module Kamal::Commands
       @config = config
     end
 
-    def run_over_ssh(*command, host:)
+    def run_over_ssh(*command, host:, interactive: false)
       "ssh".tap do |cmd|
         if config.ssh.proxy && config.ssh.proxy.is_a?(Net::SSH::Proxy::Jump)
           cmd << " -J #{config.ssh.proxy.jump_proxies}"
         elsif config.ssh.proxy && config.ssh.proxy.is_a?(Net::SSH::Proxy::Command)
           cmd << " -o ProxyCommand='#{config.ssh.proxy.command_line_template}'"
         end
-        cmd << " -t #{config.ssh.user}@#{host} -p #{config.ssh.port} '#{command.join(" ").gsub("'", "'\\\\''")}'"
+        cmd << " -tt" if interactive # Add -tt for interactive sessions
+        cmd << " #{config.ssh.user}@#{host} -p #{config.ssh.port}"
+        cmd << " '#{command.join(" ").gsub("'", "'\\\\''")}'" unless interactive
       end
     end
 
