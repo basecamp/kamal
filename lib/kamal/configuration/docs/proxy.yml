@@ -103,10 +103,3 @@ proxy:
   # By default, kamal-proxy will not forward the headers if the `ssl` option is set to `true`, and
   # will forward them if it is set to `false`.
   forward_headers: true
-
-  # Network
-  #
-  # The network the proxy container will be attached to.
-  #
-  # Defaults to kamal:
-  network: custom

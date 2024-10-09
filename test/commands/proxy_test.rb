@@ -27,14 +27,6 @@ class CommandsProxyTest < ActiveSupport::TestCase
       new_command.run.join(" ")
   end
 
-  test "run in custom network" do
-    @config[:network] = "custom"
-
-    assert_equal \
-      "docker run --name kamal-proxy --network custom --detach --restart unless-stopped --volume kamal-proxy-config:/home/kamal-proxy/.config/kamal-proxy $(cat .kamal/proxy/options || echo \"--publish 80:80 --publish 443:443\") basecamp/kamal-proxy:#{Kamal::Configuration::PROXY_MINIMUM_VERSION}",
-      new_command.run.join(" ")
-  end
-
   test "proxy start" do
     assert_equal \
       "docker container start kamal-proxy",

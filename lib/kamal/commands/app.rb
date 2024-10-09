@@ -18,7 +18,7 @@ class Kamal::Commands::App < Kamal::Commands::Base
       "--detach",
       "--restart unless-stopped",
       "--name", container_name,
-      *config.network_args,
+      "--network", "kamal",
       *([ "--hostname", hostname ] if hostname),
       "-e", "KAMAL_CONTAINER_NAME=\"#{container_name}\"",
       "-e", "KAMAL_VERSION=\"#{config.version}\"",

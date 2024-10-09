@@ -11,7 +11,7 @@ module Kamal::Commands::App::Execution
     docker :run,
       ("-it" if interactive),
       "--rm",
-      *config.network_args,
+      "--network", "kamal",
       *role&.env_args(host),
       *argumentize("--env", env),
       *config.volume_args,

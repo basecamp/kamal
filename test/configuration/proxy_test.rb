@@ -38,15 +38,6 @@ class ConfigurationProxyTest < ActiveSupport::TestCase
     assert_not config.proxy.ssl?
   end
 
-  test "network_args defaults" do
-    assert_equal [ "--network", "kamal" ], config.proxy.network_args
-  end
-
-  test "network_args with configured options" do
-    @deploy[:proxy] = { "network" => "example" }
-    assert_equal [ "--network", "example" ], config.proxy.network_args
-  end
-
   private
     def config
       Kamal::Configuration.new(@deploy)
