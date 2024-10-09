@@ -12,6 +12,8 @@ class Kamal::Configuration
   attr_reader :destination, :raw_config, :secrets
   attr_reader :accessories, :aliases, :boot, :builder, :env, :logging, :proxy, :servers, :ssh, :sshkit, :registry
 
+  delegate :container_name, to: :proxy, prefix: true
+
   include Validation
 
   PROXY_MINIMUM_VERSION = "v0.8.0"
@@ -263,10 +265,6 @@ class Kamal::Configuration
 
   def proxy_image
     "basecamp/kamal-proxy:#{PROXY_MINIMUM_VERSION}"
-  end
-
-  def proxy_container_name
-    proxy.container_name
   end
 
   def proxy_directory
