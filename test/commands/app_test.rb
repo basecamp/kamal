@@ -234,6 +234,12 @@ class CommandsAppTest < ActiveSupport::TestCase
       new_command.execute_in_new_container("bin/rails", "db:setup", env: { "foo" => "bar" }).join(" ")
   end
 
+  test "execute in new detached container" do
+    assert_equal \
+      "docker run --detach --rm --env-file .kamal/env/roles/app-web.env --detach dhh/app:999 bin/rails db:setup",
+      new_command.execute_in_new_container("bin/rails", "db:setup", detach: true, env: {}).join(" ")
+  end
+
   test "execute in new container with tags" do
     @config[:servers] = [ { "1.1.1.1" => "tag1" } ]
     @config[:env]["tags"] = { "tag1" => { "ENV1" => "value1" } }
