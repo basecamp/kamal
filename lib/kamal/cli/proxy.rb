@@ -21,7 +21,7 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
     end
   end
 
-  desc "boot_config <set|get|reset>", "Mange kamal-proxy boot configuration"
+  desc "boot_config <set|get|reset>", "Manage kamal-proxy boot configuration"
   option :publish, type: :boolean, default: true, desc: "Publish the proxy ports on the host"
   option :http_port, type: :numeric, default: Kamal::Configuration::PROXY_HTTP_PORT, desc: "HTTP port to publish on the host"
   option :https_port, type: :numeric, default: Kamal::Configuration::PROXY_HTTPS_PORT, desc: "HTTPS port to publish on the host"
