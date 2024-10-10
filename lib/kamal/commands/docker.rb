@@ -19,6 +19,11 @@ class Kamal::Commands::Docker < Kamal::Commands::Base
     [ '[ "${EUID:-$(id -u)}" -eq 0 ] || command -v sudo >/dev/null || command -v su >/dev/null' ]
   end
 
+  # Add the user to the docker group if we're not root
+  def add_group
+    [ '[ "${EUID:-$(id -u)}" -eq 0 ] || sudo usermod -aG docker "${USER:-$(id -un)}"' ]
+  end
+
   def create_network
     docker :network, :create, :kamal
   end
