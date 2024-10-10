@@ -30,6 +30,8 @@ class Kamal::Configuration::Proxy
     {
       host: hosts,
       tls: proxy_config["ssl"].presence,
+      "tls-certificate-path": proxy_config["ssl_certificate_path"],
+      "tls-private-key-path": proxy_config["ssl_private_key_path"],
       "deploy-timeout": seconds_duration(config.deploy_timeout),
       "drain-timeout": seconds_duration(config.drain_timeout),
       "health-check-interval": seconds_duration(proxy_config.dig("healthcheck", "interval")),
