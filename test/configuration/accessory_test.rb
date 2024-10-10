@@ -152,4 +152,13 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
   test "options" do
     assert_equal [ "--cpus", "\"4\"", "--memory", "\"2GB\"" ], @config.accessory(:redis).option_args
   end
+
+  test "network_args default" do
+    assert_equal [ "--network", "kamal" ], @config.accessory(:mysql).network_args
+  end
+
+  test "network_args with configured options" do
+    @deploy[:accessories]["mysql"]["network"] = "database"
+    assert_equal [ "--network", "database" ], @config.accessory(:mysql).network_args
+  end
 end

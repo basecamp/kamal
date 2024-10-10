@@ -1,6 +1,8 @@
 class Kamal::Configuration::Accessory
   include Kamal::Configuration::Validation
 
+  DEFAULT_NETWORK = "kamal"
+
   delegate :argumentize, :optionize, to: Kamal::Utils
 
   attr_reader :name, :accessory_config, :env
@@ -36,6 +38,10 @@ class Kamal::Configuration::Accessory
     if port = accessory_config["port"]&.to_s
       port.include?(":") ? port : "#{port}:#{port}"
     end
+  end
+
+  def network_args
+    argumentize "--network", network
   end
 
   def publish_args
@@ -172,5 +178,9 @@ class Kamal::Configuration::Accessory
       if accessory_config.key?("roles")
         accessory_config["roles"].flat_map { |role| config.role(role).hosts }
       end
+    end
+
+    def network
+      accessory_config["network"] || DEFAULT_NETWORK
     end
 end
