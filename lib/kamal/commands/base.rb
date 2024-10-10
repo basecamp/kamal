@@ -11,7 +11,7 @@ module Kamal::Commands
     end
 
     def run_over_ssh(*command, host:)
-      "ssh#{ssh_proxy_args} -t #{config.ssh.user}@#{host} -p #{config.ssh.port} '#{command.join(" ").gsub("'", "'\\\\''")}'".squish
+      "ssh#{ssh_proxy_args} -t #{config.ssh.user}@#{host} -p #{config.ssh.port} '#{command.join(" ").gsub("'", "'\\\\''")}'"
     end
 
     def container_id_for(container_name:, only_running: false)

@@ -54,4 +54,4 @@ jobs:
       - name: Run tests
         run: bin/test
         env:
-          RUBYOPT: ${{ matrix.ruby-version == '3.4.0-preview2' && '--enable=frozen-string-literal' || '' }}
+          RUBYOPT: ${{ startsWith(matrix.ruby-version, '3.4.') && '--enable=frozen-string-literal' || '' }}
