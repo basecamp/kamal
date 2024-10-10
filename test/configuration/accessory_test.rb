@@ -9,7 +9,7 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
         "workers" => [ "1.1.1.3", "1.1.1.4" ]
       },
       builder: { "arch" => "amd64" },
-      env: { "REDIS_URL" => "redis://x/y" },
+      env: { "VALKEY_URL" => "valkey://x/y" },
       accessories: {
         "mysql" => {
           "image" => "mysql:8.0",
@@ -31,8 +31,8 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
             "data:/var/lib/mysql"
           ]
         },
-        "redis" => {
-          "image" => "redis:latest",
+        "valkey" => {
+          "image" => "valkey/valkey:latest",
           "hosts" => [ "1.1.1.6", "1.1.1.7" ],
           "port" => "6379:6379",
           "labels" => {
@@ -42,7 +42,7 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
             "SOMETHING" => "else"
           },
           "volumes" => [
-            "/var/lib/redis:/data"
+            "/var/lib/valkey:/data"
           ],
           "options" => {
             "cpus" => "4",
@@ -73,18 +73,18 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
 
   test "service name" do
     assert_equal "app-mysql", @config.accessory(:mysql).service_name
-    assert_equal "app-redis", @config.accessory(:redis).service_name
+    assert_equal "app-valkey", @config.accessory(:valkey).service_name
     assert_equal "custom-monitoring", @config.accessory(:monitoring).service_name
   end
 
   test "port" do
     assert_equal "3306:3306", @config.accessory(:mysql).port
-    assert_equal "6379:6379", @config.accessory(:redis).port
+    assert_equal "6379:6379", @config.accessory(:valkey).port
   end
 
   test "host" do
     assert_equal [ "1.1.1.5" ], @config.accessory(:mysql).hosts
-    assert_equal [ "1.1.1.6", "1.1.1.7" ], @config.accessory(:redis).hosts
+    assert_equal [ "1.1.1.6", "1.1.1.7" ], @config.accessory(:valkey).hosts
     assert_equal [ "1.1.1.1", "1.1.1.2" ], @config.accessory(:monitoring).hosts
   end
 
@@ -112,7 +112,7 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
 
   test "label args" do
     assert_equal [ "--label", "service=\"app-mysql\"" ], @config.accessory(:mysql).label_args
-    assert_equal [ "--label", "service=\"app-redis\"", "--label", "cache=\"true\"" ], @config.accessory(:redis).label_args
+    assert_equal [ "--label", "service=\"app-valkey\"", "--label", "cache=\"true\"" ], @config.accessory(:valkey).label_args
   end
 
   test "env args" do
@@ -121,14 +121,14 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
 
       assert_equal [ "--env", "MYSQL_ROOT_HOST=\"%\"", "--env-file", ".kamal/apps/app/env/accessories/mysql.env" ], config.accessory(:mysql).env_args.map(&:to_s)
       assert_equal "MYSQL_ROOT_PASSWORD=secret123\n", config.accessory(:mysql).secrets_io.string
-      assert_equal [ "--env", "SOMETHING=\"else\"", "--env-file", ".kamal/apps/app/env/accessories/redis.env" ], @config.accessory(:redis).env_args
-      assert_equal "\n", config.accessory(:redis).secrets_io.string
+      assert_equal [ "--env", "SOMETHING=\"else\"", "--env-file", ".kamal/apps/app/env/accessories/valkey.env" ], @config.accessory(:valkey).env_args
+      assert_equal "\n", config.accessory(:valkey).secrets_io.string
     end
   end
 
   test "volume args" do
     assert_equal [ "--volume", "$PWD/app-mysql/etc/mysql/my.cnf:/etc/mysql/my.cnf", "--volume", "$PWD/app-mysql/docker-entrypoint-initdb.d/structure.sql:/docker-entrypoint-initdb.d/structure.sql", "--volume", "$PWD/app-mysql/data:/var/lib/mysql" ], @config.accessory(:mysql).volume_args
-    assert_equal [ "--volume", "/var/lib/redis:/data" ], @config.accessory(:redis).volume_args
+    assert_equal [ "--volume", "/var/lib/valkey:/data" ], @config.accessory(:valkey).volume_args
   end
 
   test "dynamic file expansion" do
@@ -150,6 +150,6 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
   end
 
   test "options" do
-    assert_equal [ "--cpus", "\"4\"", "--memory", "\"2GB\"" ], @config.accessory(:redis).option_args
+    assert_equal [ "--cpus", "\"4\"", "--memory", "\"2GB\"" ], @config.accessory(:valkey).option_args
   end
 end

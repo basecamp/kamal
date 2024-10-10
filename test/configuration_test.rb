@@ -9,7 +9,7 @@ class ConfigurationTest < ActiveSupport::TestCase
       service: "app", image: "dhh/app",
       registry: { "username" => "dhh", "password" => "secret" },
       builder: { "arch" => "amd64" },
-      env: { "REDIS_URL" => "redis://x/y" },
+      env: { "VALKEY_URL" => "valkey://x/y" },
       servers: [ "1.1.1.1", "1.1.1.2" ],
       volumes: [ "/local/path:/container/path" ]
     }

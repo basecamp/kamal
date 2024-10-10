@@ -22,8 +22,8 @@ class CliAccessoryTest < CliTestCase
   test "boot all" do
     Kamal::Cli::Accessory.any_instance.expects(:directories).with("mysql")
     Kamal::Cli::Accessory.any_instance.expects(:upload).with("mysql")
-    Kamal::Cli::Accessory.any_instance.expects(:directories).with("redis")
-    Kamal::Cli::Accessory.any_instance.expects(:upload).with("redis")
+    Kamal::Cli::Accessory.any_instance.expects(:directories).with("valkey")
+    Kamal::Cli::Accessory.any_instance.expects(:upload).with("valkey")
 
     run_command("boot", "all").tap do |output|
       assert_match /docker login.*on 1.1.1.3/, output
@@ -33,8 +33,8 @@ class CliAccessoryTest < CliTestCase
       assert_match /docker network create kamal.*on 1.1.1.2/, output
       assert_match /docker network create kamal.*on 1.1.1.3/, output
       assert_match "docker run --name app-mysql --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 3306:3306 --env MYSQL_ROOT_HOST=\"%\" --env-file .kamal/apps/app/env/accessories/mysql.env --volume $PWD/app-mysql/etc/mysql/my.cnf:/etc/mysql/my.cnf --volume $PWD/app-mysql/data:/var/lib/mysql --label service=\"app-mysql\" mysql:5.7 on 1.1.1.3", output
-      assert_match "docker run --name app-redis --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 6379:6379 --env-file .kamal/apps/app/env/accessories/redis.env --volume $PWD/app-redis/data:/data --label service=\"app-redis\" redis:latest on 1.1.1.1", output
-      assert_match "docker run --name app-redis --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 6379:6379 --env-file .kamal/apps/app/env/accessories/redis.env --volume $PWD/app-redis/data:/data --label service=\"app-redis\" redis:latest on 1.1.1.2", output
+      assert_match "docker run --name app-valkey --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 6379:6379 --env-file .kamal/apps/app/env/accessories/valkey.env --volume $PWD/app-valkey/data:/data --label service=\"app-valkey\" valkey/valkey:latest on 1.1.1.1", output
+      assert_match "docker run --name app-valkey --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 6379:6379 --env-file .kamal/apps/app/env/accessories/valkey.env --volume $PWD/app-valkey/data:/data --label service=\"app-valkey\" valkey/valkey:latest on 1.1.1.2", output
     end
   end
 
@@ -64,9 +64,9 @@ class CliAccessoryTest < CliTestCase
     Kamal::Cli::Accessory.any_instance.expects(:stop).with("mysql")
     Kamal::Cli::Accessory.any_instance.expects(:remove_container).with("mysql")
     Kamal::Cli::Accessory.any_instance.expects(:boot).with("mysql", prepare: false)
-    Kamal::Cli::Accessory.any_instance.expects(:stop).with("redis")
-    Kamal::Cli::Accessory.any_instance.expects(:remove_container).with("redis")
-    Kamal::Cli::Accessory.any_instance.expects(:boot).with("redis", prepare: false)
+    Kamal::Cli::Accessory.any_instance.expects(:stop).with("valkey")
+    Kamal::Cli::Accessory.any_instance.expects(:remove_container).with("valkey")
+    Kamal::Cli::Accessory.any_instance.expects(:boot).with("valkey", prepare: false)
 
     run_command("reboot", "all")
   end
@@ -94,15 +94,15 @@ class CliAccessoryTest < CliTestCase
   end
 
   test "details with non-existent accessory" do
-    assert_equal "No accessory by the name of 'hello' (options: mysql and redis)", stderred { run_command("details", "hello") }
+    assert_equal "No accessory by the name of 'hello' (options: mysql and valkey)", stderred { run_command("details", "hello") }
   end
 
   test "details with all" do
     run_command("details", "all").tap do |output|
       assert_match "Accessory mysql Host: 1.1.1.3", output
-      assert_match "Accessory redis Host: 1.1.1.2", output
+      assert_match "Accessory valkey Host: 1.1.1.2", output
       assert_match "docker ps --filter label=service=app-mysql", output
-      assert_match "docker ps --filter label=service=app-redis", output
+      assert_match "docker ps --filter label=service=app-valkey", output
     end
   end
 
@@ -176,10 +176,10 @@ class CliAccessoryTest < CliTestCase
     Kamal::Cli::Accessory.any_instance.expects(:remove_container).with("mysql")
     Kamal::Cli::Accessory.any_instance.expects(:remove_image).with("mysql")
     Kamal::Cli::Accessory.any_instance.expects(:remove_service_directory).with("mysql")
-    Kamal::Cli::Accessory.any_instance.expects(:stop).with("redis")
-    Kamal::Cli::Accessory.any_instance.expects(:remove_container).with("redis")
-    Kamal::Cli::Accessory.any_instance.expects(:remove_image).with("redis")
-    Kamal::Cli::Accessory.any_instance.expects(:remove_service_directory).with("redis")
+    Kamal::Cli::Accessory.any_instance.expects(:stop).with("valkey")
+    Kamal::Cli::Accessory.any_instance.expects(:remove_container).with("valkey")
+    Kamal::Cli::Accessory.any_instance.expects(:remove_image).with("valkey")
+    Kamal::Cli::Accessory.any_instance.expects(:remove_service_directory).with("valkey")
 
     run_command("remove", "all", "-y")
   end
@@ -197,26 +197,26 @@ class CliAccessoryTest < CliTestCase
   end
 
   test "hosts param respected" do
-    Kamal::Cli::Accessory.any_instance.expects(:directories).with("redis")
-    Kamal::Cli::Accessory.any_instance.expects(:upload).with("redis")
+    Kamal::Cli::Accessory.any_instance.expects(:directories).with("valkey")
+    Kamal::Cli::Accessory.any_instance.expects(:upload).with("valkey")
 
-    run_command("boot", "redis", "--hosts", "1.1.1.1").tap do |output|
+    run_command("boot", "valkey", "--hosts", "1.1.1.1").tap do |output|
       assert_match /docker login.*on 1.1.1.1/, output
       assert_no_match /docker login.*on 1.1.1.2/, output
-      assert_match "docker run --name app-redis --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 6379:6379 --env-file .kamal/apps/app/env/accessories/redis.env --volume $PWD/app-redis/data:/data --label service=\"app-redis\" redis:latest on 1.1.1.1", output
-      assert_no_match "docker run --name app-redis --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 6379:6379 --env-file .kamal/apps/app/env/accessories/redis.env --volume $PWD/app-redis/data:/data --label service=\"app-redis\" redis:latest on 1.1.1.2", output
+      assert_match "docker run --name app-valkey --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 6379:6379 --env-file .kamal/apps/app/env/accessories/valkey.env --volume $PWD/app-valkey/data:/data --label service=\"app-valkey\" valkey/valkey:latest on 1.1.1.1", output
+      assert_no_match "docker run --name app-valkey --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 6379:6379 --env-file .kamal/apps/app/env/accessories/valkey.env --volume $PWD/app-valkey/data:/data --label service=\"app-valkey\" valkey/valkey:latest on 1.1.1.2", output
     end
   end
 
   test "hosts param intersected with configuration" do
-    Kamal::Cli::Accessory.any_instance.expects(:directories).with("redis")
-    Kamal::Cli::Accessory.any_instance.expects(:upload).with("redis")
+    Kamal::Cli::Accessory.any_instance.expects(:directories).with("valkey")
+    Kamal::Cli::Accessory.any_instance.expects(:upload).with("valkey")
 
-    run_command("boot", "redis", "--hosts", "1.1.1.1,1.1.1.3").tap do |output|
+    run_command("boot", "valkey", "--hosts", "1.1.1.1,1.1.1.3").tap do |output|
       assert_match /docker login.*on 1.1.1.1/, output
       assert_no_match /docker login.*on 1.1.1.3/, output
-      assert_match "docker run --name app-redis --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 6379:6379 --env-file .kamal/apps/app/env/accessories/redis.env --volume $PWD/app-redis/data:/data --label service=\"app-redis\" redis:latest on 1.1.1.1", output
-      assert_no_match "docker run --name app-redis --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 6379:6379 --env-file .kamal/apps/app/env/accessories/redis.env --volume $PWD/app-redis/data:/data --label service=\"app-redis\" redis:latest on 1.1.1.3", output
+      assert_match "docker run --name app-valkey --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 6379:6379 --env-file .kamal/apps/app/env/accessories/valkey.env --volume $PWD/app-valkey/data:/data --label service=\"app-valkey\" valkey/valkey:latest on 1.1.1.1", output
+      assert_no_match "docker run --name app-valkey --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 6379:6379 --env-file .kamal/apps/app/env/accessories/valkey.env --volume $PWD/app-valkey/data:/data --label service=\"app-valkey\" valkey/valkey:latest on 1.1.1.3", output
     end
   end
 

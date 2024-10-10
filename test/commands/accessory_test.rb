@@ -22,8 +22,8 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
             ]
           }
         },
-        "redis" => {
-          "image" => "redis:latest",
+        "valkey" => {
+          "image" => "valkey/valkey:latest",
           "host" => "1.1.1.6",
           "port" => "6379:6379",
           "labels" => {
@@ -33,7 +33,7 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
             "SOMETHING" => "else"
           },
           "volumes" => [
-            "/var/lib/redis:/data"
+            "/var/lib/valkey:/data"
           ]
         },
         "busybox" => {
@@ -55,8 +55,8 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
       new_command(:mysql).run.join(" ")
 
     assert_equal \
-      "docker run --name app-redis --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 6379:6379 --env SOMETHING=\"else\" --env-file .kamal/apps/app/env/accessories/redis.env --volume /var/lib/redis:/data --label service=\"app-redis\" --label cache=\"true\" redis:latest",
-      new_command(:redis).run.join(" ")
+      "docker run --name app-valkey --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 6379:6379 --env SOMETHING=\"else\" --env-file .kamal/apps/app/env/accessories/valkey.env --volume /var/lib/valkey:/data --label service=\"app-valkey\" --label cache=\"true\" valkey/valkey:latest",
+      new_command(:valkey).run.join(" ")
 
     assert_equal \
       "docker run --name custom-busybox --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --env-file .kamal/apps/app/env/accessories/busybox.env --label service=\"custom-busybox\" busybox:latest",

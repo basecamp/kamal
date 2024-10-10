@@ -418,10 +418,10 @@ class CliMainTest < CliTestCase
       assert_match /docker image rm --force mysql/, output
       assert_match /rm -rf app-mysql/, output
 
-      assert_match /docker container stop app-redis/, output
-      assert_match /docker container prune --force --filter label=service=app-redis/, output
-      assert_match /docker image rm --force redis/, output
-      assert_match /rm -rf app-redis/, output
+      assert_match /docker container stop app-valkey/, output
+      assert_match /docker container prune --force --filter label=service=app-valkey/, output
+      assert_match /docker image rm --force valkey/, output
+      assert_match /rm -rf app-valkey/, output
 
       assert_match /docker logout/, output
     end

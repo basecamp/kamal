@@ -29,7 +29,7 @@ servers:
 builder:
   arch: amd64
 env:
-  REDIS_URL: redis://x/y
+  VALKEY_URL: valkey://x/y
 registry:
   server: registry.digitalocean.com
   username: user

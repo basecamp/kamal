@@ -34,8 +34,8 @@ accessories:
       - test/fixtures/files/my.cnf:/etc/mysql/my.cnf
     directories:
       - data:/var/lib/mysql
-  redis:
-    image: redis:latest
+  valkey:
+    image: valkey/valkey:latest
     roles:
       - web
     port: 6379
