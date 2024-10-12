@@ -1,5 +1,5 @@
-# Use the official Ruby 3.2.0 Alpine image as the base image
-FROM ruby:3.2.0-alpine
+# Use the official Ruby 3.3.5 Alpine image as the base image
+FROM ruby:3.3.5-alpine
 
 # Install docker/buildx-bin
 COPY --from=docker/buildx-bin /buildx /usr/libexec/docker/cli-plugins/docker-buildx
