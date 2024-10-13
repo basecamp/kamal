@@ -1,4 +1,3 @@
-# Use the official Ruby 3.3.5 Alpine image as the base image
 FROM ruby:3.3.5-alpine
 
 # Install docker/buildx-bin
