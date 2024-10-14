@@ -34,7 +34,7 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
   end
 
   def inspect_builder
-    docker :buildx, :inspect, builder_name unless docker_driver? || pack?
+    docker :buildx, :inspect, builder_name unless docker_driver?
   end
 
   def build_options

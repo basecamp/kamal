@@ -16,6 +16,11 @@ class Kamal::Commands::Builder::Pack < Kamal::Commands::Builder::Base
       docker(:push, config.latest_image)
   end
 
+  def info
+    pack :builder, :inspect, pack_builder
+  end
+  alias_method :inspect_builder, :info
+
   private
     def platform
       "linux/#{local_arches.first}"
