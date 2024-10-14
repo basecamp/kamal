@@ -14,9 +14,10 @@ class Kamal::Configuration
 
   include Validation
 
-  PROXY_MINIMUM_VERSION = "v0.7.0"
+  PROXY_MINIMUM_VERSION = "v0.8.1"
   PROXY_HTTP_PORT = 80
   PROXY_HTTPS_PORT = 443
+  PROXY_LOG_MAX_SIZE = "10m"
 
   class << self
     def create_from(config_file:, destination: nil, version: nil)
@@ -252,8 +253,12 @@ class Kamal::Configuration
     argumentize "--publish", [ "#{http_port}:#{PROXY_HTTP_PORT}", "#{https_port}:#{PROXY_HTTPS_PORT}" ]
   end
 
+  def proxy_logging_args(max_size)
+    argumentize "--log-opt", "max-size=#{max_size}"
+  end
+
   def proxy_options_default
-    proxy_publish_args PROXY_HTTP_PORT, PROXY_HTTPS_PORT
+    [ *proxy_publish_args(PROXY_HTTP_PORT, PROXY_HTTPS_PORT), *proxy_logging_args(PROXY_LOG_MAX_SIZE) ]
   end
 
   def proxy_image

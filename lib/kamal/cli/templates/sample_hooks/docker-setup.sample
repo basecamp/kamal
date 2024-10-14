@@ -1,13 +1,3 @@
-#!/usr/bin/env ruby
+#!/bin/sh
 
-# A sample docker-setup hook
-#
-# Sets up a Docker network on defined hosts which can then be used by the application’s containers
-
-hosts = ENV["KAMAL_HOSTS"].split(",")
-
-hosts.each do |ip|
-  destination = "root@#{ip}"
-  puts "Creating a Docker network \"kamal\" on #{destination}"
-  `ssh #{destination} docker network create kamal`
-end
+echo "Docker set up on $KAMAL_HOSTS..."

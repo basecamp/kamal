@@ -43,7 +43,12 @@ class Kamal::Commander::Specifics
     end
 
     def specified_hosts
-      (specific_hosts || config.all_hosts) \
-        .select { |host| (specific_roles || config.roles).flat_map(&:hosts).include?(host) }
+      specified_hosts = specific_hosts || config.all_hosts
+
+      if (specific_role_hosts = specific_roles&.flat_map(&:hosts)).present?
+        specified_hosts.select { |host| specific_role_hosts.include?(host) }
+      else
+        specified_hosts
+      end
     end
 end
