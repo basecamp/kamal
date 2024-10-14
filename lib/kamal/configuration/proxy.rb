@@ -22,6 +22,10 @@ class Kamal::Configuration::Proxy
     proxy_config.fetch("ssl", false)
   end
 
+  def custom_ssl_certificate?
+    proxy_config["ssl_certificate_path"].present?
+  end
+
   def hosts
     proxy_config["hosts"] || proxy_config["host"]&.split(",") || []
   end
