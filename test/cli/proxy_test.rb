@@ -22,7 +22,7 @@ class CliProxyTest < CliTestCase
       end
     end
 
-    assert_includes exception.message, "kamal-proxy version v0.0.1 is too old, please reboot to update to at least #{Kamal::Configuration::PROXY_MINIMUM_VERSION}"
+    assert_includes exception.message, "kamal-proxy version v0.0.1 is too old, please reboot to update to at least #{Kamal::Configuration::PROXY_MINIMUM_VERSION}. Run `kamal proxy reboot`."
   ensure
     Thread.report_on_exception = false
   end
