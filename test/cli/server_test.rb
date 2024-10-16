@@ -52,6 +52,7 @@ class CliServerTest < CliTestCase
     stub_setup
     SSHKit::Backend::Abstract.any_instance.expects(:execute).with(:docker, "-v", raise_on_non_zero_exit: false).returns(false).at_least_once
     SSHKit::Backend::Abstract.any_instance.expects(:execute).with('[ "${EUID:-$(id -u)}" -eq 0 ] || command -v sudo >/dev/null || command -v su >/dev/null', raise_on_non_zero_exit: false).returns(true).at_least_once
+    SSHKit::Backend::Abstract.any_instance.expects(:execute).with('[ "${EUID:-$(id -u)}" -eq 0 ] || id -nG "${USER:-$(id -un)}" | grep -qw docker || { sudo usermod -aG docker "${USER:-$(id -un)}" && kill -HUP ${PPID:-ps -o ppid= -p $$}; }').at_least_once
     SSHKit::Backend::Abstract.any_instance.expects(:execute).with(:sh, "-c", "'curl -fsSL https://get.docker.com || wget -O - https://get.docker.com || echo \"exit 1\"'", "|", :sh).at_least_once
     SSHKit::Backend::Abstract.any_instance.expects(:execute).with(:mkdir, "-p", ".kamal").returns("").at_least_once
     Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
@@ -61,6 +62,26 @@ class CliServerTest < CliTestCase
     run_command("bootstrap").tap do |output|
       ("1.1.1.1".."1.1.1.4").map do |host|
         assert_match "Missing Docker on #{host}. Installing…", output
+        assert_match "Running the docker-setup hook", output
+      end
+    end
+  end
+
+  test "bootstrap install as sudo non-root user" do
+    stub_setup
+    SSHKit::Backend::Abstract.any_instance.expects(:execute).with(:docker, "-v", raise_on_non_zero_exit: false).returns(false).at_least_once
+    SSHKit::Backend::Abstract.any_instance.expects(:execute).with('[ "${EUID:-$(id -u)}" -eq 0 ] || command -v sudo >/dev/null || command -v su >/dev/null', raise_on_non_zero_exit: false).returns(true).at_least_once
+    SSHKit::Backend::Abstract.any_instance.expects(:execute).with('[ "${EUID:-$(id -u)}" -eq 0 ] || id -nG "${USER:-$(id -un)}" | grep -qw docker || { sudo usermod -aG docker "${USER:-$(id -un)}" && kill -HUP ${PPID:-ps -o ppid= -p $$}; }').at_least_once.raises(IOError, "closed stream")
+    SSHKit::Backend::Abstract.any_instance.expects(:execute).with(:sh, "-c", "'curl -fsSL https://get.docker.com || wget -O - https://get.docker.com || echo \"exit 1\"'", "|", :sh).at_least_once
+    SSHKit::Backend::Abstract.any_instance.expects(:execute).with(:mkdir, "-p", ".kamal").returns("").at_least_once
+    Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
+    SSHKit::Backend::Abstract.any_instance.expects(:execute).with(".kamal/hooks/pre-connect", anything).at_least_once
+    SSHKit::Backend::Abstract.any_instance.expects(:execute).with(".kamal/hooks/docker-setup", anything).at_least_once
+
+    run_command("bootstrap").tap do |output|
+      ("1.1.1.1".."1.1.1.4").map do |host|
+        assert_match "Missing Docker on #{host}. Installing…", output
+        assert_match "Session refreshed due to group change.", output
         assert_match "Running the docker-setup hook", output
       end
     end
