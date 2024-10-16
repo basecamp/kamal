@@ -134,6 +134,16 @@ class ConfigurationBuilderTest < ActiveSupport::TestCase
     assert_equal "default=$SSH_AUTH_SOCK", config.builder.ssh
   end
 
+  test "provenance" do
+    assert_nil config.builder.provenance
+  end
+
+  test "setting provenance" do
+    @deploy[:builder]["provenance"] = "mode=max"
+
+    assert_equal "mode=max", config.builder.provenance
+  end
+
   test "local disabled but no remote set" do
     @deploy[:builder]["local"] = false
 
