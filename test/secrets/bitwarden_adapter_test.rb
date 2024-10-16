@@ -2,6 +2,8 @@ require "test_helper"
 
 class BitwardenAdapterTest < SecretAdapterTestCase
   test "fetch" do
+    stub_ticks.with("bw --version 2> /dev/null")
+
     stub_unlocked
     stub_ticks.with("bw sync").returns("")
     stub_mypassword
@@ -14,6 +16,8 @@ class BitwardenAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch with no login" do
+    stub_ticks.with("bw --version 2> /dev/null")
+
     stub_unlocked
     stub_ticks.with("bw sync").returns("")
     stub_noteitem
@@ -25,6 +29,8 @@ class BitwardenAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch with from" do
+    stub_ticks.with("bw --version 2> /dev/null")
+
     stub_unlocked
     stub_ticks.with("bw sync").returns("")
     stub_myitem
@@ -39,6 +45,8 @@ class BitwardenAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch with multiple items" do
+    stub_ticks.with("bw --version 2> /dev/null")
+
     stub_unlocked
 
     stub_ticks.with("bw sync").returns("")
@@ -80,6 +88,8 @@ class BitwardenAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch unauthenticated" do
+    stub_ticks.with("bw --version 2> /dev/null")
+
     stub_ticks
       .with("bw status")
       .returns(
@@ -101,6 +111,8 @@ class BitwardenAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch locked" do
+    stub_ticks.with("bw --version 2> /dev/null")
+
     stub_ticks
       .with("bw status")
       .returns(
@@ -126,6 +138,8 @@ class BitwardenAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch locked with session" do
+    stub_ticks.with("bw --version 2> /dev/null")
+
     stub_ticks
       .with("bw status")
       .returns(
@@ -148,6 +162,15 @@ class BitwardenAdapterTest < SecretAdapterTestCase
     expected_json = { "mypassword"=>"secret123" }
 
     assert_equal expected_json, json
+  end
+
+  test "fetch without CLI installed" do
+    stub_ticks_with("bw --version 2> /dev/null", succeed: false)
+
+    error = assert_raises RuntimeError do
+      JSON.parse(shellunescape(run_command("fetch", "mynote")))
+    end
+    assert_equal "Bitwarden CLI is not installed", error.message
   end
 
   private

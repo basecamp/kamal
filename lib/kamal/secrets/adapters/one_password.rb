@@ -58,4 +58,13 @@ class Kamal::Secrets::Adapters::OnePassword < Kamal::Secrets::Adapters::Base
         raise RuntimeError, "Could not read #{fields.join(", ")} from #{item} in the #{vault} 1Password vault" unless $?.success?
       end
     end
+
+    def check_dependencies!
+      raise RuntimeError, "1Password CLI is not installed" unless cli_installed?
+    end
+
+    def cli_installed?
+      `op --version 2> /dev/null`
+      $?.success?
+    end
 end
