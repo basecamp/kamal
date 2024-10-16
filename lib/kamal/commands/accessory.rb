@@ -1,7 +1,7 @@
 class Kamal::Commands::Accessory < Kamal::Commands::Base
   attr_reader :accessory_config
   delegate :service_name, :image, :hosts, :port, :files, :directories, :cmd,
-           :publish_args, :env_args, :volume_args, :label_args, :option_args,
+           :network_args, :publish_args, :env_args, :volume_args, :label_args, :option_args,
            :secrets_io, :secrets_path, :env_directory,
            to: :accessory_config
 
@@ -15,7 +15,7 @@ class Kamal::Commands::Accessory < Kamal::Commands::Base
       "--name", service_name,
       "--detach",
       "--restart", "unless-stopped",
-      "--network", "kamal",
+      *network_args,
       *config.logging_args,
       *publish_args,
       *env_args,
@@ -64,7 +64,7 @@ class Kamal::Commands::Accessory < Kamal::Commands::Base
     docker :run,
       ("-it" if interactive),
       "--rm",
-      "--network", "kamal",
+      *network_args,
       *env_args,
       *volume_args,
       image,
