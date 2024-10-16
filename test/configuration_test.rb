@@ -371,7 +371,16 @@ class ConfigurationTest < ActiveSupport::TestCase
       Kamal::Configuration.new(@deploy_with_roles)
     end
 
-    assert_equal "SSL is only supported on a single server, found 2 servers for role workers", exception.message
+    assert_equal "SSL is only supported on a single server or with custom SSL certificates, found 2 servers for role workers", exception.message
+  end
+
+  test "proxy ssl roles with multiple servers and a custom SSL certificate" do
+    @deploy_with_roles[:servers]["workers"]["proxy"] = { "ssl" => true, "host" => "foo.example.com", "ssl_certificate_path" => "/path/to/cert.pem", "ssl_private_key_path" => "/path/to/key.pem" }
+
+    config = Kamal::Configuration.new(@deploy_with_roles)
+
+    assert config.role(:workers).running_proxy?
+    assert config.role(:workers).ssl?
   end
 
   test "two proxy ssl roles with same host" do
