@@ -64,7 +64,7 @@ class ConfigurationBuilderTest < ActiveSupport::TestCase
     @deploy[:builder] = { "arch" => "amd64", "cache" => { "type" => "registry", "options" => "mode=max,image-manifest=true,oci-mediatypes=true" } }
 
     assert_equal "type=registry,ref=dhh/app-build-cache", config.builder.cache_from
-    assert_equal "type=registry,mode=max,image-manifest=true,oci-mediatypes=true,ref=dhh/app-build-cache", config.builder.cache_to
+    assert_equal "type=registry,ref=dhh/app-build-cache,mode=max,image-manifest=true,oci-mediatypes=true", config.builder.cache_to
   end
 
   test "setting registry cache when using a custom registry" do
@@ -72,14 +72,14 @@ class ConfigurationBuilderTest < ActiveSupport::TestCase
     @deploy[:builder] = { "arch" => "amd64", "cache" => { "type" => "registry", "options" => "mode=max,image-manifest=true,oci-mediatypes=true" } }
 
     assert_equal "type=registry,ref=registry.example.com/dhh/app-build-cache", config.builder.cache_from
-    assert_equal "type=registry,mode=max,image-manifest=true,oci-mediatypes=true,ref=registry.example.com/dhh/app-build-cache", config.builder.cache_to
+    assert_equal "type=registry,ref=registry.example.com/dhh/app-build-cache,mode=max,image-manifest=true,oci-mediatypes=true", config.builder.cache_to
   end
 
   test "setting registry cache with image" do
     @deploy[:builder] = { "arch" => "amd64", "cache" => { "type" => "registry", "image" => "kamal", "options" => "mode=max" } }
 
     assert_equal "type=registry,ref=kamal", config.builder.cache_from
-    assert_equal "type=registry,mode=max,ref=kamal", config.builder.cache_to
+    assert_equal "type=registry,ref=kamal,mode=max", config.builder.cache_to
   end
 
   test "args" do
