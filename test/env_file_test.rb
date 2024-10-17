@@ -11,6 +11,16 @@ class EnvFileTest < ActiveSupport::TestCase
       Kamal::EnvFile.new(env).to_s
   end
 
+  test "to_s won't escape '#'" do
+    env = {
+      "foo" => "\#$foo",
+      "bar" => "\#{bar}"
+    }
+
+    assert_equal "foo=\#$foo\nbar=\#{bar}\n", \
+      Kamal::EnvFile.new(env).to_s
+  end
+
   test "to_str won't escape chinese characters" do
     env = {
       "foo" => '你好 means hello, "欢迎" means welcome, that\'s simple! 😃 {smile}'
