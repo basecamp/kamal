@@ -16,6 +16,8 @@ class Kamal::Commands::Builder::Pack < Kamal::Commands::Builder::Base
       docker(:push, config.latest_image)
   end
 
+  def remove;end
+
   def info
     pack :builder, :inspect, pack_builder
   end
