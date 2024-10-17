@@ -300,6 +300,11 @@ class CommandsAppTest < ActiveSupport::TestCase
     assert_equal "ssh -t root@1.1.1.1 -p 2222 'ls'", new_command.run_over_ssh("ls", host: "1.1.1.1")
   end
 
+  test "run over ssh with no config" do
+    @config[:ssh] = { "config" => false }
+    assert_equal "ssh -F none -t root@1.1.1.1 -p 22 'ls'", new_command.run_over_ssh("ls", host: "1.1.1.1")
+  end
+
   test "run over ssh with proxy" do
     @config[:ssh] = { "proxy" => "2.2.2.2" }
     assert_equal "ssh -J root@2.2.2.2 -t root@1.1.1.1 -p 22 'ls'", new_command.run_over_ssh("ls", host: "1.1.1.1")

@@ -38,8 +38,12 @@ class Kamal::Configuration::Ssh
     ssh_config["key_data"]
   end
 
+  def config
+    ssh_config["config"]
+  end
+
   def options
-    { user: user, port: port, proxy: proxy, logger: logger, keepalive: true, keepalive_interval: 30, keys_only: keys_only, keys: keys, key_data: key_data }.compact
+    { user: user, port: port, proxy: proxy, logger: logger, keepalive: true, keepalive_interval: 30, keys_only: keys_only, keys: keys, key_data: key_data, config: config }.compact
   end
 
   def to_h
