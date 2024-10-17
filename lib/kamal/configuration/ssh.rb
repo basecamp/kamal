@@ -7,7 +7,7 @@ class Kamal::Configuration::Ssh
 
   def initialize(config:)
     @ssh_config = config.raw_config.ssh || {}
-    validate! ssh_config
+    validate! ssh_config, with: Kamal::Configuration::Validator::Ssh
   end
 
   def user

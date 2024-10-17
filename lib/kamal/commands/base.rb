@@ -101,6 +101,8 @@ module Kamal::Commands
           ""
         when false
           " -F none"
+        when String
+          " -F #{Shellwords.escape(config.ssh.config)}"
         end
       end
   end

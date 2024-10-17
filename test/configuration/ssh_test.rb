@@ -42,4 +42,9 @@ class ConfigurationSshTest < ActiveSupport::TestCase
     config = Kamal::Configuration.new(@deploy.tap { |c| c.merge!(ssh: { "config" => false }) })
     assert_equal false, config.ssh.options[:config]
   end
+
+  test "ssh options with path to an ssh_config-file" do
+    config = Kamal::Configuration.new(@deploy.tap { |c| c.merge!(ssh: { "config" => "config/ssh_config" }) })
+    assert_equal "config/ssh_config", config.ssh.options[:config]
+  end
 end
