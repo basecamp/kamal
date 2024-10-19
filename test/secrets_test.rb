@@ -31,4 +31,18 @@ class SecretsTest < ActiveSupport::TestCase
       assert_equal "JKL", Kamal::Secrets.new(destination: "nodest")["SECRET2"]
     end
   end
+
+  test "no secrets files" do
+    with_test_secrets do
+      error = assert_raises(Kamal::ConfigurationError) do
+        Kamal::Secrets.new["SECRET"]
+      end
+      assert_equal "Secret 'SECRET' not found, no secret files (.kamal/secrets-common, .kamal/secrets) provided", error.message
+
+      error = assert_raises(Kamal::ConfigurationError) do
+        Kamal::Secrets.new(destination: "dest")["SECRET"]
+      end
+      assert_equal "Secret 'SECRET' not found, no secret files (.kamal/secrets-common, .kamal/secrets.dest) provided", error.message
+    end
+  end
 end
