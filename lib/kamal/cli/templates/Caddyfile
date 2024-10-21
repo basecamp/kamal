@@ -1,0 +1,5 @@
+
+myexample.com, www.myexample.com {
+  reverse_proxy :3000
+
+}

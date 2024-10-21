@@ -35,8 +35,8 @@ class Kamal::Cli::Main < Kamal::Cli::Base
       with_lock do
         run_hook "pre-deploy", secrets: true
 
-        say "Ensure kamal-proxy is running...", :magenta
-        invoke "kamal:cli:proxy:boot", [], invoke_options
+        say "Ensure kamal-caddy is running...", :magenta
+        invoke "kamal:cli:caddy:boot", [], invoke_options
 
         say "Detect stale containers...", :magenta
         invoke "kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true)
@@ -104,7 +104,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
 
   desc "details", "Show details about all containers"
   def details
-    invoke "kamal:cli:proxy:details"
+    invoke "kamal:cli:caddy:details"
     invoke "kamal:cli:app:details"
     invoke "kamal:cli:accessory:details", [ "all" ]
   end
@@ -148,6 +148,14 @@ class Kamal::Cli::Main < Kamal::Cli::Base
       puts "Created configuration file in config/deploy.yml"
     end
 
+    if (caddyfile = Pathname.new(File.expand_path("config/caddy/Caddyfile"))).exist?
+      puts "Caddyfile already exists in config/caddy/Caddyfile (remove first to create a new one)"
+    else
+      FileUtils.mkdir_p caddyfile.dirname
+      FileUtils.cp_r Pathname.new(File.expand_path("templates/Caddyfile", __dir__)), caddyfile
+      puts "Created Caddyfile in config/caddy/Caddyfile"
+    end
+
     unless (secrets_file = Pathname.new(File.expand_path(".kamal/secrets"))).exist?
       FileUtils.mkdir_p secrets_file.dirname
       FileUtils.cp_r Pathname.new(File.expand_path("templates/secrets", __dir__)), secrets_file
@@ -182,7 +190,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
     confirming "This will remove all containers and images. Are you sure?" do
       with_lock do
         invoke "kamal:cli:app:remove", [], options.without(:confirmed)
-        invoke "kamal:cli:proxy:remove", [], options.without(:confirmed)
+        invoke "kamal:cli:caddy:remove", [], options.without(:confirmed)
         invoke "kamal:cli:accessory:remove", [ "all" ], options
         invoke "kamal:cli:registry:logout", [], options.without(:confirmed).merge(skip_local: true)
       end
@@ -239,6 +247,9 @@ class Kamal::Cli::Main < Kamal::Cli::Base
 
   desc "proxy", "Manage kamal-proxy"
   subcommand "proxy", Kamal::Cli::Proxy
+
+  desc "caddy", "Manage kamal-caddy"
+  subcommand "caddy", Kamal::Cli::Caddy
 
   desc "prune", "Prune old application images and containers"
   subcommand "prune", Kamal::Cli::Prune

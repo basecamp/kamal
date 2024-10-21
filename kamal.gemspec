@@ -3,9 +3,9 @@ require_relative "lib/kamal/version"
 Gem::Specification.new do |spec|
   spec.name        = "kamal"
   spec.version     = Kamal::VERSION
-  spec.authors     = [ "David Heinemeier Hansson" ]
-  spec.email       = "dhh@hey.com"
-  spec.homepage    = "https://github.com/basecamp/kamal"
+  spec.authors     = [ "David Heinemeier Hansson", "Bilal Budhani" ]
+  spec.email       = "hey@bilal.dev"
+  spec.homepage    = "https://github.com/bilalbudhani/kamal-caddy"
   spec.summary     = "Deploy web apps in containers to servers running Docker with zero downtime."
   spec.license     = "MIT"
   spec.files = Dir["lib/**/*", "MIT-LICENSE", "README.md"]

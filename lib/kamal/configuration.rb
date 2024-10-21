@@ -277,7 +277,6 @@ class Kamal::Configuration
     File.join proxy_directory, "options"
   end
 
-
   def to_h
     {
       roles: role_names,

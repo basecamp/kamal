@@ -113,6 +113,10 @@ class Kamal::Commander
     @proxy ||= Kamal::Commands::Proxy.new(config)
   end
 
+  def caddy
+    @caddy ||= Kamal::Commands::Caddy.new(config)
+  end
+
   def prune
     @prune ||= Kamal::Commands::Prune.new(config)
   end
