@@ -13,8 +13,8 @@ class EnvFileTest < ActiveSupport::TestCase
 
   test "to_s won't escape '#'" do
     env = {
-      "foo" => "\#$foo",
-      "bar" => "\#{bar}"
+      "foo" => '#$foo',
+      "bar" => '#{bar}'
     }
 
     assert_equal "foo=\#$foo\nbar=\#{bar}\n", \
