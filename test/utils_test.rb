@@ -2,8 +2,8 @@ require "test_helper"
 
 class UtilsTest < ActiveSupport::TestCase
   test "argumentize" do
-    assert_equal [ "--label", "foo=\"\\`bar\\`\"", "--label", "baz=\"qux\"", "--label", :quux ], \
-      Kamal::Utils.argumentize("--label", { foo: "`bar`", baz: "qux", quux: nil })
+    assert_equal [ "--label", "foo=\"\\`bar\\`\"", "--label", "baz=\"qux\"", "--label", :quux, "--label", "quuz=false" ], \
+      Kamal::Utils.argumentize("--label", { foo: "`bar`", baz: "qux", quux: nil, quuz: false })
   end
 
   test "argumentize with redacted" do
