@@ -57,6 +57,10 @@ class Kamal::Configuration::Builder
     !!builder_config["cache"]
   end
 
+  def pack?
+    !!builder_config["pack"]
+  end
+
   def args
     builder_config["args"] || {}
   end
@@ -79,6 +83,14 @@ class Kamal::Configuration::Builder
 
   def driver
     builder_config.fetch("driver", "docker-container")
+  end
+
+  def pack_builder
+    builder_config["pack"]["builder"] if pack?
+  end
+
+  def pack_buildpacks
+    builder_config["pack"]["buildpacks"] if pack?
   end
 
   def local_disabled?
