@@ -37,6 +37,8 @@ class Kamal::EnvFile
     def escape_docker_env_file_ascii_value(value)
       # Doublequotes are treated literally in docker env files
       # so remove leading and trailing ones and unescape any others
-      value.to_s.dump[1..-2].gsub(/\\"/, "\"")
+      value.to_s.dump[1..-2]
+        .gsub(/\\"/, "\"")
+        .gsub(/\\#/, "#")
     end
 end
