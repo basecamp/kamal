@@ -15,6 +15,7 @@ module Kamal::Commands::App::Execution
       "--network", "kamal",
       *role&.env_args(host),
       *argumentize("--env", env),
+      *role.logging_args,
       *config.volume_args,
       *role&.option_args,
       config.absolute_image,
