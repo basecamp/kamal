@@ -1,12 +1,12 @@
-module Kamal::Commands::App::Proxy
+module Kamal::Commands::Proxy::Exec
   delegate :proxy_container_name, to: :config
 
   def deploy(target:)
-    proxy_exec :deploy, role.container_prefix, *role.proxy.deploy_command_args(target: target)
+    proxy_exec :deploy, service_name, *proxy_deploy_command_args(target: target)
   end
 
   def remove
-    proxy_exec :remove, role.container_prefix
+    proxy_exec :remove, service_name
   end
 
   private
