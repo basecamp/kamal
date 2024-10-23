@@ -7,4 +7,8 @@ class Kamal::Secrets::Adapters::Test < Kamal::Secrets::Adapters::Base
     def fetch_secrets(secrets, account:, session:)
       secrets.to_h { |secret| [ secret, secret.reverse ] }
     end
+
+    def check_dependencies!
+      # no op
+    end
 end

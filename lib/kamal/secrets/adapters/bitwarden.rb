@@ -63,4 +63,13 @@ class Kamal::Secrets::Adapters::Bitwarden < Kamal::Secrets::Adapters::Base
       result = `#{full_command}`.strip
       raw ? result : JSON.parse(result)
     end
+
+    def check_dependencies!
+      raise RuntimeError, "Bitwarden CLI is not installed" unless cli_installed?
+    end
+
+    def cli_installed?
+      `bw --version 2> /dev/null`
+      $?.success?
+    end
 end

@@ -6,6 +6,7 @@ class LastPassAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch" do
+    stub_ticks.with("lpass --version 2> /dev/null")
     stub_ticks.with("lpass status --color never").returns("Logged in as email@example.com.")
 
     stub_ticks
@@ -63,6 +64,7 @@ class LastPassAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch with from" do
+    stub_ticks.with("lpass --version 2> /dev/null")
     stub_ticks.with("lpass status --color never").returns("Logged in as email@example.com.")
 
     stub_ticks
@@ -107,6 +109,8 @@ class LastPassAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch with signin" do
+    stub_ticks.with("lpass --version 2> /dev/null")
+
     stub_ticks_with("lpass status --color never", succeed: false).returns("Not logged in.")
     stub_ticks_with("lpass login email@example.com", succeed: true).returns("")
     stub_ticks.with("lpass show SECRET1 --json").returns(single_item_json)
@@ -118,6 +122,15 @@ class LastPassAdapterTest < SecretAdapterTestCase
     }
 
     assert_equal expected_json, json
+  end
+
+  test "fetch without CLI installed" do
+    stub_ticks_with("lpass --version 2> /dev/null", succeed: false)
+
+    error = assert_raises RuntimeError do
+      JSON.parse(shellunescape(run_command("fetch", "SECRET1", "FOLDER1/FSECRET1", "FOLDER1/FSECRET2")))
+    end
+    assert_equal "LastPass CLI is not installed", error.message
   end
 
   private
