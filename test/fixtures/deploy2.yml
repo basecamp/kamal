@@ -1,0 +1,12 @@
+service: app2
+image: dhh/app2
+servers:
+  - "1.1.1.1"
+  - "1.1.1.2"
+registry:
+  username: user2
+  password: pw2
+builder:
+  arch: amd64
+aliases:
+  other_config: config -c config/deploy2.yml
