@@ -37,6 +37,7 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
       ]
 
       on(KAMAL.proxy_hosts) do |host|
+        p boot_options
         execute(*KAMAL.proxy.ensure_proxy_directory)
         upload! StringIO.new(boot_options.join(" ")), KAMAL.config.proxy_options_file
       end

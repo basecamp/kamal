@@ -263,6 +263,15 @@ class CliProxyTest < CliTestCase
     end
   end
 
+  test "boot_config set no log max size" do
+    run_command("boot_config", "set", "--log-max-size=").tap do |output|
+      %w[ 1.1.1.1 1.1.1.2 ].each do |host|
+        assert_match "Running /usr/bin/env mkdir -p .kamal/proxy on #{host}", output
+        assert_match "Uploading \"--publish 80:80 --publish 443:443\" to .kamal/proxy/options on #{host}", output
+      end
+    end
+  end
+
   test "boot_config set custom ports" do
     run_command("boot_config", "set", "--http-port", "8080", "--https-port", "8443").tap do |output|
       %w[ 1.1.1.1 1.1.1.2 ].each do |host|
