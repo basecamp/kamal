@@ -279,6 +279,24 @@ class CliAppTest < CliTestCase
     end
   end
 
+  test "exec detach with reuse" do
+    assert_raises(ArgumentError, "Detach is not compatible with reuse") do
+      run_command("exec", "--detach", "--reuse", "ruby -v")
+    end
+  end
+
+  test "exec detach with interactive" do
+    assert_raises(ArgumentError, "Detach is not compatible with interactive") do
+      run_command("exec", "--interactive", "--detach", "ruby -v")
+    end
+  end
+
+  test "exec detach with interactive and reuse" do
+    assert_raises(ArgumentError, "Detach is not compatible with interactive or reuse") do
+      run_command("exec", "--interactive", "--detach", "--reuse", "ruby -v")
+    end
+  end
+
   test "exec with reuse" do
     run_command("exec", "--reuse", "ruby -v").tap do |output|
       assert_match "sh -c 'docker ps --latest --format '\\''{{.Names}}'\\'' --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --format '\\''{{.Names}}'\\'' --filter label=service=app --filter label=role=web --filter status=running --filter status=restarting' | head -1 | while read line; do echo ${line#app-web-}; done", output # Get current version

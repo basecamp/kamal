@@ -96,6 +96,10 @@ class Kamal::Cli::App < Kamal::Cli::Base
   option :env, aliases: "-e", type: :hash, desc: "Set environment variables for the command"
   option :detach, type: :boolean, default: false, desc: "Execute command in a detached container"
   def exec(*cmd)
+    if (incompatible_options = [ :interactive, :reuse ].select { |key| options[:detach] && options[key] }.presence)
+      raise ArgumentError, "Detach is not compatible with #{incompatible_options.join(" or ")}"
+    end
+
     cmd = Kamal::Utils.join_commands(cmd)
     env = options[:env]
     detach = options[:detach]
