@@ -111,6 +111,10 @@ class Kamal::Configuration::Builder
     builder_config["ssh"]
   end
 
+  def provenance
+    builder_config["provenance"]
+  end
+
   def git_clone?
     Kamal::Git.used? && builder_config["context"].nil?
   end

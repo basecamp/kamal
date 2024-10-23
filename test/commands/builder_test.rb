@@ -144,6 +144,20 @@ class CommandsBuilderTest < ActiveSupport::TestCase
       builder.push.join(" ")
   end
 
+  test "push with provenance" do
+    builder = new_builder_command(builder: { "provenance" => "mode=max" })
+    assert_equal \
+      "docker buildx build --push --platform linux/amd64 --builder kamal-local-docker-container -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile --provenance mode=max .",
+      builder.push.join(" ")
+  end
+
+  test "push with provenance false" do
+    builder = new_builder_command(builder: { "provenance" => false })
+    assert_equal \
+      "docker buildx build --push --platform linux/amd64 --builder kamal-local-docker-container -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile --provenance false .",
+      builder.push.join(" ")
+  end
+
   test "mirror count" do
     command = new_builder_command
     assert_equal "docker info --format '{{index .RegistryConfig.Mirrors 0}}'", command.first_mirror.join(" ")
