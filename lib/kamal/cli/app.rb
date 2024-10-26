@@ -195,12 +195,14 @@ class Kamal::Cli::App < Kamal::Cli::Base
   option :grep_options, aliases: "-o", desc: "Additional options supplied to grep"
   option :follow, aliases: "-f", desc: "Follow log on primary server (or specific host set by --hosts)"
   option :skip_timestamps, type: :boolean, aliases: "-T", desc: "Skip appending timestamps to logging output"
+  option :container_id, desc: "Docker container ID to fetch logs"
   def logs
     # FIXME: Catch when app containers aren't running
 
     grep = options[:grep]
     grep_options = options[:grep_options]
     since = options[:since]
+    container_id = options[:container_id]
     timestamps = !options[:skip_timestamps]
 
     if options[:follow]
@@ -213,8 +215,8 @@ class Kamal::Cli::App < Kamal::Cli::Base
         role = KAMAL.roles_on(KAMAL.primary_host).first
 
         app = KAMAL.app(role: role, host: host)
-        info app.follow_logs(host: KAMAL.primary_host, timestamps: timestamps, lines: lines, grep: grep, grep_options: grep_options)
-        exec app.follow_logs(host: KAMAL.primary_host, timestamps: timestamps, lines: lines, grep: grep, grep_options: grep_options)
+        info app.follow_logs(host: KAMAL.primary_host, timestamps: timestamps, lines: lines, grep: grep, grep_options: grep_options, container_id: container_id)
+        exec app.follow_logs(host: KAMAL.primary_host, timestamps: timestamps, lines: lines, grep: grep, grep_options: grep_options, container_id: container_id)
       end
     else
       lines = options[:lines].presence || ((since || grep) ? nil : 100) # Default to 100 lines if since or grep isn't set

@@ -6,10 +6,10 @@ module Kamal::Commands::App::Logging
       ("grep '#{grep}'#{" #{grep_options}" if grep_options}" if grep)
   end
 
-  def follow_logs(host:, timestamps: true, lines: nil, grep: nil, grep_options: nil)
+  def follow_logs(host:, timestamps: true, lines: nil, grep: nil, grep_options: nil, container_id: nil)
     run_over_ssh \
       pipe(
-        current_running_container_id,
+        container_id ? "echo #{container_id}" : current_running_container_id,
         "xargs docker logs#{" --timestamps" if timestamps}#{" --tail #{lines}" if lines} --follow 2>&1",
         (%(grep "#{grep}"#{" #{grep_options}" if grep_options}) if grep)
       ),

@@ -353,6 +353,13 @@ class CliAppTest < CliTestCase
     assert_match "sh -c '\\''docker ps --latest --quiet --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''\\'\\'''\\''{{.ID}}'\\''\\'\\'''\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting'\\'' | head -1 | xargs docker logs --timestamps --tail 10 --follow 2>&1", run_command("logs", "--follow")
   end
 
+  test "logs with follow and container_id" do
+    SSHKit::Backend::Abstract.any_instance.stubs(:exec)
+      .with("ssh -t root@1.1.1.1 -p 22 'echo ID123 | xargs docker logs --timestamps --tail 10 --follow 2>&1'")
+
+    assert_match "echo ID123 | xargs docker logs --timestamps --tail 10 --follow 2>&1", run_command("logs", "--follow", "--container_id", "ID123")
+  end
+
   test "logs with follow and grep" do
     SSHKit::Backend::Abstract.any_instance.stubs(:exec)
       .with("ssh -t root@1.1.1.1 -p 22 'sh -c '\\''docker ps --latest --quiet --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''\\'\\'''\\''{{.ID}}'\\''\\'\\'''\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting'\\'' | head -1 | xargs docker logs --timestamps --follow 2>&1 | grep \"hey\"'")
