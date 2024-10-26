@@ -157,6 +157,12 @@ class CommandsAppTest < ActiveSupport::TestCase
       new_command.logs.join(" ")
   end
 
+  test "logs with container_id" do
+    assert_equal \
+      "echo C137 | xargs docker logs --timestamps 2>&1",
+      new_command.logs(container_id: "C137").join(" ")
+  end
+
   test "logs with since" do
     assert_equal \
       "sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting' | head -1 | xargs docker logs --timestamps --since 5m 2>&1",
@@ -248,7 +254,7 @@ class CommandsAppTest < ActiveSupport::TestCase
 
   test "execute in new detached container" do
     assert_equal \
-      "docker run --detach --rm --network kamal --env-file .kamal/apps/app/env/roles/web.env --log-opt max-size=\"10m\" dhh/app:999 bin/rails db:setup",
+      "docker run --detach --network kamal --env-file .kamal/apps/app/env/roles/web.env --log-opt max-size=\"10m\" dhh/app:999 bin/rails db:setup",
       new_command.execute_in_new_container("bin/rails", "db:setup", detach: true, env: {}).join(" ")
   end
 

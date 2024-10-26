@@ -215,8 +215,8 @@ class Kamal::Cli::App < Kamal::Cli::Base
         role = KAMAL.roles_on(KAMAL.primary_host).first
 
         app = KAMAL.app(role: role, host: host)
-        info app.follow_logs(host: KAMAL.primary_host, timestamps: timestamps, lines: lines, grep: grep, grep_options: grep_options, container_id: container_id)
-        exec app.follow_logs(host: KAMAL.primary_host, timestamps: timestamps, lines: lines, grep: grep, grep_options: grep_options, container_id: container_id)
+        info app.follow_logs(host: KAMAL.primary_host, container_id: container_id, timestamps: timestamps, lines: lines, grep: grep, grep_options: grep_options)
+        exec app.follow_logs(host: KAMAL.primary_host, container_id: container_id, timestamps: timestamps, lines: lines, grep: grep, grep_options: grep_options)
       end
     else
       lines = options[:lines].presence || ((since || grep) ? nil : 100) # Default to 100 lines if since or grep isn't set
@@ -226,7 +226,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
 
         roles.each do |role|
           begin
-            puts_by_host host, capture_with_info(*KAMAL.app(role: role, host: host).logs(timestamps: timestamps, since: since, lines: lines, grep: grep, grep_options: grep_options))
+            puts_by_host host, capture_with_info(*KAMAL.app(role: role, host: host).logs(container_id: container_id, timestamps: timestamps, since: since, lines: lines, grep: grep, grep_options: grep_options))
           rescue SSHKit::Command::Failed
             puts_by_host host, "Nothing found"
           end

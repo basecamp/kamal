@@ -275,7 +275,7 @@ class CliAppTest < CliTestCase
 
   test "exec detach" do
     run_command("exec", "--detach", "ruby -v").tap do |output|
-      assert_match "docker run --detach --rm --network kamal --env-file .kamal/apps/app/env/roles/web.env --log-opt max-size=\"10m\" dhh/app:latest ruby -v", output
+      assert_match "docker run --detach --network kamal --env-file .kamal/apps/app/env/roles/web.env --log-opt max-size=\"10m\" dhh/app:latest ruby -v", output
     end
   end
 

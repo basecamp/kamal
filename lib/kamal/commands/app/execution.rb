@@ -11,7 +11,7 @@ module Kamal::Commands::App::Execution
     docker :run,
       ("-it" if interactive),
       ("--detach" if detach),
-      "--rm",
+      ("--rm" unless detach),
       "--network", "kamal",
       *role&.env_args(host),
       *argumentize("--env", env),
