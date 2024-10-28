@@ -254,7 +254,7 @@ class Kamal::Configuration
   end
 
   def proxy_logging_args(max_size)
-    argumentize "--log-opt", "max-size=#{max_size}"
+    argumentize "--log-opt", "max-size=#{max_size}" if max_size.present?
   end
 
   def proxy_options_default

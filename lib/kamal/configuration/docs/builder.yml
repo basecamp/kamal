@@ -114,3 +114,9 @@ builder:
   #
   # The build driver to use, defaults to `docker-container`:
   driver: docker
+
+  # Provenance
+  #
+  # It is used to configure provenance attestations for the build result.
+  # The value can also be a boolean to enable or disable provenance attestations.
+  provenance: mode=max

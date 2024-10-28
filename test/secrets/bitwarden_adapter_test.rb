@@ -2,6 +2,8 @@ require "test_helper"
 
 class BitwardenAdapterTest < SecretAdapterTestCase
   test "fetch" do
+    stub_ticks.with("bw --version 2> /dev/null")
+
     stub_unlocked
     stub_ticks.with("bw sync").returns("")
     stub_mypassword
@@ -14,6 +16,8 @@ class BitwardenAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch with no login" do
+    stub_ticks.with("bw --version 2> /dev/null")
+
     stub_unlocked
     stub_ticks.with("bw sync").returns("")
     stub_noteitem
@@ -25,6 +29,8 @@ class BitwardenAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch with from" do
+    stub_ticks.with("bw --version 2> /dev/null")
+
     stub_unlocked
     stub_ticks.with("bw sync").returns("")
     stub_myitem
@@ -38,7 +44,26 @@ class BitwardenAdapterTest < SecretAdapterTestCase
     assert_equal expected_json, json
   end
 
+  test "fetch all with from" do
+    stub_ticks.with("bw --version 2> /dev/null")
+
+    stub_unlocked
+    stub_ticks.with("bw sync").returns("")
+    stub_noteitem_with_fields
+
+    json = JSON.parse(shellunescape(run_command("fetch", "mynotefields")))
+
+    expected_json = {
+      "mynotefields/field1"=>"secret1", "mynotefields/field2"=>"blam", "mynotefields/field3"=>"fewgrwjgk",
+      "mynotefields/field4"=>"auto"
+    }
+
+    assert_equal expected_json, json
+  end
+
   test "fetch with multiple items" do
+    stub_ticks.with("bw --version 2> /dev/null")
+
     stub_unlocked
 
     stub_ticks.with("bw sync").returns("")
@@ -80,6 +105,8 @@ class BitwardenAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch unauthenticated" do
+    stub_ticks.with("bw --version 2> /dev/null")
+
     stub_ticks
       .with("bw status")
       .returns(
@@ -101,6 +128,8 @@ class BitwardenAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch locked" do
+    stub_ticks.with("bw --version 2> /dev/null")
+
     stub_ticks
       .with("bw status")
       .returns(
@@ -126,6 +155,8 @@ class BitwardenAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch locked with session" do
+    stub_ticks.with("bw --version 2> /dev/null")
+
     stub_ticks
       .with("bw status")
       .returns(
@@ -148,6 +179,15 @@ class BitwardenAdapterTest < SecretAdapterTestCase
     expected_json = { "mypassword"=>"secret123" }
 
     assert_equal expected_json, json
+  end
+
+  test "fetch without CLI installed" do
+    stub_ticks_with("bw --version 2> /dev/null", succeed: false)
+
+    error = assert_raises RuntimeError do
+      JSON.parse(shellunescape(run_command("fetch", "mynote")))
+    end
+    assert_equal "Bitwarden CLI is not installed", error.message
   end
 
   private
@@ -214,7 +254,37 @@ class BitwardenAdapterTest < SecretAdapterTestCase
             "collectionIds":[]
           }
         JSON
-  end
+      end
+
+      def stub_noteitem_with_fields(session: nil)
+      stub_ticks
+        .with("#{"BW_SESSION=#{session} " if session}bw get item mynotefields")
+        .returns(<<~JSON)
+            {
+              "passwordHistory":null,
+              "revisionDate":"2024-09-28T09:07:27.461Z",
+              "creationDate":"2024-09-28T09:07:00.740Z",
+              "deletedDate":null,
+              "object":"item",
+              "id":"aaaaaaaa-cccc-eeee-0000-222222222222",
+              "organizationId":null,
+              "folderId":null,
+              "type":2,
+              "reprompt":0,
+              "name":"noteitem",
+              "notes":"NOTES",
+              "favorite":false,
+              "fields":[
+                {"name":"field1","value":"secret1","type":1,"linkedId":null},
+                {"name":"field2","value":"blam","type":1,"linkedId":null},
+                {"name":"field3","value":"fewgrwjgk","type":1,"linkedId":null},
+                {"name":"field4","value":"auto","type":1,"linkedId":null}
+              ],
+              "secureNote":{"type":0},
+              "collectionIds":[]
+            }
+          JSON
+      end
 
     def stub_myitem
       stub_ticks
@@ -237,7 +307,8 @@ class BitwardenAdapterTest < SecretAdapterTestCase
             "fields":[
               {"name":"field1","value":"secret1","type":1,"linkedId":null},
               {"name":"field2","value":"blam","type":1,"linkedId":null},
-              {"name":"field3","value":"fewgrwjgk","type":1,"linkedId":null}
+              {"name":"field3","value":"fewgrwjgk","type":1,"linkedId":null},
+              {"name":"field4","value":"auto","type":1,"linkedId":null}
             ],
             "login":{"fido2Credentials":[],"uris":[],"username":null,"password":null,"totp":null,"passwordRevisionDate":null},"collectionIds":[]
           }

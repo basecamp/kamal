@@ -22,7 +22,7 @@ class CliProxyTest < CliTestCase
       end
     end
 
-    assert_includes exception.message, "kamal-proxy version v0.0.1 is too old, please reboot to update to at least #{Kamal::Configuration::PROXY_MINIMUM_VERSION}"
+    assert_includes exception.message, "kamal-proxy version v0.0.1 is too old, run `kamal proxy reboot` in order to update to at least #{Kamal::Configuration::PROXY_MINIMUM_VERSION}"
   ensure
     Thread.report_on_exception = false
   end
@@ -259,6 +259,15 @@ class CliProxyTest < CliTestCase
       %w[ 1.1.1.1 1.1.1.2 ].each do |host|
         assert_match "Running /usr/bin/env mkdir -p .kamal/proxy on #{host}", output
         assert_match "Uploading \"--publish 80:80 --publish 443:443 --log-opt max-size=100m\" to .kamal/proxy/options on #{host}", output
+      end
+    end
+  end
+
+  test "boot_config set no log max size" do
+    run_command("boot_config", "set", "--log-max-size=").tap do |output|
+      %w[ 1.1.1.1 1.1.1.2 ].each do |host|
+        assert_match "Running /usr/bin/env mkdir -p .kamal/proxy on #{host}", output
+        assert_match "Uploading \"--publish 80:80 --publish 443:443\" to .kamal/proxy/options on #{host}", output
       end
     end
   end

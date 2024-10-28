@@ -7,7 +7,7 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
   delegate \
     :args, :secrets, :dockerfile, :target, :arches, :local_arches, :remote_arches, :remote,
     :pack?, :pack_builder, :pack_buildpacks,
-    :cache_from, :cache_to, :ssh, :driver, :docker_driver?,
+    :cache_from, :cache_to, :ssh, :provenance, :driver, :docker_driver?,
     to: :builder_config
 
   def clean
@@ -38,7 +38,7 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
   end
 
   def build_options
-    [ *build_tags, *build_cache, *build_labels, *build_args, *build_secrets, *build_dockerfile, *build_target, *build_ssh ]
+    [ *build_tags, *build_cache, *build_labels, *build_args, *build_secrets, *build_dockerfile, *build_target, *build_ssh, *builder_provenance ]
   end
 
   def build_context
@@ -96,6 +96,10 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
 
     def build_ssh
       argumentize "--ssh", ssh if ssh.present?
+    end
+
+    def builder_provenance
+      argumentize "--provenance", provenance unless provenance.nil?
     end
 
     def builder_config
