@@ -4,6 +4,7 @@ class Kamal::Commands::Builder::Pack < Kamal::Commands::Builder::Base
       pack(:build,
         config.repository,
         "--platform", platform,
+        "--creation-time", "now",
         "--builder", pack_builder,
         buildpacks,
         "-t", config.absolute_image,
