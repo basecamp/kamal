@@ -32,6 +32,7 @@ class Kamal::Cli::Server < Kamal::Cli::Base
           if execute(*KAMAL.docker.superuser?, raise_on_non_zero_exit: false)
             info "Missing Docker on #{host}. Installing…"
             execute *KAMAL.docker.install
+            run_hook "host-docker-setup"
           else
             missing << host
           end

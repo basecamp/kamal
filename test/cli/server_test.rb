@@ -57,11 +57,13 @@ class CliServerTest < CliTestCase
     Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
     SSHKit::Backend::Abstract.any_instance.expects(:execute).with(".kamal/hooks/pre-connect", anything).at_least_once
     SSHKit::Backend::Abstract.any_instance.expects(:execute).with(".kamal/hooks/docker-setup", anything).at_least_once
+    SSHKit::Backend::Abstract.any_instance.expects(:execute).with(".kamal/hooks/host-docker-setup", anything).at_least_once
 
     run_command("bootstrap").tap do |output|
       ("1.1.1.1".."1.1.1.4").map do |host|
         assert_match "Missing Docker on #{host}. Installing…", output
         assert_match "Running the docker-setup hook", output
+        assert_match "Running the host-docker-setup hook", output
       end
     end
   end
