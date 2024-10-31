@@ -89,7 +89,7 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
         on(hosts) do
           execute *KAMAL.auditor.record("Stopped #{name} accessory"), verbosity: :debug
           execute *accessory.stop, raise_on_non_zero_exit: false
-          # execute *accessory.remove if accessory.running_proxy?
+          execute *accessory.remove if accessory.running_proxy?
         end
       end
     end

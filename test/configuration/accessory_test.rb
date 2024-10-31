@@ -63,6 +63,9 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
           "options" => {
             "cpus" => "4",
             "memory" => "2GB"
+          },
+          "proxy" => {
+            "host" => "monitoring.example.com"
           }
         }
       }
@@ -160,5 +163,10 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
   test "network_args with configured options" do
     @deploy[:accessories]["mysql"]["network"] = "database"
     assert_equal [ "--network", "database" ], @config.accessory(:mysql).network_args
+  end
+
+  test "proxy" do
+    assert @config.accessory(:monitoring).running_proxy?
+    assert_equal "monitoring.example.com", @config.accessory(:monitoring).proxy.host
   end
 end

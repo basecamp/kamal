@@ -21,7 +21,7 @@ class Kamal::Configuration::Accessory
       secrets: config.secrets,
       context: "accessories/#{name}/env"
 
-    # initialize_proxy if running_proxy?
+    initialize_proxy if running_proxy?
   end
 
   def service_name
