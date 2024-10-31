@@ -177,7 +177,7 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
 
   test "remove" do
     assert_equal \
-      "docker exec kamal-proxy kamal-proxy remove custom-busybox --target \"172.1.0.2:80\"",
+      "docker exec kamal-proxy kamal-proxy remove custom-busybox",
       new_command(:busybox).remove(target: "172.1.0.2").join(" ")
   end
 

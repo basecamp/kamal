@@ -2,7 +2,7 @@ class Kamal::Commands::Accessory < Kamal::Commands::Base
   attr_reader :accessory_config
   delegate :service_name, :image, :hosts, :port, :files, :directories, :cmd,
            :network_args, :publish_args, :env_args, :volume_args, :label_args, :option_args,
-           :secrets_io, :secrets_path, :env_directory, :running_proxy?,
+           :secrets_io, :secrets_path, :env_directory, :proxy, :running_proxy?,
            to: :accessory_config
   delegate :proxy_container_name, to: :config
 
@@ -41,11 +41,11 @@ class Kamal::Commands::Accessory < Kamal::Commands::Base
   end
 
   def deploy(target:)
-    proxy_exec :deploy, service_name, *accessory_config.proxy.deploy_command_args(target: target)
+    proxy_exec :deploy, service_name, *proxy.deploy_command_args(target: target)
   end
 
-  def remove(target:)
-    proxy_exec :remove, service_name, *accessory_config.proxy.remove_command_args(target: target)
+  def remove
+    proxy_exec :remove, service_name
   end
 
 
