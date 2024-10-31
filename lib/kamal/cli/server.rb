@@ -25,6 +25,7 @@ class Kamal::Cli::Server < Kamal::Cli::Base
   desc "bootstrap", "Set up Docker to run Kamal apps"
   def bootstrap
     with_lock do
+      completed = []
       missing = []
 
       on(KAMAL.hosts | KAMAL.accessory_hosts) do |host|
@@ -32,7 +33,7 @@ class Kamal::Cli::Server < Kamal::Cli::Base
           if execute(*KAMAL.docker.superuser?, raise_on_non_zero_exit: false)
             info "Missing Docker on #{host}. Installing…"
             execute *KAMAL.docker.install
-            run_hook "host-docker-setup"
+            completed << host
           else
             missing << host
           end
@@ -41,6 +42,10 @@ class Kamal::Cli::Server < Kamal::Cli::Base
 
       if missing.any?
         raise "Docker is not installed on #{missing.join(", ")} and can't be automatically installed without having root access and either `wget` or `curl`. Install Docker manually: https://docs.docker.com/engine/install/"
+      end
+
+      if completed.any?
+        run_hook "host-docker-setup", hosts: completed
       end
 
       run_hook "docker-setup"
