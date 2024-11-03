@@ -44,9 +44,9 @@ class Kamal::Secrets::Adapters::Enpass < Kamal::Secrets::Adapters::Base
 
     def parse_result_and_take_secrets(unparsed_result, secrets)
       unparsed_result.split("\n").reduce({}) do |acc, line|
-        title = line[/title:\s*(\w+)/, 1]
-        label = line[/label:\s*(.*?)\s{2}/, 1]
-        password = line[/password:\s*([^"]+)/, 1]
+        title = line[/title:\s{1}(\w+)/, 1]
+        label = line[/label:\s{1}(.*?)\s{2}/, 1]
+        password = line[/password:\s{1}([^"]+)/, 1]
 
         if title && !password.to_s.empty?
           key = label.nil? || label.empty? ? title : "#{title}/#{label}"
