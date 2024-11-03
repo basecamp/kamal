@@ -1,5 +1,9 @@
 require "open3"
 
+##
+# Enpass is different from most password managers, in a way that it's offline. A path to a vault is treated as account.
+#
+# Pass it like so: `kamal secrets fetch --adapter enpass --account /Users/YOUR_USERNAME/Library/Containers/in.sinew.Enpass-Desktop/Data/Documents/Vaults/primary --from MY_PROD_SERVER`
 class Kamal::Secrets::Adapters::Enpass < Kamal::Secrets::Adapters::Base
   private
     def login(account)
@@ -28,7 +32,7 @@ class Kamal::Secrets::Adapters::Enpass < Kamal::Secrets::Adapters::Base
 
     def fetch_secret_titles(secrets)
       secrets.reduce(Set.new) do |acc, secret|
-        # Use rpartition to split the string at the last '/'
+        # Sometimes secrets contain a '/', sometimes not
         key, separator, value = secret.rpartition("/")
         if key.empty?
           acc << value
@@ -44,7 +48,6 @@ class Kamal::Secrets::Adapters::Enpass < Kamal::Secrets::Adapters::Base
         label = line[/label:\s*(.*?)\s{2}/, 1]
         password = line[/password:\s*([^"]+)/, 1]
 
-        # If title and label are not empty and password is defined, add to the hash
         if title && !password.to_s.empty?
           key = label.nil? || label.empty? ? title : "#{title}/#{label}"
           if secrets.include?(title) || secrets.include?(key)
