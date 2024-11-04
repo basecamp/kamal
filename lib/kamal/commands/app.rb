@@ -47,7 +47,7 @@ class Kamal::Commands::App < Kamal::Commands::Base
   end
 
   def info
-    docker :ps, *filter_args
+    docker :ps, *container_filter_args
   end
 
 
@@ -67,7 +67,7 @@ class Kamal::Commands::App < Kamal::Commands::Base
 
   def list_versions(*docker_args, statuses: nil)
     pipe \
-      docker(:ps, *filter_args(statuses: statuses), *docker_args, "--format", '"{{.Names}}"'),
+      docker(:ps, *container_filter_args(statuses: statuses), *docker_args, "--format", '"{{.Names}}"'),
       extract_version_from_name
   end
 
@@ -91,11 +91,15 @@ class Kamal::Commands::App < Kamal::Commands::Base
     end
 
     def latest_container(format:, filters: nil)
-      docker :ps, "--latest", *format, *filter_args(statuses: ACTIVE_DOCKER_STATUSES), argumentize("--filter", filters)
+      docker :ps, "--latest", *format, *container_filter_args(statuses: ACTIVE_DOCKER_STATUSES), argumentize("--filter", filters)
     end
 
-    def filter_args(statuses: nil)
-      argumentize "--filter", filters(statuses: statuses)
+    def container_filter_args(statuses: nil)
+      argumentize "--filter", container_filters(statuses: statuses)
+    end
+
+    def image_filter_args
+      argumentize "--filter", image_filters
     end
 
     def extract_version_from_name
@@ -103,13 +107,17 @@ class Kamal::Commands::App < Kamal::Commands::Base
       %(while read line; do echo ${line##{role.container_prefix}-}; done)
     end
 
-    def filters(statuses: nil)
+    def container_filters(statuses: nil)
       [ "label=service=#{config.service}" ].tap do |filters|
-        filters << "label=destination=#{config.destination}" if config.destination
+        filters << "label=destination=#{config.destination}"
         filters << "label=role=#{role}" if role
         statuses&.each do |status|
           filters << "status=#{status}"
         end
       end
+    end
+
+    def image_filters
+      [ "label=service=#{config.service}" ]
     end
 end
