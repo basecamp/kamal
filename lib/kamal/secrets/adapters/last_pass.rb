@@ -27,4 +27,13 @@ class Kamal::Secrets::Adapters::LastPass < Kamal::Secrets::Adapters::Base
         end
       end
     end
+
+    def check_dependencies!
+      raise RuntimeError, "LastPass CLI is not installed" unless cli_installed?
+    end
+
+    def cli_installed?
+      `lpass --version 2> /dev/null`
+      $?.success?
+    end
 end

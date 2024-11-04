@@ -2,6 +2,7 @@ require "test_helper"
 
 class SecretsOnePasswordAdapterTest < SecretAdapterTestCase
   test "fetch" do
+    stub_ticks.with("op --version 2> /dev/null")
     stub_ticks.with("op account get --account myaccount 2> /dev/null")
 
     stub_ticks
@@ -56,6 +57,7 @@ class SecretsOnePasswordAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch with multiple items" do
+    stub_ticks.with("op --version 2> /dev/null")
     stub_ticks.with("op account get --account myaccount 2> /dev/null")
 
     stub_ticks
@@ -115,6 +117,8 @@ class SecretsOnePasswordAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch with signin, no session" do
+    stub_ticks.with("op --version 2> /dev/null")
+
     stub_ticks_with("op account get --account myaccount 2> /dev/null", succeed: false)
     stub_ticks_with("op signin --account \"myaccount\" --force --raw", succeed: true).returns("")
 
@@ -132,6 +136,8 @@ class SecretsOnePasswordAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch with signin and session" do
+    stub_ticks.with("op --version 2> /dev/null")
+
     stub_ticks_with("op account get --account myaccount 2> /dev/null", succeed: false)
     stub_ticks_with("op signin --account \"myaccount\" --force --raw", succeed: true).returns("1234567890")
 
@@ -146,6 +152,15 @@ class SecretsOnePasswordAdapterTest < SecretAdapterTestCase
     }
 
     assert_equal expected_json, json
+  end
+
+  test "fetch without CLI installed" do
+    stub_ticks_with("op --version 2> /dev/null", succeed: false)
+
+    error = assert_raises RuntimeError do
+      JSON.parse(shellunescape(run_command("fetch", "--from", "op://myvault/myitem", "section/SECRET1", "section/SECRET2", "section2/SECRET3")))
+    end
+    assert_equal "1Password CLI is not installed", error.message
   end
 
   private
