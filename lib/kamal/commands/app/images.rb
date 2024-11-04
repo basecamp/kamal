@@ -4,7 +4,7 @@ module Kamal::Commands::App::Images
   end
 
   def remove_images
-    docker :image, :prune, "--all", "--force", *filter_args
+    docker :image, :prune, "--all", "--force", *image_filter_args
   end
 
   def tag_latest_image
