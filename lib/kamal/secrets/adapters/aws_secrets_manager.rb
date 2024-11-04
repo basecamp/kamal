@@ -22,4 +22,13 @@ class Kamal::Secrets::Adapters::AwsSecretsManager < Kamal::Secrets::Adapters::Ba
         raise RuntimeError, "Could not read #{secret} from AWS Secrets Manager" unless $?.success?
       end
     end
+
+    def check_dependencies!
+      raise RuntimeError, "AWS CLI is not installed" unless cli_installed?
+    end
+
+    def cli_installed?
+      `aws --version 2> /dev/null`
+      $?.success?
+    end
 end

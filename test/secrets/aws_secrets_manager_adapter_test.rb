@@ -2,6 +2,7 @@ require "test_helper"
 
 class AwsSecretsManagerAdapterTest < SecretAdapterTestCase
   test "fetch" do
+    stub_ticks.with("aws --version 2> /dev/null")
     stub_ticks
       .with("aws secretsmanager batch-get-secret-value --secret-id-list secret/KEY1 secret/KEY2 secret2/KEY3 --profile default")
       .returns(<<~JSON)
@@ -44,6 +45,7 @@ class AwsSecretsManagerAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch with secret names" do
+    stub_ticks.with("aws --version 2> /dev/null")
     stub_ticks
       .with("aws secretsmanager batch-get-secret-value --secret-id-list secret/KEY1 secret/KEY2 --profile default")
       .returns(<<~JSON)
@@ -72,6 +74,15 @@ class AwsSecretsManagerAdapterTest < SecretAdapterTestCase
     }
 
     assert_equal expected_json, json
+  end
+
+  test "fetch without CLI installed" do
+    stub_ticks_with("aws --version 2> /dev/null", succeed: false)
+
+    error = assert_raises RuntimeError do
+      JSON.parse(shellunescape(run_command("fetch", "SECRET1")))
+    end
+    assert_equal "AWS CLI is not installed", error.message
   end
 
   private
