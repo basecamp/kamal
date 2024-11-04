@@ -18,7 +18,7 @@ class Kamal::Secrets::Adapters::AwsSecretsManager < Kamal::Secrets::Adapters::Ba
     end
 
     def get_from_secrets_manager(secrets, account:)
-      `aws secretsmanager batch-get-secret-value --secret-id-list #{secrets.map(&:shellescape).join(" ")} --profile #{account}`.tap do
+      `aws secretsmanager batch-get-secret-value --secret-id-list #{secrets.map(&:shellescape).join(" ")} --profile #{account.shellescape}`.tap do
         raise RuntimeError, "Could not read #{secret} from AWS Secrets Manager" unless $?.success?
       end
     end
