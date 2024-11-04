@@ -1,4 +1,4 @@
-class Kamal::Secrets::Adapters::AwsSecretsmanager < Kamal::Secrets::Adapters::Base
+class Kamal::Secrets::Adapters::AwsSecretsManager < Kamal::Secrets::Adapters::Base
   private
     def login(_account)
       nil

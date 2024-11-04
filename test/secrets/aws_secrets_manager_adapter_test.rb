@@ -1,6 +1,6 @@
 require "test_helper"
 
-class AwsSecretsmanagerAdapterTest < SecretAdapterTestCase
+class AwsSecretsManagerAdapterTest < SecretAdapterTestCase
   test "fetch" do
     stub_ticks
       .with("aws secretsmanager batch-get-secret-value --secret-id-list secret/KEY1 secret/KEY2 secret2/KEY3 --profile default")
@@ -80,7 +80,7 @@ class AwsSecretsmanagerAdapterTest < SecretAdapterTestCase
         Kamal::Cli::Secrets.start \
           [ *command,
             "-c", "test/fixtures/deploy_with_accessories.yml",
-            "--adapter", "aws_secretsmanager",
+            "--adapter", "aws_secrets_manager",
             "--account", "default" ]
       end
     end
