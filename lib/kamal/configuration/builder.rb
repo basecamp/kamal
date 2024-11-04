@@ -111,6 +111,10 @@ class Kamal::Configuration::Builder
     builder_config["ssh"]
   end
 
+  def provenance
+    builder_config["provenance"]
+  end
+
   def git_clone?
     Kamal::Git.used? && builder_config["context"].nil?
   end
@@ -166,7 +170,7 @@ class Kamal::Configuration::Builder
     end
 
     def cache_to_config_for_registry
-      [ "type=registry", builder_config["cache"]&.fetch("options", nil), "ref=#{cache_image_ref}" ].compact.join(",")
+      [ "type=registry", "ref=#{cache_image_ref}", builder_config["cache"]&.fetch("options", nil) ].compact.join(",")
     end
 
     def repo_basename

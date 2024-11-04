@@ -1,13 +1,10 @@
 require "dotenv"
 
 class Kamal::Secrets
-  attr_reader :secrets_files
-
   Kamal::Secrets::Dotenv::InlineCommandSubstitution.install!
 
   def initialize(destination: nil)
-    @secrets_files = \
-      [ ".kamal/secrets-common", ".kamal/secrets#{(".#{destination}" if destination)}" ].select { |f| File.exist?(f) }
+    @destination = destination
     @mutex = Mutex.new
   end
 
@@ -17,10 +14,10 @@ class Kamal::Secrets
       secrets.fetch(key)
     end
   rescue KeyError
-    if secrets_files
+    if secrets_files.present?
       raise Kamal::ConfigurationError, "Secret '#{key}' not found in #{secrets_files.join(", ")}"
     else
-      raise Kamal::ConfigurationError, "Secret '#{key}' not found, no secret files provided"
+      raise Kamal::ConfigurationError, "Secret '#{key}' not found, no secret files (#{secrets_filenames.join(", ")}) provided"
     end
   end
 
@@ -28,10 +25,18 @@ class Kamal::Secrets
     secrets
   end
 
+  def secrets_files
+    @secrets_files ||= secrets_filenames.select { |f| File.exist?(f) }
+  end
+
   private
     def secrets
       @secrets ||= secrets_files.inject({}) do |secrets, secrets_file|
         secrets.merge!(::Dotenv.parse(secrets_file))
       end
+    end
+
+    def secrets_filenames
+      [ ".kamal/secrets-common", ".kamal/secrets#{(".#{@destination}" if @destination)}" ]
     end
 end

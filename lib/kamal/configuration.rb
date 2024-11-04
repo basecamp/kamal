@@ -14,7 +14,7 @@ class Kamal::Configuration
 
   include Validation
 
-  PROXY_MINIMUM_VERSION = "v0.8.1"
+  PROXY_MINIMUM_VERSION = "v0.8.2"
   PROXY_HTTP_PORT = 80
   PROXY_HTTPS_PORT = 443
   PROXY_LOG_MAX_SIZE = "10m"
@@ -254,7 +254,7 @@ class Kamal::Configuration
   end
 
   def proxy_logging_args(max_size)
-    argumentize "--log-opt", "max-size=#{max_size}"
+    argumentize "--log-opt", "max-size=#{max_size}" if max_size.present?
   end
 
   def proxy_options_default

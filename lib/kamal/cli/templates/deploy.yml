@@ -13,13 +13,14 @@ servers:
   #     - 192.168.0.1
   #   cmd: bin/jobs
 
-# Enable SSL auto certification via Let's Encrypt (and allow for multiple apps on one server).
-# If using something like Cloudflare, it is recommended to set encryption mode 
-# in Cloudflare's SSL/TLS setting to "Full" to enable end-to-end encryption. 
+# Enable SSL auto certification via Let's Encrypt and allow for multiple apps on a single web server.
+# Remove this section when using multiple web servers and ensure you terminate SSL at your load balancer.
+#
+# Note: If using Cloudflare, set encryption mode in SSL/TLS setting to "Full" to enable CF-to-app encryption. 
 proxy: 
   ssl: true
   host: app.example.com
-  # kamal-proxy connects to your container over port 80, use `app_port` to specify a different port.
+  # Proxy connects to your container on port 80 by default.
   # app_port: 3000
 
 # Credentials for your image host.
@@ -90,7 +91,7 @@ builder:
 #     directories:
 #       - data:/var/lib/mysql
 #   redis:
-#     image: redis:7.0
+#     image: valkey/valkey:8
 #     host: 192.168.0.2
 #     port: 6379
 #     directories:
