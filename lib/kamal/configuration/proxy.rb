@@ -26,6 +26,14 @@ class Kamal::Configuration::Proxy
     proxy_config["hosts"] || proxy_config["host"]&.split(",") || []
   end
 
+  def shm_size
+    proxy_config.dig("shm_size")
+  end
+
+  def shm_size_args
+    shm_size ? [ "--shm-size=#{shm_size}" ] : []
+  end
+
   def deploy_options
     {
       host: hosts,

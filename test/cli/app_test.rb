@@ -388,6 +388,14 @@ class CliAppTest < CliTestCase
     end
   end
 
+  test "boot proxy with shm_size" do
+    SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info).returns("123") # old version
+
+    run_command("boot", config: :with_proxy_shm_size).tap do |output|
+      assert_match /docker run .* --shm-size=123mb/, output
+    end
+  end
+
   test "boot proxy with role specific config" do
     SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info).returns("123") # old version
 

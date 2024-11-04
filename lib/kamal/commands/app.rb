@@ -28,6 +28,7 @@ class Kamal::Commands::App < Kamal::Commands::Base
       *role.asset_volume_args,
       *role.label_args,
       *role.option_args,
+      *config.proxy.shm_size_args,
       config.absolute_image,
       role.cmd
   end

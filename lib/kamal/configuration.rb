@@ -193,6 +193,10 @@ class Kamal::Configuration
     logging.args
   end
 
+  def shm_size_args
+    proxy.shm_size_args
+  end
+
 
   def readiness_delay
     raw_config.readiness_delay || 7
