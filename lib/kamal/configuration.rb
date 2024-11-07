@@ -14,11 +14,6 @@ class Kamal::Configuration
 
   include Validation
 
-  PROXY_MINIMUM_VERSION = "v0.8.4"
-  PROXY_HTTP_PORT = 80
-  PROXY_HTTPS_PORT = 443
-  PROXY_LOG_MAX_SIZE = "10m"
-
   class << self
     def create_from(config_file:, destination: nil, version: nil)
       ENV["KAMAL_DESTINATION"] = destination
@@ -82,7 +77,6 @@ class Kamal::Configuration
     ensure_unique_hosts_for_ssl_roles
   end
 
-
   def version=(version)
     @declared_version = version
   end
@@ -106,7 +100,6 @@ class Kamal::Configuration
     raw_config.minimum_version
   end
 
-
   def roles
     servers.roles
   end
@@ -118,7 +111,6 @@ class Kamal::Configuration
   def accessory(name)
     accessories.detect { |a| a.name == name.to_s }
   end
-
 
   def all_hosts
     (roles + accessories).flat_map(&:hosts).uniq
@@ -180,7 +172,6 @@ class Kamal::Configuration
     raw_config.retain_containers || 5
   end
 
-
   def volume_args
     if raw_config.volumes.present?
       argumentize "--volume", raw_config.volumes
@@ -193,7 +184,6 @@ class Kamal::Configuration
     logging.args
   end
 
-
   def readiness_delay
     raw_config.readiness_delay || 7
   end
@@ -205,7 +195,6 @@ class Kamal::Configuration
   def drain_timeout
     raw_config.drain_timeout || 30
   end
-
 
   def run_directory
     ".kamal"
@@ -227,7 +216,6 @@ class Kamal::Configuration
     File.join app_directory, "assets"
   end
 
-
   def hooks_path
     raw_config.hooks_path || ".kamal/hooks"
   end
@@ -235,7 +223,6 @@ class Kamal::Configuration
   def asset_path
     raw_config.asset_path
   end
-
 
   def env_tags
     @env_tags ||= if (tags = raw_config.env["tags"])
@@ -248,35 +235,6 @@ class Kamal::Configuration
   def env_tag(name)
     env_tags.detect { |t| t.name == name.to_s }
   end
-
-  def proxy_publish_args(http_port, https_port)
-    argumentize "--publish", [ "#{http_port}:#{PROXY_HTTP_PORT}", "#{https_port}:#{PROXY_HTTPS_PORT}" ]
-  end
-
-  def proxy_logging_args(max_size)
-    argumentize "--log-opt", "max-size=#{max_size}" if max_size.present?
-  end
-
-  def proxy_options_default
-    [ *proxy_publish_args(PROXY_HTTP_PORT, PROXY_HTTPS_PORT), *proxy_logging_args(PROXY_LOG_MAX_SIZE) ]
-  end
-
-  def proxy_image
-    "basecamp/kamal-proxy:#{PROXY_MINIMUM_VERSION}"
-  end
-
-  def proxy_container_name
-    "kamal-proxy"
-  end
-
-  def proxy_directory
-    File.join run_directory, "proxy"
-  end
-
-  def proxy_options_file
-    File.join proxy_directory, "options"
-  end
-
 
   def to_h
     {

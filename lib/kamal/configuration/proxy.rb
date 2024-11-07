@@ -1,8 +1,13 @@
 class Kamal::Configuration::Proxy
   include Kamal::Configuration::Validation
 
+  HTTP_PORT = 80
+  HTTPS_PORT = 443
+  LOG_MAX_SIZE = "10m"
+  MINIMUM_VERSION = "v0.8.4"
   DEFAULT_LOG_REQUEST_HEADERS = [ "Cache-Control", "Last-Modified", "User-Agent" ]
-  CONTAINER_NAME = "kamal-proxy"
+  DEFAULT_CONTAINER_NAME = "kamal-proxy"
+  DEFAULT_IMAGE = "basecamp/kamal-proxy:#{MINIMUM_VERSION}"
 
   delegate :argumentize, :optionize, to: Kamal::Utils
 
@@ -12,6 +17,10 @@ class Kamal::Configuration::Proxy
     @config = config
     @proxy_config = proxy_config
     validate! @proxy_config, with: Kamal::Configuration::Validator::Proxy, context: context
+  end
+
+  def container_name
+    DEFAULT_CONTAINER_NAME
   end
 
   def app_port
@@ -45,6 +54,26 @@ class Kamal::Configuration::Proxy
       "log-request-header": proxy_config.dig("logging", "request_headers") || DEFAULT_LOG_REQUEST_HEADERS,
       "log-response-header": proxy_config.dig("logging", "response_headers")
     }.compact
+  end
+
+  def directory
+    File.join config.run_directory, "proxy"
+  end
+
+  def options_file
+    File.join directory, "options"
+  end
+
+  def publish_args(http_port, https_port)
+    argumentize "--publish", [ "#{http_port}:#{HTTP_PORT}", "#{https_port}:#{HTTPS_PORT}" ]
+  end
+
+  def logging_args(max_size)
+    argumentize "--log-opt", "max-size=#{max_size}" if max_size.present?
+  end
+
+  def options_default
+    [ *publish_args(HTTP_PORT, HTTPS_PORT), *logging_args(LOG_MAX_SIZE), DEFAULT_IMAGE ]
   end
 
   def deploy_command_args(target:)
