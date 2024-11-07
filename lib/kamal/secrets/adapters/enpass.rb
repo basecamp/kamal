@@ -1,5 +1,3 @@
-require "open3"
-
 ##
 # Enpass is different from most password managers, in a way that it's offline. A path to a vault is treated as account.
 #
