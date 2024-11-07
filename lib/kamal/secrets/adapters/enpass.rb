@@ -15,10 +15,9 @@ class Kamal::Secrets::Adapters::Enpass < Kamal::Secrets::Adapters::Base
       secrets_titles = fetch_secret_titles(secrets)
 
       # Enpass outputs result as stderr, I did not find a way to stub backticks and output to stderr. Open3 did the job.
-      _stdout, stderr, status = Open3.capture3("enpass-cli -vault #{account.shellescape} show #{secrets_titles.map(&:shellescape).join(" ")}")
-      raise RuntimeError, "Could not read #{secrets} from Enpass" unless status.success?
+      result = `enpass-cli -json -vault #{account.shellescape} show #{secrets.map(&:shellescape).join(" ")}`.strip
 
-      parse_result_and_take_secrets(stderr, secrets)
+      parse_result_and_take_secrets(result, secrets)
     end
 
     def check_dependencies!
@@ -31,32 +30,36 @@ class Kamal::Secrets::Adapters::Enpass < Kamal::Secrets::Adapters::Base
     end
 
     def fetch_secret_titles(secrets)
-      secrets.reduce(Set.new) do |acc, secret|
-        # Sometimes secrets contain a '/', sometimes not
+      secrets.reduce(Set.new) do |secret_titles, secret|
+        # Sometimes secrets contain a '/', when the intent is to fetch a single password for an item. Example: FooBar/DB_PASSWORD
+        # Another case is, when the intent is to fetch all passwords for an item. Example: FooBar (and FooBar may have multiple different passwords)
         key, separator, value = secret.rpartition("/")
         if key.empty?
-          acc << value
+          secret_titles << value
         else
-          acc << key
+          secret_titles << key
         end
       end.to_a
     end
 
     def parse_result_and_take_secrets(unparsed_result, secrets)
-      unparsed_result.split("\n").reduce({}) do |acc, line|
-        title = line[/title:\s{1}(\w+)/, 1]
-        label = line[/label:\s{1}(.*?)\s{2}/, 1]
-        password = line[/password:\s{1}([^"]+)/, 1]
+      result = JSON.parse(unparsed_result)
 
-        if title && !password.to_s.empty?
-          key = label.nil? || label.empty? ? title : "#{title}/#{label}"
+      result.reduce({}) do |secrets_with_passwords, item|
+        title = item["title"]
+        label = item["label"]
+        password = item["password"]
+
+        if title && password.present?
+          key = [ title, label ].compact.reject(&:empty?).join("/")
+
           if secrets.include?(title) || secrets.include?(key)
-            raise RuntimeError, "#{key} is present more than once" if acc[key]
-            acc[key] = password
+            raise RuntimeError, "#{key} is present more than once" if secrets_with_passwords[key]
+            secrets_with_passwords[key] = password
           end
         end
 
-        acc
+        secrets_with_passwords
       end
     end
 end

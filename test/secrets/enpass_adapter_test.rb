@@ -18,11 +18,11 @@ class EnpassAdapterTest < SecretAdapterTestCase
   test "fetch one item" do
     stub_ticks_with("enpass-cli version 2> /dev/null")
 
-    stderr_response = <<~RESULT
-    time="2024-11-03T13:34:39+01:00" level=info msg="> title: FooBar  login:   cat.: computer  label: SECRET_1  password: my-password-1
-    RESULT
-
-    Open3.stubs(:capture3).returns([ "", stderr_response, OpenStruct.new(success?: true) ])
+    stub_ticks
+      .with("enpass-cli -json -vault vault-path show FooBar/SECRET_1")
+      .returns(<<~JSON)
+      [{"category":"computer","label":"SECRET_1","login":"","password":"my-password-1","title":"FooBar","type":"password"}]
+      JSON
 
     json = JSON.parse(shellunescape(run_command("fetch", "FooBar/SECRET_1")))
 
@@ -34,13 +34,15 @@ class EnpassAdapterTest < SecretAdapterTestCase
   test "fetch multiple items" do
     stub_ticks_with("enpass-cli version 2> /dev/null")
 
-    stderr_response = <<~RESULT
-    time="2024-11-03T13:34:39+01:00" level=info msg="> title: FooBar  login:   cat.: computer  label: SECRET_1  password: my-password-1
-    time="2024-11-03T13:34:39+01:00" level=info msg="> title: FooBar  login:   cat.: computer  label: SECRET_2  password: my-password-2
-    time="2024-11-03T13:34:39+01:00" level=info msg="> title: Hello  login:   cat.: computer  label: SECRET_3  password: my-password-3
-    RESULT
-
-    Open3.stubs(:capture3).returns([ "", stderr_response, OpenStruct.new(success?: true) ])
+    stub_ticks
+      .with("enpass-cli -json -vault vault-path show FooBar/SECRET_1 FooBar/SECRET_2")
+      .returns(<<~JSON)
+      [
+        {"category":"computer","label":"SECRET_1","login":"","password":"my-password-1","title":"FooBar","type":"password"},
+        {"category":"computer","label":"SECRET_2","login":"","password":"my-password-2","title":"FooBar","type":"password"},
+        {"category":"computer","label":"SECRET_3","login":"","password":"my-password-1","title":"Hello","type":"password"}
+      ]
+      JSON
 
     json = JSON.parse(shellunescape(run_command("fetch", "FooBar/SECRET_1", "FooBar/SECRET_2")))
 
@@ -52,13 +54,15 @@ class EnpassAdapterTest < SecretAdapterTestCase
   test "fetch multiple items with from" do
     stub_ticks_with("enpass-cli version 2> /dev/null")
 
-    stderr_response = <<~RESULT
-    time="2024-11-03T13:34:39+01:00" level=info msg="> title: FooBar  login:   cat.: computer  label: SECRET_1  password: my-password-1
-    time="2024-11-03T13:34:39+01:00" level=info msg="> title: FooBar  login:   cat.: computer  label: SECRET_2  password: my-password-2
-    time="2024-11-03T13:34:39+01:00" level=info msg="> title: Hello  login:   cat.: computer  label: SECRET_3  password: my-password-3
-    RESULT
-
-    Open3.stubs(:capture3).returns([ "", stderr_response, OpenStruct.new(success?: true) ])
+    stub_ticks
+      .with("enpass-cli -json -vault vault-path show FooBar/SECRET_1 FooBar/SECRET_2")
+      .returns(<<~JSON)
+      [
+        {"category":"computer","label":"SECRET_1","login":"","password":"my-password-1","title":"FooBar","type":"password"},
+        {"category":"computer","label":"SECRET_2","login":"","password":"my-password-2","title":"FooBar","type":"password"},
+        {"category":"computer","label":"SECRET_3","login":"","password":"my-password-1","title":"Hello","type":"password"}
+      ]
+      JSON
 
     json = JSON.parse(shellunescape(run_command("fetch", "--from", "FooBar", "SECRET_1", "SECRET_2")))
 
@@ -70,14 +74,16 @@ class EnpassAdapterTest < SecretAdapterTestCase
   test "fetch all with from" do
     stub_ticks_with("enpass-cli version 2> /dev/null")
 
-    stderr_response = <<~RESULT
-    time="2024-11-03T13:34:39+01:00" level=info msg="> title: FooBar  login:   cat.: computer  label: SECRET_1  password: my-password-1
-    time="2024-11-03T13:34:39+01:00" level=info msg="> title: FooBar  login:   cat.: computer  label: SECRET_2  password: my-password-2
-    time="2024-11-03T13:34:39+01:00" level=info msg="> title: Hello  login:   cat.: computer  label: SECRET_3  password: my-password-3
-    time="2024-11-03T13:34:39+01:00" level=info msg="> title: FooBar  login:   cat.: computer  label:   password: my-password-3
-    RESULT
-
-    Open3.stubs(:capture3).returns([ "", stderr_response, OpenStruct.new(success?: true) ])
+    stub_ticks
+      .with("enpass-cli -json -vault vault-path show FooBar")
+      .returns(<<~JSON)
+      [
+        {"category":"computer","label":"SECRET_1","login":"","password":"my-password-1","title":"FooBar","type":"password"},
+        {"category":"computer","label":"SECRET_2","login":"","password":"my-password-2","title":"FooBar","type":"password"},
+        {"category":"computer","label":"SECRET_3","login":"","password":"my-password-1","title":"Hello","type":"password"},
+        {"category":"computer","label":"","login":"","password":"my-password-3","title":"FooBar","type":"password"}
+      ]
+      JSON
 
     json = JSON.parse(shellunescape(run_command("fetch", "FooBar")))
 
