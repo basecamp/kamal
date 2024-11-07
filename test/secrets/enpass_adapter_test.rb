@@ -1,10 +1,6 @@
 require "test_helper"
 
 class EnpassAdapterTest < SecretAdapterTestCase
-  setup do
-    `true` # Ensure $? is 0
-  end
-
   test "fetch without CLI installed" do
     stub_ticks_with("enpass-cli version 2> /dev/null", succeed: false)
 
@@ -19,7 +15,7 @@ class EnpassAdapterTest < SecretAdapterTestCase
     stub_ticks_with("enpass-cli version 2> /dev/null")
 
     stub_ticks
-      .with("enpass-cli -json -vault vault-path show FooBar/SECRET_1")
+      .with("enpass-cli -json -vault vault-path show FooBar")
       .returns(<<~JSON)
       [{"category":"computer","label":"SECRET_1","login":"","password":"my-password-1","title":"FooBar","type":"password"}]
       JSON
@@ -35,7 +31,7 @@ class EnpassAdapterTest < SecretAdapterTestCase
     stub_ticks_with("enpass-cli version 2> /dev/null")
 
     stub_ticks
-      .with("enpass-cli -json -vault vault-path show FooBar/SECRET_1 FooBar/SECRET_2")
+      .with("enpass-cli -json -vault vault-path show FooBar")
       .returns(<<~JSON)
       [
         {"category":"computer","label":"SECRET_1","login":"","password":"my-password-1","title":"FooBar","type":"password"},
@@ -45,26 +41,6 @@ class EnpassAdapterTest < SecretAdapterTestCase
       JSON
 
     json = JSON.parse(shellunescape(run_command("fetch", "FooBar/SECRET_1", "FooBar/SECRET_2")))
-
-    expected_json = { "FooBar/SECRET_1" => "my-password-1", "FooBar/SECRET_2" => "my-password-2" }
-
-    assert_equal expected_json, json
-  end
-
-  test "fetch multiple items with from" do
-    stub_ticks_with("enpass-cli version 2> /dev/null")
-
-    stub_ticks
-      .with("enpass-cli -json -vault vault-path show FooBar/SECRET_1 FooBar/SECRET_2")
-      .returns(<<~JSON)
-      [
-        {"category":"computer","label":"SECRET_1","login":"","password":"my-password-1","title":"FooBar","type":"password"},
-        {"category":"computer","label":"SECRET_2","login":"","password":"my-password-2","title":"FooBar","type":"password"},
-        {"category":"computer","label":"SECRET_3","login":"","password":"my-password-1","title":"Hello","type":"password"}
-      ]
-      JSON
-
-    json = JSON.parse(shellunescape(run_command("fetch", "--from", "FooBar", "SECRET_1", "SECRET_2")))
 
     expected_json = { "FooBar/SECRET_1" => "my-password-1", "FooBar/SECRET_2" => "my-password-2" }
 
@@ -99,7 +75,7 @@ class EnpassAdapterTest < SecretAdapterTestCase
           [ *command,
             "-c", "test/fixtures/deploy_with_accessories.yml",
             "--adapter", "enpass",
-            "--account", "vault-path" ]
+            "--from", "vault-path" ]
       end
     end
 end

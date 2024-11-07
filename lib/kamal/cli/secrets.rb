@@ -1,7 +1,7 @@
 class Kamal::Cli::Secrets < Kamal::Cli::Base
   desc "fetch [SECRETS...]", "Fetch secrets from a vault"
   option :adapter, type: :string, aliases: "-a", required: true, desc: "Which vault adapter to use"
-  option :account, type: :string, required: true, desc: "The account identifier or username"
+  option :account, type: :string, required: false, desc: "The account identifier or username"
   option :from, type: :string, required: false, desc: "A vault or folder to fetch the secrets from"
   option :inline, type: :boolean, required: false, hidden: true
   def fetch(*secrets)

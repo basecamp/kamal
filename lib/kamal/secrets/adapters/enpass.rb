@@ -1,19 +1,24 @@
 ##
-# Enpass is different from most password managers, in a way that it's offline. A path to a vault is treated as account.
+# Enpass is different from most password managers, in a way that it's offline and doesn't need an account.
 #
-# Pass it like so: `kamal secrets fetch --adapter enpass --account /Users/YOUR_USERNAME/Library/Containers/in.sinew.Enpass-Desktop/Data/Documents/Vaults/primary --from MY_PROD_SERVER`
+# Usage
+#
+# Fetch all password from FooBar item
+# `kamal secrets fetch --adapter enpass --from /Users/YOUR_USERNAME/Library/Containers/in.sinew.Enpass-Desktop/Data/Documents/Vaults/primary FooBar`
+#
+# Fetch only DB_PASSWORD from FooBar item
+# `kamal secrets fetch --adapter enpass --from /Users/YOUR_USERNAME/Library/Containers/in.sinew.Enpass-Desktop/Data/Documents/Vaults/primary FooBar/DB_PASSWORD`
 class Kamal::Secrets::Adapters::Enpass < Kamal::Secrets::Adapters::Base
-  private
-    def login(account)
-      # There is no concept of session in enpass-cli
-      true
-    end
+  def fetch(secrets, account: nil, from:)
+    check_dependencies!
+    fetch_secrets(secrets, from)
+  end
 
-    def fetch_secrets(secrets, account:, session:)
+  private
+    def fetch_secrets(secrets, vault)
       secrets_titles = fetch_secret_titles(secrets)
 
-      # Enpass outputs result as stderr, I did not find a way to stub backticks and output to stderr. Open3 did the job.
-      result = `enpass-cli -json -vault #{account.shellescape} show #{secrets.map(&:shellescape).join(" ")}`.strip
+      result = `enpass-cli -json -vault #{vault.shellescape} show #{secrets_titles.map(&:shellescape).join(" ")}`.strip
 
       parse_result_and_take_secrets(result, secrets)
     end
