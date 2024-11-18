@@ -96,7 +96,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
   option :env, aliases: "-e", type: :hash, desc: "Set environment variables for the command"
   def exec(*cmd)
     cmd = Kamal::Utils.join_commands(cmd)
-    env = options[:env]
+    env = KAMAL.primary_role.env(KAMAL.primary_host).secrets.to_h.merge(options[:env] || {})
     case
     when options[:interactive] && options[:reuse]
       say "Get current version of running container...", :magenta unless options[:version]

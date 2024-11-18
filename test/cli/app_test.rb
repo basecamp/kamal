@@ -299,6 +299,19 @@ class CliAppTest < CliTestCase
     end
   end
 
+  test "exec includes secrets" do
+    setup_test_secrets("secrets" => "HELLO=world")
+    run_command("exec", "echo $HELLO").tap do |output|
+      assert_match "world", output
+    end
+    # Env vars passed with --env should override secrets.
+    run_command("exec", "--env", "HELLO=Dolly!", "echo $HELLO").tap do |output|
+      assert_match "Dolly!", output
+    end
+  ensure
+    teardown_test_secrets
+  end
+
   test "containers" do
     run_command("containers").tap do |output|
       assert_match "docker container ls --all --filter label=service=app", output
