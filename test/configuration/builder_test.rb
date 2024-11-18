@@ -144,6 +144,16 @@ class ConfigurationBuilderTest < ActiveSupport::TestCase
     assert_equal "mode=max", config.builder.provenance
   end
 
+  test "sbom" do
+    assert_nil config.builder.sbom
+  end
+
+  test "setting sbom" do
+    @deploy[:builder]["sbom"] = true
+
+    assert_equal true, config.builder.sbom
+  end
+
   test "local disabled but no remote set" do
     @deploy[:builder]["local"] = false
 
