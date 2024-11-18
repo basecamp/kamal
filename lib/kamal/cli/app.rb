@@ -97,6 +97,10 @@ class Kamal::Cli::App < Kamal::Cli::Base
   def exec(*cmd)
     cmd = Kamal::Utils.join_commands(cmd)
     env = options[:env]
+    unless options[:reuse]
+      say "Log into image registry...", :magenta
+      invoke "kamal:cli:registry:login", [], {skip_local: true}
+    end
     case
     when options[:interactive] && options[:reuse]
       say "Get current version of running container...", :magenta unless options[:version]

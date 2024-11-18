@@ -299,6 +299,17 @@ class CliAppTest < CliTestCase
     end
   end
 
+  test "exec logs into the container registry remotely for new containers" do
+    run_command("exec", "ruby -v").tap do |output|
+      assert_no_match /docker login -u \[REDACTED\] -p \[REDACTED\] as .*@localhost/, output
+      assert_match /docker login -u \[REDACTED\] -p \[REDACTED\] on 1.1.1.\d/, output
+    end
+    # Login is never required if reuse
+    run_command("exec", "-i", "--reuse", "ruby -v").tap do |output|
+      assert_no_match /docker login -u \[REDACTED\] -p \[REDACTED\] on 1.1.1.\d/, output
+    end
+  end
+
   test "containers" do
     run_command("containers").tap do |output|
       assert_match "docker container ls --all --filter label=service=app", output
