@@ -1,10 +1,8 @@
 class Kamal::Secrets::Adapters::GcpSecretManager < Kamal::Secrets::Adapters::Base
   private
     def login(account)
-      # Since only the account option is passed from the cli, we'll use it for:
-      # - Account
-      # - GCP project
-      # - Service account impersonation
+      # Since only the account option is passed from the cli, we'll use it for both account and service account
+      # impersonation.
       #
       # Syntax:
       # ACCOUNT: USER | USER "," DELEGATION_CHAIN
