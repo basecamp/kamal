@@ -1,5 +1,5 @@
 class Kamal::Commands::Accessory < Kamal::Commands::Base
-  include Kamal::Commands::Proxy::Exec
+  include Proxy
 
   attr_reader :accessory_config
   delegate :service_name, :image, :hosts, :port, :files, :directories, :cmd,
@@ -111,10 +111,6 @@ class Kamal::Commands::Accessory < Kamal::Commands::Base
   end
 
   private
-    def proxy_deploy_command_args(target:)
-      proxy.deploy_command_args(target: target)
-    end
-
     def service_filter
       [ "--filter", "label=service=#{service_name}" ]
     end
