@@ -6,7 +6,7 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
   delegate :argumentize, to: Kamal::Utils
   delegate \
     :args, :secrets, :dockerfile, :target, :arches, :local_arches, :remote_arches, :remote,
-    :cache_from, :cache_to, :ssh, :provenance, :driver, :docker_driver?,
+    :cache_from, :cache_to, :ssh, :provenance, :sbom, :driver, :docker_driver?,
     to: :builder_config
 
   def clean
@@ -37,7 +37,7 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
   end
 
   def build_options
-    [ *build_tags, *build_cache, *build_labels, *build_args, *build_secrets, *build_dockerfile, *build_target, *build_ssh, *builder_provenance ]
+    [ *build_tags, *build_cache, *build_labels, *build_args, *build_secrets, *build_dockerfile, *build_target, *build_ssh, *builder_provenance, *builder_sbom ]
   end
 
   def build_context
@@ -99,6 +99,10 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
 
     def builder_provenance
       argumentize "--provenance", provenance unless provenance.nil?
+    end
+
+    def builder_sbom
+      argumentize "--sbom", sbom unless sbom.nil?
     end
 
     def builder_config
