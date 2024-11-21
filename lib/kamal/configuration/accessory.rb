@@ -176,7 +176,9 @@ class Kamal::Configuration::Accessory
 
     def hosts_from_roles
       if accessory_config.key?("roles")
-        accessory_config["roles"].flat_map { |role| config.role(role).hosts }
+        accessory_config["roles"].flat_map do |role|
+          config.role(role)&.hosts || raise(Kamal::ConfigurationError, "Unknown role in accessories config: '#{role}'")
+        end
       end
     end
 
