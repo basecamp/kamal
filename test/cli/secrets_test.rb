@@ -7,6 +7,18 @@ class CliSecretsTest < CliTestCase
       run_command("fetch", "foo", "bar", "baz", "--account", "myaccount", "--adapter", "test")
   end
 
+  test "fetch missing --acount" do
+    assert_equal \
+      "No value provided for required options '--account'",
+      run_command("fetch", "foo", "bar", "baz", "--adapter", "test")
+  end
+
+  test "fetch without required --account" do
+    assert_equal \
+      "\\{\\\"foo\\\":\\\"oof\\\",\\\"bar\\\":\\\"rab\\\",\\\"baz\\\":\\\"zab\\\"\\}",
+      run_command("fetch", "foo", "bar", "baz", "--adapter", "test_optional_account")
+  end
+
   test "extract" do
     assert_equal "oof", run_command("extract", "foo", "{\"foo\":\"oof\", \"bar\":\"rab\", \"baz\":\"zab\"}")
   end
