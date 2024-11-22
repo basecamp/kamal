@@ -96,12 +96,13 @@ module Kamal::Commands
       end
 
       def ssh_keys_args
-        args = ""
-        config.ssh.keys&.each do |key|
-          args << " -i #{key}"
+        "#{ ssh_keys.join("") if ssh_keys}" + "#{" -o IdentitiesOnly=yes" if config.ssh&.keys_only}"
+      end
+
+      def ssh_keys
+        config.ssh.keys&.map do |key|
+          " -i #{key}"
         end
-        args << " -o IdentitiesOnly=yes" if config.ssh&.keys_only
-        args
       end
   end
 end
