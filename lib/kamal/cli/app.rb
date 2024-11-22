@@ -218,7 +218,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
 
         roles.each do |role|
           begin
-            puts_by_host host, capture_with_info(*KAMAL.app(role: role, host: host).logs(timestamps: timestamps, since: since, lines: lines, grep: grep, grep_options: grep_options))
+            puts_by_host host, capture_with_info(*KAMAL.app(role: role, host: host).logs(timestamps: timestamps, since: since, lines: lines, grep: grep, grep_options: grep_options)), type: role
           rescue SSHKit::Command::Failed
             puts_by_host host, "Nothing found"
           end
