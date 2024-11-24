@@ -91,7 +91,7 @@ class Kamal::Commands::Accessory < Kamal::Commands::Base
   end
 
   def remove_service_directory
-    [ :rm, "-rf", service_name ]
+    [ :sudo, :rm, "-rf", service_name ]
   end
 
   def remove_container
