@@ -66,5 +66,5 @@ ssh:
   #
   # Set to true to load the default OpenSSH config files (~/.ssh/config,
   # /etc/ssh_config), to false ignore config files, or to a file path
-  # (or array of paths) to load specific configuration. Defaults to true.
+  # to load specific configuration. Defaults to true.
   config: true
