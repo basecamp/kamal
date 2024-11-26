@@ -1,0 +1,70 @@
+mkdir ruby_weather_cli
+cd ruby_weather_cli
+
+bundle init
+
+require 'httparty'
+require 'json'
+require 'dotenv/load'
+
+class WeatherCLI
+  BASE_URL = 'https://api.openweathermap.org/data/2.5/weather'
+
+  def initialize(city)
+    @city = city
+    @api_key = ENV['OPENWEATHER_API_KEY']
+  end
+
+  def fetch_weather
+    response = HTTParty.get("#{BASE_URL}?q=#{@city}&appid=#{@api_key}&units=metric")
+    
+    if response.success?
+      parse_weather(response)
+    else
+      puts "Error: #{response['message']}"
+    end
+  end
+
+  private
+
+  def parse_weather(response)
+    weather_data = {
+      city: response['name'],
+      temperature: response['main']['temp'],
+      humidity: response['main']['humidity'],
+      wind_speed: response['wind']['speed'],
+      description: response['weather'].first['description']
+    }
+
+    display_weather(weather_data)
+  end
+
+  def display_weather(data)
+    puts "Weather in #{data[:city]}:"
+    puts "Temperature: #{data[:temperature]}°C"
+    puts "Humidity: #{data[:humidity]}%"
+    puts "Wind Speed: #{data[:wind_speed]} m/s"
+    puts "Conditions: #{data[:description].capitalize}"
+  end
+end
+
+if __FILE__ == $0
+  if ARGV.empty?
+    puts "Usage: ruby weather_cli.rb <city_name>"
+    exit
+  end
+
+  city = ARGV.join(" ")
+  weather_cli = WeatherCLI.new(city)
+  weather_cli.fetch_weather
+end
+
+ruby weather_cli.rb "London"
+
+Weather in London:
+Temperature: 15°C
+Humidity: 72%
+Wind Speed: 3.6 m/s
+Conditions: Clear sky
+
+Error: city not found
