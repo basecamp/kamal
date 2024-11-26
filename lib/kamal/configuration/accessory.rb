@@ -5,7 +5,7 @@ class Kamal::Configuration::Accessory
 
   delegate :argumentize, :optionize, to: Kamal::Utils
 
-  attr_reader :name, :accessory_config, :env
+  attr_reader :name, :accessory_config, :env, :proxy
 
   def initialize(name, config:)
     @name, @config, @accessory_config = name.inquiry, config, config.raw_config["accessories"][name]
@@ -20,6 +20,8 @@ class Kamal::Configuration::Accessory
       config: accessory_config.fetch("env", {}),
       secrets: config.secrets,
       context: "accessories/#{name}/env"
+
+    initialize_proxy if running_proxy?
   end
 
   def service_name
@@ -104,6 +106,17 @@ class Kamal::Configuration::Accessory
 
   def cmd
     accessory_config["cmd"]
+  end
+
+  def running_proxy?
+    @accessory_config["proxy"].present?
+  end
+
+  def initialize_proxy
+    @proxy = Kamal::Configuration::Proxy.new \
+      config: config,
+      proxy_config: accessory_config["proxy"],
+      context: "accessories/#{name}/proxy"
   end
 
   private

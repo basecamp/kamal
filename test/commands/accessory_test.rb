@@ -39,7 +39,10 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
         "busybox" => {
           "service" => "custom-busybox",
           "image" => "busybox:latest",
-          "host" => "1.1.1.7"
+          "host" => "1.1.1.7",
+          "proxy" => {
+            "host" => "busybox.example.com"
+          }
         }
       }
     }
@@ -164,6 +167,18 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
     assert_equal \
       "docker image rm --force private.registry/mysql:8.0",
       new_command(:mysql).remove_image.join(" ")
+  end
+
+  test "deploy" do
+    assert_equal \
+      "docker exec kamal-proxy kamal-proxy deploy custom-busybox --target=\"172.1.0.2:80\" --host=\"busybox.example.com\" --deploy-timeout=\"30s\" --drain-timeout=\"30s\" --buffer-requests --buffer-responses --log-request-header=\"Cache-Control\" --log-request-header=\"Last-Modified\" --log-request-header=\"User-Agent\"",
+      new_command(:busybox).deploy(target: "172.1.0.2").join(" ")
+  end
+
+  test "remove" do
+    assert_equal \
+      "docker exec kamal-proxy kamal-proxy remove custom-busybox",
+      new_command(:busybox).remove.join(" ")
   end
 
   private

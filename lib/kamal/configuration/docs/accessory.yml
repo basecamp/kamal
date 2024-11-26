@@ -98,3 +98,7 @@ accessories:
     # Defaults to kamal:
     network: custom
 
+    # Proxy
+    #
+    proxy:
+      ...

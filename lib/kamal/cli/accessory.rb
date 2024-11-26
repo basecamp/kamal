@@ -18,6 +18,11 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
             execute *accessory.ensure_env_directory
             upload! accessory.secrets_io, accessory.secrets_path, mode: "0600"
             execute *accessory.run
+
+            if accessory.running_proxy?
+              target = capture_with_info(*accessory.container_id_for(container_name: accessory.service_name, only_running: true)).strip
+              execute *accessory.deploy(target: target)
+            end
           end
         end
       end
@@ -75,6 +80,10 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
         on(hosts) do
           execute *KAMAL.auditor.record("Started #{name} accessory"), verbosity: :debug
           execute *accessory.start
+          if accessory.running_proxy?
+            target = capture_with_info(*accessory.container_id_for(container_name: accessory.service_name, only_running: true)).strip
+            execute *accessory.deploy(target: target)
+          end
         end
       end
     end
@@ -87,6 +96,11 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
         on(hosts) do
           execute *KAMAL.auditor.record("Stopped #{name} accessory"), verbosity: :debug
           execute *accessory.stop, raise_on_non_zero_exit: false
+
+          if accessory.running_proxy?
+            target = capture_with_info(*accessory.container_id_for(container_name: accessory.service_name, only_running: true)).strip
+            execute *accessory.remove if target
+          end
         end
       end
     end
