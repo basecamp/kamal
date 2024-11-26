@@ -20,7 +20,7 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
             execute *accessory.run
 
             if accessory.running_proxy?
-              target = accessory.container_id_for(container_name: accessory.service_name, only_running: true)
+              target = capture_with_info(*accessory.container_id_for(container_name: accessory.service_name, only_running: true)).strip
               execute *accessory.deploy(target: target)
             end
           end
@@ -81,7 +81,7 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
           execute *KAMAL.auditor.record("Started #{name} accessory"), verbosity: :debug
           execute *accessory.start
           if accessory.running_proxy?
-            target = container_id_for(container_name: service_name, only_running: true)
+            target = capture_with_info(*accessory.container_id_for(container_name: accessory.service_name, only_running: true)).strip
             execute *accessory.deploy(target: target)
           end
         end
