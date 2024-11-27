@@ -3,7 +3,7 @@ module Kamal::Secrets::Adapters
   def self.lookup(name)
     name = "one_password" if name.downcase == "1password"
     name = "last_pass" if name.downcase == "lastpass"
-    name = "gcp_secret_manager" if %w[gcp secret_manager].include? name.downcase
+    name = "gcp_secret_manager" if name.downcase == "gcp"
     adapter_class(name)
   end
 
