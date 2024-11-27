@@ -18,6 +18,11 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
             execute *accessory.ensure_env_directory
             upload! accessory.secrets_io, accessory.secrets_path, mode: "0600"
             execute *accessory.run
+
+            if accessory.running_proxy?
+              target = capture_with_info(*accessory.container_id_for(container_name: accessory.service_name, only_running: true)).strip
+              execute *accessory.deploy(target: target)
+            end
           end
         end
       end
@@ -75,6 +80,10 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
         on(hosts) do
           execute *KAMAL.auditor.record("Started #{name} accessory"), verbosity: :debug
           execute *accessory.start
+          if accessory.running_proxy?
+            target = capture_with_info(*accessory.container_id_for(container_name: accessory.service_name, only_running: true)).strip
+            execute *accessory.deploy(target: target)
+          end
         end
       end
     end
@@ -87,6 +96,11 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
         on(hosts) do
           execute *KAMAL.auditor.record("Stopped #{name} accessory"), verbosity: :debug
           execute *accessory.stop, raise_on_non_zero_exit: false
+
+          if accessory.running_proxy?
+            target = capture_with_info(*accessory.container_id_for(container_name: accessory.service_name, only_running: true)).strip
+            execute *accessory.remove if target
+          end
         end
       end
     end
@@ -112,14 +126,15 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
     end
   end
 
-  desc "exec [NAME] [CMD]", "Execute a custom command on servers (use --help to show options)"
+  desc "exec [NAME] [CMD...]", "Execute a custom command on servers within the accessory container (use --help to show options)"
   option :interactive, aliases: "-i", type: :boolean, default: false, desc: "Execute command over ssh for an interactive shell (use for console/bash)"
   option :reuse, type: :boolean, default: false, desc: "Reuse currently running container instead of starting a new one"
-  def exec(name, cmd)
+  def exec(name, *cmd)
+    cmd = Kamal::Utils.join_commands(cmd)
     with_accessory(name) do |accessory, hosts|
       case
       when options[:interactive] && options[:reuse]
-        say "Launching interactive command with via SSH from existing container...", :magenta
+        say "Launching interactive command via SSH from existing container...", :magenta
         run_locally { exec accessory.execute_in_existing_container_over_ssh(cmd) }
 
       when options[:interactive]
@@ -128,16 +143,16 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
 
       when options[:reuse]
         say "Launching command from existing container...", :magenta
-        on(hosts) do
+        on(hosts) do |host|
           execute *KAMAL.auditor.record("Executed cmd '#{cmd}' on #{name} accessory"), verbosity: :debug
-          capture_with_info(*accessory.execute_in_existing_container(cmd))
+          puts_by_host host, capture_with_info(*accessory.execute_in_existing_container(cmd))
         end
 
       else
         say "Launching command from new container...", :magenta
-        on(hosts) do
+        on(hosts) do |host|
           execute *KAMAL.auditor.record("Executed cmd '#{cmd}' on #{name} accessory"), verbosity: :debug
-          capture_with_info(*accessory.execute_in_new_container(cmd))
+          puts_by_host host, capture_with_info(*accessory.execute_in_new_container(cmd))
         end
       end
     end

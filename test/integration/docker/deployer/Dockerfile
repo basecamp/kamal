@@ -20,6 +20,7 @@ COPY *.sh .
 COPY app/ app/
 COPY app_with_roles/ app_with_roles/
 COPY app_with_traefik/ app_with_traefik/
+COPY app_with_proxied_accessory/ app_with_proxied_accessory/
 
 RUN rm -rf /root/.ssh
 RUN ln -s /shared/ssh /root/.ssh
@@ -30,6 +31,7 @@ RUN git config --global user.name "Deployer"
 RUN cd app && git init && git add . && git commit -am "Initial version"
 RUN cd app_with_roles && git init && git add . && git commit -am "Initial version"
 RUN cd app_with_traefik && git init && git add . && git commit -am "Initial version"
+RUN cd app_with_proxied_accessory && git init && git add . && git commit -am "Initial version"
 
 HEALTHCHECK --interval=1s CMD pgrep sleep
 

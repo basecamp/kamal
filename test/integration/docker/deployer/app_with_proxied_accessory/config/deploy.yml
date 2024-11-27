@@ -1,0 +1,44 @@
+service: app_with_proxied_accessory
+image: app_with_proxied_accessory
+servers:
+  - vm1
+env:
+  clear:
+    CLEAR_TOKEN: 4321
+    CLEAR_TAG: ""
+    HOST_TOKEN: "${HOST_TOKEN}"
+asset_path: /usr/share/nginx/html/versions
+proxy:
+  host: 127.0.0.1
+registry:
+  server: registry:4443
+  username: root
+  password: root
+builder:
+  driver: docker
+  arch: <%= Kamal::Utils.docker_arch %>
+  args:
+    COMMIT_SHA: <%= `git rev-parse HEAD` %>
+accessories:
+  busybox:
+    service: custom-busybox
+    image: registry:4443/busybox:1.36.0
+    cmd: sh -c 'echo "Starting busybox..."; trap exit term; while true; do sleep 1; done'
+    roles:
+      - web
+  netcat:
+    service: netcat
+    image: registry:4443/busybox:1.36.0
+    cmd: >
+      sh -c 'echo "Starting netcat..."; while true; do echo -e "HTTP/1.1 200 OK\r\nContent-Length: 11\r\n\r\nHello Ruby" | nc -l -p 80; done'
+    roles:
+      - web
+    port: 12345:80
+    proxy:
+      host: netcat
+      ssl: false
+      healthcheck:
+        interval: 1
+        timeout: 1
+        path: "/"
+

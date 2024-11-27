@@ -16,8 +16,8 @@ servers:
 # Enable SSL auto certification via Let's Encrypt and allow for multiple apps on a single web server.
 # Remove this section when using multiple web servers and ensure you terminate SSL at your load balancer.
 #
-# Note: If using Cloudflare, set encryption mode in SSL/TLS setting to "Full" to enable CF-to-app encryption. 
-proxy: 
+# Note: If using Cloudflare, set encryption mode in SSL/TLS setting to "Full" to enable CF-to-app encryption.
+proxy:
   ssl: true
   host: app.example.com
   # Proxy connects to your container on port 80 by default.
@@ -36,6 +36,9 @@ registry:
 # Configure builder setup.
 builder:
   arch: amd64
+  # Pass in additional build args needed for your Dockerfile.
+  # args:
+  #   RUBY_VERSION: <%= File.read('.ruby-version').strip %>
 
 # Inject ENV variables into containers (secrets come from .kamal/secrets).
 #
