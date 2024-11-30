@@ -249,8 +249,9 @@ class Kamal::Configuration
     env_tags.detect { |t| t.name == name.to_s }
   end
 
-  def proxy_publish_args(http_port, https_port)
-    argumentize "--publish", [ "#{http_port}:#{PROXY_HTTP_PORT}", "#{https_port}:#{PROXY_HTTPS_PORT}" ]
+  def proxy_publish_args(http_port, https_port, bind_ip = nil)
+    bind_ip = bind_ip ? "#{bind_ip}:" : ""
+    argumentize "--publish", [ "#{bind_ip}#{http_port}:#{PROXY_HTTP_PORT}", "#{bind_ip}#{https_port}:#{PROXY_HTTPS_PORT}" ]
   end
 
   def proxy_logging_args(max_size)
