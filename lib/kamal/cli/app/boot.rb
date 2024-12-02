@@ -91,7 +91,7 @@ class Kamal::Cli::App::Boot
       if barrier.close
         info "First #{KAMAL.primary_role} container is unhealthy on #{host}, not booting any other roles"
         begin
-          error capture_with_info(*app.logs(version: version))
+          error capture_with_info(*app.logs(container_id: app.container_id_for_version(version)))
           error capture_with_info(*app.container_health_log(version: version))
         rescue SSHKit::Command::Failed
           error "Could not fetch logs for #{version}"
