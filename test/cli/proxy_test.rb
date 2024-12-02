@@ -282,7 +282,7 @@ class CliProxyTest < CliTestCase
   end
 
   test "boot_config set custom bind ip" do
-    run_command("boot_config", "set", "--publish-ip", "127.0.0.1").tap do |output|
+    run_command("boot_config", "set", "--publish-host-ip", "127.0.0.1").tap do |output|
       %w[ 1.1.1.1 1.1.1.2 ].each do |host|
         assert_match "Running /usr/bin/env mkdir -p .kamal/proxy on #{host}", output
         assert_match "Uploading \"--publish 127.0.0.1:80:80 --publish 127.0.0.1:443:443 --log-opt max-size=10m\" to .kamal/proxy/options on #{host}", output
