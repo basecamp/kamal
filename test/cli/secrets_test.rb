@@ -3,7 +3,7 @@ require_relative "cli_test_case"
 class CliSecretsTest < CliTestCase
   test "fetch" do
     assert_equal \
-      "\\{\\\"foo\\\":\\\"oof\\\",\\\"bar\\\":\\\"rab\\\",\\\"baz\\\":\\\"zab\\\"\\}",
+      "{\"foo\":\"oof\",\"bar\":\"rab\",\"baz\":\"zab\"}",
       run_command("fetch", "foo", "bar", "baz", "--account", "myaccount", "--adapter", "test")
   end
 
@@ -15,7 +15,7 @@ class CliSecretsTest < CliTestCase
 
   test "fetch without required --account" do
     assert_equal \
-      "\\{\\\"foo\\\":\\\"oof\\\",\\\"bar\\\":\\\"rab\\\",\\\"baz\\\":\\\"zab\\\"\\}",
+      "{\"foo\":\"oof\",\"bar\":\"rab\",\"baz\":\"zab\"}",
       run_command("fetch", "foo", "bar", "baz", "--adapter", "test_optional_account")
   end
 

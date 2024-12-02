@@ -3,7 +3,7 @@ class Kamal::Cli::Secrets < Kamal::Cli::Base
   option :adapter, type: :string, aliases: "-a", required: true, desc: "Which vault adapter to use"
   option :account, type: :string, required: false, desc: "The account identifier or username"
   option :from, type: :string, required: false, desc: "A vault or folder to fetch the secrets from"
-  option :inline, type: :boolean, required: false, hidden: true
+  option :inline, type: :boolean, required: false, hide: true
   def fetch(*secrets)
     adapter = initialize_adapter(options[:adapter])
 
@@ -13,11 +13,11 @@ class Kamal::Cli::Secrets < Kamal::Cli::Base
 
     results = adapter.fetch(secrets, **options.slice(:account, :from).symbolize_keys)
 
-    return_or_puts JSON.dump(results).shellescape, inline: options[:inline]
+    return_or_puts JSON.dump(results), inline: options[:inline]
   end
 
   desc "extract", "Extract a single secret from the results of a fetch call"
-  option :inline, type: :boolean, required: false, hidden: true
+  option :inline, type: :boolean, required: false, hide: true
   def extract(name, secrets)
     parsed_secrets = JSON.parse(secrets)
     value = parsed_secrets[name] || parsed_secrets.find { |k, v| k.end_with?("/#{name}") }&.last
