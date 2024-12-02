@@ -290,6 +290,11 @@ class CommandsAppTest < ActiveSupport::TestCase
     assert_equal "ssh -t root@1.1.1.1 -p 22 'ls'", new_command.run_over_ssh("ls", host: "1.1.1.1")
   end
 
+   test "run over ssh with keys" do
+    @config[:ssh] = { "keys" => [ "key1", "key2" ] }
+    assert_equal "ssh -i key1 -i key2 -t root@1.1.1.1 -p 22 'ls'", new_command.run_over_ssh("ls", host: "1.1.1.1")
+  end
+
   test "run over ssh with custom user" do
     @config[:ssh] = { "user" => "app" }
     assert_equal "ssh -t app@1.1.1.1 -p 22 'ls'", new_command.run_over_ssh("ls", host: "1.1.1.1")
