@@ -32,7 +32,7 @@ class DopplerAdapterTest < SecretAdapterTestCase
       JSON
 
     json = JSON.parse(
-      shellunescape run_command("fetch", "--from", "my-project/prd", "SECRET1", "FSECRET1", "FSECRET2")
+      run_command("fetch", "--from", "my-project/prd", "SECRET1", "FSECRET1", "FSECRET2")
     )
 
     expected_json = {
@@ -73,7 +73,7 @@ class DopplerAdapterTest < SecretAdapterTestCase
       JSON
 
     json = JSON.parse(
-      shellunescape run_command("fetch", "SECRET1", "FSECRET1", "FSECRET2")
+      run_command("fetch", "SECRET1", "FSECRET1", "FSECRET2")
     )
 
     expected_json = {
@@ -114,7 +114,7 @@ class DopplerAdapterTest < SecretAdapterTestCase
       JSON
 
     json = JSON.parse(
-      shellunescape run_command("fetch", "my-project/prd/SECRET1", "my-project/prd/FSECRET1", "my-project/prd/FSECRET2")
+      run_command("fetch", "my-project/prd/SECRET1", "my-project/prd/FSECRET1", "my-project/prd/FSECRET2")
     )
 
     expected_json = {
@@ -143,7 +143,7 @@ class DopplerAdapterTest < SecretAdapterTestCase
     stub_ticks_with("doppler login -y", succeed: true).returns("")
     stub_ticks.with("doppler secrets get SECRET1 --json -p my-project -c prd").returns(single_item_json)
 
-    json = JSON.parse(shellunescape(run_command("fetch", "--from", "my-project/prd", "SECRET1")))
+    json = JSON.parse(run_command("fetch", "--from", "my-project/prd", "SECRET1"))
 
     expected_json = {
       "SECRET1"=>"secret1"
@@ -156,7 +156,7 @@ class DopplerAdapterTest < SecretAdapterTestCase
     stub_ticks_with("doppler --version 2> /dev/null", succeed: false)
 
     error = assert_raises RuntimeError do
-      JSON.parse(shellunescape(run_command("fetch", "HOST", "PORT")))
+      JSON.parse(run_command("fetch", "HOST", "PORT"))
     end
 
     assert_equal "Doppler CLI is not installed", error.message
