@@ -30,7 +30,7 @@ class ConfigurationSshTest < ActiveSupport::TestCase
 
   test "ssh options with proxy host" do
     config = Kamal::Configuration.new(@deploy.tap { |c| c.merge!(ssh: { "proxy" => "1.2.3.4" }) })
-    assert_equal "root@1.2.3.4", config.ssh.options[:proxy].jump_proxies
+    assert_equal "1.2.3.4", config.ssh.options[:proxy].jump_proxies
   end
 
   test "ssh options with proxy host and user" do
