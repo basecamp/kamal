@@ -143,6 +143,14 @@ class CommandsAppTest < ActiveSupport::TestCase
       new_command.deploy(target: "172.1.0.2").join(" ")
   end
 
+  test "deploy with custom SSL certificate" do
+    @config[:proxy] = { "ssl" => true, "host" => "example.com", "ssl_certificate_path" => "/path/to/cert.pem", "ssl_private_key_path" => "/path/to/key.pem" }
+
+    assert_equal \
+      "docker exec kamal-proxy kamal-proxy deploy app-web --target=\"172.1.0.2:80\" --host=\"example.com\" --tls --tls-certificate-path=\"/path/to/cert.pem\" --tls-private-key-path=\"/path/to/key.pem\" --deploy-timeout=\"30s\" --drain-timeout=\"30s\" --buffer-requests --buffer-responses --log-request-header=\"Cache-Control\" --log-request-header=\"Last-Modified\" --log-request-header=\"User-Agent\"",
+      new_command.deploy(target: "172.1.0.2").join(" ")
+  end
+
   test "remove" do
     assert_equal \
       "docker exec kamal-proxy kamal-proxy remove app-web",
