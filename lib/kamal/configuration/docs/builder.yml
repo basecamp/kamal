@@ -8,7 +8,6 @@
 #
 # Options go under the builder key in the root configuration.
 builder:
-
   # Arch
   #
   # The architectures to build for — you can set an array or just a single value.
@@ -30,6 +29,19 @@ builder:
   #
   # Defaults to true:
   local: true
+
+  # Buildpack configuration
+  #
+  # The build configuration for using pack to build a Cloud Native Buildpack image.
+  #
+  # For additional buildpack customization options you can create a project descriptor
+  # file(project.toml) that the Pack CLI will automatically use.
+  # See https://buildpacks.io/docs/for-app-developers/how-to/build-inputs/use-project-toml/ for more information.
+  pack:
+    builder: heroku/builder:24
+    buildpacks:
+      - heroku/ruby
+      - heroku/procfile
 
   # Builder cache
   #
