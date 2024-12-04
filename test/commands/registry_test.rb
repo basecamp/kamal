@@ -49,6 +49,18 @@ class CommandsRegistryTest < ActiveSupport::TestCase
     end
   end
 
+  test "registry login with blank ENV password" do
+    with_test_secrets("secrets" => "KAMAL_REGISTRY_PASSWORD=") do
+      @config[:registry]["password"] = [ "KAMAL_REGISTRY_PASSWORD" ]
+
+      assert_raises Kamal::ConfigurationError do
+        assert_equal \
+          "docker login hub.docker.com -u \"dhh\" -p \"\"",
+          registry.login.join(" ")
+      end
+    end
+  end
+
   test "registry logout" do
     assert_equal \
       "docker logout hub.docker.com",
