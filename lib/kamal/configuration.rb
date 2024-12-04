@@ -355,7 +355,7 @@ class Kamal::Configuration
     def ensure_valid_bind_ips(bind_ips)
       bind_ips.present? && bind_ips.each do |ip|
         next if ip =~ Resolv::IPv4::Regex || ip =~ Resolv::IPv6::Regex
-        raise Kamal::ConfigurationError, "Invalid publish IP address: #{ip}"
+        raise ArgumentError, "Invalid publish IP address: #{ip}"
       end
 
       true
