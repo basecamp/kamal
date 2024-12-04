@@ -23,7 +23,7 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
 
   desc "boot_config <set|get|reset>", "Manage kamal-proxy boot configuration"
   option :publish, type: :boolean, default: true, desc: "Publish the proxy ports on the host"
-  option :publish_host_ip, type: :string, desc: "Host IP address to bind HTTP/HTTPS traffic to. Defaults to all interfaces"
+  option :publish_host_ip, type: :string, repeatable: true, default: nil, desc: "Host IP address to bind HTTP/HTTPS traffic to. Defaults to all interfaces"
   option :http_port, type: :numeric, default: Kamal::Configuration::PROXY_HTTP_PORT, desc: "HTTP port to publish on the host"
   option :https_port, type: :numeric, default: Kamal::Configuration::PROXY_HTTPS_PORT, desc: "HTTPS port to publish on the host"
   option :log_max_size, type: :string, default: Kamal::Configuration::PROXY_LOG_MAX_SIZE, desc: "Max size of proxy logs"
