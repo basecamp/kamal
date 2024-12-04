@@ -16,7 +16,6 @@
 # It is disabled by default on all other roles but can be enabled by setting
 # `proxy: true` or providing a proxy configuration.
 proxy:
-
   # Hosts
   #
   # The hosts that will be used to serve the app. The proxy will only route requests

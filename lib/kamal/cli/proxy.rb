@@ -13,8 +13,8 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
 
         version = capture_with_info(*KAMAL.proxy.version).strip.presence
 
-        if version && Kamal::Utils.older_version?(version, Kamal::Configuration::PROXY_MINIMUM_VERSION)
-          raise "kamal-proxy version #{version} is too old, run `kamal proxy reboot` in order to update to at least #{Kamal::Configuration::PROXY_MINIMUM_VERSION}"
+        if version && Kamal::Utils.older_version?(version, Kamal::Configuration::Proxy::MINIMUM_VERSION)
+          raise "kamal-proxy version #{version} is too old, run `kamal proxy reboot` in order to update to at least #{Kamal::Configuration::Proxy::MINIMUM_VERSION}"
         end
         execute *KAMAL.proxy.start_or_run
       end
@@ -22,23 +22,25 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
   end
 
   desc "boot_config <set|get|reset>", "Manage kamal-proxy boot configuration"
+  option :image, type: :string, default: Kamal::Configuration::Proxy::DEFAULT_IMAGE, desc: "Name of the image"
   option :publish, type: :boolean, default: true, desc: "Publish the proxy ports on the host"
-  option :http_port, type: :numeric, default: Kamal::Configuration::PROXY_HTTP_PORT, desc: "HTTP port to publish on the host"
-  option :https_port, type: :numeric, default: Kamal::Configuration::PROXY_HTTPS_PORT, desc: "HTTPS port to publish on the host"
-  option :log_max_size, type: :string, default: Kamal::Configuration::PROXY_LOG_MAX_SIZE, desc: "Max size of proxy logs"
+  option :http_port, type: :numeric, default: Kamal::Configuration::Proxy::HTTP_PORT, desc: "HTTP port to publish on the host"
+  option :https_port, type: :numeric, default: Kamal::Configuration::Proxy::HTTPS_PORT, desc: "HTTPS port to publish on the host"
+  option :log_max_size, type: :string, default: Kamal::Configuration::Proxy::LOG_MAX_SIZE, desc: "Max size of proxy logs"
   option :docker_options, type: :array, default: [], desc: "Docker options to pass to the proxy container", banner: "option=value option2=value2"
   def boot_config(subcommand)
     case subcommand
     when "set"
       boot_options = [
-        *(KAMAL.config.proxy_publish_args(options[:http_port], options[:https_port]) if options[:publish]),
-        *(KAMAL.config.proxy_logging_args(options[:log_max_size])),
-        *options[:docker_options].map { |option| "--#{option}" }
+        *(KAMAL.config.proxy.publish_args(options[:http_port], options[:https_port]) if options[:publish]),
+        *(KAMAL.config.proxy.logging_args(options[:log_max_size])),
+        *options[:docker_options].map { |option| "--#{option}" },
+        options[:image]
       ]
 
       on(KAMAL.proxy_hosts) do |host|
         execute(*KAMAL.proxy.ensure_proxy_directory)
-        upload! StringIO.new(boot_options.join(" ")), KAMAL.config.proxy_options_file
+        upload! StringIO.new(boot_options.join(" ")), KAMAL.config.proxy.options_file
       end
     when "get"
       on(KAMAL.proxy_hosts) do |host|

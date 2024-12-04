@@ -8,8 +8,7 @@ class Kamal::Commands::Proxy < Kamal::Commands::Base
       "--detach",
       "--restart", "unless-stopped",
       "--volume", "kamal-proxy-config:/home/kamal-proxy/.config/kamal-proxy",
-      "\$\(#{get_boot_options.join(" ")}\)",
-      config.proxy_image
+      "\$\(#{get_boot_options.join(" ")}\)"
   end
 
   def start
@@ -65,23 +64,23 @@ class Kamal::Commands::Proxy < Kamal::Commands::Base
   end
 
   def ensure_proxy_directory
-    make_directory config.proxy_directory
+    make_directory config.proxy.directory
   end
 
   def remove_proxy_directory
-    remove_directory config.proxy_directory
+    remove_directory config.proxy.directory
   end
 
   def get_boot_options
-    combine [ :cat, config.proxy_options_file ], [ :echo, "\"#{config.proxy_options_default.join(" ")}\"" ], by: "||"
+    combine [ :cat, config.proxy.options_file ], [ :echo, "\"#{config.proxy.options_default.join(" ")}\"" ], by: "||"
   end
 
   def reset_boot_options
-    remove_file config.proxy_options_file
+    remove_file config.proxy.options_file
   end
 
   private
     def container_name
-      config.proxy_container_name
+      config.proxy.container_name
     end
 end
