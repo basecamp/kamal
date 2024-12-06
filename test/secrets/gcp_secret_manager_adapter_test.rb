@@ -169,6 +169,15 @@ class GcpSecretManagerAdapterTest < SecretAdapterTestCase
       stub_ticks
         .with("gcloud auth list --format=json")
         .returns("[]")
+
+      stub_ticks
+        .with("gcloud auth login")
+        .returns(<<~JSON)
+          {
+            "expired": false,
+            "valid": true
+          }
+        JSON
     end
 
     def stub_mypassword
