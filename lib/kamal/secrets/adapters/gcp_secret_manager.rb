@@ -40,7 +40,7 @@ class Kamal::Secrets::Adapters::GcpSecretManager < Kamal::Secrets::Adapters::Bas
 
     def fetch_secret(project, secret_name, secret_version, user, service_account)
       secret = run_command(
-        "secrets versions access #{secret_version} --secret=#{secret_name.shellescape}",
+        "secrets versions access #{secret_version.shellescape} --secret=#{secret_name.shellescape}",
         project: project,
         user: user,
         service_account: service_account
@@ -79,9 +79,9 @@ class Kamal::Secrets::Adapters::GcpSecretManager < Kamal::Secrets::Adapters::Bas
 
     def run_command(command, project: "default", user: "default", service_account: nil)
       full_command = [ "gcloud", command ]
-      full_command << "--project=#{project}" unless project == "default"
-      full_command << "--account=#{user}" unless user == "default"
-      full_command << "--impersonate-service-account=#{service_account}" if service_account
+      full_command << "--project=#{project.shellescape}" unless project == "default"
+      full_command << "--account=#{user.shellescape}" unless user == "default"
+      full_command << "--impersonate-service-account=#{service_account.shellescape}" if service_account
       full_command << "--format=json"
       full_command = full_command.join(" ")
 
