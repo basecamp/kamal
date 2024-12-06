@@ -8,7 +8,7 @@ class GcpSecretManagerAdapterTest < SecretAdapterTestCase
 
     json = JSON.parse(shellunescape(run_command("fetch", "mypassword")))
 
-    expected_json = { "mypassword"=>"secret123" }
+    expected_json = { "default/mypassword"=>"secret123" }
 
     assert_equal expected_json, json
   end
