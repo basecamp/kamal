@@ -94,9 +94,15 @@ class Kamal::Cli::App < Kamal::Cli::Base
   option :interactive, aliases: "-i", type: :boolean, default: false, desc: "Execute command over ssh for an interactive shell (use for console/bash)"
   option :reuse, type: :boolean, default: false, desc: "Reuse currently running container instead of starting a new one"
   option :env, aliases: "-e", type: :hash, desc: "Set environment variables for the command"
+  option :detach, type: :boolean, default: false, desc: "Execute command in a detached container"
   def exec(*cmd)
+    if (incompatible_options = [ :interactive, :reuse ].select { |key| options[:detach] && options[key] }.presence)
+      raise ArgumentError, "Detach is not compatible with #{incompatible_options.join(" or ")}"
+    end
+
     cmd = Kamal::Utils.join_commands(cmd)
     env = options[:env]
+    detach = options[:detach]
     case
     when options[:interactive] && options[:reuse]
       say "Get current version of running container...", :magenta unless options[:version]
@@ -138,7 +144,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
 
           roles.each do |role|
             execute *KAMAL.auditor.record("Executed cmd '#{cmd}' on app version #{version}"), verbosity: :debug
-            puts_by_host host, capture_with_info(*KAMAL.app(role: role, host: host).execute_in_new_container(cmd, env: env))
+            puts_by_host host, capture_with_info(*KAMAL.app(role: role, host: host).execute_in_new_container(cmd, env: env, detach: detach))
           end
         end
       end
@@ -189,12 +195,14 @@ class Kamal::Cli::App < Kamal::Cli::Base
   option :grep_options, aliases: "-o", desc: "Additional options supplied to grep"
   option :follow, aliases: "-f", desc: "Follow log on primary server (or specific host set by --hosts)"
   option :skip_timestamps, type: :boolean, aliases: "-T", desc: "Skip appending timestamps to logging output"
+  option :container_id, desc: "Docker container ID to fetch logs"
   def logs
     # FIXME: Catch when app containers aren't running
 
     grep = options[:grep]
     grep_options = options[:grep_options]
     since = options[:since]
+    container_id = options[:container_id]
     timestamps = !options[:skip_timestamps]
 
     if options[:follow]
@@ -207,8 +215,8 @@ class Kamal::Cli::App < Kamal::Cli::Base
         role = KAMAL.roles_on(KAMAL.primary_host).first
 
         app = KAMAL.app(role: role, host: host)
-        info app.follow_logs(host: KAMAL.primary_host, timestamps: timestamps, lines: lines, grep: grep, grep_options: grep_options)
-        exec app.follow_logs(host: KAMAL.primary_host, timestamps: timestamps, lines: lines, grep: grep, grep_options: grep_options)
+        info app.follow_logs(host: KAMAL.primary_host, container_id: container_id, timestamps: timestamps, lines: lines, grep: grep, grep_options: grep_options)
+        exec app.follow_logs(host: KAMAL.primary_host, container_id: container_id, timestamps: timestamps, lines: lines, grep: grep, grep_options: grep_options)
       end
     else
       lines = options[:lines].presence || ((since || grep) ? nil : 100) # Default to 100 lines if since or grep isn't set
@@ -218,7 +226,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
 
         roles.each do |role|
           begin
-            puts_by_host host, capture_with_info(*KAMAL.app(role: role, host: host).logs(timestamps: timestamps, since: since, lines: lines, grep: grep, grep_options: grep_options))
+            puts_by_host host, capture_with_info(*KAMAL.app(role: role, host: host).logs(container_id: container_id, timestamps: timestamps, since: since, lines: lines, grep: grep, grep_options: grep_options))
           rescue SSHKit::Command::Failed
             puts_by_host host, "Nothing found"
           end
