@@ -5,7 +5,7 @@ class Kamal::Secrets::Adapters::GcpSecretManager < Kamal::Secrets::Adapters::Bas
       # impersonation.
       #
       # Syntax:
-      # ACCOUNT: USER | USER "," DELEGATION_CHAIN
+      # ACCOUNT: USER | USER "|" DELEGATION_CHAIN
       # USER: DEFAULT_USER | EMAIL
       # DELEGATION_CHAIN: EMAIL | EMAIL "," DELEGATION_CHAIN
       # EMAIL: <The email address of the user or service account, like "my-user@example.com" >
@@ -13,10 +13,10 @@ class Kamal::Secrets::Adapters::GcpSecretManager < Kamal::Secrets::Adapters::Bas
       #
       # Some valid examples:
       # - "my-user@example.com" sets the user
-      # - "my-user@example.com,my-service-user@example.com" will use my-user and enable service account impersonation as my-service-user
+      # - "my-user@example.com|my-service-user@example.com" will use my-user and enable service account impersonation as my-service-user
       # - "default" will use the default user and no impersonation
-      # - "default,my-service-user@example.com" will use the default user, and enable service account impersonation as my-service-user
-      # - "default,my-service-user@example.com,another-service-user@example.com" same as above, but with an impersonation delegation chain
+      # - "default|my-service-user@example.com" will use the default user, and enable service account impersonation as my-service-user
+      # - "default|my-service-user@example.com,another-service-user@example.com" same as above, but with an impersonation delegation chain
 
       if !logged_in?
         raise RuntimeError, "gcloud is not authenticated, please run `gcloud auth login`"
@@ -102,19 +102,7 @@ class Kamal::Secrets::Adapters::GcpSecretManager < Kamal::Secrets::Adapters::Bas
     end
 
     def parse_account(account)
-      return "default", nil if account == "default"
-
-      parts = account.split(",", 2)
-
-      if parts.length == 2
-        return parts.shift, parts.shift
-      elsif parts.length != 1
-        raise RuntimeError, "Invalid account, too many parts: #{account}"
-      elsif is_user?(account)
-        return account, nil
-      end
-
-      raise RuntimeError, "Invalid account, not a user: #{account}"
+      account.split("|", 2)
     end
 
     def is_user?(candidate)

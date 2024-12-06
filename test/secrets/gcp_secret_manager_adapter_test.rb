@@ -91,7 +91,7 @@ class GcpSecretManagerAdapterTest < SecretAdapterTestCase
     stub_authenticated
     stub_items(0, project: "some-project", version: "123", impersonate_service_account: "service-user@example.com")
 
-    json = JSON.parse(shellunescape(run_command("fetch", "some-project/item1/123", account: "default,service-user@example.com")))
+    json = JSON.parse(shellunescape(run_command("fetch", "some-project/item1/123", account: "default|service-user@example.com")))
 
     expected_json = {
       "some-project/item1"=>"secret1"
@@ -105,7 +105,7 @@ class GcpSecretManagerAdapterTest < SecretAdapterTestCase
     stub_authenticated
     stub_items(0, project: "some-project", version: "123", account: "user@example.com", impersonate_service_account: "service-user@example.com,service-user2@example.com")
 
-    json = JSON.parse(shellunescape(run_command("fetch", "some-project/item1/123", account: "user@example.com,service-user@example.com,service-user2@example.com")))
+    json = JSON.parse(shellunescape(run_command("fetch", "some-project/item1/123", account: "user@example.com|service-user@example.com,service-user2@example.com")))
 
     expected_json = {
       "some-project/item1"=>"secret1"
@@ -119,7 +119,7 @@ class GcpSecretManagerAdapterTest < SecretAdapterTestCase
     stub_authenticated
     stub_items(0, project: "some-project", version: "123", account: "email@example.com", impersonate_service_account: "service-user@example.com")
 
-    json = JSON.parse(shellunescape(run_command("fetch", "some-project/item1/123", account: "email@example.com,service-user@example.com")))
+    json = JSON.parse(shellunescape(run_command("fetch", "some-project/item1/123", account: "email@example.com|service-user@example.com")))
 
     expected_json = {
       "some-project/item1"=>"secret1"
