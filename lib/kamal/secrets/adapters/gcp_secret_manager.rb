@@ -23,28 +23,29 @@ class Kamal::Secrets::Adapters::GcpSecretManager < Kamal::Secrets::Adapters::Bas
         raise RuntimeError, "gcloud is not authenticated, please run `gcloud auth login`" if !logged_in?
       end
 
-      user, impersonate_service_account = parse_account(account)
-
-      {
-        user: user,
-        impersonate_service_account: impersonate_service_account
-      }
+      nil
     end
 
     def fetch_secrets(secrets, account:, session:)
-      # puts("secrets spec: #{secrets.inspect}")
+      user, service_account = parse_account(account)
+
       {}.tap do |results|
         secrets_with_metadata(secrets).each do |secret, metadata|
           project, secret_name, secret_version = metadata
           item_name = project == "default" ? secret_name : "#{project}/#{secret_name}"
-          results[item_name] = fetch_secret(session, project, secret_name, secret_version)
+          results[item_name] = fetch_secret(project, secret_name, secret_version, user, service_account)
           raise RuntimeError, "Could not read #{item_name} from Google Secret Manager" unless $?.success?
         end
       end
     end
 
-    def fetch_secret(session, project, secret_name, secret_version)
-      secret = run_command("secrets versions access #{secret_version} --secret=#{secret_name.shellescape}", session: session, project: project)
+    def fetch_secret(project, secret_name, secret_version, user, service_account)
+      secret = run_command(
+        "secrets versions access #{secret_version} --secret=#{secret_name.shellescape}",
+        project: project,
+        user: user,
+        service_account: service_account
+      )
       Base64.decode64(secret.dig("payload", "data"))
     end
 
@@ -77,11 +78,11 @@ class Kamal::Secrets::Adapters::GcpSecretManager < Kamal::Secrets::Adapters::Bas
       end
     end
 
-    def run_command(command, session: nil, project: nil)
+    def run_command(command, project: "default", user: "default", service_account: nil)
       full_command = [ "gcloud", command ]
       full_command << "--project=#{project}" unless project == "default"
-      full_command << "--account=#{session[:user]}" unless session[:user] == "default"
-      full_command << "--impersonate-service-account=#{session[:impersonate_service_account]}" if session[:impersonate_service_account]
+      full_command << "--account=#{user}" unless user == "default"
+      full_command << "--impersonate-service-account=#{service_account}" if service_account
       full_command << "--format=json"
       full_command = full_command.join(" ")
 
