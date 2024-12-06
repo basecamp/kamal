@@ -19,7 +19,8 @@ class Kamal::Secrets::Adapters::GcpSecretManager < Kamal::Secrets::Adapters::Bas
       # - "default|my-service-user@example.com,another-service-user@example.com" same as above, but with an impersonation delegation chain
 
       if !logged_in?
-        raise RuntimeError, "gcloud is not authenticated, please run `gcloud auth login`"
+        `gcloud auth login`
+        raise RuntimeError, "gcloud is not authenticated, please run `gcloud auth login`" if !logged_in?
       end
 
       user, impersonate_service_account = parse_account(account)
