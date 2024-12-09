@@ -5,7 +5,7 @@ class Kamal::Configuration::Sshkit
 
   def initialize(config:)
     @sshkit_config = config.raw_config.sshkit || {}
-    validate! sshkit_config
+    validate! sshkit_config, with: Kamal::Configuration::Validator::Sshkit
   end
 
   def max_concurrent_starts
@@ -14,6 +14,10 @@ class Kamal::Configuration::Sshkit
 
   def pool_idle_timeout
     sshkit_config.fetch("pool_idle_timeout", 900)
+  end
+
+  def default_env
+    sshkit_config.fetch("default_env", {}).transform_keys(&:to_sym)
   end
 
   def to_h
