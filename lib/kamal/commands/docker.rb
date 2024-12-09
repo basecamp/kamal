@@ -20,7 +20,7 @@ class Kamal::Commands::Docker < Kamal::Commands::Base
   end
 
   def create_network
-    docker :network, :create, :kamal
+    docker :network, :create, "--ipv6", :kamal
   end
 
   private
