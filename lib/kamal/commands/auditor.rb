@@ -11,7 +11,7 @@ class Kamal::Commands::Auditor < Kamal::Commands::Base
     combine \
       [ :mkdir, "-p", config.run_directory ],
       append(
-        [ :echo, audit_tags(**details).except(:version, :service_version, :service).to_s, line ],
+        [ :echo, "\"#{audit_tags(**details).except(:version, :service_version, :service)}\"", "\"#{line}\"" ],
         audit_log_file
       )
   end
