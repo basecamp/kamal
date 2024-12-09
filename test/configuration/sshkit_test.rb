@@ -25,4 +25,10 @@ class ConfigurationSshkitTest < ActiveSupport::TestCase
     @config = Kamal::Configuration.new(@deploy.tap { |c| c.merge!(sshkit: { "pool_idle_timeout" => 600 }) })
     assert_equal 600, @config.sshkit.pool_idle_timeout
   end
+
+  test "sshkit default env" do
+    assert_equal({}, @config.sshkit.default_env)
+    @config = Kamal::Configuration.new(@deploy.tap { |c| c.merge!(sshkit: { "default_env" => {"path" => "/usr/local/bin:$PATH" } }) })
+    assert_equal({path: "/usr/local/bin:$PATH" }, @config.sshkit.default_env)
+  end
 end
