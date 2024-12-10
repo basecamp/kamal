@@ -45,7 +45,7 @@ class Kamal::Cli::App::Boot
 
     def start_new_version
       audit "Booted app version #{version}"
-      hostname = "#{host.to_s[0...51].gsub(/\.+$/, '')}-#{SecureRandom.hex(6)}"
+      hostname = "#{host.to_s[0...51].chomp(".")}-#{SecureRandom.hex(6)}"
 
       execute *app.ensure_env_directory
       upload! role.secrets_io(host), role.secrets_path, mode: "0600"
