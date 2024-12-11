@@ -23,6 +23,10 @@ class CliSecretsTest < CliTestCase
     assert_equal "oof", run_command("extract", "foo", "{\"foo\":\"oof\", \"bar\":\"rab\", \"baz\":\"zab\"}")
   end
 
+  test "extract when value contains (" do
+    assert_equal "bar(", run_command("extract", "foo", "\\{\\\"foo\\\":\\\"bar\\(\\\"\\}")
+  end
+
   test "extract match from end" do
     assert_equal "oof", run_command("extract", "foo", "{\"abc/foo\":\"oof\", \"bar\":\"rab\", \"baz\":\"zab\"}")
   end

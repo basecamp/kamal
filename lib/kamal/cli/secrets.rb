@@ -19,7 +19,7 @@ class Kamal::Cli::Secrets < Kamal::Cli::Base
   desc "extract", "Extract a single secret from the results of a fetch call"
   option :inline, type: :boolean, required: false, hidden: true
   def extract(name, secrets)
-    parsed_secrets = JSON.parse(secrets)
+    parsed_secrets = parse_secrets(secrets)
     value = parsed_secrets[name] || parsed_secrets.find { |k, v| k.end_with?("/#{name}") }&.last
 
     raise "Could not find secret #{name}" if value.nil?
@@ -35,6 +35,12 @@ class Kamal::Cli::Secrets < Kamal::Cli::Base
   end
 
   private
+    def parse_secrets(secrets)
+      secrets = secrets.shellsplit[0] if secrets.start_with?("\\{")
+
+      JSON.parse(secrets)
+    end
+
     def initialize_adapter(adapter)
       Kamal::Secrets::Adapters.lookup(adapter)
     end
