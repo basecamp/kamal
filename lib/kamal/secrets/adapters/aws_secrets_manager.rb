@@ -6,7 +6,15 @@ class Kamal::Secrets::Adapters::AwsSecretsManager < Kamal::Secrets::Adapters::Ba
 
     def fetch_secrets(secrets, account:, session:)
       {}.tap do |results|
-        JSON.parse(get_from_secrets_manager(secrets, account: account))["SecretValues"].each do |secret|
+        secrets = JSON.parse(get_from_secrets_manager(secrets, account: account))
+
+        if secrets["Errors"].present?
+          first_error = secrets["Errors"].first
+
+          raise RuntimeError, "#{first_error['SecretId']}: #{first_error['Message']}"
+        end
+
+        secrets["SecretValues"].each do |secret|
           secret_name = secret["Name"]
           secret_string = JSON.parse(secret["SecretString"])
 
@@ -20,8 +28,8 @@ class Kamal::Secrets::Adapters::AwsSecretsManager < Kamal::Secrets::Adapters::Ba
     end
 
     def get_from_secrets_manager(secrets, account:)
-      `aws secretsmanager batch-get-secret-value --secret-id-list #{secrets.map(&:shellescape).join(" ")} --profile #{account.shellescape}`.tap do
-        raise RuntimeError, "Could not read #{secret} from AWS Secrets Manager" unless $?.success?
+      `aws secretsmanager batch-get-secret-value --secret-id-list #{secrets.map(&:shellescape).join(" ")} --profile #{account.shellescape}`.tap do |secrets|
+        raise RuntimeError, "Could not read #{secrets} from AWS Secrets Manager" unless $?.success?
       end
     end
 

@@ -1,6 +1,30 @@
 require "test_helper"
 
 class AwsSecretsManagerAdapterTest < SecretAdapterTestCase
+  test "fails when errors are present" do
+    stub_ticks.with("aws --version 2> /dev/null")
+    stub_ticks
+      .with("aws secretsmanager batch-get-secret-value --secret-id-list unknown-secret-id --profile default")
+      .returns(<<~JSON)
+        {
+          "SecretValues": [],
+          "Errors": [
+            {
+                "SecretId": "unknown-secret-id",
+                "ErrorCode": "ResourceNotFoundException",
+                "Message": "Secrets Manager can't find the specified secret."
+            }
+          ]
+        }
+      JSON
+
+    error = assert_raises RuntimeError do
+      JSON.parse(shellunescape(run_command("fetch", "unknown-secret-id")))
+    end
+
+    assert_equal "unknown-secret-id: Secrets Manager can't find the specified secret.", error.message
+  end
+
   test "fetch" do
     stub_ticks.with("aws --version 2> /dev/null")
     stub_ticks
