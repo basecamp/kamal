@@ -27,7 +27,7 @@ class Kamal::Secrets::Adapters::AwsSecretsManager < Kamal::Secrets::Adapters::Ba
 
         return secrets["SecretValues"] unless secrets["Errors"].present?
 
-        raise RuntimeError, secrets["Errors"].map { |error| "#{error['SecretId']}: #{error['Message']}" }.join(", ")
+        raise RuntimeError, secrets["Errors"].map { |error| "#{error['SecretId']}: #{error['Message']}" }.join(" ")
       end
     end
 

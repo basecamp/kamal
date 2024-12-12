@@ -4,13 +4,18 @@ class AwsSecretsManagerAdapterTest < SecretAdapterTestCase
   test "fails when errors are present" do
     stub_ticks.with("aws --version 2> /dev/null")
     stub_ticks
-      .with("aws secretsmanager batch-get-secret-value --secret-id-list unknown-secret-id --profile default")
+      .with("aws secretsmanager batch-get-secret-value --secret-id-list unknown1 unknown2 --profile default")
       .returns(<<~JSON)
         {
           "SecretValues": [],
           "Errors": [
             {
-                "SecretId": "unknown-secret-id",
+                "SecretId": "unknown1",
+                "ErrorCode": "ResourceNotFoundException",
+                "Message": "Secrets Manager can't find the specified secret."
+            },
+            {
+                "SecretId": "unknown2",
                 "ErrorCode": "ResourceNotFoundException",
                 "Message": "Secrets Manager can't find the specified secret."
             }
@@ -19,10 +24,10 @@ class AwsSecretsManagerAdapterTest < SecretAdapterTestCase
       JSON
 
     error = assert_raises RuntimeError do
-      JSON.parse(shellunescape(run_command("fetch", "unknown-secret-id")))
+      JSON.parse(shellunescape(run_command("fetch", "unknown1", "unknown2")))
     end
 
-    assert_equal "unknown-secret-id: Secrets Manager can't find the specified secret.", error.message
+    assert_equal ["unknown1: Secrets Manager can't find the specified secret.", "unknown2: Secrets Manager can't find the specified secret."].join(" "), error.message
   end
 
   test "fetch" do
