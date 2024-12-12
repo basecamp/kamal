@@ -80,7 +80,7 @@ class AwsSecretsManagerAdapterTest < SecretAdapterTestCase
 
     expected_json = {
       "secret"=>"a-string-secret",
-      "secret/KEY2"=>"VALUE2"
+      "secret2/KEY2"=>"VALUE2"
     }
 
     assert_equal expected_json, json
