@@ -44,6 +44,48 @@ class AwsSecretsManagerAdapterTest < SecretAdapterTestCase
     assert_equal expected_json, json
   end
 
+  test "fetch with string value" do
+    stub_ticks.with("aws --version 2> /dev/null")
+    stub_ticks
+      .with("aws secretsmanager batch-get-secret-value --secret-id-list secret secret2/KEY1 --profile default")
+      .returns(<<~JSON)
+        {
+          "SecretValues": [
+            {
+              "ARN": "arn:aws:secretsmanager:us-east-1:aaaaaaaaaaaa:secret:secret",
+              "Name": "secret",
+              "VersionId": "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv",
+              "SecretString": "a-string-secret",
+              "VersionStages": [
+                  "AWSCURRENT"
+              ],
+              "CreatedDate": "2024-01-01T00:00:00.000000"
+            },
+            {
+              "ARN": "arn:aws:secretsmanager:us-east-1:aaaaaaaaaaaa:secret:secret2",
+              "Name": "secret2",
+              "VersionId": "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv",
+              "SecretString": "{\\"KEY2\\":\\"VALUE2\\"}",
+              "VersionStages": [
+                  "AWSCURRENT"
+              ],
+              "CreatedDate": "2024-01-01T00:00:00.000000"
+            }
+          ],
+          "Errors": []
+        }
+      JSON
+
+    json = JSON.parse(shellunescape(run_command("fetch", "secret", "secret2/KEY1")))
+
+    expected_json = {
+      "secret"=>"a-string-secret",
+      "secret/KEY2"=>"VALUE2"
+    }
+
+    assert_equal expected_json, json
+  end
+
   test "fetch with secret names" do
     stub_ticks.with("aws --version 2> /dev/null")
     stub_ticks

@@ -13,6 +13,8 @@ class Kamal::Secrets::Adapters::AwsSecretsManager < Kamal::Secrets::Adapters::Ba
           secret_string.each do |key, value|
             results["#{secret_name}/#{key}"] = value
           end
+        rescue JSON::ParserError
+          results["#{secret_name}"] = secret["SecretString"]
         end
       end
     end
