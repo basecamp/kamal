@@ -2,7 +2,7 @@ require "active_support/core_ext/string/filters"
 
 class Kamal::Commands::Builder < Kamal::Commands::Base
   delegate :create, :remove, :push, :clean, :pull, :info, :inspect_builder, :validate_image, :first_mirror, to: :target
-  delegate :local?, :remote?, to: "config.builder"
+  delegate :local?, :remote?, :pack?, to: "config.builder"
 
   include Clone
 
@@ -17,6 +17,8 @@ class Kamal::Commands::Builder < Kamal::Commands::Base
       else
         remote
       end
+    elsif pack?
+      pack
     else
       local
     end
@@ -34,6 +36,9 @@ class Kamal::Commands::Builder < Kamal::Commands::Base
     @hybrid ||= Kamal::Commands::Builder::Hybrid.new(config)
   end
 
+  def pack
+    @pack ||= Kamal::Commands::Builder::Pack.new(config)
+  end
 
   def ensure_local_dependencies_installed
     if name.native?
