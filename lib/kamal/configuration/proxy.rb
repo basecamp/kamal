@@ -55,6 +55,10 @@ class Kamal::Configuration::Proxy
     self.class.new config: config, proxy_config: proxy_config.deep_merge(other.proxy_config)
   end
 
+  def container_name
+    CONTAINER_NAME
+  end
+
   private
     def seconds_duration(value)
       value ? "#{value}s" : nil
