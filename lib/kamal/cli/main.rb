@@ -9,6 +9,9 @@ class Kamal::Cli::Main < Kamal::Cli::Base
         say "Ensure Docker is installed...", :magenta
         invoke "kamal:cli:server:bootstrap", [], invoke_options
 
+        say "Ensure kamal-proxy is running...", :magenta
+        invoke "kamal:cli:proxy:boot", [], invoke_options
+
         invoke "kamal:cli:accessory:boot", [ "all" ], invoke_options
         deploy
       end
