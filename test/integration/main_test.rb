@@ -90,7 +90,7 @@ class MainTest < IntegrationTest
   test "setup and remove" do
     @app = "app_with_roles"
 
-    kamal :proxy, :set_config,
+    kamal :proxy, :boot_config, "set",
       "--publish=false",
       "--options=label=traefik.http.services.kamal_proxy.loadbalancer.server.scheme=http",
       "label=traefik.http.routers.kamal_proxy.rule=PathPrefix\\\(\\\`/\\\`\\\)",
