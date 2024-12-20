@@ -92,7 +92,7 @@ class MainTest < IntegrationTest
 
     kamal :proxy, :boot_config, "set",
       "--publish=false",
-      "--options=label=traefik.http.services.kamal_proxy.loadbalancer.server.scheme=http",
+      "--docker-options=label=traefik.http.services.kamal_proxy.loadbalancer.server.scheme=http",
       "label=traefik.http.routers.kamal_proxy.rule=PathPrefix\\\(\\\`/\\\`\\\)",
       "label=traefik.http.routers.kamal_proxy.priority=2"
 
