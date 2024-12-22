@@ -59,7 +59,7 @@ class Kamal::Configuration
 
     # Eager load config to validate it, these are first as they have dependencies later on
     @servers = Servers.new(config: self)
-    @registry = Registry.new(config: self)
+    @registry = Registry.new(config: raw_config, secrets: secrets)
 
     @accessories = @raw_config.accessories&.keys&.collect { |name| Accessory.new(name, config: self) } || []
     @aliases = @raw_config.aliases&.keys&.to_h { |name| [ name, Alias.new(name, config: self) ] } || {}
@@ -81,7 +81,6 @@ class Kamal::Configuration
     ensure_one_host_for_ssl_roles
     ensure_unique_hosts_for_ssl_roles
   end
-
 
   def version=(version)
     @declared_version = version
@@ -106,7 +105,6 @@ class Kamal::Configuration
     raw_config.minimum_version
   end
 
-
   def roles
     servers.roles
   end
@@ -118,7 +116,6 @@ class Kamal::Configuration
   def accessory(name)
     accessories.detect { |a| a.name == name.to_s }
   end
-
 
   def all_hosts
     (roles + accessories).flat_map(&:hosts).uniq
@@ -180,7 +177,6 @@ class Kamal::Configuration
     raw_config.retain_containers || 5
   end
 
-
   def volume_args
     if raw_config.volumes.present?
       argumentize "--volume", raw_config.volumes
@@ -193,7 +189,6 @@ class Kamal::Configuration
     logging.args
   end
 
-
   def readiness_delay
     raw_config.readiness_delay || 7
   end
@@ -205,7 +200,6 @@ class Kamal::Configuration
   def drain_timeout
     raw_config.drain_timeout || 30
   end
-
 
   def run_directory
     ".kamal"
@@ -227,7 +221,6 @@ class Kamal::Configuration
     File.join app_directory, "assets"
   end
 
-
   def hooks_path
     raw_config.hooks_path || ".kamal/hooks"
   end
@@ -235,7 +228,6 @@ class Kamal::Configuration
   def asset_path
     raw_config.asset_path
   end
-
 
   def env_tags
     @env_tags ||= if (tags = raw_config.env["tags"])
@@ -276,7 +268,6 @@ class Kamal::Configuration
   def proxy_options_file
     File.join proxy_directory, "options"
   end
-
 
   def to_h
     {

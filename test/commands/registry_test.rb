@@ -2,14 +2,27 @@ require "test_helper"
 
 class CommandsRegistryTest < ActiveSupport::TestCase
   setup do
-    @config = { service: "app",
+    @config = {
+      service: "app",
       image: "dhh/app",
-      registry: { "username" => "dhh",
+      registry: {
+        "username" => "dhh",
         "password" => "secret",
         "server" => "hub.docker.com"
       },
       builder: { "arch" => "amd64" },
-      servers: [ "1.1.1.1" ]
+      servers: [ "1.1.1.1" ],
+      accessories: {
+        "db" => {
+          "image" => "mysql:8.0",
+          "hosts" => [ "1.1.1.1" ],
+          "registry" => {
+            "username" => "user",
+            "password" => "pw",
+            "server" => "other.hub.docker.com"
+          }
+        }
+      }
     }
   end
 
@@ -19,13 +32,24 @@ class CommandsRegistryTest < ActiveSupport::TestCase
       registry.login.join(" ")
   end
 
+  test "given registry login" do
+    assert_equal \
+      "docker login other.hub.docker.com -u \"user\" -p \"pw\"",
+      registry.login(registry_config: accessory_registry_config).join(" ")
+  end
+
   test "registry login with ENV password" do
-    with_test_secrets("secrets" => "KAMAL_REGISTRY_PASSWORD=more-secret") do
+    with_test_secrets("secrets" => "KAMAL_REGISTRY_PASSWORD=more-secret\nKAMAL_MYSQL_REGISTRY_PASSWORD=secret-pw") do
       @config[:registry]["password"] = [ "KAMAL_REGISTRY_PASSWORD" ]
+      @config[:accessories]["db"]["registry"]["password"] = [ "KAMAL_MYSQL_REGISTRY_PASSWORD" ]
 
       assert_equal \
         "docker login hub.docker.com -u \"dhh\" -p \"more-secret\"",
         registry.login.join(" ")
+
+      assert_equal \
+        "docker login other.hub.docker.com -u \"user\" -p \"secret-pw\"",
+        registry.login(registry_config: accessory_registry_config).join(" ")
     end
   end
 
@@ -55,8 +79,22 @@ class CommandsRegistryTest < ActiveSupport::TestCase
       registry.logout.join(" ")
   end
 
+  test "given registry logout" do
+    assert_equal \
+      "docker logout other.hub.docker.com",
+      registry.logout(registry_config: accessory_registry_config).join(" ")
+  end
+
   private
     def registry
-      Kamal::Commands::Registry.new Kamal::Configuration.new(@config)
+      Kamal::Commands::Registry.new main_config
+    end
+
+    def main_config
+      Kamal::Configuration.new(@config)
+    end
+
+    def accessory_registry_config
+      main_config.accessory("db").registry
     end
 end

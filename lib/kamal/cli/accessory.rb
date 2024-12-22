@@ -292,7 +292,7 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
     def prepare(name)
       with_accessory(name) do |accessory, hosts|
         on(hosts) do
-          execute *KAMAL.registry.login
+          execute *KAMAL.registry.login(registry_config: accessory.registry)
           execute *KAMAL.docker.create_network
         rescue SSHKit::Command::Failed => e
           raise unless e.message.include?("already exists")
