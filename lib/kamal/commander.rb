@@ -76,11 +76,6 @@ class Kamal::Commander
     config.accessories&.collect(&:name) || []
   end
 
-  def accessories_on(host)
-    config.accessories.select { |accessory| accessory.hosts.include?(host.to_s) }.map(&:name)
-  end
-
-
   def app(role: nil, host: nil)
     Kamal::Commands::App.new(config, role: role, host: host)
   end
@@ -128,7 +123,6 @@ class Kamal::Commander
   def alias(name)
     config.aliases[name]
   end
-
 
   def with_verbosity(level)
     old_level = self.verbosity
