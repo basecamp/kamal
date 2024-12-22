@@ -59,7 +59,7 @@ class Kamal::Configuration
 
     # Eager load config to validate it, these are first as they have dependencies later on
     @servers = Servers.new(config: self)
-    @registry = Registry.new(config: raw_config, secrets: secrets)
+    @registry = Registry.new(config: @raw_config, secrets: secrets)
 
     @accessories = @raw_config.accessories&.keys&.collect { |name| Accessory.new(name, config: self) } || []
     @aliases = @raw_config.aliases&.keys&.to_h { |name| [ name, Alias.new(name, config: self) ] } || {}
