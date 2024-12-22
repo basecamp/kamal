@@ -7,7 +7,7 @@ require "net/ssh/proxy/jump"
 
 class Kamal::Configuration
   delegate :service, :image, :labels, :hooks_path, to: :raw_config, allow_nil: true
-  delegate :argumentize, :optionize, to: Kamal::Utils
+  delegate :argumentize, to: Kamal::Utils
 
   attr_reader :destination, :raw_config, :secrets
   attr_reader :accessories, :aliases, :boot, :builder, :env, :logging, :proxy, :servers, :ssh, :sshkit, :registry
@@ -141,10 +141,6 @@ class Kamal::Configuration
     roles.select(&:running_proxy?)
   end
 
-  def proxy_role_names
-    proxy_roles.flat_map(&:name)
-  end
-
   def proxy_hosts
     proxy_roles.flat_map(&:hosts).uniq
   end
@@ -263,10 +259,6 @@ class Kamal::Configuration
 
   def proxy_image
     "basecamp/kamal-proxy:#{PROXY_MINIMUM_VERSION}"
-  end
-
-  def proxy_container_name
-    "kamal-proxy"
   end
 
   def proxy_directory

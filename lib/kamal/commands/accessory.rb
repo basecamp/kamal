@@ -1,12 +1,10 @@
 class Kamal::Commands::Accessory < Kamal::Commands::Base
-  include Proxy
-
   attr_reader :accessory_config
+
   delegate :service_name, :image, :hosts, :port, :files, :directories, :cmd,
            :network_args, :publish_args, :env_args, :volume_args, :label_args, :option_args,
            :secrets_io, :secrets_path, :env_directory, :proxy, :running_proxy?, :registry,
            to: :accessory_config
-  delegate :proxy_container_name, to: :config
 
   def initialize(config, name:)
     super(config)
@@ -104,6 +102,14 @@ class Kamal::Commands::Accessory < Kamal::Commands::Base
 
   def ensure_env_directory
     make_directory env_directory
+  end
+
+  def deploy(target:)
+    KAMAL.proxy.deploy_service(service_name, proxy_config: proxy, target: target)
+  end
+
+  def remove
+    KAMAL.proxy.remove_service(service_name)
   end
 
   private

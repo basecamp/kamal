@@ -3,7 +3,6 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
 
   ENDPOINT_DOCKER_HOST_INSPECT = "'{{.Endpoints.docker.Host}}'"
 
-  delegate :argumentize, to: Kamal::Utils
   delegate \
     :args, :secrets, :dockerfile, :target, :arches, :local_arches, :remote_arches, :remote,
     :cache_from, :cache_to, :ssh, :provenance, :sbom, :driver, :docker_driver?,
