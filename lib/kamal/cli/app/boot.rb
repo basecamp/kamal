@@ -45,7 +45,7 @@ class Kamal::Cli::App::Boot
 
     def start_new_version
       audit "Booted app version #{version}"
-      hostname = "#{host.to_s[0...51].gsub(/\.+$/, '')}-#{SecureRandom.hex(6)}"
+      hostname = "#{host.to_s[0...51].chomp(".")}-#{SecureRandom.hex(6)}"
 
       execute *app.ensure_env_directory
       upload! role.secrets_io(host), role.secrets_path, mode: "0600"
@@ -91,7 +91,7 @@ class Kamal::Cli::App::Boot
       if barrier.close
         info "First #{KAMAL.primary_role} container is unhealthy on #{host}, not booting any other roles"
         begin
-          error capture_with_info(*app.logs(version: version))
+          error capture_with_info(*app.logs(container_id: app.container_id_for_version(version)))
           error capture_with_info(*app.container_health_log(version: version))
         rescue SSHKit::Command::Failed
           error "Could not fetch logs for #{version}"

@@ -43,8 +43,8 @@ accessories:
 
     # Port mappings
     #
-    # See https://docs.docker.com/network/, and especially note the warning about the security
-    # implications of exposing ports publicly.
+    # See [https://docs.docker.com/network/](https://docs.docker.com/network/), and
+    # especially note the warning about the security implications of exposing ports publicly.
     port: "127.0.0.1:3306:3306"
 
     # Labels

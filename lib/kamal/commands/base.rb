@@ -11,7 +11,7 @@ module Kamal::Commands
     end
 
     def run_over_ssh(*command, host:)
-      "ssh#{ssh_proxy_args} -t #{config.ssh.user}@#{host} -p #{config.ssh.port} '#{command.join(" ").gsub("'", "'\\\\''")}'"
+      "ssh#{ssh_proxy_args}#{ssh_keys_args} -t #{config.ssh.user}@#{host} -p #{config.ssh.port} '#{command.join(" ").gsub("'", "'\\\\''")}'"
     end
 
     def container_id_for(container_name:, only_running: false)
@@ -96,6 +96,16 @@ module Kamal::Commands
           " -J #{config.ssh.proxy.jump_proxies}"
         when Net::SSH::Proxy::Command
           " -o ProxyCommand='#{config.ssh.proxy.command_line_template}'"
+        end
+      end
+
+      def ssh_keys_args
+        "#{ ssh_keys.join("") if ssh_keys}" + "#{" -o IdentitiesOnly=yes" if config.ssh&.keys_only}"
+      end
+
+      def ssh_keys
+        config.ssh.keys&.map do |key|
+          " -i #{key}"
         end
       end
   end

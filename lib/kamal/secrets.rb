@@ -32,7 +32,7 @@ class Kamal::Secrets
   private
     def secrets
       @secrets ||= secrets_files.inject({}) do |secrets, secrets_file|
-        secrets.merge!(::Dotenv.parse(secrets_file))
+        secrets.merge!(::Dotenv.parse(secrets_file, overwrite: true))
       end
     end
 

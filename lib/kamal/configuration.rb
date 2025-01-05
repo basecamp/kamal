@@ -14,7 +14,7 @@ class Kamal::Configuration
 
   include Validation
 
-  PROXY_MINIMUM_VERSION = "v0.8.2"
+  PROXY_MINIMUM_VERSION = "v0.8.4"
   PROXY_HTTP_PORT = 80
   PROXY_HTTPS_PORT = 443
   PROXY_LOG_MAX_SIZE = "10m"
@@ -37,7 +37,7 @@ class Kamal::Configuration
         if file.exist?
           # Newer Psych doesn't load aliases by default
           load_method = YAML.respond_to?(:unsafe_load) ? :unsafe_load : :load
-          YAML.send(load_method, ERB.new(IO.read(file)).result).symbolize_keys
+          YAML.send(load_method, ERB.new(File.read(file)).result).symbolize_keys
         else
           raise "Configuration file not found in #{file}"
         end
