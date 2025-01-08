@@ -9,11 +9,10 @@
 # A reference to a secret (in this case, `DOCKER_REGISTRY_TOKEN`) will look up the secret
 # in the local environment:
 registry:
-  server: registry.digitalocean.com
-  username:
-    - DOCKER_REGISTRY_TOKEN
+  server: registry.digitalocean.com/<your-registry>
+  username: <your-digitalocean-username>
   password:
-    - DOCKER_REGISTRY_TOKEN
+    - DIGITALOCEAN_PERSONAL_ACCESS_TOKEN
 
 # Using AWS ECR as the container registry
 #
