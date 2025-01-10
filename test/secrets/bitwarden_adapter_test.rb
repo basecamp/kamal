@@ -2,10 +2,10 @@ require "test_helper"
 
 class BitwardenAdapterTest < SecretAdapterTestCase
   test "fetch" do
-    stub_ticks.with("bw --version 2> /dev/null")
+    stub_command(:system).with("bw --version", err: File::NULL)
 
     stub_unlocked
-    stub_ticks.with("bw sync").returns("")
+    stub_command.with("bw sync").returns("")
     stub_mypassword
 
     json = JSON.parse(shellunescape(run_command("fetch", "mypassword")))
@@ -16,10 +16,10 @@ class BitwardenAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch with no login" do
-    stub_ticks.with("bw --version 2> /dev/null")
+    stub_command(:system).with("bw --version", err: File::NULL)
 
     stub_unlocked
-    stub_ticks.with("bw sync").returns("")
+    stub_command.with("bw sync").returns("")
     stub_noteitem
 
     error = assert_raises RuntimeError do
@@ -29,10 +29,10 @@ class BitwardenAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch with from" do
-    stub_ticks.with("bw --version 2> /dev/null")
+    stub_command(:system).with("bw --version", err: File::NULL)
 
     stub_unlocked
-    stub_ticks.with("bw sync").returns("")
+    stub_command.with("bw sync").returns("")
     stub_myitem
 
     json = JSON.parse(shellunescape(run_command("fetch", "--from", "myitem", "field1", "field2", "field3")))
@@ -45,10 +45,10 @@ class BitwardenAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch all with from" do
-    stub_ticks.with("bw --version 2> /dev/null")
+    stub_command(:system).with("bw --version", err: File::NULL)
 
     stub_unlocked
-    stub_ticks.with("bw sync").returns("")
+    stub_command.with("bw sync").returns("")
     stub_noteitem_with_fields
 
     json = JSON.parse(shellunescape(run_command("fetch", "mynotefields")))
@@ -62,15 +62,15 @@ class BitwardenAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch with multiple items" do
-    stub_ticks.with("bw --version 2> /dev/null")
+    stub_command(:system).with("bw --version", err: File::NULL)
 
     stub_unlocked
 
-    stub_ticks.with("bw sync").returns("")
+    stub_command.with("bw sync").returns("")
     stub_mypassword
     stub_myitem
 
-    stub_ticks
+    stub_command
     .with("bw get item myitem2")
     .returns(<<~JSON)
       {
@@ -105,9 +105,9 @@ class BitwardenAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch unauthenticated" do
-    stub_ticks.with("bw --version 2> /dev/null")
+    stub_command(:system).with("bw --version", err: File::NULL)
 
-    stub_ticks
+    stub_command
       .with("bw status")
       .returns(
         '{"serverUrl":null,"lastSync":null,"status":"unauthenticated"}',
@@ -115,9 +115,9 @@ class BitwardenAdapterTest < SecretAdapterTestCase
         '{"serverUrl":null,"lastSync":"2024-09-04T10:11:12.433Z","userEmail":"email@example.com","userId":"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee","status":"unlocked"}'
       )
 
-    stub_ticks.with("bw login email@example.com").returns("1234567890")
-    stub_ticks.with("bw unlock --raw").returns("")
-    stub_ticks.with("bw sync").returns("")
+    stub_command.with("bw login email@example.com").returns("1234567890")
+    stub_command.with("bw unlock --raw").returns("")
+    stub_command.with("bw sync").returns("")
     stub_mypassword
 
     json = JSON.parse(shellunescape(run_command("fetch", "mypassword")))
@@ -128,23 +128,23 @@ class BitwardenAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch locked" do
-    stub_ticks.with("bw --version 2> /dev/null")
+    stub_command(:system).with("bw --version", err: File::NULL)
 
-    stub_ticks
+    stub_command
       .with("bw status")
       .returns(
         '{"serverUrl":null,"lastSync":"2024-09-04T10:11:12.433Z","userEmail":"email@example.com","userId":"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee","status":"locked"}'
       )
 
-    stub_ticks
+    stub_command
       .with("bw status")
       .returns(
         '{"serverUrl":null,"lastSync":"2024-09-04T10:11:12.433Z","userEmail":"email@example.com","userId":"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee","status":"unlocked"}'
       )
 
-    stub_ticks.with("bw login email@example.com").returns("1234567890")
-    stub_ticks.with("bw unlock --raw").returns("")
-    stub_ticks.with("bw sync").returns("")
+    stub_command.with("bw login email@example.com").returns("1234567890")
+    stub_command.with("bw unlock --raw").returns("")
+    stub_command.with("bw sync").returns("")
     stub_mypassword
 
     json = JSON.parse(shellunescape(run_command("fetch", "mypassword")))
@@ -155,23 +155,24 @@ class BitwardenAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch locked with session" do
-    stub_ticks.with("bw --version 2> /dev/null")
+    stub_command(:system).with("bw --version", err: File::NULL)
 
-    stub_ticks
+
+    stub_command
       .with("bw status")
       .returns(
         '{"serverUrl":null,"lastSync":"2024-09-04T10:11:12.433Z","userEmail":"email@example.com","userId":"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee","status":"locked"}'
       )
 
-    stub_ticks
+    stub_command
       .with("BW_SESSION=0987654321 bw status")
       .returns(
         '{"serverUrl":null,"lastSync":"2024-09-04T10:11:12.433Z","userEmail":"email@example.com","userId":"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee","status":"unlocked"}'
       )
 
-    stub_ticks.with("bw login email@example.com").returns("1234567890")
-    stub_ticks.with("bw unlock --raw").returns("0987654321")
-    stub_ticks.with("BW_SESSION=0987654321 bw sync").returns("")
+    stub_command.with("bw login email@example.com").returns("1234567890")
+    stub_command.with("bw unlock --raw").returns("0987654321")
+    stub_command.with("BW_SESSION=0987654321 bw sync").returns("")
     stub_mypassword(session: "0987654321")
 
     json = JSON.parse(shellunescape(run_command("fetch", "mypassword")))
@@ -182,7 +183,7 @@ class BitwardenAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch without CLI installed" do
-    stub_ticks_with(system("bw --version", out: File::NULL, err: File::NULL), succeed: false)
+    stub_command_with("bw --version", :system, false)
 
     error = assert_raises RuntimeError do
       JSON.parse(shellunescape(run_command("fetch", "mynote")))
@@ -202,7 +203,7 @@ class BitwardenAdapterTest < SecretAdapterTestCase
     end
 
     def stub_unlocked
-      stub_ticks
+      stub_command
         .with("bw status")
         .returns(<<~JSON)
           {"serverUrl":null,"lastSync":"2024-09-04T10:11:12.433Z","userEmail":"email@example.com","userId":"aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee","status":"unlocked"}
@@ -210,7 +211,7 @@ class BitwardenAdapterTest < SecretAdapterTestCase
     end
 
     def stub_mypassword(session: nil)
-      stub_ticks
+      stub_command
         .with("#{"BW_SESSION=#{session} " if session}bw get item mypassword")
         .returns(<<~JSON)
           {
@@ -233,7 +234,7 @@ class BitwardenAdapterTest < SecretAdapterTestCase
     end
 
   def stub_noteitem(session: nil)
-    stub_ticks
+    stub_command
       .with("#{"BW_SESSION=#{session} " if session}bw get item mynote")
       .returns(<<~JSON)
           {
@@ -257,7 +258,7 @@ class BitwardenAdapterTest < SecretAdapterTestCase
       end
 
       def stub_noteitem_with_fields(session: nil)
-      stub_ticks
+      stub_command
         .with("#{"BW_SESSION=#{session} " if session}bw get item mynotefields")
         .returns(<<~JSON)
             {
@@ -287,7 +288,7 @@ class BitwardenAdapterTest < SecretAdapterTestCase
       end
 
     def stub_myitem
-      stub_ticks
+      stub_command
         .with("bw get item myitem")
         .returns(<<~JSON)
           {

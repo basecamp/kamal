@@ -75,7 +75,7 @@ class Kamal::Secrets::Adapters::Bitwarden < Kamal::Secrets::Adapters::Base
     end
 
     def cli_installed?
-      system("bw --version", out: File::NULL, err: File::NULL)
+      system("bw --version", err: File::NULL)
       $?.success?
     end
 end
