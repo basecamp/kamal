@@ -12,7 +12,7 @@ class Kamal::Secrets::Adapters::Doppler < Kamal::Secrets::Adapters::Base
     end
 
     def loggedin?
-      `doppler me --json 2> /dev/null`
+      system("doppler me --json", err: File::NULL)
       $?.success?
     end
 
@@ -47,7 +47,7 @@ class Kamal::Secrets::Adapters::Doppler < Kamal::Secrets::Adapters::Base
     end
 
     def cli_installed?
-      system("doppler --version", out: File::NULL, err: File::NULL)
+      system("doppler --version", err: File::NULL)
       $?.success?
     end
 end

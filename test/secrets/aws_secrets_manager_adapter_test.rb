@@ -2,8 +2,8 @@ require "test_helper"
 
 class AwsSecretsManagerAdapterTest < SecretAdapterTestCase
   test "fails when errors are present" do
-    stub_ticks.with("aws --version 2> /dev/null")
-    stub_ticks
+    stub_command(:system).with("aws --version", err: File::NULL)
+    stub_command
       .with("aws secretsmanager batch-get-secret-value --secret-id-list unknown1 unknown2 --profile default")
       .returns(<<~JSON)
         {
@@ -31,8 +31,8 @@ class AwsSecretsManagerAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch" do
-    stub_ticks.with("aws --version 2> /dev/null")
-    stub_ticks
+    stub_command(:system).with("aws --version", err: File::NULL)
+    stub_command
       .with("aws secretsmanager batch-get-secret-value --secret-id-list secret/KEY1 secret/KEY2 secret2/KEY3 --profile default")
       .returns(<<~JSON)
         {
@@ -74,8 +74,8 @@ class AwsSecretsManagerAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch with string value" do
-    stub_ticks.with("aws --version 2> /dev/null")
-    stub_ticks
+    stub_command(:system).with("aws --version", err: File::NULL)
+    stub_command
       .with("aws secretsmanager batch-get-secret-value --secret-id-list secret secret2/KEY1 --profile default")
       .returns(<<~JSON)
         {
@@ -116,8 +116,8 @@ class AwsSecretsManagerAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch with secret names" do
-    stub_ticks.with("aws --version 2> /dev/null")
-    stub_ticks
+    stub_command(:system).with("aws --version", err: File::NULL)
+    stub_command
       .with("aws secretsmanager batch-get-secret-value --secret-id-list secret/KEY1 secret/KEY2 --profile default")
       .returns(<<~JSON)
         {
@@ -148,7 +148,7 @@ class AwsSecretsManagerAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch without CLI installed" do
-    stub_ticks_with("aws --version 2> /dev/null", succeed: false)
+    stub_command_with("aws --version", :system, false)
 
     error = assert_raises RuntimeError do
       JSON.parse(shellunescape(run_command("fetch", "SECRET1")))

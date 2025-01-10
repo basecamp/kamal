@@ -36,7 +36,7 @@ class Kamal::Secrets::Adapters::AwsSecretsManager < Kamal::Secrets::Adapters::Ba
     end
 
     def cli_installed?
-      system("aws --version", out: File::NULL, err: File::NULL)
+      system("aws --version", err: File::NULL)
       $?.success?
     end
 end

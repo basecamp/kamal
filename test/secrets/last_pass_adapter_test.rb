@@ -2,14 +2,14 @@ require "test_helper"
 
 class LastPassAdapterTest < SecretAdapterTestCase
   setup do
-    `true` # Ensure $? is 0
+    `exit 0` # Ensure $? is 0
   end
 
   test "fetch" do
-    stub_ticks.with("lpass --version 2> /dev/null")
-    stub_ticks.with("lpass status --color never").returns("Logged in as email@example.com.")
+    stub_command(:system).with("lpass --version", err: File::NULL)
+    stub_command.with("lpass status --color never").returns("Logged in as email@example.com.")
 
-    stub_ticks
+    stub_command
       .with("lpass show SECRET1 FOLDER1/FSECRET1 FOLDER1/FSECRET2 --json")
       .returns(<<~JSON)
         [
@@ -64,10 +64,10 @@ class LastPassAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch with from" do
-    stub_ticks.with("lpass --version 2> /dev/null")
-    stub_ticks.with("lpass status --color never").returns("Logged in as email@example.com.")
+    stub_command(:system).with("lpass --version", err: File::NULL)
+    stub_command.with("lpass status --color never").returns("Logged in as email@example.com.")
 
-    stub_ticks
+    stub_command
       .with("lpass show FOLDER1/FSECRET1 FOLDER1/FSECRET2 --json")
       .returns(<<~JSON)
         [
@@ -109,11 +109,11 @@ class LastPassAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch with signin" do
-    stub_ticks.with("lpass --version 2> /dev/null")
+    stub_command(:system).with("lpass --version", err: File::NULL)
 
-    stub_ticks_with("lpass status --color never", succeed: false).returns("Not logged in.")
-    stub_ticks_with("lpass login email@example.com", succeed: true).returns("")
-    stub_ticks.with("lpass show SECRET1 --json").returns(single_item_json)
+    stub_command_with("lpass status --color never", :`, false).returns("Not logged in.")
+    stub_command_with("lpass login email@example.com", :`, true).returns("")
+    stub_command.with("lpass show SECRET1 --json").returns(single_item_json)
 
     json = JSON.parse(shellunescape(run_command("fetch", "SECRET1")))
 
@@ -125,7 +125,7 @@ class LastPassAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch without CLI installed" do
-    stub_ticks_with("lpass --version 2> /dev/null", succeed: false)
+    stub_command_with("lpass --version", :system, false)
 
     error = assert_raises RuntimeError do
       JSON.parse(shellunescape(run_command("fetch", "SECRET1", "FOLDER1/FSECRET1", "FOLDER1/FSECRET2")))
