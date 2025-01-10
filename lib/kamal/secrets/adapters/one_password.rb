@@ -64,7 +64,7 @@ class Kamal::Secrets::Adapters::OnePassword < Kamal::Secrets::Adapters::Base
     end
 
     def cli_installed?
-      `op --version 2> /dev/null`
+      system("op --version", out: File::NULL, err: File::NULL)
       $?.success?
     end
 end

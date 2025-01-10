@@ -47,7 +47,7 @@ class Kamal::Secrets::Adapters::Doppler < Kamal::Secrets::Adapters::Base
     end
 
     def cli_installed?
-      `doppler --version 2> /dev/null`
+      system("doppler --version", out: File::NULL, err: File::NULL)
       $?.success?
     end
 end
