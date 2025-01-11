@@ -65,7 +65,8 @@ class Kamal::Secrets::Adapters::Bitwarden < Kamal::Secrets::Adapters::Base
     end
 
     def run_command(command, session: nil, raw: false)
-      full_command = [ *("BW_SESSION=#{session.shellescape}" if session), "bw", command ].join(" ")
+      system("BW_SESSION=", session) if session
+      full_command = [ "bw", command ].join(" ")
       result = `#{full_command}`.strip
       raw ? result : JSON.parse(result)
     end
