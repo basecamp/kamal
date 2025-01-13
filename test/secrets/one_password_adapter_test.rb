@@ -119,8 +119,8 @@ class SecretsOnePasswordAdapterTest < SecretAdapterTestCase
   test "fetch with signin, no session" do
     stub_command(:system).with("op --version", err: File::NULL)
 
-    stub_command_with("op account get --account myaccount", :system, false)
-    stub_command_with("op signin --account \"myaccount\" --force --raw", :`, true).returns("")
+    stub_command_with("op account get --account myaccount", false)
+    stub_command_with("op signin --account \"myaccount\" --force --raw", true, :`).returns("")
 
     stub_command
       .with("op item get myitem --vault \"myvault\" --fields \"label=section.SECRET1\" --format \"json\" --account \"myaccount\"")
@@ -138,8 +138,8 @@ class SecretsOnePasswordAdapterTest < SecretAdapterTestCase
   test "fetch with signin and session" do
     stub_command(:system).with("op --version", err: File::NULL)
 
-    stub_command_with("op account get --account myaccount", :system, false)
-    stub_command_with("op signin --account \"myaccount\" --force --raw", :`, true).returns("1234567890")
+    stub_command_with("op account get --account myaccount", false)
+    stub_command_with("op signin --account \"myaccount\" --force --raw", true, :`).returns("1234567890")
 
     stub_command
       .with("op item get myitem --vault \"myvault\" --fields \"label=section.SECRET1\" --format \"json\" --account \"myaccount\" --session \"1234567890\"")
@@ -155,7 +155,7 @@ class SecretsOnePasswordAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch without CLI installed" do
-    stub_command_with("op --version", :system, false)
+    stub_command_with("op --version", false)
 
     error = assert_raises RuntimeError do
       JSON.parse(shellunescape(run_command("fetch", "--from", "op://myvault/myitem", "section/SECRET1", "section/SECRET2", "section2/SECRET3")))

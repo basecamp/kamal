@@ -183,7 +183,7 @@ class BitwardenAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch without CLI installed" do
-    stub_command_with("bw --version", :system, false)
+    stub_command_with("bw --version", false, :system)
 
     error = assert_raises RuntimeError do
       JSON.parse(shellunescape(run_command("fetch", "mynote")))

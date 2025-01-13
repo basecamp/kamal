@@ -148,7 +148,7 @@ class AwsSecretsManagerAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch without CLI installed" do
-    stub_command_with("aws --version", :system, false)
+    stub_command_with("aws --version", false)
 
     error = assert_raises RuntimeError do
       JSON.parse(shellunescape(run_command("fetch", "SECRET1")))
