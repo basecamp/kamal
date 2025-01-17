@@ -33,24 +33,4 @@ class Kamal::Commands::Builder < Kamal::Commands::Base
   def hybrid
     @hybrid ||= Kamal::Commands::Builder::Hybrid.new(config)
   end
-
-
-  def ensure_local_dependencies_installed
-    if name.native?
-      ensure_local_docker_installed
-    else
-      combine \
-        ensure_local_docker_installed,
-        ensure_local_buildx_installed
-    end
-  end
-
-  private
-    def ensure_local_docker_installed
-      docker "--version"
-    end
-
-    def ensure_local_buildx_installed
-      docker :buildx, "version"
-    end
 end
