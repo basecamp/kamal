@@ -249,8 +249,16 @@ class Kamal::Configuration
     env_tags.detect { |t| t.name == name.to_s }
   end
 
-  def proxy_publish_args(http_port, https_port)
-    argumentize "--publish", [ "#{http_port}:#{PROXY_HTTP_PORT}", "#{https_port}:#{PROXY_HTTPS_PORT}" ]
+  def proxy_publish_args(http_port, https_port, bind_ips = nil)
+    ensure_valid_bind_ips(bind_ips)
+
+    (bind_ips || [ nil ]).map do |bind_ip|
+      bind_ip = format_bind_ip(bind_ip)
+      publish_http = [ bind_ip, http_port, PROXY_HTTP_PORT ].compact.join(":")
+      publish_https = [ bind_ip, https_port, PROXY_HTTPS_PORT ].compact.join(":")
+
+      argumentize "--publish", [ publish_http, publish_https ]
+    end.join(" ")
   end
 
   def proxy_logging_args(max_size)
@@ -344,6 +352,15 @@ class Kamal::Configuration
       true
     end
 
+    def ensure_valid_bind_ips(bind_ips)
+      bind_ips.present? && bind_ips.each do |ip|
+        next if ip =~ Resolv::IPv4::Regex || ip =~ Resolv::IPv6::Regex
+        raise ArgumentError, "Invalid publish IP address: #{ip}"
+      end
+
+      true
+    end
+
     def ensure_retain_containers_valid
       raise Kamal::ConfigurationError, "Must retain at least 1 container" if retain_containers < 1
 
@@ -373,6 +390,15 @@ class Kamal::Configuration
       raise Kamal::ConfigurationError, "Different roles can't share the same host for SSL: #{duplicates.join(", ")}" if duplicates.any?
 
       true
+    end
+
+    def format_bind_ip(ip)
+      # Ensure IPv6 address inside square brackets - e.g. [::1]
+      if ip =~ Resolv::IPv6::Regex && ip !~ /\[.*\]/
+        "[#{ip}]"
+      else
+        ip
+      end
     end
 
     def role_names
