@@ -26,11 +26,11 @@ class Kamal::Secrets::Adapters::GcpSecretManager < Kamal::Secrets::Adapters::Bas
       nil
     end
 
-    def fetch_secrets(secrets, account:, session:)
+    def fetch_secrets(secrets, from:, account:, session:)
       user, service_account = parse_account(account)
 
       {}.tap do |results|
-        secrets_with_metadata(secrets).each do |secret, (project, secret_name, secret_version)|
+        secrets_with_metadata(prefixed_secrets(secrets, from: from)).each do |secret, (project, secret_name, secret_version)|
           item_name = "#{project}/#{secret_name}"
           results[item_name] = fetch_secret(project, secret_name, secret_version, user, service_account)
           raise RuntimeError, "Could not read #{item_name} from Google Secret Manager" unless $?.success?

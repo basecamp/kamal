@@ -16,8 +16,10 @@ class Kamal::Secrets::Adapters::Doppler < Kamal::Secrets::Adapters::Base
       $?.success?
     end
 
-    def fetch_secrets(secrets, **)
+    def fetch_secrets(secrets, from:, **)
+      secrets = prefixed_secrets(secrets, from: from)
       project_and_config_flags = ""
+
       unless service_token_set?
         project, config, _ = secrets.first.split("/")
 

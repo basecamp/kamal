@@ -9,17 +9,11 @@ class Kamal::Secrets::Adapters::BitwardenSecretsManager < Kamal::Secrets::Adapte
     LIST_COMMAND = "secret list -o env"
     GET_COMMAND = "secret get -o env"
 
-    def fetch_secrets(secrets, account:, session:)
+    def fetch_secrets(secrets, from:, account:, session:)
       raise RuntimeError, "You must specify what to retrieve from Bitwarden Secrets Manager" if secrets.length == 0
 
-      if secrets.length == 1
-        if secrets[0] == LIST_ALL_SELECTOR
-          command = LIST_COMMAND
-        elsif secrets[0].end_with?(LIST_ALL_FROM_PROJECT_SUFFIX)
-          project = secrets[0].split(LIST_ALL_FROM_PROJECT_SUFFIX).first
-          command = "#{LIST_COMMAND} #{project}"
-        end
-      end
+      secrets = prefixed_secrets(secrets, from: from)
+      command, project = extract_command_and_project(secrets)
 
       {}.tap do |results|
         if command.nil?
@@ -36,6 +30,17 @@ class Kamal::Secrets::Adapters::BitwardenSecretsManager < Kamal::Secrets::Adapte
             key, value = parse_secret(secret)
             results[key] = value
           end
+        end
+      end
+    end
+
+    def extract_command_and_project(secrets)
+      if secrets.length == 1
+        if secrets[0] == LIST_ALL_SELECTOR
+          [ LIST_COMMAND, nil ]
+        elsif secrets[0].end_with?(LIST_ALL_FROM_PROJECT_SUFFIX)
+          project = secrets[0].split(LIST_ALL_FROM_PROJECT_SUFFIX).first
+          [ "#{LIST_COMMAND} #{project}", project ]
         end
       end
     end
