@@ -155,7 +155,7 @@ class CliBuildTest < CliTestCase
       .raises(SSHKit::Command::Failed.new("no buildx"))
 
     Kamal::Commands::Builder.any_instance.stubs(:native_and_local?).returns(false)
-    assert_raises(Kamal::Cli::Build::BuildError) { run_command("push") }
+    assert_raises(Kamal::Cli::DependencyError) { run_command("push") }
   end
 
   test "push pre-build hook failure" do
@@ -285,18 +285,5 @@ class CliBuildTest < CliTestCase
         .with(:docker, "--version", "&&", :docker, :buildx, "version")
       SSHKit::Backend::Abstract.any_instance.stubs(:execute)
         .with { |*args| args[0..1] == [ :docker, :buildx ] }
-    end
-
-    def with_build_directory
-      build_directory = File.join Dir.tmpdir, "kamal-clones", "app-#{pwd_sha}", "kamal"
-      FileUtils.mkdir_p build_directory
-      FileUtils.touch File.join build_directory, "Dockerfile"
-      yield build_directory + "/"
-    ensure
-      FileUtils.rm_rf build_directory
-    end
-
-    def pwd_sha
-      Digest::SHA256.hexdigest(Dir.pwd)[0..12]
     end
 end

@@ -281,6 +281,32 @@ class CliProxyTest < CliTestCase
     end
   end
 
+  test "boot_config set bind IP" do
+    run_command("boot_config", "set", "--publish-host-ip", "127.0.0.1").tap do |output|
+      %w[ 1.1.1.1 1.1.1.2 ].each do |host|
+        assert_match "Running /usr/bin/env mkdir -p .kamal/proxy on #{host}", output
+        assert_match "Uploading \"--publish 127.0.0.1:80:80 --publish 127.0.0.1:443:443 --log-opt max-size=10m\" to .kamal/proxy/options on #{host}", output
+      end
+    end
+  end
+
+  test "boot_config set multiple bind IPs" do
+    run_command("boot_config", "set", "--publish-host-ip", "127.0.0.1", "--publish-host-ip", "::1").tap do |output|
+      %w[ 1.1.1.1 1.1.1.2 ].each do |host|
+        assert_match "Running /usr/bin/env mkdir -p .kamal/proxy on #{host}", output
+        assert_match "Uploading \"--publish 127.0.0.1:80:80 --publish 127.0.0.1:443:443 --publish [::1]:80:80 --publish [::1]:443:443 --log-opt max-size=10m\" to .kamal/proxy/options on #{host}", output
+      end
+    end
+  end
+
+  test "boot_config set invalid bind IPs" do
+    exception = assert_raises do
+      run_command("boot_config", "set", "--publish-host-ip", "1.2.3.invalidIP", "--publish-host-ip", "::1")
+    end
+
+    assert_includes exception.message, "Invalid publish IP address: 1.2.3.invalidIP"
+  end
+
   test "boot_config set docker options" do
     run_command("boot_config", "set", "--docker_options", "label=foo=bar", "add_host=thishost:thathost").tap do |output|
       %w[ 1.1.1.1 1.1.1.2 ].each do |host|

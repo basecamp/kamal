@@ -4,8 +4,8 @@ class Kamal::Secrets::Adapters::Test < Kamal::Secrets::Adapters::Base
       true
     end
 
-    def fetch_secrets(secrets, account:, session:)
-      secrets.to_h { |secret| [ secret, secret.reverse ] }
+    def fetch_secrets(secrets, from:, account:, session:)
+      prefixed_secrets(secrets, from: from).to_h { |secret| [ secret, secret.reverse ] }
     end
 
     def check_dependencies!

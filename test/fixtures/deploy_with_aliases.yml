@@ -21,3 +21,6 @@ aliases:
   console: app exec --reuse -p -r console "bin/console"
   exec: app exec --reuse -p -r console
   rails: app exec --reuse -p -r console rails
+  primary_details: details -p
+  deploy_secondary: deploy -d secondary
+
