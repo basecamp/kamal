@@ -18,7 +18,7 @@ class Kamal::Secrets::Adapters::BitwardenSecretsManager < Kamal::Secrets::Adapte
       {}.tap do |results|
         if command.nil?
           secrets.each do |secret_uuid|
-            secret = run_command("#{GET_COMMAND} #{secret_uuid}")
+            secret = run_command("#{GET_COMMAND} #{secret_uuid.shellescape}")
             raise RuntimeError, "Could not read #{secret_uuid} from Bitwarden Secrets Manager" unless $?.success?
             key, value = parse_secret(secret)
             results[key] = value
@@ -40,7 +40,7 @@ class Kamal::Secrets::Adapters::BitwardenSecretsManager < Kamal::Secrets::Adapte
           [ LIST_COMMAND, nil ]
         elsif secrets[0].end_with?(LIST_ALL_FROM_PROJECT_SUFFIX)
           project = secrets[0].split(LIST_ALL_FROM_PROJECT_SUFFIX).first
-          [ "#{LIST_COMMAND} #{project}", project ]
+          [ "#{LIST_COMMAND} #{project.shellescape}", project ]
         end
       end
     end
