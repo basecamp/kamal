@@ -5,7 +5,7 @@ module Kamal::Cli
   class Base < Thor
     include SSHKit::DSL
 
-    def self.exit_on_failure?() false end
+    def self.exit_on_failure?() true end
     def self.dynamic_command_class() Kamal::Cli::Alias::Command end
 
     class_option :verbose, type: :boolean, aliases: "-v", desc: "Detailed logging"
@@ -30,7 +30,8 @@ module Kamal::Cli
       else
         super
       end
-      initialize_commander unless KAMAL.configured?
+
+      initialize_commander unless config[:invoked_via_subcommand]
     end
 
     private

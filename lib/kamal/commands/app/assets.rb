@@ -4,10 +4,10 @@ module Kamal::Commands::App::Assets
 
     combine \
       make_directory(role.asset_extracted_directory),
-      [ *docker(:stop, "-t 1", asset_container, "2> /dev/null"), "|| true" ],
-      docker(:run, "--name", asset_container, "--detach", "--rm", "--entrypoint", "sleep", config.absolute_image, "1000000"),
-      docker(:cp, "-L", "#{asset_container}:#{role.asset_path}/.", role.asset_extracted_directory),
-      docker(:stop, "-t 1", asset_container),
+      [ *docker(:container, :rm, asset_container, "2> /dev/null"), "|| true" ],
+      docker(:container, :create, "--name", asset_container, config.absolute_image),
+      docker(:container, :cp, "-L", "#{asset_container}:#{role.asset_path}/.", role.asset_extracted_directory),
+      docker(:container, :rm, asset_container),
       by: "&&"
   end
 

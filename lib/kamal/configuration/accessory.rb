@@ -142,7 +142,7 @@ class Kamal::Configuration::Accessory
     end
 
     def read_dynamic_file(local_file)
-      StringIO.new(ERB.new(IO.read(local_file)).result)
+      StringIO.new(ERB.new(File.read(local_file)).result)
     end
 
     def expand_remote_file(remote_file)
