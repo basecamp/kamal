@@ -5,7 +5,9 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
     setup_test_secrets("secrets" => "MYSQL_ROOT_PASSWORD=secret123")
 
     @config = {
-      service: "app", image: "dhh/app", registry: { "server" => "private.registry", "username" => "dhh", "password" => "secret" },
+      service: "app",
+      image: "dhh/app",
+      registry: { "server" => "private.registry", "username" => "dhh", "password" => "secret" },
       servers: [ "1.1.1.1" ],
       builder: { "arch" => "amd64" },
       accessories: {
@@ -39,6 +41,7 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
         "busybox" => {
           "service" => "custom-busybox",
           "image" => "busybox:latest",
+          "registry" => { "server" => "other.registry", "username" => "user", "password" => "pw" },
           "host" => "1.1.1.7",
           "proxy" => {
             "host" => "busybox.example.com"
@@ -62,7 +65,7 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
       new_command(:redis).run.join(" ")
 
     assert_equal \
-      "docker run --name custom-busybox --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --env-file .kamal/apps/app/env/accessories/busybox.env --label service=\"custom-busybox\" busybox:latest",
+      "docker run --name custom-busybox --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --env-file .kamal/apps/app/env/accessories/busybox.env --label service=\"custom-busybox\" other.registry/busybox:latest",
       new_command(:busybox).run.join(" ")
   end
 
@@ -70,7 +73,7 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
     @config[:logging] = { "driver" => "local", "options" => { "max-size" => "100m", "max-file" => "3" } }
 
     assert_equal \
-      "docker run --name custom-busybox --detach --restart unless-stopped --network kamal --log-driver \"local\" --log-opt max-size=\"100m\" --log-opt max-file=\"3\" --env-file .kamal/apps/app/env/accessories/busybox.env --label service=\"custom-busybox\" busybox:latest",
+      "docker run --name custom-busybox --detach --restart unless-stopped --network kamal --log-driver \"local\" --log-opt max-size=\"100m\" --log-opt max-file=\"3\" --env-file .kamal/apps/app/env/accessories/busybox.env --label service=\"custom-busybox\" other.registry/busybox:latest",
       new_command(:busybox).run.join(" ")
   end
 
@@ -100,7 +103,6 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
       new_command(:mysql).info.join(" ")
   end
 
-
   test "execute in new container" do
     assert_equal \
       "docker run --rm --network kamal --env MYSQL_ROOT_HOST=\"%\" --env-file .kamal/apps/app/env/accessories/mysql.env private.registry/mysql:8.0 mysql -u root",
@@ -126,8 +128,6 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
         new_command(:mysql).execute_in_existing_container_over_ssh("mysql", "-u", "root")
     end
   end
-
-
 
   test "logs" do
     assert_equal \

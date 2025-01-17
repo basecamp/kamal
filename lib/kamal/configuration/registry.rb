@@ -1,12 +1,10 @@
 class Kamal::Configuration::Registry
   include Kamal::Configuration::Validation
 
-  attr_reader :registry_config, :secrets
-
-  def initialize(config:)
-    @registry_config = config.raw_config.registry || {}
-    @secrets = config.secrets
-    validate! registry_config, with: Kamal::Configuration::Validator::Registry
+  def initialize(config:, secrets:, context: "registry")
+    @registry_config = config["registry"] || {}
+    @secrets = secrets
+    validate! registry_config, context: context, with: Kamal::Configuration::Validator::Registry
   end
 
   def server
@@ -22,6 +20,8 @@ class Kamal::Configuration::Registry
   end
 
   private
+    attr_reader :registry_config, :secrets
+
     def lookup(key)
       if registry_config[key].is_a?(Array)
         secrets[registry_config[key].first]
