@@ -155,7 +155,7 @@ class CliBuildTest < CliTestCase
       .raises(SSHKit::Command::Failed.new("no buildx"))
 
     Kamal::Commands::Builder.any_instance.stubs(:native_and_local?).returns(false)
-    assert_raises(Kamal::Cli::Build::BuildError) { run_command("push") }
+    assert_raises(Kamal::Cli::DependencyError) { run_command("push") }
   end
 
   test "push pre-build hook failure" do
