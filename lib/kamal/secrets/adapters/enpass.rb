@@ -14,6 +14,10 @@ class Kamal::Secrets::Adapters::Enpass < Kamal::Secrets::Adapters::Base
     fetch_secrets(secrets, from)
   end
 
+  def requires_account?
+    false
+  end
+
   private
     def fetch_secrets(secrets, vault)
       secrets_titles = fetch_secret_titles(secrets)
