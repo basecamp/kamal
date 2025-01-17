@@ -9,18 +9,14 @@ class Kamal::Cli::Main < Kamal::Cli::Base
         say "Ensure Docker is installed...", :magenta
         invoke "kamal:cli:server:bootstrap", [], invoke_options
 
-        say "Ensure kamal-proxy is running...", :magenta
-        invoke "kamal:cli:proxy:boot", [], invoke_options
-
-        invoke "kamal:cli:accessory:boot", [ "all" ], invoke_options
-        deploy(boot_proxy: false)
+        deploy(boot_accessories: true)
       end
     end
   end
 
   desc "deploy", "Deploy app to servers"
   option :skip_push, aliases: "-P", type: :boolean, default: false, desc: "Skip image build and push"
-  def deploy(boot_proxy: true)
+  def deploy(boot_accessories: false)
     runtime = print_runtime do
       invoke_options = deploy_options
 
@@ -39,7 +35,9 @@ class Kamal::Cli::Main < Kamal::Cli::Base
         run_hook "pre-deploy", secrets: true
 
         say "Ensure kamal-proxy is running...", :magenta
-        invoke "kamal:cli:proxy:boot", [], invoke_options if boot_proxy
+        invoke "kamal:cli:proxy:boot", [], invoke_options
+
+        invoke "kamal:cli:accessory:boot", [ "all" ], invoke_options if boot_accessories
 
         say "Detect stale containers...", :magenta
         invoke "kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true)
