@@ -21,7 +21,7 @@ class Kamal::Commander
   end
 
   def config
-    @config ||= Kamal::Configuration.create_from(**@config_kwargs).tap do |config|
+    @config ||= Kamal::Configuration.create_from(**@config_kwargs.to_h).tap do |config|
       @config_kwargs = nil
       configure_sshkit_with(config)
     end
