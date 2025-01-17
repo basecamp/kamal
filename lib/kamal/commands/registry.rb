@@ -31,4 +31,8 @@ class Kamal::Commands::Registry < Kamal::Commands::Base
       docker(:rm, "kamal-docker-registry"),
       by: "&&"
   end
+
+  def local?
+    config.registry.local?
+  end
 end

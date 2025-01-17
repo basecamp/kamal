@@ -43,13 +43,13 @@ class CliRegistryTest < CliTestCase
     end
   end
 
-  test "login with no docker" do
+  test "setup with no docker" do
     stub_setup
     SSHKit::Backend::Abstract.any_instance.stubs(:execute)
       .with(:docker, "--version", "&&", :docker, :buildx, "version")
       .raises(SSHKit::Command::Failed.new("command not found"))
 
-    assert_raises(Kamal::Cli::DependencyError) { run_command("login") }
+    assert_raises(Kamal::Cli::DependencyError) { run_command("setup") }
   end
 
   test "allow remote login with no docker" do
