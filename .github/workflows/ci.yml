@@ -17,7 +17,7 @@ jobs:
       - name: Setup Ruby and install gems
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: 3.4.1
+          ruby-version: 3.3.0
           bundler-cache: true
       - name: Run Rubocop
         run: bundle exec rubocop --parallel
