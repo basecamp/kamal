@@ -23,7 +23,7 @@ class GcpSecretManagerAdapterTest < SecretAdapterTestCase
       JSON.parse(shellunescape(run_command("fetch", "mypassword")))
     end
 
-    assert_match(/not authenticated/, error.message)
+    assert_match(/could not login to gcloud/, error.message)
   end
 
   test "fetch with from" do

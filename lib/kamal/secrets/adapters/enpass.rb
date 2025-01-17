@@ -9,16 +9,15 @@
 # Fetch only DB_PASSWORD from FooBar item
 # `kamal secrets fetch --adapter enpass --from /Users/YOUR_USERNAME/Library/Containers/in.sinew.Enpass-Desktop/Data/Documents/Vaults/primary FooBar/DB_PASSWORD`
 class Kamal::Secrets::Adapters::Enpass < Kamal::Secrets::Adapters::Base
-  def fetch(secrets, account: nil, from:)
-    check_dependencies!
-    fetch_secrets(secrets, from)
+  def requires_account?
+    false
   end
 
   private
-    def fetch_secrets(secrets, vault)
+    def fetch_secrets(secrets, from:, account:, session:)
       secrets_titles = fetch_secret_titles(secrets)
 
-      result = `enpass-cli -json -vault #{vault.shellescape} show #{secrets_titles.map(&:shellescape).join(" ")}`.strip
+      result = `enpass-cli -json -vault #{from.shellescape} show #{secrets_titles.map(&:shellescape).join(" ")}`.strip
 
       parse_result_and_take_secrets(result, secrets)
     end
@@ -30,6 +29,10 @@ class Kamal::Secrets::Adapters::Enpass < Kamal::Secrets::Adapters::Base
     def cli_installed?
       `enpass-cli version 2> /dev/null`
       $?.success?
+    end
+
+    def login(account)
+      nil
     end
 
     def fetch_secret_titles(secrets)
