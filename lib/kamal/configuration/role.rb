@@ -10,7 +10,7 @@ class Kamal::Configuration::Role
   def initialize(name, config:)
     @name, @config = name.inquiry, config
     validate! \
-      specializations,
+      role_config,
       example: validation_yml["servers"]["workers"],
       context: "servers/#{name}",
       with: Kamal::Configuration::Validator::Role
@@ -204,11 +204,11 @@ class Kamal::Configuration::Role
     end
 
     def specializations
-      if config.raw_config.servers.is_a?(Array) || config.raw_config.servers[name].is_a?(Array)
-        {}
-      else
-        config.raw_config.servers[name]
-      end
+      @specializations ||= role_config.is_a?(Array) ? {} : role_config
+    end
+
+    def role_config
+      @role_config ||= config.raw_config.servers.is_a?(Array) ? {} : config.raw_config.servers[name]
     end
 
     def custom_labels

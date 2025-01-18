@@ -4,9 +4,9 @@ class Kamal::Secrets::Adapters::AwsSecretsManager < Kamal::Secrets::Adapters::Ba
       nil
     end
 
-    def fetch_secrets(secrets, account:, session:)
+    def fetch_secrets(secrets, from:, account:, session:)
       {}.tap do |results|
-        get_from_secrets_manager(secrets, account: account).each do |secret|
+        get_from_secrets_manager(prefixed_secrets(secrets, from: from), account: account).each do |secret|
           secret_name = secret["Name"]
           secret_string = JSON.parse(secret["SecretString"])
 

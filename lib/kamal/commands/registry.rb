@@ -1,14 +1,16 @@
 class Kamal::Commands::Registry < Kamal::Commands::Base
-  delegate :registry, to: :config
+  def login(registry_config: nil)
+    registry_config ||= config.registry
 
-  def login
     docker :login,
-      registry.server,
-      "-u", sensitive(Kamal::Utils.escape_shell_value(registry.username)),
-      "-p", sensitive(Kamal::Utils.escape_shell_value(registry.password))
+      registry_config.server,
+      "-u", sensitive(Kamal::Utils.escape_shell_value(registry_config.username)),
+      "-p", sensitive(Kamal::Utils.escape_shell_value(registry_config.password))
   end
 
-  def logout
-    docker :logout, registry.server
+  def logout(registry_config: nil)
+    registry_config ||= config.registry
+
+    docker :logout, registry_config.server
   end
 end

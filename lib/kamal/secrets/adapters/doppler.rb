@@ -16,8 +16,21 @@ class Kamal::Secrets::Adapters::Doppler < Kamal::Secrets::Adapters::Base
       $?.success?
     end
 
-    def fetch_secrets(secrets, **)
-      project_and_config_flags = ""
+    def fetch_secrets(secrets, from:, **)
+      secrets = prefixed_secrets(secrets, from: from)
+      flags = secrets_get_flags(secrets)
+
+      secret_names = secrets.collect { |s| s.split("/").last }
+
+      items = `doppler secrets get #{secret_names.map(&:shellescape).join(" ")} --json #{flags}`
+      raise RuntimeError, "Could not read #{secrets} from Doppler" unless $?.success?
+
+      items = JSON.parse(items)
+
+      items.transform_values { |value| value["computed"] }
+    end
+
+    def secrets_get_flags(secrets)
       unless service_token_set?
         project, config, _ = secrets.first.split("/")
 
@@ -27,15 +40,6 @@ class Kamal::Secrets::Adapters::Doppler < Kamal::Secrets::Adapters::Base
 
         project_and_config_flags = "-p #{project.shellescape} -c #{config.shellescape}"
       end
-
-      secret_names = secrets.collect { |s| s.split("/").last }
-
-      items = `doppler secrets get #{secret_names.map(&:shellescape).join(" ")} --json #{project_and_config_flags}`
-      raise RuntimeError, "Could not read #{secrets} from Doppler" unless $?.success?
-
-      items = JSON.parse(items)
-
-      items.transform_values { |value| value["computed"] }
     end
 
     def service_token_set?

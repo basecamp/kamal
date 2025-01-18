@@ -15,9 +15,9 @@ class Kamal::Secrets::Adapters::OnePassword < Kamal::Secrets::Adapters::Base
       $?.success?
     end
 
-    def fetch_secrets(secrets, account:, session:)
+    def fetch_secrets(secrets, from:, account:, session:)
       {}.tap do |results|
-        vaults_items_fields(secrets).map do |vault, items|
+        vaults_items_fields(prefixed_secrets(secrets, from: from)).map do |vault, items|
           items.each do |item, fields|
             fields_json = JSON.parse(op_item_get(vault, item, fields, account: account, session: session))
             fields_json = [ fields_json ] if fields.one?
