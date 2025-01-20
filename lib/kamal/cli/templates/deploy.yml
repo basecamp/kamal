@@ -49,7 +49,7 @@ builder:
 #     - RAILS_MASTER_KEY
 
 # Aliases are triggered with "bin/kamal <alias>". You can overwrite arguments on invocation:
-# "bin/kamal logs -r job" will tail logs from the first server in the job section.
+# "bin/kamal app logs -r job" will tail logs from the first server in the job section.
 #
 # aliases:
 #   shell: app exec --interactive --reuse "bash"
