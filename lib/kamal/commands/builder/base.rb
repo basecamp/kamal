@@ -13,9 +13,9 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
     docker :image, :rm, "--force", config.absolute_image
   end
 
-  def push
+  def push(export_action = "registry")
     docker :buildx, :build,
-      "--push",
+      "--output=type=#{export_action}",
       *platform_options(arches),
       *([ "--builder", builder_name ] unless docker_driver?),
       *build_options,

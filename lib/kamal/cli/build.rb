@@ -5,11 +5,12 @@ class Kamal::Cli::Build < Kamal::Cli::Base
 
   desc "deliver", "Build app and push app image to registry then pull image on servers"
   def deliver
-    push
-    pull
+    invoke :push
+    invoke :pull
   end
 
   desc "push", "Build and push app image to registry"
+  option :output, type: :string, default: "registry", banner: "export_type", desc: "Exported type for the build result, and may be any exported type supported by 'buildx --output'."
   def push
     cli = self
 
@@ -49,7 +50,7 @@ class Kamal::Cli::Build < Kamal::Cli::Base
         end
 
         # Get the command here to ensure the Dir.chdir doesn't interfere with it
-        push = KAMAL.builder.push
+        push = KAMAL.builder.push(cli.options[:output])
 
         KAMAL.with_verbosity(:debug) do
           Dir.chdir(KAMAL.config.builder.build_directory) { execute *push }
