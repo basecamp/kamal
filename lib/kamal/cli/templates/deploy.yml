@@ -38,7 +38,7 @@ builder:
   arch: amd64
   # Pass in additional build args needed for your Dockerfile.
   # args:
-  #   RUBY_VERSION: <%= File.read('.ruby-version').strip %>
+  #   RUBY_VERSION: <%= ENV["RBENV_VERSION"] || ENV["rvm_ruby_string"] || "#{RUBY_ENGINE}-#{RUBY_ENGINE_VERSION}" %>
 
 # Inject ENV variables into containers (secrets come from .kamal/secrets).
 #
