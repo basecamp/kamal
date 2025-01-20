@@ -298,6 +298,30 @@ class CliBuildTest < CliTestCase
     end
   end
 
+  test "dev" do
+    with_build_directory do |build_directory|
+      Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
+
+      run_command("dev", "--verbose").tap do |output|
+        assert_no_match(/Cloning repo into build directory/, output)
+        assert_match(/docker --version && docker buildx version/, output)
+        assert_match(/docker buildx build --output=type=docker --platform linux\/amd64 --builder kamal-local-docker-container -t dhh\/app:999-dirty -t dhh\/app:latest-dirty --label service="app" --file Dockerfile \. as .*@localhost/, output)
+      end
+    end
+  end
+
+  test "dev --output=local" do
+    with_build_directory do |build_directory|
+      Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
+
+      run_command("dev", "--output=local", "--verbose").tap do |output|
+        assert_no_match(/Cloning repo into build directory/, output)
+        assert_match(/docker --version && docker buildx version/, output)
+        assert_match(/docker buildx build --output=type=local --platform linux\/amd64 --builder kamal-local-docker-container -t dhh\/app:999-dirty -t dhh\/app:latest-dirty --label service="app" --file Dockerfile \. as .*@localhost/, output)
+      end
+    end
+  end
+
   private
     def run_command(*command, fixture: :with_accessories)
       stdouted { Kamal::Cli::Build.start([ *command, "-c", "test/fixtures/deploy_#{fixture}.yml" ]) }

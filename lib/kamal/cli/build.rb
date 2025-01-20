@@ -109,6 +109,28 @@ class Kamal::Cli::Build < Kamal::Cli::Base
     end
   end
 
+  desc "dev", "Build using the working directory, tag it as dirty, and push to local image store."
+  option :output, type: :string, default: "docker", banner: "export_type", desc: "Exported type for the build result, and may be any exported type supported by 'buildx --output'."
+  def dev
+    cli = self
+
+    ensure_docker_installed
+
+    uncommitted_changes = Kamal::Git.uncommitted_changes
+    if uncommitted_changes.present?
+      say "WARNING: building with uncommitted changes:\n #{uncommitted_changes}", :yellow
+    end
+
+    with_env(KAMAL.config.builder.secrets) do
+      run_locally do
+        build = KAMAL.builder.push(cli.options[:output], tag_as_dirty: true)
+        KAMAL.with_verbosity(:debug) do
+          execute(*build)
+        end
+      end
+    end
+  end
+
   private
     def connect_to_remote_host(remote_host)
       remote_uri = URI.parse(remote_host)

@@ -72,7 +72,7 @@ class CommandsBuilderTest < ActiveSupport::TestCase
   test "build args" do
     builder = new_builder_command(builder: { "args" => { "a" => 1, "b" => 2 } })
     assert_equal \
-      "-t dhh/app:123 -t dhh/app:latest --label service=\"app\" --build-arg a=\"1\" --build-arg b=\"2\" --file Dockerfile",
+      "--label service=\"app\" --build-arg a=\"1\" --build-arg b=\"2\" --file Dockerfile",
       builder.target.build_options.join(" ")
   end
 
@@ -81,7 +81,7 @@ class CommandsBuilderTest < ActiveSupport::TestCase
       FileUtils.touch("Dockerfile")
       builder = new_builder_command(builder: { "secrets" => [ "token_a", "token_b" ] })
       assert_equal \
-        "-t dhh/app:123 -t dhh/app:latest --label service=\"app\" --secret id=\"token_a\" --secret id=\"token_b\" --file Dockerfile",
+        "--label service=\"app\" --secret id=\"token_a\" --secret id=\"token_b\" --file Dockerfile",
         builder.target.build_options.join(" ")
     end
   end
@@ -90,7 +90,7 @@ class CommandsBuilderTest < ActiveSupport::TestCase
     Pathname.any_instance.expects(:exist?).returns(true).once
     builder = new_builder_command(builder: { "dockerfile" => "Dockerfile.xyz" })
     assert_equal \
-      "-t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile.xyz",
+      "--label service=\"app\" --file Dockerfile.xyz",
       builder.target.build_options.join(" ")
   end
 
@@ -105,7 +105,7 @@ class CommandsBuilderTest < ActiveSupport::TestCase
   test "build target" do
     builder = new_builder_command(builder: { "target" => "prod" })
     assert_equal \
-      "-t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile --target prod",
+      "--label service=\"app\" --file Dockerfile --target prod",
       builder.target.build_options.join(" ")
   end
 
@@ -137,7 +137,7 @@ class CommandsBuilderTest < ActiveSupport::TestCase
     builder = new_builder_command(builder: { "ssh" => "default=$SSH_AUTH_SOCK" })
 
     assert_equal \
-      "-t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile --ssh default=$SSH_AUTH_SOCK",
+      "--label service=\"app\" --file Dockerfile --ssh default=$SSH_AUTH_SOCK",
       builder.target.build_options.join(" ")
   end
 
