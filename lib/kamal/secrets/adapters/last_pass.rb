@@ -24,7 +24,7 @@ class Kamal::Secrets::Adapters::LastPass < Kamal::Secrets::Adapters::Base
         end
 
         if (missing_items = secrets - results.keys).any?
-          raise RuntimeError, "Could not find #{missing_items.join(", ")} in LassPass"
+          raise RuntimeError, "Could not find #{missing_items.join(", ")} in LastPass"
         end
       end
     end
