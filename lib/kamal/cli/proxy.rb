@@ -68,9 +68,6 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
             execute *KAMAL.auditor.record("Rebooted proxy"), verbosity: :debug
             execute *KAMAL.registry.login
 
-            "Stopping and removing Traefik on #{host}, if running..."
-            execute *KAMAL.proxy.cleanup_traefik
-
             "Stopping and removing kamal-proxy on #{host}, if running..."
             execute *KAMAL.proxy.stop, raise_on_non_zero_exit: false
             execute *KAMAL.proxy.remove_container
