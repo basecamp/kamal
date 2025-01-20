@@ -23,8 +23,26 @@ accessories:
 
     # Image
     #
-    # The Docker image to use, prefix it with a registry if not using Docker Hub:
+    # The Docker image to use.
+    # Prefix it with its server when using root level registry different from Docker Hub.
+    # Define registry directly or via anchors when it differs from root level registry.
     image: mysql:8.0
+
+    # Registry
+    #
+    # By default accessories use Docker Hub registry.
+    # You can specify different registry per accessory with this option.
+    # Don't prefix image with this registry server.
+    # Use anchors if you need to set the same specific registry for several accessories.
+    #
+    # ```yml
+    # registry:
+    #   <<: *specific-registry
+    # ```
+    #
+    # See kamal docs registry for more information:
+    registry:
+      ...
 
     # Accessory hosts
     #
@@ -43,8 +61,8 @@ accessories:
 
     # Port mappings
     #
-    # See https://docs.docker.com/network/, and especially note the warning about the security
-    # implications of exposing ports publicly.
+    # See [https://docs.docker.com/network/](https://docs.docker.com/network/), and
+    # especially note the warning about the security implications of exposing ports publicly.
     port: "127.0.0.1:3306:3306"
 
     # Labels

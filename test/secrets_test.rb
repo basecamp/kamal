@@ -20,6 +20,20 @@ class SecretsTest < ActiveSupport::TestCase
     end
   end
 
+  test "env references" do
+    with_test_secrets("secrets" => "SECRET1=$SECRET1") do
+      ENV["SECRET1"] = "ABC"
+      assert_equal "ABC", Kamal::Secrets.new["SECRET1"]
+    end
+  end
+
+  test "secrets file value overrides env" do
+    with_test_secrets("secrets" => "SECRET1=DEF") do
+      ENV["SECRET1"] = "ABC"
+      assert_equal "DEF", Kamal::Secrets.new["SECRET1"]
+    end
+  end
+
   test "destinations" do
     with_test_secrets("secrets.dest" => "SECRET=DEF", "secrets" => "SECRET=ABC", "secrets-common" => "SECRET=GHI\nSECRET2=JKL") do
       assert_equal "ABC", Kamal::Secrets.new["SECRET"]

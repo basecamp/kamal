@@ -162,7 +162,7 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
   option :since, aliases: "-s", desc: "Show logs since timestamp (e.g. 2013-01-02T13:23:37Z) or relative (e.g. 42m for 42 minutes)"
   option :lines, type: :numeric, aliases: "-n", desc: "Number of log lines to pull from each server"
   option :grep, aliases: "-g", desc: "Show lines with grep match only (use this to fetch specific requests by id)"
-  option :grep_options, aliases: "-o", desc: "Additional options supplied to grep"
+  option :grep_options, desc: "Additional options supplied to grep"
   option :follow, aliases: "-f", desc: "Follow logs on primary server (or specific host set by --hosts)"
   option :skip_timestamps, type: :boolean, aliases: "-T", desc: "Skip appending timestamps to logging output"
   def logs(name)
@@ -292,7 +292,7 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
     def prepare(name)
       with_accessory(name) do |accessory, hosts|
         on(hosts) do
-          execute *KAMAL.registry.login
+          execute *KAMAL.registry.login(registry_config: accessory.registry)
           execute *KAMAL.docker.create_network
         rescue SSHKit::Command::Failed => e
           raise unless e.message.include?("already exists")

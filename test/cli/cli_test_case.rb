@@ -51,4 +51,17 @@ class CliTestCase < ActiveSupport::TestCase
     ensure
       ARGV.replace(old_argv)
     end
+
+    def with_build_directory
+      build_directory = File.join Dir.tmpdir, "kamal-clones", "app-#{pwd_sha}", "kamal"
+      FileUtils.mkdir_p build_directory
+      FileUtils.touch File.join build_directory, "Dockerfile"
+      yield build_directory + "/"
+    ensure
+      FileUtils.rm_rf build_directory
+    end
+
+    def pwd_sha
+      Digest::SHA256.hexdigest(Dir.pwd)[0..12]
+    end
 end

@@ -13,7 +13,7 @@ class Kamal::Cli::Build < Kamal::Cli::Base
   def push
     cli = self
 
-    verify_local_dependencies
+    ensure_docker_installed
     run_hook "pre-build"
 
     uncommitted_changes = Kamal::Git.uncommitted_changes
@@ -109,20 +109,6 @@ class Kamal::Cli::Build < Kamal::Cli::Base
   end
 
   private
-    def verify_local_dependencies
-      run_locally do
-        begin
-          execute *KAMAL.builder.ensure_local_dependencies_installed
-        rescue SSHKit::Command::Failed => e
-          build_error = e.message =~ /command not found/ ?
-            "Docker is not installed locally" :
-            "Docker buildx plugin is not installed locally"
-
-          raise BuildError, build_error
-        end
-      end
-    end
-
     def connect_to_remote_host(remote_host)
       remote_uri = URI.parse(remote_host)
       if remote_uri.scheme == "ssh"

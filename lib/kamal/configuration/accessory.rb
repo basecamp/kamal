@@ -5,7 +5,7 @@ class Kamal::Configuration::Accessory
 
   delegate :argumentize, :optionize, to: Kamal::Utils
 
-  attr_reader :name, :accessory_config, :env, :proxy
+  attr_reader :name, :env, :proxy, :registry
 
   def initialize(name, config:)
     @name, @config, @accessory_config = name.inquiry, config, config.raw_config["accessories"][name]
@@ -16,12 +16,9 @@ class Kamal::Configuration::Accessory
       context: "accessories/#{name}",
       with: Kamal::Configuration::Validator::Accessory
 
-    @env = Kamal::Configuration::Env.new \
-      config: accessory_config.fetch("env", {}),
-      secrets: config.secrets,
-      context: "accessories/#{name}/env"
-
-    initialize_proxy if running_proxy?
+    @env = initialize_env
+    @proxy = initialize_proxy if running_proxy?
+    @registry = initialize_registry if accessory_config["registry"].present?
   end
 
   def service_name
@@ -29,7 +26,7 @@ class Kamal::Configuration::Accessory
   end
 
   def image
-    accessory_config["image"]
+    [ registry&.server, accessory_config["image"] ].compact.join("/")
   end
 
   def hosts
@@ -109,18 +106,32 @@ class Kamal::Configuration::Accessory
   end
 
   def running_proxy?
-    @accessory_config["proxy"].present?
-  end
-
-  def initialize_proxy
-    @proxy = Kamal::Configuration::Proxy.new \
-      config: config,
-      proxy_config: accessory_config["proxy"],
-      context: "accessories/#{name}/proxy"
+    accessory_config["proxy"].present?
   end
 
   private
-    attr_accessor :config
+    attr_reader :config, :accessory_config
+
+    def initialize_env
+      Kamal::Configuration::Env.new \
+        config: accessory_config.fetch("env", {}),
+        secrets: config.secrets,
+        context: "accessories/#{name}/env"
+    end
+
+    def initialize_proxy
+      Kamal::Configuration::Proxy.new \
+        config: config,
+        proxy_config: accessory_config["proxy"],
+        context: "accessories/#{name}/proxy"
+    end
+
+    def initialize_registry
+      Kamal::Configuration::Registry.new \
+        config: accessory_config,
+        secrets: config.secrets,
+        context: "accessories/#{name}/registry"
+    end
 
     def default_labels
       { "service" => service_name }
@@ -142,7 +153,7 @@ class Kamal::Configuration::Accessory
     end
 
     def read_dynamic_file(local_file)
-      StringIO.new(ERB.new(IO.read(local_file)).result)
+      StringIO.new(ERB.new(File.read(local_file)).result)
     end
 
     def expand_remote_file(remote_file)

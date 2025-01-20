@@ -2,7 +2,7 @@ require "active_support/core_ext/string/filters"
 
 class Kamal::Commands::Builder < Kamal::Commands::Base
   delegate :create, :remove, :push, :clean, :pull, :info, :inspect_builder, :validate_image, :first_mirror, to: :target
-  delegate :local?, :remote?, :pack?, to: "config.builder"
+  delegate :local?, :remote?, :pack?, :cloud?, to: "config.builder"
 
   include Clone
 
@@ -19,6 +19,8 @@ class Kamal::Commands::Builder < Kamal::Commands::Base
       end
     elsif pack?
       pack
+    elsif cloud?
+      cloud
     else
       local
     end
@@ -40,22 +42,7 @@ class Kamal::Commands::Builder < Kamal::Commands::Base
     @pack ||= Kamal::Commands::Builder::Pack.new(config)
   end
 
-  def ensure_local_dependencies_installed
-    if name.native?
-      ensure_local_docker_installed
-    else
-      combine \
-        ensure_local_docker_installed,
-        ensure_local_buildx_installed
-    end
+  def cloud
+    @cloud ||= Kamal::Commands::Builder::Cloud.new(config)
   end
-
-  private
-    def ensure_local_docker_installed
-      docker "--version"
-    end
-
-    def ensure_local_buildx_installed
-      docker :buildx, "version"
-    end
 end

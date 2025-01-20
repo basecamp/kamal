@@ -3,7 +3,9 @@ require "test_helper"
 class ConfigurationAccessoryTest < ActiveSupport::TestCase
   setup do
     @deploy = {
-      service: "app", image: "dhh/app", registry: { "username" => "dhh", "password" => "secret" },
+      service: "app",
+      image: "dhh/app",
+      registry: { "username" => "dhh", "password" => "secret" },
       servers: {
         "web" => [ "1.1.1.1", "1.1.1.2" ],
         "workers" => [ "1.1.1.3", "1.1.1.4" ]
@@ -12,7 +14,7 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
       env: { "REDIS_URL" => "redis://x/y" },
       accessories: {
         "mysql" => {
-          "image" => "mysql:8.0",
+          "image" => "public.registry/mysql:8.0",
           "host" => "1.1.1.5",
           "port" => "3306",
           "env" => {
@@ -52,6 +54,7 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
         "monitoring" => {
           "service" => "custom-monitoring",
           "image" => "monitoring:latest",
+          "registry" => { "server" => "other.registry", "username" => "user", "password" => "pw" },
           "roles" => [ "web" ],
           "port" => "4321:4321",
           "labels" => {
@@ -78,6 +81,21 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
     assert_equal "app-mysql", @config.accessory(:mysql).service_name
     assert_equal "app-redis", @config.accessory(:redis).service_name
     assert_equal "custom-monitoring", @config.accessory(:monitoring).service_name
+  end
+
+  test "image" do
+    assert_equal "public.registry/mysql:8.0", @config.accessory(:mysql).image
+    assert_equal "redis:latest", @config.accessory(:redis).image
+    assert_equal "other.registry/monitoring:latest", @config.accessory(:monitoring).image
+  end
+
+  test "registry" do
+    assert_nil @config.accessory(:mysql).registry
+    assert_nil @config.accessory(:redis).registry
+    monitoring_registry = @config.accessory(:monitoring).registry
+    assert_equal "other.registry", monitoring_registry.server
+    assert_equal "user", monitoring_registry.username
+    assert_equal "pw", monitoring_registry.password
   end
 
   test "port" do

@@ -155,7 +155,7 @@ class CliBuildTest < CliTestCase
       .raises(SSHKit::Command::Failed.new("no buildx"))
 
     Kamal::Commands::Builder.any_instance.stubs(:native_and_local?).returns(false)
-    assert_raises(Kamal::Cli::Build::BuildError) { run_command("push") }
+    assert_raises(Kamal::Cli::DependencyError) { run_command("push") }
   end
 
   test "push pre-build hook failure" do
@@ -235,6 +235,12 @@ class CliBuildTest < CliTestCase
     end
   end
 
+  test "create cloud" do
+    run_command("create", fixture: :with_cloud_builder).tap do |output|
+      assert_match /docker buildx create --driver cloud example_org\/cloud_builder/, output
+    end
+  end
+
   test "create with error" do
     stub_setup
     SSHKit::Backend::Abstract.any_instance.stubs(:execute)
@@ -249,6 +255,12 @@ class CliBuildTest < CliTestCase
   test "remove" do
     run_command("remove").tap do |output|
       assert_match /docker buildx rm kamal-local/, output
+    end
+  end
+
+  test "remove cloud" do
+    run_command("remove", fixture: :with_cloud_builder).tap do |output|
+      assert_match /docker buildx rm cloud-example_org-cloud_builder/, output
     end
   end
 
@@ -273,18 +285,5 @@ class CliBuildTest < CliTestCase
         .with(:docker, "--version", "&&", :docker, :buildx, "version")
       SSHKit::Backend::Abstract.any_instance.stubs(:execute)
         .with { |*args| args[0..1] == [ :docker, :buildx ] }
-    end
-
-    def with_build_directory
-      build_directory = File.join Dir.tmpdir, "kamal-clones", "app-#{pwd_sha}", "kamal"
-      FileUtils.mkdir_p build_directory
-      FileUtils.touch File.join build_directory, "Dockerfile"
-      yield build_directory + "/"
-    ensure
-      FileUtils.rm_rf build_directory
-    end
-
-    def pwd_sha
-      Digest::SHA256.hexdigest(Dir.pwd)[0..12]
     end
 end

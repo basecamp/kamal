@@ -114,6 +114,9 @@ builder:
   #
   # The build driver to use, defaults to `docker-container`:
   driver: docker
+  #
+  # If you want to use Docker Build Cloud (https://www.docker.com/products/build-cloud/), you can set the driver to:
+  driver: cloud org-name/builder-name
 
   # Provenance
   #

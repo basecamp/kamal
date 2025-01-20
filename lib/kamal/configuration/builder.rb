@@ -53,6 +53,10 @@ class Kamal::Configuration::Builder
     !local_disabled? && (arches.empty? || local_arches.any?)
   end
 
+  def cloud?
+    driver.start_with? "cloud"
+  end
+
   def cached?
     !!builder_config["cache"]
   end

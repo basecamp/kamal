@@ -7,8 +7,7 @@ class Kamal::Secrets::Adapters::Base
     check_dependencies!
 
     session = login(account)
-    full_secrets = secrets.map { |secret| [ from, secret ].compact.join("/") }
-    fetch_secrets(full_secrets, account: account, session: session)
+    fetch_secrets(secrets, from: from, account: account, session: session)
   end
 
   def requires_account?
@@ -26,5 +25,9 @@ class Kamal::Secrets::Adapters::Base
 
     def check_dependencies!
       raise NotImplementedError
+    end
+
+    def prefixed_secrets(secrets, from:)
+      secrets.map { |secret| [ from, secret ].compact.join("/") }
     end
 end

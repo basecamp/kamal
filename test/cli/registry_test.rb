@@ -43,6 +43,16 @@ class CliRegistryTest < CliTestCase
     end
   end
 
+  test "login with no docker" do
+    stub_setup
+    SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+      .with(:docker, "--version", "&&", :docker, :buildx, "version")
+      .raises(SSHKit::Command::Failed.new("command not found"))
+
+    assert_raises(Kamal::Cli::DependencyError) { run_command("login") }
+  end
+
+
   private
     def run_command(*command)
       stdouted { Kamal::Cli::Registry.start([ *command, "-c", "test/fixtures/deploy_with_accessories.yml" ]) }
