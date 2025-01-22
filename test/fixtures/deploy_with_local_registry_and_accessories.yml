@@ -33,5 +33,13 @@ accessories:
     port: 6379
     directories:
       - data:/data
+  busybox:
+    service: custom-box
+    image: busybox:latest
+    host: 1.1.1.3
+    registry:
+      server: other.registry
+      username: other_user
+      password: other_pw
 
 readiness_delay: 0
