@@ -184,7 +184,7 @@ class Kamal::Cli::Build < Kamal::Cli::Base
       end
     end
 
-    def forward_local_registry_port
+    def forward_local_registry_port(&block)
       if KAMAL.config.registry.local?
         Kamal::Cli::PortForwarding.
           new(KAMAL.hosts, KAMAL.config.registry.local_port).
