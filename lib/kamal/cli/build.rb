@@ -61,7 +61,7 @@ class Kamal::Cli::Build < Kamal::Cli::Base
 
   desc "pull", "Pull app image from registry onto servers"
   def pull
-    Kamal::Cli::PortForwarding.new(KAMAL.hosts, KAMAL.config.registry.local_port).forward do
+    forward_local_registry_port do
       if (first_hosts = mirror_hosts).any?
         #  Pull on a single host per mirror first to seed them
         say "Pulling image on #{first_hosts.join(", ")} to seed the #{"mirror".pluralize(first_hosts.count)}...", :magenta
@@ -181,6 +181,16 @@ class Kamal::Cli::Build < Kamal::Cli::Base
         execute *KAMAL.builder.clean, raise_on_non_zero_exit: false
         execute *KAMAL.builder.pull
         execute *KAMAL.builder.validate_image
+      end
+    end
+
+    def forward_local_registry_port
+      if KAMAL.config.registry.local?
+        Kamal::Cli::PortForwarding.
+          new(KAMAL.hosts, KAMAL.config.registry.local_port).
+          forward(&block)
+      else
+        yield
       end
     end
 end

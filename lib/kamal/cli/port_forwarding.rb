@@ -7,10 +7,8 @@ class Kamal::Cli::PortForwarding
   end
 
   def forward
-    if KAMAL.config.registry.local?
-      @done = false
-      forward_ports
-    end
+    @done = false
+    forward_ports
 
     yield
   ensure
