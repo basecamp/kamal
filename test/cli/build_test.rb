@@ -235,6 +235,12 @@ class CliBuildTest < CliTestCase
     end
   end
 
+  test "create cloud" do
+    run_command("create", fixture: :with_cloud_builder).tap do |output|
+      assert_match /docker buildx create --driver cloud example_org\/cloud_builder/, output
+    end
+  end
+
   test "create with error" do
     stub_setup
     SSHKit::Backend::Abstract.any_instance.stubs(:execute)
@@ -249,6 +255,12 @@ class CliBuildTest < CliTestCase
   test "remove" do
     run_command("remove").tap do |output|
       assert_match /docker buildx rm kamal-local/, output
+    end
+  end
+
+  test "remove cloud" do
+    run_command("remove", fixture: :with_cloud_builder).tap do |output|
+      assert_match /docker buildx rm cloud-example_org-cloud_builder/, output
     end
   end
 

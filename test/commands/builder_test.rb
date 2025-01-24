@@ -61,6 +61,14 @@ class CommandsBuilderTest < ActiveSupport::TestCase
       builder.push.join(" ")
   end
 
+  test "cloud builder" do
+    builder = new_builder_command(builder: { "arch" => [ "#{local_arch}" ], "driver" => "cloud docker-org-name/builder-name" })
+    assert_equal "cloud", builder.name
+    assert_equal \
+      "docker buildx build --push --platform linux/#{local_arch} --builder cloud-docker-org-name-builder-name -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile .",
+      builder.push.join(" ")
+  end
+
   test "build args" do
     builder = new_builder_command(builder: { "args" => { "a" => 1, "b" => 2 } })
     assert_equal \
