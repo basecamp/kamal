@@ -194,7 +194,7 @@ class CliProxyTest < CliTestCase
       assert_match "docker container prune --force --filter label=org.opencontainers.image.title=kamal-proxy", output
       assert_match "docker image prune --all --force --filter label=org.opencontainers.image.title=kamal-proxy", output
       assert_match "/usr/bin/env mkdir -p .kamal", output
-      assert_match "docker network create kamal", output
+      assert_match "docker network create --ipv6 kamal", output
       assert_match "docker login -u [REDACTED] -p [REDACTED]", output
       assert_match "docker container start kamal-proxy || docker run --name kamal-proxy --network kamal --detach --restart unless-stopped --volume kamal-proxy-config:/home/kamal-proxy/.config/kamal-proxy $(cat .kamal/proxy/options || echo \"--publish 80:80 --publish 443:443 --log-opt max-size=10m\") basecamp/kamal-proxy:#{Kamal::Configuration::PROXY_MINIMUM_VERSION}", output
       assert_match "/usr/bin/env mkdir -p .kamal", output

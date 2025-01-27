@@ -32,9 +32,9 @@ class CliAccessoryTest < CliTestCase
       assert_match "docker login private.registry -u [REDACTED] -p [REDACTED] on 1.1.1.1", output
       assert_match "docker login private.registry -u [REDACTED] -p [REDACTED] on 1.1.1.2", output
       assert_match "docker login other.registry -u [REDACTED] -p [REDACTED] on 1.1.1.3", output
-      assert_match /docker network create kamal.*on 1.1.1.1/, output
-      assert_match /docker network create kamal.*on 1.1.1.2/, output
-      assert_match /docker network create kamal.*on 1.1.1.3/, output
+      assert_match /docker network create --ipv6 kamal.*on 1.1.1.1/, output
+      assert_match /docker network create --ipv6 kamal.*on 1.1.1.2/, output
+      assert_match /docker network create --ipv6 kamal.*on 1.1.1.3/, output
       assert_match "docker run --name app-mysql --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 3306:3306 --env MYSQL_ROOT_HOST=\"%\" --env-file .kamal/apps/app/env/accessories/mysql.env --volume $PWD/app-mysql/etc/mysql/my.cnf:/etc/mysql/my.cnf --volume $PWD/app-mysql/data:/var/lib/mysql --label service=\"app-mysql\" private.registry/mysql:5.7 on 1.1.1.3", output
       assert_match "docker run --name app-redis --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 6379:6379 --env-file .kamal/apps/app/env/accessories/redis.env --volume $PWD/app-redis/data:/data --label service=\"app-redis\" redis:latest on 1.1.1.1", output
       assert_match "docker run --name app-redis --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 6379:6379 --env-file .kamal/apps/app/env/accessories/redis.env --volume $PWD/app-redis/data:/data --label service=\"app-redis\" redis:latest on 1.1.1.2", output
@@ -234,7 +234,7 @@ class CliAccessoryTest < CliTestCase
   test "upgrade" do
     run_command("upgrade", "-y", "all").tap do |output|
       assert_match "Upgrading all accessories on 1.1.1.3,1.1.1.1,1.1.1.2...", output
-      assert_match "docker network create kamal on 1.1.1.3", output
+      assert_match "docker network create --ipv6 kamal on 1.1.1.3", output
       assert_match "docker container stop app-mysql on 1.1.1.3", output
       assert_match "docker run --name app-mysql --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 3306:3306 --env MYSQL_ROOT_HOST="%" --env-file .kamal/apps/app/env/accessories/mysql.env --volume $PWD/app-mysql/etc/mysql/my.cnf:/etc/mysql/my.cnf --volume $PWD/app-mysql/data:/var/lib/mysql --label service=\"app-mysql\" private.registry/mysql:5.7 on 1.1.1.3", output
       assert_match "Upgraded all accessories on 1.1.1.3,1.1.1.1,1.1.1.2...", output
@@ -244,7 +244,7 @@ class CliAccessoryTest < CliTestCase
   test "upgrade rolling" do
     run_command("upgrade", "--rolling", "-y", "all").tap do |output|
       assert_match "Upgrading all accessories on 1.1.1.3...", output
-      assert_match "docker network create kamal on 1.1.1.3", output
+      assert_match "docker network create --ipv6 kamal on 1.1.1.3", output
       assert_match "docker container stop app-mysql on 1.1.1.3", output
       assert_match "docker run --name app-mysql --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 3306:3306 --env MYSQL_ROOT_HOST="%" --env-file .kamal/apps/app/env/accessories/mysql.env --volume $PWD/app-mysql/etc/mysql/my.cnf:/etc/mysql/my.cnf --volume $PWD/app-mysql/data:/var/lib/mysql --label service=\"app-mysql\" private.registry/mysql:5.7 on 1.1.1.3", output
       assert_match "Upgraded all accessories on 1.1.1.3", output
