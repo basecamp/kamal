@@ -111,8 +111,8 @@ class LastPassAdapterTest < SecretAdapterTestCase
   test "fetch with signin" do
     stub_command(:system).with("lpass --version", err: File::NULL)
 
-    stub_command_with("lpass status --color never", false, :`).returns("Not logged in.")
-    stub_command_with("lpass login email@example.com", true, :`).returns("")
+    stub_command_with("lpass status --color never").returns("Not logged in.")
+    stub_command_with("lpass login email@example.com", true).returns("")
     stub_command.with("lpass show SECRET1 --json").returns(single_item_json)
 
     json = JSON.parse(shellunescape(run_command("fetch", "SECRET1")))
@@ -125,7 +125,7 @@ class LastPassAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch without CLI installed" do
-    stub_command_with("lpass --version", false)
+    stub_command_with("lpass --version", false, :system)
 
     error = assert_raises RuntimeError do
       JSON.parse(shellunescape(run_command("fetch", "SECRET1", "FOLDER1/FSECRET1", "FOLDER1/FSECRET2")))

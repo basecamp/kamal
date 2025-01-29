@@ -6,7 +6,7 @@ class DopplerAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch" do
-    stub_command_with("doppler --version")
+    stub_command_with("doppler --version", true, :system)
     stub_command(:system).with("doppler me --json", err: File::NULL)
 
     stub_command
@@ -47,7 +47,7 @@ class DopplerAdapterTest < SecretAdapterTestCase
   test "fetch having DOPPLER_TOKEN" do
     ENV["DOPPLER_TOKEN"] = "dp.st.xxxxxxxxxxxxxxxxxxxxxx"
 
-    stub_command_with("doppler --version")
+    stub_command_with("doppler --version", true, :system)
     stub_command(:system).with("doppler me --json", err: File::NULL)
 
     stub_command
@@ -88,7 +88,7 @@ class DopplerAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch with folder in secret" do
-    stub_command_with("doppler --version")
+    stub_command_with("doppler --version", true, :system)
     stub_command(:system).with("doppler me --json", err: File::NULL)
 
     stub_command
@@ -127,7 +127,7 @@ class DopplerAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch without --from" do
-    stub_command_with("doppler --version")
+    stub_command_with("doppler --version", true, :system)
     stub_command(:system).with("doppler me --json", err: File::NULL)
 
     error = assert_raises RuntimeError do
@@ -138,9 +138,9 @@ class DopplerAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch with signin" do
-    stub_command_with("doppler --version")
-    stub_command_with("doppler me --json", false)
-    stub_command_with("doppler login -y", true, :`).returns("")
+    stub_command_with("doppler --version", true, :system)
+    stub_command_with("doppler me --json")
+    stub_command_with("doppler login -y", true).returns("")
     stub_command.with("doppler secrets get SECRET1 --json -p my-project -c prd").returns(single_item_json)
 
     json = JSON.parse(shellunescape(run_command("fetch", "--from", "my-project/prd", "SECRET1")))
@@ -153,7 +153,7 @@ class DopplerAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch without CLI installed" do
-    stub_command_with("doppler --version", false)
+    stub_command_with("doppler --version", false, :system)
 
     error = assert_raises RuntimeError do
       JSON.parse(shellunescape(run_command("fetch", "HOST", "PORT")))

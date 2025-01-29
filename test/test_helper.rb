@@ -80,10 +80,10 @@ class SecretAdapterTestCase < ActiveSupport::TestCase
 
   private
     def stub_command(format = :`)
-      Kamal::Secrets::Adapters::Base.any_instance.stubs(:`)
+      Kamal::Secrets::Adapters::Base.any_instance.stubs(format)
     end
 
-    def stub_command_with(command, succeed = true, format = :system)
+    def stub_command_with(command, succeed = false, format = :`)
       # Sneakily run `exit 1`/`exit 0` after a match to set $? to 1/0
       stub_command(format).with { |c| c == command && (succeed ? `exit 0` : `exit 1`) }
       Kamal::Secrets::Adapters::Base.any_instance.stubs(format)

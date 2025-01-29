@@ -2,7 +2,7 @@ require "test_helper"
 
 class EnpassAdapterTest < SecretAdapterTestCase
   test "fetch without CLI installed" do
-    stub_ticks_with("enpass-cli version 2> /dev/null", succeed: false)
+    stub_command_with("enpass-cli version", false, :system)
 
     error = assert_raises RuntimeError do
       JSON.parse(shellunescape(run_command("fetch", "mynote")))
@@ -12,9 +12,9 @@ class EnpassAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch one item" do
-    stub_ticks_with("enpass-cli version 2> /dev/null")
+    stub_command_with("enpass-cli version", true, :system)
 
-    stub_ticks
+    stub_command
       .with("enpass-cli -json -vault vault-path show FooBar")
       .returns(<<~JSON)
       [{"category":"computer","label":"SECRET_1","login":"","password":"my-password-1","title":"FooBar","type":"password"}]
@@ -28,9 +28,9 @@ class EnpassAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch multiple items" do
-    stub_ticks_with("enpass-cli version 2> /dev/null")
+    stub_command_with("enpass-cli version", true, :system)
 
-    stub_ticks
+    stub_command
       .with("enpass-cli -json -vault vault-path show FooBar")
       .returns(<<~JSON)
       [
@@ -48,9 +48,9 @@ class EnpassAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch all with from" do
-    stub_ticks_with("enpass-cli version 2> /dev/null")
+    stub_command_with("enpass-cli version", true, :system)
 
-    stub_ticks
+    stub_command
       .with("enpass-cli -json -vault vault-path show FooBar")
       .returns(<<~JSON)
       [

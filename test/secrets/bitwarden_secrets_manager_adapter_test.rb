@@ -2,7 +2,7 @@ require "test_helper"
 
 class BitwardenSecretsManagerAdapterTest < SecretAdapterTestCase
   test "fetch with no parameters" do
-    stub_ticks.with("bws --version 2> /dev/null")
+    stub_command(:system).with("bws --version", err: File::NULL)
     stub_login
 
     error = assert_raises RuntimeError do
@@ -12,9 +12,9 @@ class BitwardenSecretsManagerAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch all" do
-    stub_ticks.with("bws --version 2> /dev/null")
+    stub_command(:system).with("bws --version", err: File::NULL)
     stub_login
-    stub_ticks
+    stub_command
       .with("bws secret list -o env")
       .returns("KAMAL_REGISTRY_PASSWORD=\"some_password\"\nMY_OTHER_SECRET=\"my=weird\"secret\"")
 
@@ -24,9 +24,9 @@ class BitwardenSecretsManagerAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch all with from" do
-    stub_ticks.with("bws --version 2> /dev/null")
+    stub_command(:system).with("bws --version", err: File::NULL)
     stub_login
-    stub_ticks
+    stub_command
       .with("bws secret list -o env 82aeb5bd-6958-4a89-8197-eacab758acce")
       .returns("KAMAL_REGISTRY_PASSWORD=\"some_password\"\nMY_OTHER_SECRET=\"my=weird\"secret\"")
 
@@ -36,9 +36,9 @@ class BitwardenSecretsManagerAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch item" do
-    stub_ticks.with("bws --version 2> /dev/null")
+    stub_command(:system).with("bws --version", err: File::NULL)
     stub_login
-    stub_ticks
+    stub_command
       .with("bws secret get -o env 82aeb5bd-6958-4a89-8197-eacab758acce")
       .returns("KAMAL_REGISTRY_PASSWORD=\"some_password\"")
 
@@ -48,12 +48,12 @@ class BitwardenSecretsManagerAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch with multiple items" do
-    stub_ticks.with("bws --version 2> /dev/null")
+    stub_command(:system).with("bws --version", err: File::NULL)
     stub_login
-    stub_ticks
+    stub_command
       .with("bws secret get -o env 82aeb5bd-6958-4a89-8197-eacab758acce")
       .returns("KAMAL_REGISTRY_PASSWORD=\"some_password\"")
-    stub_ticks
+    stub_command
       .with("bws secret get -o env 6f8cdf27-de2b-4c77-a35d-07df8050e332")
       .returns("MY_OTHER_SECRET=\"my=weird\"secret\"")
 
@@ -63,9 +63,9 @@ class BitwardenSecretsManagerAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch all empty" do
-    stub_ticks.with("bws --version 2> /dev/null")
+    stub_command(:system).with("bws --version", err: File::NULL)
     stub_login
-    stub_ticks_with("bws secret list -o env", succeed: false).returns("Error:\n0: Received error message from server")
+    stub_command_with("bws secret list -o env").returns("Error:\n0: Received error message from server")
 
     error = assert_raises RuntimeError do
       (shellunescape(run_command("fetch", "all")))
@@ -74,9 +74,9 @@ class BitwardenSecretsManagerAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch nonexistent item" do
-    stub_ticks.with("bws --version 2> /dev/null")
+    stub_command(:system).with("bws --version", err: File::NULL)
     stub_login
-    stub_ticks_with("bws secret get -o env 82aeb5bd-6958-4a89-8197-eacab758acce", succeed: false)
+    stub_command_with("bws secret get -o env 82aeb5bd-6958-4a89-8197-eacab758acce")
       .returns("ERROR (RuntimeError): Could not read 82aeb5bd-6958-4a89-8197-eacab758acce from Bitwarden Secrets Manager")
 
     error = assert_raises RuntimeError do
@@ -86,8 +86,8 @@ class BitwardenSecretsManagerAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch with no access token" do
-    stub_ticks.with("bws --version 2> /dev/null")
-    stub_ticks_with("bws run 'echo OK'", succeed: false)
+    stub_command(:system).with("bws --version", err: File::NULL)
+    stub_command_with("bws run 'echo OK'")
 
     error = assert_raises RuntimeError do
       (shellunescape(run_command("fetch", "all")))
@@ -96,7 +96,7 @@ class BitwardenSecretsManagerAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch without CLI installed" do
-    stub_ticks_with("bws --version 2> /dev/null", succeed: false)
+    stub_command_with("bws --version", false, :system)
 
     error = assert_raises RuntimeError do
       shellunescape(run_command("fetch"))
@@ -106,7 +106,7 @@ class BitwardenSecretsManagerAdapterTest < SecretAdapterTestCase
 
   private
     def stub_login
-      stub_ticks.with("bws run 'echo OK'").returns("OK")
+      stub_command.with("bws run 'echo OK'").returns("OK")
     end
 
     def run_command(*command)
