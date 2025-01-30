@@ -34,6 +34,30 @@ class SecretsTest < ActiveSupport::TestCase
     end
   end
 
+  test "secret with open bracket" do
+    with_test_secrets("secrets" => "SECRET1=$(echo 'foo)')") do
+      assert_equal "foo)", Kamal::Secrets.new["SECRET1"]
+    end
+  end
+
+  test "secret with close bracket" do
+    with_test_secrets("secrets" => "SECRET1=$(echo 'foo(')") do
+      assert_equal "foo(", Kamal::Secrets.new["SECRET1"]
+    end
+  end
+
+  test "secret with escaped quote" do
+    with_test_secrets("secrets" => "SECRET1=$(echo \"foo\\\")") do
+      assert_equal "foo", Kamal::Secrets.new["SECRET1"]
+    end
+  end
+
+  test "secret with escaped single quote" do
+    with_test_secrets("secrets" => "SECRET1=  $(echo 'foo'\"'\"'bar')") do
+      assert_equal "foo'bar", Kamal::Secrets.new["SECRET1"]
+    end
+  end
+
   test "destinations" do
     with_test_secrets("secrets.dest" => "SECRET=DEF", "secrets" => "SECRET=ABC", "secrets-common" => "SECRET=GHI\nSECRET2=JKL") do
       assert_equal "ABC", Kamal::Secrets.new["SECRET"]
