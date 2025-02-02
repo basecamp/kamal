@@ -116,9 +116,22 @@ class Kamal::Cli::Build < Kamal::Cli::Base
 
     ensure_docker_installed
 
-    uncommitted_changes = Kamal::Git.uncommitted_changes
-    if uncommitted_changes.present?
-      say "WARNING: building with uncommitted changes:\n #{uncommitted_changes}", :yellow
+    docker_included_files = Set.new(Kamal::Docker.included_files)
+    git_uncommitted_files = Set.new(Kamal::Git.uncommitted_files)
+    git_untracked_files = Set.new(Kamal::Git.untracked_files)
+
+    docker_uncommitted_files = docker_included_files & git_uncommitted_files
+    if docker_uncommitted_files.any?
+      say "WARNING: Files with uncommitted changes will be present in the dev container:", :yellow
+      docker_uncommitted_files.sort.each { |f| say "  #{f}", :yellow }
+      say
+    end
+
+    docker_untracked_files = docker_included_files & git_untracked_files
+    if docker_untracked_files.any?
+      say "WARNING: Untracked files will be present in the dev container:", :yellow
+      docker_untracked_files.sort.each { |f| say "  #{f}", :yellow }
+      say
     end
 
     with_env(KAMAL.config.builder.secrets) do
