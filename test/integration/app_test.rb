@@ -15,7 +15,9 @@ class AppTest < IntegrationTest
     # kamal app start does not wait
     wait_for_app_to_be_up
 
-    kamal :app, :boot
+    output = kamal :app, :boot, "--verbose", capture: true
+    assert_match "Booting app on vm1,vm2...", output
+    assert_match "Booted app on vm1,vm2...", output
 
     wait_for_app_to_be_up
 

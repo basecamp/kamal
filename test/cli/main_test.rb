@@ -53,17 +53,16 @@ class CliMainTest < CliTestCase
       Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:prune:all", [], invoke_options)
 
       Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
-      hook_variables = { version: 999, service_version: "app@999", hosts: "1.1.1.1,1.1.1.2", command: "deploy" }
 
       run_command("deploy", "--verbose").tap do |output|
-        assert_hook_ran "pre-connect", output, **hook_variables
+        assert_hook_ran "pre-connect", output
         assert_match /Log into image registry/, output
         assert_match /Build and push app image/, output
-        assert_hook_ran "pre-deploy", output, **hook_variables, secrets: true
+        assert_hook_ran "pre-deploy", output
         assert_match /Ensure kamal-proxy is running/, output
         assert_match /Detect stale containers/, output
         assert_match /Prune old containers and images/, output
-        assert_hook_ran "post-deploy", output, **hook_variables, runtime: true, secrets: true
+        assert_hook_ran "post-deploy", output
       end
     end
   end
@@ -205,14 +204,12 @@ class CliMainTest < CliTestCase
 
     Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
 
-    hook_variables = { version: 999, service_version: "app@999", hosts: "1.1.1.1,1.1.1.2", command: "redeploy" }
-
     run_command("redeploy", "--verbose").tap do |output|
-      assert_hook_ran "pre-connect", output, **hook_variables
+      assert_hook_ran "pre-connect", output
       assert_match /Build and push app image/, output
-      assert_hook_ran "pre-deploy", output, **hook_variables
+      assert_hook_ran "pre-deploy", output
       assert_match /Running the pre-deploy hook.../, output
-      assert_hook_ran "post-deploy", output, **hook_variables, runtime: true
+      assert_hook_ran "post-deploy", output
     end
   end
 
@@ -258,14 +255,13 @@ class CliMainTest < CliTestCase
       .returns("running").at_least_once # health check
 
     Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
-    hook_variables = { version: 123, service_version: "app@123", hosts: "1.1.1.1,1.1.1.2,1.1.1.3,1.1.1.4", command: "rollback" }
 
     run_command("rollback", "--verbose", "123", config_file: "deploy_with_accessories").tap do |output|
-      assert_hook_ran "pre-deploy", output, **hook_variables
+      assert_hook_ran "pre-deploy", output
       assert_match "docker tag dhh/app:123 dhh/app:latest", output
       assert_match "docker run --detach --restart unless-stopped --name app-web-123", output
       assert_match "docker container ls --all --filter name=^app-web-version-to-rollback$ --quiet | xargs docker stop", output, "Should stop the container that was previously running"
-      assert_hook_ran "post-deploy", output, **hook_variables, runtime: true
+      assert_hook_ran "post-deploy", output
     end
   end
 

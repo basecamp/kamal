@@ -11,7 +11,6 @@ class CliBuildTest < CliTestCase
   test "push" do
     with_build_directory do |build_directory|
       Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
-      hook_variables = { version: 999, service_version: "app@999", hosts: "1.1.1.1,1.1.1.2,1.1.1.3,1.1.1.4", command: "build", subcommand: "push" }
 
       SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
         .with(:git, "-C", anything, :"rev-parse", :HEAD)
@@ -22,7 +21,7 @@ class CliBuildTest < CliTestCase
         .returns("")
 
       run_command("push", "--verbose").tap do |output|
-        assert_hook_ran "pre-build", output, **hook_variables
+        assert_hook_ran "pre-build", output
         assert_match /Cloning repo into build directory/, output
         assert_match /git -C #{Dir.tmpdir}\/kamal-clones\/app-#{pwd_sha} clone #{Dir.pwd}/, output
         assert_match /docker --version && docker buildx version/, output
@@ -34,7 +33,6 @@ class CliBuildTest < CliTestCase
   test "push --output=docker" do
     with_build_directory do |build_directory|
       Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
-      hook_variables = { version: 999, service_version: "app@999", hosts: "1.1.1.1,1.1.1.2,1.1.1.3,1.1.1.4", command: "build", subcommand: "push" }
 
       SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
         .with(:git, "-C", anything, :"rev-parse", :HEAD)
@@ -45,7 +43,7 @@ class CliBuildTest < CliTestCase
         .returns("")
 
       run_command("push", "--output=docker", "--verbose").tap do |output|
-        assert_hook_ran "pre-build", output, **hook_variables
+        assert_hook_ran "pre-build", output
         assert_match /Cloning repo into build directory/, output
         assert_match /git -C #{Dir.tmpdir}\/kamal-clones\/app-#{pwd_sha} clone #{Dir.pwd}/, output
         assert_match /docker --version && docker buildx version/, output
@@ -91,11 +89,10 @@ class CliBuildTest < CliTestCase
 
   test "push without clone" do
     Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
-    hook_variables = { version: 999, service_version: "app@999", hosts: "1.1.1.1,1.1.1.2,1.1.1.3,1.1.1.4", command: "build", subcommand: "push" }
 
     run_command("push", "--verbose", fixture: :without_clone).tap do |output|
       assert_no_match /Cloning repo into build directory/, output
-      assert_hook_ran "pre-build", output, **hook_variables
+      assert_hook_ran "pre-build", output
       assert_match /docker --version && docker buildx version/, output
       assert_match /docker buildx build --output=type=registry --platform linux\/amd64 --builder kamal-local-docker-container -t dhh\/app:999 -t dhh\/app:latest --label service="app" --file Dockerfile . as .*@localhost/, output
     end

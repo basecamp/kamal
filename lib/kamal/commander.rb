@@ -136,14 +136,6 @@ class Kamal::Commander
     SSHKit.config.output_verbosity = old_level
   end
 
-  def boot_strategy
-    if config.boot.limit.present?
-      { in: :groups, limit: config.boot.limit, wait: config.boot.wait }
-    else
-      {}
-    end
-  end
-
   def holding_lock?
     self.holding_lock
   end
