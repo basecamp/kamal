@@ -13,6 +13,7 @@ class Kamal::Secrets::Adapters::AwsSecretsManager < Kamal::Secrets::Adapters::Ba
         get_from_secrets_manager(prefixed_secrets(secrets, from: from), account: account).each do |secret|
           secret_name = secret["Name"]
           secret_string = JSON.parse(secret["SecretString"])
+
           secret_string.each do |key, value|
             results["#{secret_name}/#{key}"] = value
           end
