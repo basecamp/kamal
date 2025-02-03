@@ -13,11 +13,12 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
     docker :image, :rm, "--force", config.absolute_image
   end
 
-  def push
+  def push(export_action = "registry", tag_as_dirty: false)
     docker :buildx, :build,
-      "--push",
+      "--output=type=#{export_action}",
       *platform_options(arches),
       *([ "--builder", builder_name ] unless docker_driver?),
+      *build_tag_options(tag_as_dirty: tag_as_dirty),
       *build_options,
       build_context
   end
@@ -37,7 +38,7 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
   end
 
   def build_options
-    [ *build_tags, *build_cache, *build_labels, *build_args, *build_secrets, *build_dockerfile, *build_target, *build_ssh, *builder_provenance, *builder_sbom ]
+    [ *build_cache, *build_labels, *build_args, *build_secrets, *build_dockerfile, *build_target, *build_ssh, *builder_provenance, *builder_sbom ]
   end
 
   def build_context
@@ -58,8 +59,14 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
   end
 
   private
-    def build_tags
-      [ "-t", config.absolute_image, "-t", config.latest_image ]
+    def build_tag_names(tag_as_dirty: false)
+      tag_names = [ config.absolute_image, config.latest_image ]
+      tag_names.map! { |t| "#{t}-dirty" } if tag_as_dirty
+      tag_names
+    end
+
+    def build_tag_options(tag_as_dirty: false)
+      build_tag_names(tag_as_dirty: tag_as_dirty).flat_map { |name| [ "-t", name ] }
     end
 
     def build_cache
