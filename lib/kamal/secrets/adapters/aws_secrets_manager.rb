@@ -23,8 +23,6 @@ class Kamal::Secrets::Adapters::AwsSecretsManager < Kamal::Secrets::Adapters::Ba
     end
 
     def get_from_secrets_manager(secrets, account: nil)
-      profile_opt = account ? "--profile #{account.shellescape}" : ""
-
       args = [ "aws", "secretsmanager", "batch-get-secret-value", "--secret-id-list" ] + secrets.map(&:shellescape)
       args += [ "--profile", account.shellescape ] if account
       cmd = args.join(" ")
