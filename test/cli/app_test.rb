@@ -37,13 +37,20 @@ class CliAppTest < CliTestCase
   end
 
   test "boot uses group strategy when specified" do
-    Kamal::Cli::App.any_instance.stubs(:on).with("1.1.1.1").times(2) # ensure locks dir, acquire & release lock
-    Kamal::Cli::App.any_instance.stubs(:on).with([ "1.1.1.1" ]) # tag container
+    Kamal::Cli::App.any_instance.stubs(:on).with("1.1.1.1").twice
+    Kamal::Cli::App.any_instance.stubs(:on).with([ "1.1.1.1", "1.1.1.2", "1.1.1.3", "1.1.1.4" ]).times(3)
 
     # Strategy is used when booting the containers
-    Kamal::Cli::App.any_instance.expects(:on).with([ "1.1.1.1" ], in: :groups, limit: 3, wait: 2).with_block_given
+    Kamal::Cli::App.any_instance.expects(:on).with([ "1.1.1.1", "1.1.1.2", "1.1.1.3" ]).with_block_given
+    Kamal::Cli::App.any_instance.expects(:on).with([ "1.1.1.4" ]).with_block_given
+    Object.any_instance.expects(:sleep).with(2).twice
 
-    run_command("boot", config: :with_boot_strategy)
+    Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
+
+    run_command("boot", config: :with_boot_strategy, host: nil).tap do |output|
+      assert_hook_ran "pre-app-boot", output, count: 2
+      assert_hook_ran "post-app-boot", output, count: 2
+    end
   end
 
   test "boot errors don't leave lock in place" do

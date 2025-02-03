@@ -40,8 +40,9 @@ class CliTestCase < ActiveSupport::TestCase
         .with(:docker, :buildx, :inspect, "kamal-local-docker-container")
     end
 
-    def assert_hook_ran(hook, output, version:, service_version:, hosts:, command:, subcommand: nil, runtime: false, secrets: false)
-      assert_match %r{usr/bin/env\s\.kamal/hooks/#{hook}}, output
+    def assert_hook_ran(hook, output, count: 1)
+      regexp = ([ "/usr/bin/env .kamal/hooks/#{hook}" ] * count).join(".*")
+      assert_match /#{regexp}/m, output
     end
 
     def with_argv(*argv)
