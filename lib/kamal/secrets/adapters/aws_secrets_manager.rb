@@ -48,4 +48,3 @@ class Kamal::Secrets::Adapters::AwsSecretsManager < Kamal::Secrets::Adapters::Ba
       $?.success?
     end
 end
-
