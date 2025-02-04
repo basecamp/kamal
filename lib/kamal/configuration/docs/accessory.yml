@@ -118,5 +118,6 @@ accessories:
 
     # Proxy
     #
+    # You can run your accessory behind the Kamal proxy. See kamal docs proxy for more information
     proxy:
       ...
