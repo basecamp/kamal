@@ -1,4 +1,4 @@
-FROM ruby:3.3-alpine
+FROM ruby:3.4-alpine
 
 # Install docker/buildx-bin
 COPY --from=docker/buildx-bin /buildx /usr/libexec/docker/cli-plugins/docker-buildx
@@ -13,7 +13,7 @@ COPY Gemfile Gemfile.lock kamal.gemspec ./
 COPY lib/kamal/version.rb /kamal/lib/kamal/version.rb
 
 # Install system dependencies
-RUN apk add --no-cache build-base git docker openrc openssh-client-default \
+RUN apk add --no-cache build-base git docker openrc openssh-client-default yaml-dev \
     && rc-update add docker boot \
     && gem install bundler --version=2.4.3 \
     && bundle install
