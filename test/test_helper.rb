@@ -36,6 +36,10 @@ class ActiveSupport::TestCase
   extend Rails::LineFiltering
 
   private
+    setup do
+      SSHKit::Backend::Netssh.pool.close_connections
+    end
+
     def stdouted
       capture(:stdout) { yield }.strip
     end

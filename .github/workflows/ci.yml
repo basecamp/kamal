@@ -23,6 +23,7 @@ jobs:
         run: bundle exec rubocop --parallel
   tests:
     strategy:
+      fail-fast: false
       matrix:
         ruby-version:
           - "3.1"
@@ -37,7 +38,6 @@ jobs:
             gemfile: gemfiles/rails_edge.gemfile
     name: ${{ format('Tests (Ruby {0})', matrix.ruby-version) }}
     runs-on: ubuntu-latest
-    continue-on-error: true
     env:
       BUNDLE_GEMFILE: ${{ github.workspace }}/${{ matrix.gemfile }}
     steps:

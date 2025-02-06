@@ -1,10 +1,14 @@
 class Kamal::Secrets::Adapters::AwsSecretsManager < Kamal::Secrets::Adapters::Base
+  def requires_account?
+    false
+  end
+
   private
     def login(_account)
       nil
     end
 
-    def fetch_secrets(secrets, from:, account:, session:)
+    def fetch_secrets(secrets, from:, account: nil, session:)
       {}.tap do |results|
         get_from_secrets_manager(prefixed_secrets(secrets, from: from), account: account).each do |secret|
           secret_name = secret["Name"]
@@ -19,8 +23,12 @@ class Kamal::Secrets::Adapters::AwsSecretsManager < Kamal::Secrets::Adapters::Ba
       end
     end
 
-    def get_from_secrets_manager(secrets, account:)
-      `aws secretsmanager batch-get-secret-value --secret-id-list #{secrets.map(&:shellescape).join(" ")} --profile #{account.shellescape}`.tap do |secrets|
+    def get_from_secrets_manager(secrets, account: nil)
+      args = [ "aws", "secretsmanager", "batch-get-secret-value", "--secret-id-list" ] + secrets.map(&:shellescape)
+      args += [ "--profile", account.shellescape ] if account
+      cmd = args.join(" ")
+
+      `#{cmd}`.tap do |secrets|
         raise RuntimeError, "Could not read #{secrets} from AWS Secrets Manager" unless $?.success?
 
         secrets = JSON.parse(secrets)

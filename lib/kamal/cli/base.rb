@@ -31,7 +31,7 @@ module Kamal::Cli
         super
       end
 
-      initialize_commander unless config[:invoked_via_subcommand]
+      initialize_commander unless KAMAL.configured?
     end
 
     private

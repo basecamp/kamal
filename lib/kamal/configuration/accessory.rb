@@ -16,6 +16,8 @@ class Kamal::Configuration::Accessory
       context: "accessories/#{name}",
       with: Kamal::Configuration::Validator::Accessory
 
+    ensure_valid_roles
+
     @env = initialize_env
     @proxy = initialize_proxy if running_proxy?
     @registry = initialize_registry if accessory_config["registry"].present?
@@ -200,13 +202,17 @@ class Kamal::Configuration::Accessory
 
     def hosts_from_roles
       if accessory_config.key?("roles")
-        accessory_config["roles"].flat_map do |role|
-          config.role(role)&.hosts || raise(Kamal::ConfigurationError, "Unknown role in accessories config: '#{role}'")
-        end
+        accessory_config["roles"].flat_map { |role| config.role(role)&.hosts }
       end
     end
 
     def network
       accessory_config["network"] || DEFAULT_NETWORK
+    end
+
+    def ensure_valid_roles
+      if accessory_config["roles"] && (missing_roles = accessory_config["roles"] - config.roles.map(&:name)).any?
+        raise Kamal::ConfigurationError, "accessories/#{name}: unknown roles #{missing_roles.join(", ")}"
+      end
     end
 end
