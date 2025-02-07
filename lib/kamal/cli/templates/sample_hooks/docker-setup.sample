@@ -7,5 +7,4 @@ bundle exec kamal server exec "
   ufw --force enable && \
   apt-get install fail2ban -y && \
   systemctl start fail2ban && \
-  systemctl enable fail2ban && \
-  systemctl status fail2ban"
+  systemctl enable fail2ban"
