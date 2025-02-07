@@ -1,6 +1,19 @@
 class Kamal::Commands::Builder::Pack < Kamal::Commands::Builder::Base
-  def push
+  def push(export_action = "registry")
     combine \
+      build,
+      export(export_action)
+  end
+
+  def remove;end
+
+  def info
+    pack :builder, :inspect, pack_builder
+  end
+  alias_method :inspect_builder, :info
+
+  private
+    def build
       pack(:build,
         config.repository,
         "--platform", platform,
@@ -12,19 +25,17 @@ class Kamal::Commands::Builder::Pack < Kamal::Commands::Builder::Base
         "--env", "BP_IMAGE_LABELS=service=#{config.service}",
         *argumentize("--env", args),
         *argumentize("--env", secrets, sensitive: true),
-        "--path", build_context),
-      docker(:push, config.absolute_image),
-      docker(:push, config.latest_image)
-  end
+        "--path", build_context)
+    end
 
-  def remove;end
+    def export(export_action)
+      return unless export_action == "registry"
 
-  def info
-    pack :builder, :inspect, pack_builder
-  end
-  alias_method :inspect_builder, :info
+      combine \
+        docker(:push, config.absolute_image),
+        docker(:push, config.latest_image)
+    end
 
-  private
     def platform
       "linux/#{local_arches.first}"
     end
