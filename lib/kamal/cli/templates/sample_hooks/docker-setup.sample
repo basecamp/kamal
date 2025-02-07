@@ -1,6 +1,6 @@
 #!/bin/sh
 
-bundle exec kamal server exec "
+bin/kamal server exec "
   ufw allow ssh && \
   ufw allow http && \
   ufw allow https && \
