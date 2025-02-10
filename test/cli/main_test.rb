@@ -53,17 +53,16 @@ class CliMainTest < CliTestCase
       Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:prune:all", [], invoke_options)
 
       Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
-      hook_variables = { version: 999, service_version: "app@999", hosts: "1.1.1.1,1.1.1.2", command: "deploy" }
 
       run_command("deploy", "--verbose", config_file: "deploy_with_local_registry").tap do |output|
-        assert_hook_ran "pre-connect", output, **hook_variables
+        assert_hook_ran "pre-connect", output
         assert_match /Log into image registry/, output
         assert_match /Build and push app image/, output
-        assert_hook_ran "pre-deploy", output, **hook_variables, secrets: true
+        assert_hook_ran "pre-deploy", output
         assert_match /Ensure kamal-proxy is running/, output
         assert_match /Detect stale containers/, output
         assert_match /Prune old containers and images/, output
-        assert_hook_ran "post-deploy", output, **hook_variables, runtime: true, secrets: true
+        assert_hook_ran "post-deploy", output
       end
     end
   end
