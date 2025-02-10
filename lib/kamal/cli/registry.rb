@@ -4,7 +4,7 @@ class Kamal::Cli::Registry < Kamal::Cli::Base
   option :skip_remote, aliases: "-R", type: :boolean, default: false, desc: "Skip remote login"
   def setup
     ensure_docker_installed unless options[:skip_local]
-    
+
     if KAMAL.registry.local?
       run_locally    { execute *KAMAL.registry.setup } unless options[:skip_local]
     else
