@@ -20,6 +20,8 @@ class CliBuildTest < CliTestCase
         .with(:git, "-C", anything, :status, "--porcelain")
         .returns("")
 
+      stub_no_uncommitted_git_changes
+
       run_command("push", "--verbose").tap do |output|
         assert_hook_ran "pre-build", output
         assert_match /Cloning repo into build directory/, output
@@ -41,6 +43,8 @@ class CliBuildTest < CliTestCase
       SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
         .with(:git, "-C", anything, :status, "--porcelain")
         .returns("")
+
+      stub_no_uncommitted_git_changes
 
       run_command("push", "--output=docker", "--verbose").tap do |output|
         assert_hook_ran "pre-build", output
@@ -79,6 +83,8 @@ class CliBuildTest < CliTestCase
       SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
         .with(:git, "-C", anything, :status, "--porcelain")
         .returns("")
+
+      stub_no_uncommitted_git_changes
 
       run_command("push", "--verbose").tap do |output|
         assert_match /Cloning repo into build directory/, output
@@ -124,6 +130,8 @@ class CliBuildTest < CliTestCase
 
       Dir.stubs(:chdir)
 
+      stub_no_uncommitted_git_changes
+
       run_command("push", "--verbose") do |output|
         assert_match /Cloning repo into build directory `#{build_directory}`\.\.\..*Cloning repo into build directory `#{build_directory}`\.\.\./, output
         assert_match "Resetting local clone as `#{build_directory}` already exists...", output
@@ -161,6 +169,8 @@ class CliBuildTest < CliTestCase
 
       SSHKit::Backend::Abstract.any_instance.expects(:execute)
         .with(:docker, :buildx, :build, "--output=type=registry", "--platform", "linux/amd64", "--builder", "kamal-local-docker-container", "-t", "dhh/app:999", "-t", "dhh/app:latest", "--label", "service=\"app\"", "--file", "Dockerfile", ".")
+
+      stub_no_uncommitted_git_changes
 
       run_command("push").tap do |output|
         assert_match /WARN Missing compatible builder, so creating a new one first/, output
