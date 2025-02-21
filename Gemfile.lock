@@ -48,8 +48,6 @@ GEM
     ast (2.4.2)
     base64 (0.2.0)
     bcrypt_pbkdf (1.1.1)
-    bcrypt_pbkdf (1.1.1-arm64-darwin)
-    bcrypt_pbkdf (1.1.1-x86_64-darwin)
     benchmark (0.4.0)
     bigdecimal (3.1.8)
     builder (3.3.0)
@@ -84,11 +82,15 @@ GEM
     net-sftp (4.0.0)
       net-ssh (>= 5.0.0, < 8.0.0)
     net-ssh (7.3.0)
-    nokogiri (1.17.2-arm64-darwin)
+    nokogiri (1.18.3-aarch64-linux-musl)
       racc (~> 1.4)
-    nokogiri (1.17.2-x86_64-darwin)
+    nokogiri (1.18.3-arm64-darwin)
       racc (~> 1.4)
-    nokogiri (1.17.2-x86_64-linux)
+    nokogiri (1.18.3-x86_64-darwin)
+      racc (~> 1.4)
+    nokogiri (1.18.3-x86_64-linux-gnu)
+      racc (~> 1.4)
+    nokogiri (1.18.3-x86_64-linux-musl)
       racc (~> 1.4)
     ostruct (0.6.1)
     parallel (1.26.3)
@@ -177,9 +179,11 @@ GEM
     zeitwerk (2.7.1)
 
 PLATFORMS
+  aarch64-linux-musl
   arm64-darwin
   x86_64-darwin
   x86_64-linux
+  x86_64-linux-musl
 
 DEPENDENCIES
   debug
@@ -189,4 +193,4 @@ DEPENDENCIES
   rubocop-rails-omakase
 
 BUNDLED WITH
-   2.4.3
+   2.6.5
