@@ -5,9 +5,10 @@ class Kamal::Configuration::Ssh
 
   attr_reader :ssh_config
 
-  def initialize(config:)
+  def initialize(config:, secrets:)
     @ssh_config = config.raw_config.ssh || {}
-    validate! ssh_config
+    @secrets = secrets
+    validate! ssh_config, with: Kamal::Configuration::Validator::Ssh
   end
 
   def user
@@ -35,7 +36,7 @@ class Kamal::Configuration::Ssh
   end
 
   def key_data
-    ssh_config["key_data"]
+    lookup("key_data")
   end
 
   def options
@@ -47,11 +48,20 @@ class Kamal::Configuration::Ssh
   end
 
   private
+  attr_reader :secrets
     def logger
       LOGGER.tap { |logger| logger.level = log_level }
     end
 
     def log_level
       ssh_config.fetch("log_level", :fatal)
+    end
+
+    def lookup(key)
+      if ssh_config[key].is_a?(String)
+        secrets[ssh_config[key]]
+      else
+        ssh_config[key]
+      end
     end
 end

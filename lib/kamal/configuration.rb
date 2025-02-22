@@ -69,7 +69,7 @@ class Kamal::Configuration
 
     @logging = Logging.new(logging_config: @raw_config.logging)
     @proxy = Proxy.new(config: self, proxy_config: @raw_config.proxy || {})
-    @ssh = Ssh.new(config: self)
+    @ssh = Ssh.new(config: self, secrets: secrets)
     @sshkit = Sshkit.new(config: self)
 
     ensure_destination_if_required

@@ -58,8 +58,8 @@ ssh:
 
   # Key data
   #
-  # An array of strings, with each element of the array being
-  # a raw private key in PEM format.
+  # Can be a string (for secret lookup) or array with each
+  # element of the array being a raw private key in PEM format.
   key_data: [ "-----BEGIN OPENSSH PRIVATE KEY-----" ]
 
   # Config
