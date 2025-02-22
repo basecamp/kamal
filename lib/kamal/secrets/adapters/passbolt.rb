@@ -22,15 +22,15 @@ class Kamal::Secrets::Adapters::Passbolt < Kamal::Secrets::Adapters::Base
       secrets.each do |secret|
         parts = secret.split("/")
         secret_name = parts.last
-        
+
         if parts.size > 1
           # get the folder path without the secret name
           folder_path = parts[0..-2]
-          
+
           # find the most nested folder for this path
           current_folder = nil
           current_path = []
-          
+
           folder_path.each do |folder_name|
             current_path << folder_name
             matching_folders = folders.select { |f| get_folder_path(f, folders) == current_path.join("/") }
@@ -55,7 +55,7 @@ class Kamal::Secrets::Adapters::Passbolt < Kamal::Secrets::Adapters::Base
       missing_secrets = secret_names - found_names
       raise RuntimeError, "Could not find the following secrets in Passbolt: #{missing_secrets.join(", ")}" if missing_secrets.any?
 
-      items.to_h { |item| [item["name"], item["password"]] }
+      items.to_h { |item| [ item["name"], item["password"] ] }
     end
 
     def secrets_get_folders(secrets)
@@ -68,7 +68,7 @@ class Kamal::Secrets::Adapters::Passbolt < Kamal::Secrets::Adapters::Base
       return [] if folder_paths.empty?
 
       all_folders = []
-      
+
       # first get all top-level folders
       parent_folders = folder_paths.map(&:first).uniq
       filter_condition = "--filter '#{parent_folders.map { |name| "Name == #{name.shellescape.inspect}" }.join(" || ")}'"
@@ -81,7 +81,7 @@ class Kamal::Secrets::Adapters::Passbolt < Kamal::Secrets::Adapters::Base
       # get nested folders for each parent
       folder_paths.each do |path|
         next if path.size <= 1 # skip non-nested folders
-        
+
         parent = path[0]
         parent_folder = parent_folder_items.find { |f| f["name"] == parent }
         next unless parent_folder
@@ -95,7 +95,7 @@ class Kamal::Secrets::Adapters::Passbolt < Kamal::Secrets::Adapters::Base
 
           nested_folders = JSON.parse(fetch_nested)
           break if nested_folders.empty?
-          
+
           all_folders.concat(nested_folders)
           current_parent = nested_folders.first
         end
@@ -112,10 +112,10 @@ class Kamal::Secrets::Adapters::Passbolt < Kamal::Secrets::Adapters::Base
     def get_folder_path(folder, all_folders, path = [])
       path.unshift(folder["name"])
       return path.join("/") if folder["folder_parent_id"].to_s.empty?
-      
+
       parent = all_folders.find { |f| f["id"] == folder["folder_parent_id"] }
       return path.join("/") unless parent
-      
+
       get_folder_path(parent, all_folders, path)
     end
 
