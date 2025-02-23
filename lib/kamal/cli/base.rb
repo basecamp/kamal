@@ -1,5 +1,6 @@
 require "thor"
 require "kamal/sshkit_with_ext"
+require "active_support/core_ext/hash/keys"
 
 module Kamal::Cli
   class Base < Thor
@@ -17,7 +18,7 @@ module Kamal::Cli
     class_option :hosts, aliases: "-h", desc: "Run commands on these hosts instead of all (separate by comma, supports wildcards with *)"
     class_option :roles, aliases: "-r", desc: "Run commands on these roles instead of all (separate by comma, supports wildcards with *)"
 
-    class_option :config_file, aliases: "-c", default: "config/deploy.yml", desc: "Path to config file"
+    class_option :config_file, aliases: "-c", desc: "Path to config file. Default set in .kamal/options.yml. Fallback to config/deploy.yml"
     class_option :destination, aliases: "-d", desc: "Specify destination to be used for config file (staging -> deploy.staging.yml)"
 
     class_option :skip_hooks, aliases: "-H", type: :boolean, default: false, desc: "Don't run hooks"
@@ -51,13 +52,24 @@ module Kamal::Cli
           end
 
           commander.configure \
-            config_file: Pathname.new(File.expand_path(options[:config_file])),
+            config_file: Pathname.new(File.expand_path(option_with_default_from_file(:config_file) || "config/deploy.yml")),
             destination: options[:destination],
             version: options[:version]
 
           commander.specific_hosts    = options[:hosts]&.split(",")
           commander.specific_roles    = options[:roles]&.split(",")
           commander.specific_primary! if options[:primary]
+        end
+      end
+
+      def option_with_default_from_file(key)
+        options[key] || options_file_defaults[key]
+      end
+
+      def options_file_defaults
+        @options_file_defaults ||= begin
+          options_file = Pathname.new(File.expand_path(".kamal/options.yml"))
+          options_file.exist? ? YAML.load(File.read(options_file)).symbolize_keys : {}
         end
       end
 
