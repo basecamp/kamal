@@ -19,6 +19,14 @@ class Kamal::Configuration::Registry
     lookup("password")
   end
 
+  def local?
+    server&.match?("^localhost[:$]")
+  end
+
+  def local_port
+    local? ? (server.split(":").last.to_i || 80) : nil
+  end
+
   private
     attr_reader :registry_config, :secrets
 
