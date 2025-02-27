@@ -4,6 +4,7 @@ class Kamal::Cli::Build < Kamal::Cli::Base
   class BuildError < StandardError; end
 
   desc "deliver", "Build app and push app image to registry then pull image on servers"
+  option :skip_uncommitted_changes_check, type: :boolean, default: false, desc: "Skip uncommitted git changes check"
   def deliver
     invoke :push
     invoke :pull
@@ -11,6 +12,7 @@ class Kamal::Cli::Build < Kamal::Cli::Base
 
   desc "push", "Build and push app image to registry"
   option :output, type: :string, default: "registry", banner: "export_type", desc: "Exported type for the build result, and may be any exported type supported by 'buildx --output'."
+  option :skip_uncommitted_changes_check, type: :boolean, default: false, desc: "Skip uncommitted git changes check"
   def push
     cli = self
 
@@ -21,7 +23,12 @@ class Kamal::Cli::Build < Kamal::Cli::Base
 
     if KAMAL.config.builder.git_clone?
       if uncommitted_changes.present?
-        say "Building from a local git clone, so ignoring these uncommitted changes:\n #{uncommitted_changes}", :yellow
+        if options[:skip_uncommitted_changes_check]
+          say "Building from a local git clone, so ignoring these uncommitted changes:\n #{uncommitted_changes}", :yellow
+        else
+          say "Uncommitted changes detected - commit your changes first. To ignore uncommitted changes and deploy from latest git commit, use --skip-uncommitted-changes-check. Uncommitted changes:\n#{uncommitted_changes}", :red
+          raise BuildError, "Uncommitted changes detected"
+        end
       end
 
       run_locally do
