@@ -274,6 +274,13 @@ class CliAppTest < CliTestCase
     end
   end
 
+  test "exec without command fails" do
+    error = assert_raises(ArgumentError, "Exec requires a command to be specified") do
+      run_command("exec")
+    end
+    assert_equal 'No command provided. You must specify a command to execute.', error.message
+  end
+
   test "exec separate arguments" do
     run_command("exec", "ruby", " -v").tap do |output|
       assert_match "docker run --rm --network kamal --env-file .kamal/apps/app/env/roles/web.env --log-opt max-size=\"10m\" dhh/app:latest ruby -v", output
