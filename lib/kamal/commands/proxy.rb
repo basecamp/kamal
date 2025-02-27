@@ -1,9 +1,9 @@
 class Kamal::Commands::Proxy < Kamal::Commands::Base
-  delegate :argumentize, :optionize, to: Kamal::Utils
+  CONTAINER_NAME = "kamal-proxy"
 
   def run
     docker :run,
-      "--name", container_name,
+      "--name", CONTAINER_NAME,
       "--network", "kamal",
       "--detach",
       "--restart", "unless-stopped",
@@ -13,10 +13,10 @@ class Kamal::Commands::Proxy < Kamal::Commands::Base
   end
 
   def start
-    docker :container, :start, container_name
+    docker :container, :start, CONTAINER_NAME
   end
 
-  def stop(name: container_name)
+  def stop(name: CONTAINER_NAME)
     docker :container, :stop, name
   end
 
@@ -25,24 +25,24 @@ class Kamal::Commands::Proxy < Kamal::Commands::Base
   end
 
   def info
-    docker :ps, "--filter", "name=^#{container_name}$"
+    docker :ps, "--filter", "name=^#{CONTAINER_NAME}$"
   end
 
   def version
     pipe \
-      docker(:inspect, container_name, "--format '{{.Config.Image}}'"),
+      docker(:inspect, CONTAINER_NAME, "--format '{{.Config.Image}}'"),
       [ :cut, "-d:", "-f2" ]
   end
 
   def logs(timestamps: true, since: nil, lines: nil, grep: nil, grep_options: nil)
     pipe \
-      docker(:logs, container_name, ("--since #{since}" if since), ("--tail #{lines}" if lines), ("--timestamps" if timestamps), "2>&1"),
+      docker(:logs, CONTAINER_NAME, ("--since #{since}" if since), ("--tail #{lines}" if lines), ("--timestamps" if timestamps), "2>&1"),
       ("grep '#{grep}'#{" #{grep_options}" if grep_options}" if grep)
   end
 
   def follow_logs(host:, timestamps: true, grep: nil, grep_options: nil)
     run_over_ssh pipe(
-      docker(:logs, container_name, ("--timestamps" if timestamps), "--tail", "10", "--follow", "2>&1"),
+      docker(:logs, CONTAINER_NAME, ("--timestamps" if timestamps), "--tail", "10", "--follow", "2>&1"),
       (%(grep "#{grep}"#{" #{grep_options}" if grep_options}) if grep)
     ).join(" "), host: host
   end
@@ -80,8 +80,16 @@ class Kamal::Commands::Proxy < Kamal::Commands::Base
     remove_file config.proxy_options_file
   end
 
+  def deploy_service(name, proxy_config:, target:)
+    exec :deploy, name, *proxy_config.deploy_command_args(target: target)
+  end
+
+  def remove_service(name)
+    exec :remove, name
+  end
+
   private
-    def container_name
-      config.proxy_container_name
+    def exec(*command)
+      docker :exec, CONTAINER_NAME, "kamal-proxy", *command
     end
 end
