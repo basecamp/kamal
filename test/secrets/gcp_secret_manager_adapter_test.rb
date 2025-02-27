@@ -14,8 +14,7 @@ class GcpSecretManagerAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch unauthenticated" do
-    stub_ticks.with("gcloud --version 2> /dev/null")
-
+    stub_gcloud_version
     stub_mypassword
     stub_unauthenticated
 
@@ -129,7 +128,7 @@ class GcpSecretManagerAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch without CLI installed" do
-    stub_gcloud_version(succeed: false)
+    stub_gcloud_version(false)
 
     error = assert_raises RuntimeError do
       JSON.parse(shellunescape(run_command("fetch", "item1")))
@@ -148,12 +147,12 @@ class GcpSecretManagerAdapterTest < SecretAdapterTestCase
       end
     end
 
-    def stub_gcloud_version(succeed: true)
-      stub_ticks_with("gcloud --version 2> /dev/null", succeed: succeed)
+    def stub_gcloud_version(succeed = true)
+      stub_command_with("gcloud --version", succeed, :system)
     end
 
     def stub_authenticated
-      stub_ticks
+      stub_command
         .with("gcloud auth list --format=json")
         .returns(<<~JSON)
           [
@@ -166,11 +165,11 @@ class GcpSecretManagerAdapterTest < SecretAdapterTestCase
     end
 
     def stub_unauthenticated
-      stub_ticks
+      stub_command
         .with("gcloud auth list --format=json")
         .returns("[]")
 
-      stub_ticks
+      stub_command
         .with("gcloud auth login")
         .returns(<<~JSON)
           {
@@ -181,7 +180,7 @@ class GcpSecretManagerAdapterTest < SecretAdapterTestCase
     end
 
     def stub_mypassword
-      stub_ticks
+      stub_command
         .with("gcloud secrets versions access latest --secret=mypassword --format=json")
         .returns(<<~JSON)
           {
@@ -200,7 +199,7 @@ class GcpSecretManagerAdapterTest < SecretAdapterTestCase
         { data: "c2VjcmV0Mg==", checksum: 2101741365 },
         { data: "c2VjcmV0Mw==", checksum: 2402124854 }
       ]
-      stub_ticks
+      stub_command
         .with("gcloud secrets versions access #{version} " \
               "--secret=item#{n + 1}" \
               "#{" --project=#{project}" if project}" \
