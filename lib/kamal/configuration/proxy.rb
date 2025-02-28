@@ -1,8 +1,13 @@
 class Kamal::Configuration::Proxy
   include Kamal::Configuration::Validation
 
+  HTTP_PORT = 80
+  HTTPS_PORT = 443
+  LOG_MAX_SIZE = "10m"
+  MINIMUM_VERSION = "v0.8.4"
   DEFAULT_LOG_REQUEST_HEADERS = [ "Cache-Control", "Last-Modified", "User-Agent" ]
-  CONTAINER_NAME = "kamal-proxy"
+  DEFAULT_CONTAINER_NAME = "kamal-proxy"
+  DEFAULT_IMAGE = "basecamp/kamal-proxy:#{MINIMUM_VERSION}"
 
   delegate :argumentize, :optionize, to: Kamal::Utils
 
@@ -12,6 +17,10 @@ class Kamal::Configuration::Proxy
     @config = config
     @proxy_config = proxy_config
     validate! @proxy_config, with: Kamal::Configuration::Validator::Proxy, context: context
+  end
+
+  def container_name
+    DEFAULT_CONTAINER_NAME
   end
 
   def app_port
@@ -47,6 +56,34 @@ class Kamal::Configuration::Proxy
     }.compact
   end
 
+  def directory
+    File.join config.run_directory, "proxy"
+  end
+
+  def options_file
+    File.join directory, "options"
+  end
+
+  def publish_args(http_port, https_port, bind_ips = nil)
+    ensure_valid_bind_ips(bind_ips)
+
+    (bind_ips || [ nil ]).map do |bind_ip|
+      bind_ip = format_bind_ip(bind_ip)
+      publish_http = [ bind_ip, http_port, HTTP_PORT ].compact.join(":")
+      publish_https = [ bind_ip, https_port, HTTPS_PORT ].compact.join(":")
+
+      argumentize "--publish", [ publish_http, publish_https ]
+    end.join(" ")
+  end
+
+  def logging_args(max_size)
+    argumentize "--log-opt", "max-size=#{max_size}" if max_size.present?
+  end
+
+  def options_default
+    [ *publish_args(HTTP_PORT, HTTPS_PORT), *logging_args(LOG_MAX_SIZE), DEFAULT_IMAGE ]
+  end
+
   def deploy_command_args(target:)
     optionize ({ target: "#{target}:#{app_port}" }).merge(deploy_options), with: "="
   end
@@ -58,5 +95,23 @@ class Kamal::Configuration::Proxy
   private
     def seconds_duration(value)
       value ? "#{value}s" : nil
+    end
+
+    def ensure_valid_bind_ips(bind_ips)
+      bind_ips.present? && bind_ips.each do |ip|
+        next if ip =~ Resolv::IPv4::Regex || ip =~ Resolv::IPv6::Regex
+        raise ArgumentError, "Invalid publish IP address: #{ip}"
+      end
+
+      true
+    end
+
+    def format_bind_ip(ip)
+      # Ensure IPv6 address inside square brackets - e.g. [::1]
+      if ip =~ Resolv::IPv6::Regex && ip !~ /\[.*\]/
+        "[#{ip}]"
+      else
+        ip
+      end
     end
 end
