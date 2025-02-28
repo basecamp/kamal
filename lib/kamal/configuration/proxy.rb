@@ -64,8 +64,16 @@ class Kamal::Configuration::Proxy
     File.join directory, "options"
   end
 
-  def publish_args(http_port, https_port)
-    argumentize "--publish", [ "#{http_port}:#{HTTP_PORT}", "#{https_port}:#{HTTPS_PORT}" ]
+  def publish_args(http_port, https_port, bind_ips = nil)
+    ensure_valid_bind_ips(bind_ips)
+
+    (bind_ips || [ nil ]).map do |bind_ip|
+      bind_ip = format_bind_ip(bind_ip)
+      publish_http = [ bind_ip, http_port, HTTP_PORT ].compact.join(":")
+      publish_https = [ bind_ip, https_port, HTTPS_PORT ].compact.join(":")
+
+      argumentize "--publish", [ publish_http, publish_https ]
+    end.join(" ")
   end
 
   def logging_args(max_size)
@@ -87,5 +95,23 @@ class Kamal::Configuration::Proxy
   private
     def seconds_duration(value)
       value ? "#{value}s" : nil
+    end
+
+    def ensure_valid_bind_ips(bind_ips)
+      bind_ips.present? && bind_ips.each do |ip|
+        next if ip =~ Resolv::IPv4::Regex || ip =~ Resolv::IPv6::Regex
+        raise ArgumentError, "Invalid publish IP address: #{ip}"
+      end
+
+      true
+    end
+
+    def format_bind_ip(ip)
+      # Ensure IPv6 address inside square brackets - e.g. [::1]
+      if ip =~ Resolv::IPv6::Regex && ip !~ /\[.*\]/
+        "[#{ip}]"
+      else
+        ip
+      end
     end
 end

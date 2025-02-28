@@ -34,6 +34,12 @@ module Kamal::Commands
       [ :rm, path ]
     end
 
+    def ensure_docker_installed
+      combine \
+        ensure_local_docker_installed,
+        ensure_local_buildx_installed
+    end
+
     private
       def combine(*commands, by: "&&")
         commands
@@ -103,6 +109,14 @@ module Kamal::Commands
         config.ssh.keys&.map do |key|
           " -i #{key}"
         end
+      end
+
+      def ensure_local_docker_installed
+        docker "--version"
+      end
+
+      def ensure_local_buildx_installed
+        docker :buildx, "version"
       end
   end
 end

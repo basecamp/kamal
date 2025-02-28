@@ -24,4 +24,14 @@ module Kamal::Git
   def root
     `git rev-parse --show-toplevel`.strip
   end
+
+  # returns an array of relative path names of files with uncommitted changes
+  def uncommitted_files
+    `git ls-files --modified`.lines.map(&:strip)
+  end
+
+  # returns an array of relative path names of untracked files, including gitignored files
+  def untracked_files
+    `git ls-files --others`.lines.map(&:strip)
+  end
 end

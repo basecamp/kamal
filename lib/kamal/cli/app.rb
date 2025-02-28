@@ -16,10 +16,18 @@ class Kamal::Cli::App < Kamal::Cli::Base
         # Primary hosts and roles are returned first, so they can open the barrier
         barrier = Kamal::Cli::Healthcheck::Barrier.new
 
-        on(KAMAL.hosts, **KAMAL.boot_strategy) do |host|
-          KAMAL.roles_on(host).each do |role|
-            Kamal::Cli::App::Boot.new(host, role, self, version, barrier).run
+        host_boot_groups.each do |hosts|
+          host_list = Array(hosts).join(",")
+          run_hook "pre-app-boot", hosts: host_list
+
+          on(hosts) do |host|
+            KAMAL.roles_on(host).each do |role|
+              Kamal::Cli::App::Boot.new(host, role, self, version, barrier).run
+            end
           end
+
+          run_hook "post-app-boot", hosts: host_list
+          sleep KAMAL.config.boot.wait if KAMAL.config.boot.wait
         end
 
         # Tag once the app booted on all hosts
@@ -192,7 +200,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
   option :since, aliases: "-s", desc: "Show lines since timestamp (e.g. 2013-01-02T13:23:37Z) or relative (e.g. 42m for 42 minutes)"
   option :lines, type: :numeric, aliases: "-n", desc: "Number of lines to show from each server"
   option :grep, aliases: "-g", desc: "Show lines with grep match only (use this to fetch specific requests by id)"
-  option :grep_options, aliases: "-o", desc: "Additional options supplied to grep"
+  option :grep_options, desc: "Additional options supplied to grep"
   option :follow, aliases: "-f", desc: "Follow log on primary server (or specific host set by --hosts)"
   option :skip_timestamps, type: :boolean, aliases: "-T", desc: "Skip appending timestamps to logging output"
   option :container_id, desc: "Docker container ID to fetch logs"
@@ -339,5 +347,9 @@ class Kamal::Cli::App < Kamal::Cli::Base
       else
         yield
       end
+    end
+
+    def host_boot_groups
+      KAMAL.config.boot.limit ? KAMAL.hosts.each_slice(KAMAL.config.boot.limit).to_a : [ KAMAL.hosts ]
     end
 end

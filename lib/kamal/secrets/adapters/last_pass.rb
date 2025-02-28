@@ -11,7 +11,8 @@ class Kamal::Secrets::Adapters::LastPass < Kamal::Secrets::Adapters::Base
       `lpass status --color never`.strip == "Logged in as #{account}."
     end
 
-    def fetch_secrets(secrets, account:, session:)
+    def fetch_secrets(secrets, from:, account:, session:)
+      secrets = prefixed_secrets(secrets, from: from)
       items = `lpass show #{secrets.map(&:shellescape).join(" ")} --json`
       raise RuntimeError, "Could not read #{secrets} from LastPass" unless $?.success?
 
@@ -23,7 +24,7 @@ class Kamal::Secrets::Adapters::LastPass < Kamal::Secrets::Adapters::Base
         end
 
         if (missing_items = secrets - results.keys).any?
-          raise RuntimeError, "Could not find #{missing_items.join(", ")} in LassPass"
+          raise RuntimeError, "Could not find #{missing_items.join(", ")} in LastPass"
         end
       end
     end

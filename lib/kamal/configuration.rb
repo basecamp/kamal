@@ -32,7 +32,7 @@ class Kamal::Configuration
         if file.exist?
           # Newer Psych doesn't load aliases by default
           load_method = YAML.respond_to?(:unsafe_load) ? :unsafe_load : :load
-          YAML.send(load_method, ERB.new(IO.read(file)).result).symbolize_keys
+          YAML.send(load_method, ERB.new(File.read(file)).result).symbolize_keys
         else
           raise "Configuration file not found in #{file}"
         end
@@ -54,7 +54,7 @@ class Kamal::Configuration
 
     # Eager load config to validate it, these are first as they have dependencies later on
     @servers = Servers.new(config: self)
-    @registry = Registry.new(config: self)
+    @registry = Registry.new(config: @raw_config, secrets: secrets)
 
     @accessories = @raw_config.accessories&.keys&.collect { |name| Accessory.new(name, config: self) } || []
     @aliases = @raw_config.aliases&.keys&.to_h { |name| [ name, Alias.new(name, config: self) ] } || {}

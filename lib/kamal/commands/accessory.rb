@@ -4,10 +4,8 @@ class Kamal::Commands::Accessory < Kamal::Commands::Base
   attr_reader :accessory_config
   delegate :service_name, :image, :hosts, :port, :files, :directories, :cmd,
            :network_args, :publish_args, :env_args, :volume_args, :label_args, :option_args,
-           :secrets_io, :secrets_path, :env_directory, :proxy, :running_proxy?,
+           :secrets_io, :secrets_path, :env_directory, :proxy, :running_proxy?, :registry,
            to: :accessory_config
-  delegate :proxy_container_name, to: :config
-
 
   def initialize(config, name:)
     super(config)
@@ -42,7 +40,6 @@ class Kamal::Commands::Accessory < Kamal::Commands::Base
     docker :ps, *service_filter
   end
 
-
   def logs(timestamps: true, since: nil, lines: nil, grep: nil, grep_options: nil)
     pipe \
       docker(:logs, service_name, (" --since #{since}" if since), (" --tail #{lines}" if lines), ("--timestamps" if timestamps), "2>&1"),
@@ -55,7 +52,6 @@ class Kamal::Commands::Accessory < Kamal::Commands::Base
         docker(:logs, service_name, ("--timestamps" if timestamps), "--tail", "10", "--follow", "2>&1"),
         (%(grep "#{grep}"#{" #{grep_options}" if grep_options}) if grep)
   end
-
 
   def execute_in_existing_container(*command, interactive: false)
     docker :exec,
@@ -86,7 +82,6 @@ class Kamal::Commands::Accessory < Kamal::Commands::Base
   def run_over_ssh(command)
     super command, host: hosts.first
   end
-
 
   def ensure_local_file_present(local_file)
     if !local_file.is_a?(StringIO) && !Pathname.new(local_file).exist?

@@ -4,13 +4,20 @@ require "active_support/core_ext/object/blank"
 
 class Kamal::Commander
   attr_accessor :verbosity, :holding_lock, :connected
+  attr_reader :specific_roles, :specific_hosts
   delegate :hosts, :roles, :primary_host, :primary_role, :roles_on, :proxy_hosts, :accessory_hosts, to: :specifics
 
   def initialize
+    reset
+  end
+
+  def reset
     self.verbosity = :info
     self.holding_lock = false
     self.connected = false
-    @specifics = nil
+    @specifics = @specific_roles = @specific_hosts = nil
+    @config = @config_kwargs = nil
+    @commands = {}
   end
 
   def config
@@ -27,8 +34,6 @@ class Kamal::Commander
   def configured?
     @config || @config_kwargs
   end
-
-  attr_reader :specific_roles, :specific_hosts
 
   def specific_primary!
     @specifics = nil
@@ -76,11 +81,6 @@ class Kamal::Commander
     config.accessories&.collect(&:name) || []
   end
 
-  def accessories_on(host)
-    config.accessories.select { |accessory| accessory.hosts.include?(host.to_s) }.map(&:name)
-  end
-
-
   def app(role: nil, host: nil)
     Kamal::Commands::App.new(config, role: role, host: host)
   end
@@ -94,41 +94,40 @@ class Kamal::Commander
   end
 
   def builder
-    @builder ||= Kamal::Commands::Builder.new(config)
+    @commands[:builder] ||= Kamal::Commands::Builder.new(config)
   end
 
   def docker
-    @docker ||= Kamal::Commands::Docker.new(config)
+    @commands[:docker] ||= Kamal::Commands::Docker.new(config)
   end
 
   def hook
-    @hook ||= Kamal::Commands::Hook.new(config)
+    @commands[:hook] ||= Kamal::Commands::Hook.new(config)
   end
 
   def lock
-    @lock ||= Kamal::Commands::Lock.new(config)
+    @commands[:lock] ||= Kamal::Commands::Lock.new(config)
   end
 
   def proxy
-    @proxy ||= Kamal::Commands::Proxy.new(config)
+    @commands[:proxy] ||= Kamal::Commands::Proxy.new(config)
   end
 
   def prune
-    @prune ||= Kamal::Commands::Prune.new(config)
+    @commands[:prune] ||= Kamal::Commands::Prune.new(config)
   end
 
   def registry
-    @registry ||= Kamal::Commands::Registry.new(config)
+    @commands[:registry] ||= Kamal::Commands::Registry.new(config)
   end
 
   def server
-    @server ||= Kamal::Commands::Server.new(config)
+    @commands[:server] ||= Kamal::Commands::Server.new(config)
   end
 
   def alias(name)
     config.aliases[name]
   end
-
 
   def with_verbosity(level)
     old_level = self.verbosity
@@ -140,14 +139,6 @@ class Kamal::Commander
   ensure
     self.verbosity = old_level
     SSHKit.config.output_verbosity = old_level
-  end
-
-  def boot_strategy
-    if config.boot.limit.present?
-      { in: :groups, limit: config.boot.limit, wait: config.boot.wait }
-    else
-      {}
-    end
   end
 
   def holding_lock?

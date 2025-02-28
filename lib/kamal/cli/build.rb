@@ -5,15 +5,16 @@ class Kamal::Cli::Build < Kamal::Cli::Base
 
   desc "deliver", "Build app and push app image to registry then pull image on servers"
   def deliver
-    push
-    pull
+    invoke :push
+    invoke :pull
   end
 
   desc "push", "Build and push app image to registry"
+  option :output, type: :string, default: "registry", banner: "export_type", desc: "Exported type for the build result, and may be any exported type supported by 'buildx --output'."
   def push
     cli = self
 
-    verify_local_dependencies
+    ensure_docker_installed
     run_hook "pre-build"
 
     uncommitted_changes = Kamal::Git.uncommitted_changes
@@ -49,7 +50,7 @@ class Kamal::Cli::Build < Kamal::Cli::Base
         end
 
         # Get the command here to ensure the Dir.chdir doesn't interfere with it
-        push = KAMAL.builder.push
+        push = KAMAL.builder.push(cli.options[:output])
 
         KAMAL.with_verbosity(:debug) do
           Dir.chdir(KAMAL.config.builder.build_directory) { execute *push }
@@ -108,21 +109,42 @@ class Kamal::Cli::Build < Kamal::Cli::Base
     end
   end
 
-  private
-    def verify_local_dependencies
-      run_locally do
-        begin
-          execute *KAMAL.builder.ensure_local_dependencies_installed
-        rescue SSHKit::Command::Failed => e
-          build_error = e.message =~ /command not found/ ?
-            "Docker is not installed locally" :
-            "Docker buildx plugin is not installed locally"
+  desc "dev", "Build using the working directory, tag it as dirty, and push to local image store."
+  option :output, type: :string, default: "docker", banner: "export_type", desc: "Exported type for the build result, and may be any exported type supported by 'buildx --output'."
+  def dev
+    cli = self
 
-          raise BuildError, build_error
+    ensure_docker_installed
+
+    docker_included_files = Set.new(Kamal::Docker.included_files)
+    git_uncommitted_files = Set.new(Kamal::Git.uncommitted_files)
+    git_untracked_files = Set.new(Kamal::Git.untracked_files)
+
+    docker_uncommitted_files = docker_included_files & git_uncommitted_files
+    if docker_uncommitted_files.any?
+      say "WARNING: Files with uncommitted changes will be present in the dev container:", :yellow
+      docker_uncommitted_files.sort.each { |f| say "  #{f}", :yellow }
+      say
+    end
+
+    docker_untracked_files = docker_included_files & git_untracked_files
+    if docker_untracked_files.any?
+      say "WARNING: Untracked files will be present in the dev container:", :yellow
+      docker_untracked_files.sort.each { |f| say "  #{f}", :yellow }
+      say
+    end
+
+    with_env(KAMAL.config.builder.secrets) do
+      run_locally do
+        build = KAMAL.builder.push(cli.options[:output], tag_as_dirty: true)
+        KAMAL.with_verbosity(:debug) do
+          execute(*build)
         end
       end
     end
+  end
 
+  private
     def connect_to_remote_host(remote_host)
       remote_uri = URI.parse(remote_host)
       if remote_uri.scheme == "ssh"

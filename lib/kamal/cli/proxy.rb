@@ -22,8 +22,9 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
   end
 
   desc "boot_config <set|get|reset>", "Manage kamal-proxy boot configuration"
-  option :image, type: :string, default: Kamal::Configuration::Proxy::DEFAULT_IMAGE, desc: "Name of the image"
+  option :image, type: :string, default: Kamal::Configuration::Proxy::DEFAULT_IMAGE, desc: "Repository of the image"
   option :publish, type: :boolean, default: true, desc: "Publish the proxy ports on the host"
+  option :publish_host_ip, type: :string, repeatable: true, default: nil, desc: "Host IP address to bind HTTP/HTTPS traffic to. Defaults to all interfaces"
   option :http_port, type: :numeric, default: Kamal::Configuration::Proxy::HTTP_PORT, desc: "HTTP port to publish on the host"
   option :https_port, type: :numeric, default: Kamal::Configuration::Proxy::HTTPS_PORT, desc: "HTTPS port to publish on the host"
   option :log_max_size, type: :string, default: Kamal::Configuration::Proxy::LOG_MAX_SIZE, desc: "Max size of proxy logs"
@@ -32,7 +33,7 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
     case subcommand
     when "set"
       boot_options = [
-        *(KAMAL.config.proxy.publish_args(options[:http_port], options[:https_port]) if options[:publish]),
+        *(KAMAL.config.proxy.publish_args(options[:http_port], options[:https_port], options[:publish_host_ip]) if options[:publish]),
         *(KAMAL.config.proxy.logging_args(options[:log_max_size])),
         *options[:docker_options].map { |option| "--#{option}" },
         options[:image]
@@ -68,9 +69,6 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
           on(hosts) do |host|
             execute *KAMAL.auditor.record("Rebooted proxy"), verbosity: :debug
             execute *KAMAL.registry.login
-
-            "Stopping and removing Traefik on #{host}, if running..."
-            execute *KAMAL.proxy.cleanup_traefik
 
             "Stopping and removing kamal-proxy on #{host}, if running..."
             execute *KAMAL.proxy.stop, raise_on_non_zero_exit: false

@@ -1,0 +1,3 @@
+#!/bin/sh
+echo "Booted app on ${KAMAL_HOSTS}..."
+mkdir -p /tmp/${TEST_ID} && touch /tmp/${TEST_ID}/post-app-boot

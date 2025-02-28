@@ -5,7 +5,7 @@ module Kamal::Cli
   class Base < Thor
     include SSHKit::DSL
 
-    def self.exit_on_failure?() false end
+    def self.exit_on_failure?() true end
     def self.dynamic_command_class() Kamal::Cli::Alias::Command end
 
     class_option :verbose, type: :boolean, aliases: "-v", desc: "Detailed logging"
@@ -30,6 +30,7 @@ module Kamal::Cli
       else
         super
       end
+
       initialize_commander unless KAMAL.configured?
     end
 
@@ -193,6 +194,20 @@ module Kamal::Cli
       ensure
         ENV.clear
         ENV.update(current_env)
+      end
+
+      def ensure_docker_installed
+        run_locally do
+          begin
+            execute *KAMAL.builder.ensure_docker_installed
+          rescue SSHKit::Command::Failed => e
+            error = e.message =~ /command not found/ ?
+              "Docker is not installed locally" :
+              "Docker buildx plugin is not installed locally"
+
+            raise DependencyError, error
+          end
+        end
       end
   end
 end

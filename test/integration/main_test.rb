@@ -8,19 +8,19 @@ class MainTest < IntegrationTest
 
     kamal :deploy
     assert_app_is_up version: first_version
-    assert_hooks_ran "pre-connect", "pre-build", "pre-deploy", "post-deploy"
+    assert_hooks_ran "pre-connect", "pre-build", "pre-deploy", "pre-app-boot", "post-app-boot", "post-deploy"
     assert_envs version: first_version
 
     second_version = update_app_rev
 
     kamal :redeploy
     assert_app_is_up version: second_version
-    assert_hooks_ran "pre-connect", "pre-build", "pre-deploy", "post-deploy"
+    assert_hooks_ran "pre-connect", "pre-build", "pre-deploy", "pre-app-boot", "post-app-boot", "post-deploy"
 
     assert_accumulated_assets first_version, second_version
 
     kamal :rollback, first_version
-    assert_hooks_ran "pre-connect", "pre-deploy", "post-deploy"
+    assert_hooks_ran "pre-connect", "pre-deploy", "pre-app-boot", "post-app-boot", "post-deploy"
     assert_app_is_up version: first_version
 
     details = kamal :details, capture: true
@@ -90,9 +90,9 @@ class MainTest < IntegrationTest
   test "setup and remove" do
     @app = "app_with_roles"
 
-    kamal :proxy, :set_config,
+    kamal :proxy, :boot_config, "set",
       "--publish=false",
-      "--options=label=traefik.http.services.kamal_proxy.loadbalancer.server.scheme=http",
+      "--docker-options=label=traefik.http.services.kamal_proxy.loadbalancer.server.scheme=http",
       "label=traefik.http.routers.kamal_proxy.rule=PathPrefix\\\(\\\`/\\\`\\\)",
       "label=traefik.http.routers.kamal_proxy.priority=2"
 

@@ -40,8 +40,9 @@ class CliTestCase < ActiveSupport::TestCase
         .with(:docker, :buildx, :inspect, "kamal-local-docker-container")
     end
 
-    def assert_hook_ran(hook, output, version:, service_version:, hosts:, command:, subcommand: nil, runtime: false, secrets: false)
-      assert_match %r{usr/bin/env\s\.kamal/hooks/#{hook}}, output
+    def assert_hook_ran(hook, output, count: 1)
+      regexp = ([ "/usr/bin/env .kamal/hooks/#{hook}" ] * count).join(".*")
+      assert_match /#{regexp}/m, output
     end
 
     def with_argv(*argv)
@@ -50,5 +51,18 @@ class CliTestCase < ActiveSupport::TestCase
       yield
     ensure
       ARGV.replace(old_argv)
+    end
+
+    def with_build_directory
+      build_directory = File.join Dir.tmpdir, "kamal-clones", "app-#{pwd_sha}", "kamal"
+      FileUtils.mkdir_p build_directory
+      FileUtils.touch File.join build_directory, "Dockerfile"
+      yield build_directory + "/"
+    ensure
+      FileUtils.rm_rf build_directory
+    end
+
+    def pwd_sha
+      Digest::SHA256.hexdigest(Dir.pwd)[0..12]
     end
 end
