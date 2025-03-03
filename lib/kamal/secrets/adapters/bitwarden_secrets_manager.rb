@@ -57,7 +57,7 @@ class Kamal::Secrets::Adapters::BitwardenSecretsManager < Kamal::Secrets::Adapte
     end
 
     def login(account)
-      run_command("run 'echo OK'")
+      run_command("project list")
       raise RuntimeError, "Could not authenticate to Bitwarden Secrets Manager. Did you set a valid access token?" unless $?.success?
     end
 
