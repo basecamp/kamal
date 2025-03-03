@@ -18,5 +18,4 @@ class Kamal::Configuration::Validator::Ssh < Kamal::Configuration::Validator
       error "should be a string (for secret lookup) or an array"
     end
   end
-
 end
