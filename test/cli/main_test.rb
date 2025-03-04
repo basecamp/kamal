@@ -43,7 +43,7 @@ class CliMainTest < CliTestCase
 
   test "deploy" do
     with_test_secrets("secrets" => "DB_PASSWORD=secret") do
-      invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false, "verbose" => true }
+      invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false, "skip_uncommitted_changes_check" => false, "verbose" => true }
 
       Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:registry:login", [], invoke_options.merge(skip_local: false))
       Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:deliver", [], invoke_options)
@@ -68,7 +68,7 @@ class CliMainTest < CliTestCase
   end
 
   test "deploy with skip_push" do
-    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false }
+    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false, "skip_uncommitted_changes_check" => false }
 
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:registry:login", [], invoke_options.merge(skip_local: true))
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:pull", [], invoke_options)
@@ -81,6 +81,45 @@ class CliMainTest < CliTestCase
       assert_match /Acquiring the deploy lock/, output
       assert_match /Log into image registry/, output
       assert_match /Pull app image/, output
+      assert_match /Ensure kamal-proxy is running/, output
+      assert_match /Detect stale containers/, output
+      assert_match /Prune old containers and images/, output
+      assert_match /Releasing the deploy lock/, output
+    end
+  end
+
+  test "deploy with uncommitted git changes" do
+    Kamal::Git.stubs(:uncommitted_changes).returns("M   file\n")
+
+    with_argv([ "deploy", "-c", "test/fixtures/deploy_simple.yml" ]) do
+      output = capture(:stdout) do
+        begin
+          Kamal::Cli::Main.start
+        rescue Kamal::Cli::Build::BuildError => e
+          @raised_error = e
+        end
+      end
+      assert_match /Uncommitted changes detected - commit your changes first. To ignore uncommitted changes and deploy from latest git commit, use --skip-uncommitted-changes-check. Uncommitted changes:\nM   file/, output
+    end
+    assert_equal Kamal::Cli::Build::BuildError, @raised_error.class
+    assert_equal "Uncommitted changes detected", @raised_error.message
+  end
+
+  test "deploy with uncommitted git changes and skip_uncommitted_changes_check" do
+    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false, "skip_uncommitted_changes_check" => true }
+
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:registry:login", [], invoke_options.merge(skip_local: false))
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:deliver", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:proxy:boot", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true))
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:boot", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:prune:all", [], invoke_options)
+
+    Kamal::Git.stubs(:uncommitted_changes).returns("M   file\n")
+
+    run_command("deploy", "--skip-uncommitted-changes-check").tap do |output|
+      assert_match /Acquiring the deploy lock/, output
+      assert_match /Log into image registry/, output
       assert_match /Ensure kamal-proxy is running/, output
       assert_match /Detect stale containers/, output
       assert_match /Prune old containers and images/, output
@@ -117,6 +156,8 @@ class CliMainTest < CliTestCase
       .returns("")
       .at_least_once
 
+    stub_no_uncommitted_git_changes
+
     assert_raises(Kamal::Cli::LockError) do
       run_command("deploy")
     end
@@ -148,13 +189,15 @@ class CliMainTest < CliTestCase
       .returns("")
       .at_least_once
 
+    stub_no_uncommitted_git_changes
+
     assert_raises(SSHKit::Runner::ExecuteError) do
       run_command("deploy")
     end
   end
 
   test "deploy errors during outside section leave remove lock" do
-    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false, :skip_local => false }
+    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false, "skip_uncommitted_changes_check" => false, :skip_local => false }
 
     Kamal::Cli::Main.any_instance.expects(:invoke)
       .with("kamal:cli:registry:login", [], invoke_options.merge(skip_local: false))
@@ -168,7 +211,7 @@ class CliMainTest < CliTestCase
   end
 
   test "deploy with skipped hooks" do
-    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => true }
+    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => true, "skip_uncommitted_changes_check" => false }
 
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:registry:login", [], invoke_options.merge(skip_local: false))
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:deliver", [], invoke_options)
@@ -183,7 +226,7 @@ class CliMainTest < CliTestCase
   end
 
   test "deploy with missing secrets" do
-    invoke_options = { "config_file" => "test/fixtures/deploy_with_secrets.yml", "version" => "999", "skip_hooks" => false }
+    invoke_options = { "config_file" => "test/fixtures/deploy_with_secrets.yml", "version" => "999", "skip_hooks" => false, "skip_uncommitted_changes_check" => false }
 
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:registry:login", [], invoke_options.merge(skip_local: false))
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:deliver", [], invoke_options)
