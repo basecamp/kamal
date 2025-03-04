@@ -18,7 +18,7 @@ class Kamal::Configuration::Env
   end
 
   def secrets_io
-    Kamal::EnvFile.new(secret_keys.to_h { |key| [ key, secrets[key] ] }).to_io
+    Kamal::EnvFile.new(secrets_hash).to_io
   end
 
   def merge(other)
@@ -26,4 +26,12 @@ class Kamal::Configuration::Env
       config: { "clear" => clear.merge(other.clear), "secret" => secret_keys | other.secret_keys },
       secrets: secrets
   end
+
+  private
+    def secrets_hash
+      secret_keys.to_h do |key|
+        key_name, key_aliased_to = key.split(":")
+        [ key_name, secrets[key_aliased_to || key_name] ]
+      end
+    end
 end
