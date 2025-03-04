@@ -278,7 +278,7 @@ class CliAppTest < CliTestCase
     error = assert_raises(ArgumentError, "Exec requires a command to be specified") do
       run_command("exec")
     end
-    assert_equal 'No command provided. You must specify a command to execute.', error.message
+    assert_equal "No command provided. You must specify a command to execute.", error.message
   end
 
   test "exec separate arguments" do
