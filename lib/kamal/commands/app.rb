@@ -1,5 +1,5 @@
 class Kamal::Commands::App < Kamal::Commands::Base
-  include Assets, Containers, Execution, Images, Logging, Proxy
+  include Assets, Containers, Execution, Images, Logging
 
   ACTIVE_DOCKER_STATUSES = [ :running, :restarting ]
 
@@ -50,7 +50,6 @@ class Kamal::Commands::App < Kamal::Commands::Base
     docker :ps, *container_filter_args
   end
 
-
   def current_running_container_id
     current_running_container(format: "--quiet")
   end
@@ -73,6 +72,14 @@ class Kamal::Commands::App < Kamal::Commands::Base
 
   def ensure_env_directory
     make_directory role.env_directory
+  end
+
+  def deploy(target:)
+    KAMAL.proxy.deploy_service(role.container_prefix, proxy_config: role.proxy, target: target)
+  end
+
+  def remove
+    KAMAL.proxy.remove_service(role.container_prefix)
   end
 
   private
