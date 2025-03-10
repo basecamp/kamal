@@ -2,14 +2,21 @@ class Kamal::Commands::Proxy < Kamal::Commands::Base
   delegate :argumentize, :optionize, to: Kamal::Utils
 
   def run
-    docker :run,
-      "--name", container_name,
-      "--network", "kamal",
-      "--detach",
-      "--restart", "unless-stopped",
-      "--volume", "kamal-proxy-config:/home/kamal-proxy/.config/kamal-proxy",
-      "\$\(#{get_boot_options.join(" ")}\)",
-      config.proxy_image
+    shell \
+      chain \
+        boot_options,
+        eval(
+          docker(
+            :run,
+            "--name", container_name,
+            "--network", "kamal",
+            "--detach",
+            "--restart", "unless-stopped",
+            "--volume", "kamal-proxy-config:/home/kamal-proxy/.config/kamal-proxy",
+            "\$OPTIONS",
+            config.proxy_image
+          )
+        )
   end
 
   def start
@@ -70,6 +77,10 @@ class Kamal::Commands::Proxy < Kamal::Commands::Base
 
   def remove_proxy_directory
     remove_directory config.proxy_directory
+  end
+
+  def boot_options
+    "OPTIONS=$(cat #{config.proxy_options_file} 2> /dev/null || echo \"#{config.proxy_options_default.join(" ")}\")"
   end
 
   def get_boot_options

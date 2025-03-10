@@ -76,6 +76,10 @@ module Kamal::Commands
         [ :sh, "-c", "'#{command.flatten.join(" ").gsub("'", "'\\\\''")}'" ]
       end
 
+      def eval(*args)
+        [ :eval, *args ]
+      end
+
       def docker(*args)
         args.compact.unshift :docker
       end
