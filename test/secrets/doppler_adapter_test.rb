@@ -2,14 +2,14 @@ require "test_helper"
 
 class DopplerAdapterTest < SecretAdapterTestCase
   setup do
-    `true` # Ensure $? is 0
+    `exit 0` # Ensure $? is 0
   end
 
   test "fetch" do
-    stub_ticks_with("doppler --version 2> /dev/null", succeed: true)
-    stub_ticks.with("doppler me --json 2> /dev/null")
+    stub_command_with("doppler --version", true, :system)
+    stub_command(:system).with("doppler me --json", err: File::NULL)
 
-    stub_ticks
+    stub_command
       .with("doppler secrets get SECRET1 FSECRET1 FSECRET2 --json -p my-project -c prd")
       .returns(<<~JSON)
         {
@@ -47,10 +47,10 @@ class DopplerAdapterTest < SecretAdapterTestCase
   test "fetch having DOPPLER_TOKEN" do
     ENV["DOPPLER_TOKEN"] = "dp.st.xxxxxxxxxxxxxxxxxxxxxx"
 
-    stub_ticks_with("doppler --version 2> /dev/null", succeed: true)
-    stub_ticks.with("doppler me --json 2> /dev/null")
+    stub_command_with("doppler --version", true, :system)
+    stub_command(:system).with("doppler me --json", err: File::NULL)
 
-    stub_ticks
+    stub_command
       .with("doppler secrets get SECRET1 FSECRET1 FSECRET2 --json ")
       .returns(<<~JSON)
         {
@@ -88,10 +88,10 @@ class DopplerAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch with folder in secret" do
-    stub_ticks_with("doppler --version 2> /dev/null", succeed: true)
-    stub_ticks.with("doppler me --json 2> /dev/null")
+    stub_command_with("doppler --version", true, :system)
+    stub_command(:system).with("doppler me --json", err: File::NULL)
 
-    stub_ticks
+    stub_command
       .with("doppler secrets get SECRET1 FSECRET1 FSECRET2 --json -p my-project -c prd")
       .returns(<<~JSON)
         {
@@ -127,8 +127,8 @@ class DopplerAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch without --from" do
-    stub_ticks_with("doppler --version 2> /dev/null", succeed: true)
-    stub_ticks.with("doppler me --json 2> /dev/null")
+    stub_command_with("doppler --version", true, :system)
+    stub_command(:system).with("doppler me --json", err: File::NULL)
 
     error = assert_raises RuntimeError do
       run_command("fetch", "FSECRET1", "FSECRET2")
@@ -138,10 +138,10 @@ class DopplerAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch with signin" do
-    stub_ticks_with("doppler --version 2> /dev/null", succeed: true)
-    stub_ticks_with("doppler me --json 2> /dev/null", succeed: false)
-    stub_ticks_with("doppler login -y", succeed: true).returns("")
-    stub_ticks.with("doppler secrets get SECRET1 --json -p my-project -c prd").returns(single_item_json)
+    stub_command_with("doppler --version", true, :system)
+    stub_command_with("doppler me --json")
+    stub_command_with("doppler login -y", true).returns("")
+    stub_command.with("doppler secrets get SECRET1 --json -p my-project -c prd").returns(single_item_json)
 
     json = JSON.parse(shellunescape(run_command("fetch", "--from", "my-project/prd", "SECRET1")))
 
@@ -153,7 +153,7 @@ class DopplerAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch without CLI installed" do
-    stub_ticks_with("doppler --version 2> /dev/null", succeed: false)
+    stub_command_with("doppler --version", false, :system)
 
     error = assert_raises RuntimeError do
       JSON.parse(shellunescape(run_command("fetch", "HOST", "PORT")))

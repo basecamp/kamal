@@ -27,7 +27,7 @@ class Kamal::Secrets::Adapters::Enpass < Kamal::Secrets::Adapters::Base
     end
 
     def cli_installed?
-      `enpass-cli version 2> /dev/null`
+      system("enpass-cli version", err: File::NULL)
       $?.success?
     end
 

@@ -94,7 +94,7 @@ class Kamal::Secrets::Adapters::GcpSecretManager < Kamal::Secrets::Adapters::Bas
     end
 
     def cli_installed?
-      `gcloud --version 2> /dev/null`
+      system("gcloud --version", err: File::NULL)
       $?.success?
     end
 
