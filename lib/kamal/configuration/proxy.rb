@@ -2,9 +2,8 @@ class Kamal::Configuration::Proxy
   include Kamal::Configuration::Validation
 
   DEFAULT_LOG_REQUEST_HEADERS = [ "Cache-Control", "Last-Modified", "User-Agent" ]
-  CONTAINER_NAME = "kamal-proxy"
 
-  delegate :argumentize, :optionize, to: Kamal::Utils
+  delegate :optionize, to: Kamal::Utils
 
   attr_reader :config, :proxy_config
 

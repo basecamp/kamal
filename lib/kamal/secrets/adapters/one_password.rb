@@ -1,6 +1,4 @@
 class Kamal::Secrets::Adapters::OnePassword < Kamal::Secrets::Adapters::Base
-  delegate :optionize, to: Kamal::Utils
-
   private
     def login(account)
       unless loggedin?(account)
