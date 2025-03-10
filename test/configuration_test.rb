@@ -43,6 +43,19 @@ class ConfigurationTest < ActiveSupport::TestCase
     end
   end
 
+  test "image uses service name if registry is local" do
+    assert_equal "app", Kamal::Configuration.new(@deploy.tap {
+      _1[:registry] = { "server" => "localhost:5000" }
+      _1.delete(:image)
+    }).image
+  end
+
+  test "image uses image if registry is local" do
+    assert_equal "dhh/app", Kamal::Configuration.new(@deploy.tap {
+      _1[:registry] = { "server" => "localhost:5000" }
+    }).image
+  end
+
   test "service name valid" do
     assert_nothing_raised do
       Kamal::Configuration.new(@deploy.tap { _1[:service] = "hey-app1_primary" })
