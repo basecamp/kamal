@@ -314,17 +314,15 @@ class Kamal::Cli::App < Kamal::Cli::Base
   end
 
   private
+
     def using_version(new_version)
-      if new_version
-        begin
-          old_version = KAMAL.config.version
-          KAMAL.config.version = new_version
-          yield new_version
-        ensure
-          KAMAL.config.version = old_version
-        end
-      else
-        yield KAMAL.config.version
+      return yield KAMAL.config.version unless new_version
+      begin
+        old_version = KAMAL.config.version
+        KAMAL.config.version = new_version
+        yield new_version
+      ensure
+        KAMAL.config.version = old_version
       end
     end
 
