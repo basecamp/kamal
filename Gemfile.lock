@@ -101,7 +101,7 @@ GEM
       date
       stringio
     racc (1.8.1)
-    rack (3.1.10)
+    rack (3.1.12)
     rack-session (2.0.0)
       rack (>= 3.0.0)
     rack-test (2.1.0)
@@ -174,7 +174,7 @@ GEM
     unicode-display_width (3.1.2)
       unicode-emoji (~> 4.0, >= 4.0.4)
     unicode-emoji (4.0.4)
-    uri (1.0.2)
+    uri (1.0.3)
     useragent (0.16.11)
     zeitwerk (2.7.1)
 
