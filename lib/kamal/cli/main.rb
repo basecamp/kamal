@@ -16,6 +16,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
 
   desc "deploy", "Deploy app to servers"
   option :skip_push, aliases: "-P", type: :boolean, default: false, desc: "Skip image build and push"
+  option :skip_uncommitted_changes_check, type: :boolean, default: false, desc: "Skip uncommitted git changes check"
   def deploy(boot_accessories: false)
     runtime = print_runtime do
       invoke_options = deploy_options

@@ -75,6 +75,10 @@ class ActiveSupport::TestCase
       Dir.chdir(@original_pwd)
       FileUtils.rm_rf(@secrets_tmpdir)
     end
+
+    def stub_no_uncommitted_git_changes
+      Kamal::Git.stubs(:uncommitted_changes).returns("")
+    end
 end
 
 class SecretAdapterTestCase < ActiveSupport::TestCase
