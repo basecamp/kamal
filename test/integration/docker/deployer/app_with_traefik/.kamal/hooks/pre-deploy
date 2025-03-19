@@ -1,3 +1,4 @@
 kamal proxy boot_config set --publish false \
                             --docker_options label=traefik.http.services.kamal_proxy.loadbalancer.server.scheme=http \
-                                             label=traefik.http.routers.kamal_proxy.rule=PathPrefix\(\`/\`\)
+                                             label=traefik.http.routers.kamal_proxy.rule=PathPrefix\(\`/\`\) \
+                                             sysctl=net.ipv4.ip_local_port_range=\"10000\ 60999\"
