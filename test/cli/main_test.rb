@@ -21,7 +21,7 @@ class CliMainTest < CliTestCase
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:server:bootstrap", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:accessory:boot", [ "all" ], invoke_options)
     # deploy
-    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:registry:login", [], invoke_options.merge(skip_local: true))
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:registry:setup", [], invoke_options.merge(skip_local: true))
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:pull", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:proxy:boot", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true))
@@ -41,11 +41,37 @@ class CliMainTest < CliTestCase
     end
   end
 
+  test "deploy with local registry" do
+    with_test_secrets("secrets" => "DB_PASSWORD=secret") do
+      invoke_options = { "config_file" => "test/fixtures/deploy_with_local_registry.yml", "version" => "999", "skip_hooks" => false, "verbose" => true }
+
+      Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:registry:setup", [], invoke_options.merge(skip_local: false))
+      Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:deliver", [], invoke_options)
+      Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:proxy:boot", [], invoke_options)
+      Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true))
+      Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:boot", [], invoke_options)
+      Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:prune:all", [], invoke_options)
+
+      Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
+
+      run_command("deploy", "--verbose", config_file: "deploy_with_local_registry").tap do |output|
+        assert_hook_ran "pre-connect", output
+        assert_match /Log into image registry/, output
+        assert_match /Build and push app image/, output
+        assert_hook_ran "pre-deploy", output
+        assert_match /Ensure kamal-proxy is running/, output
+        assert_match /Detect stale containers/, output
+        assert_match /Prune old containers and images/, output
+        assert_hook_ran "post-deploy", output
+      end
+    end
+  end
+
   test "deploy" do
     with_test_secrets("secrets" => "DB_PASSWORD=secret") do
       invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false, "verbose" => true }
 
-      Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:registry:login", [], invoke_options.merge(skip_local: false))
+      Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:registry:setup", [], invoke_options.merge(skip_local: false))
       Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:deliver", [], invoke_options)
       Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:proxy:boot", [], invoke_options)
       Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true))
@@ -70,7 +96,7 @@ class CliMainTest < CliTestCase
   test "deploy with skip_push" do
     invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false }
 
-    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:registry:login", [], invoke_options.merge(skip_local: true))
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:registry:setup", [], invoke_options.merge(skip_local: true))
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:pull", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:proxy:boot", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true))
@@ -157,7 +183,7 @@ class CliMainTest < CliTestCase
     invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false, :skip_local => false }
 
     Kamal::Cli::Main.any_instance.expects(:invoke)
-      .with("kamal:cli:registry:login", [], invoke_options.merge(skip_local: false))
+      .with("kamal:cli:registry:setup", [], invoke_options.merge(skip_local: false))
       .raises(RuntimeError)
 
     assert_not KAMAL.holding_lock?
@@ -170,7 +196,7 @@ class CliMainTest < CliTestCase
   test "deploy with skipped hooks" do
     invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => true }
 
-    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:registry:login", [], invoke_options.merge(skip_local: false))
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:registry:setup", [], invoke_options.merge(skip_local: false))
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:deliver", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:proxy:boot", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true))
@@ -185,7 +211,7 @@ class CliMainTest < CliTestCase
   test "deploy with missing secrets" do
     invoke_options = { "config_file" => "test/fixtures/deploy_with_secrets.yml", "version" => "999", "skip_hooks" => false }
 
-    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:registry:login", [], invoke_options.merge(skip_local: false))
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:registry:setup", [], invoke_options.merge(skip_local: false))
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:deliver", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:proxy:boot", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true))
@@ -282,6 +308,16 @@ class CliMainTest < CliTestCase
       assert_match "docker run --detach --restart unless-stopped --name app-web-123", output
       assert_no_match "docker stop", output
     end
+  end
+
+  test "remove" do
+    options = { "config_file" => "test/fixtures/deploy_simple.yml", "skip_hooks" => false, "confirmed" => true }
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:proxy:remove", [], options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:remove", [], options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:accessory:remove", [ "all" ], options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:registry:remove", [], options.merge(skip_local: true))
+
+    run_command("remove", "-y")
   end
 
   test "details" do
