@@ -96,6 +96,24 @@ class ConfigurationEnvTagsTest < ActiveSupport::TestCase
     end
   end
 
+  test "aliased tag secret env" do
+    with_test_secrets("secrets" => "PASSWORD=hello\nALIASED_PASSWORD=aliased_hello") do
+      deploy = {
+        service: "app", image: "dhh/app", registry: { "username" => "dhh", "password" => "secret" },
+        servers: [ { "1.1.1.1" => "secrets" } ],
+        builder: { "arch" => "amd64" },
+        env: {
+          "tags" => {
+            "secrets" => { "secret" => [ "PASSWORD:ALIASED_PASSWORD" ] }
+          }
+        }
+      }
+
+      config = Kamal::Configuration.new(deploy)
+      assert_equal "aliased_hello", config.role("web").env("1.1.1.1").secrets["PASSWORD"]
+    end
+  end
+
   test "tag clear env" do
     deploy = {
       service: "app", image: "dhh/app", registry: { "username" => "dhh", "password" => "secret" },
