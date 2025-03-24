@@ -92,7 +92,7 @@ class ConfigurationEnvTagsTest < ActiveSupport::TestCase
       }
 
       config = Kamal::Configuration.new(deploy)
-      assert_equal "hello", config.role("web").env("1.1.1.1").secrets["PASSWORD"]
+      assert_equal "PASSWORD=hello\n", config.role("web").env("1.1.1.1").secrets_io.string
     end
   end
 
@@ -110,7 +110,7 @@ class ConfigurationEnvTagsTest < ActiveSupport::TestCase
       }
 
       config = Kamal::Configuration.new(deploy)
-      assert_equal "aliased_hello", config.role("web").env("1.1.1.1").secrets["PASSWORD"]
+      assert_equal "PASSWORD=aliased_hello\n", config.role("web").env("1.1.1.1").secrets_io.string
     end
   end
 
