@@ -108,6 +108,10 @@ class Kamal::Cli::App < Kamal::Cli::Base
       raise ArgumentError, "Detach is not compatible with #{incompatible_options.join(" or ")}"
     end
 
+    if cmd.empty?
+      raise ArgumentError, "No command provided. You must specify a command to execute."
+    end
+
     cmd = Kamal::Utils.join_commands(cmd)
     env = options[:env]
     detach = options[:detach]
