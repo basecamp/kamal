@@ -82,11 +82,12 @@ end
 
 $stdout.sync = true
 
-puts "Checking build status..."
-attempts = 0
-checks = GithubStatusChecks.new
-
 begin
+  puts "Checking build status..."
+
+  attempts = 0
+  checks = GithubStatusChecks.new
+
   loop do
     case checks.state
     when "success"
