@@ -22,6 +22,7 @@ class Kamal::Commands::App < Kamal::Commands::Base
       *([ "--hostname", hostname ] if hostname),
       "-e", "KAMAL_CONTAINER_NAME=\"#{container_name}\"",
       "-e", "KAMAL_VERSION=\"#{config.version}\"",
+      "-e", "KAMAL_HOST=\"#{host}\"",
       *role.env_args(host),
       *role.logging_args,
       *config.volume_args,
