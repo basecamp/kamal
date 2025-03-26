@@ -13,11 +13,12 @@ class Kamal::Commands::Accessory < Kamal::Commands::Base
     @accessory_config = config.accessory(name)
   end
 
-  def run
+  def run(host: nil)
     docker :run,
       "--name", service_name,
       "--detach",
       "--restart", "unless-stopped",
+      *([ "-e", "KAMAL_HOST=\"#{host}\"" ] if host),
       *network_args,
       *config.logging_args,
       *publish_args,

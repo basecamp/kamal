@@ -13,11 +13,11 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
           directories(name)
           upload(name)
 
-          on(hosts) do
+          on(hosts) do |host|
             execute *KAMAL.auditor.record("Booted #{name} accessory"), verbosity: :debug
             execute *accessory.ensure_env_directory
             upload! accessory.secrets_io, accessory.secrets_path, mode: "0600"
-            execute *accessory.run
+            execute *accessory.run(host: host)
 
             if accessory.running_proxy?
               target = capture_with_info(*accessory.container_id_for(container_name: accessory.service_name, only_running: true)).strip
