@@ -26,9 +26,7 @@ readiness_delay: 0
 proxy:
   host: 127.0.0.1
 registry:
-  server: registry:4443
-  username: root
-  password: root
+  server: localhost:5000
 builder:
   driver: docker
   arch: <%= Kamal::Utils.docker_arch %>

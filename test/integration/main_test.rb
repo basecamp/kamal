@@ -29,7 +29,7 @@ class MainTest < IntegrationTest
     assert_match /App Host: vm1/, details
     assert_match /App Host: vm2/, details
     assert_match /basecamp\/kamal-proxy:#{Kamal::Configuration::PROXY_MINIMUM_VERSION}/, details
-    assert_match /registry:4443\/app:#{first_version}/, details
+    assert_match /localhost:5000\/app:#{first_version}/, details
 
     audit = kamal :audit, capture: true
     assert_match /Booted app version #{first_version}.*Booted app version #{second_version}.*Booted app version #{first_version}.*/m, audit
@@ -63,8 +63,8 @@ class MainTest < IntegrationTest
     assert_equal [ "vm1", "vm2" ], config[:hosts]
     assert_equal "vm1", config[:primary_host]
     assert_equal version, config[:version]
-    assert_equal "registry:4443/app", config[:repository]
-    assert_equal "registry:4443/app:#{version}", config[:absolute_image]
+    assert_equal "localhost:5000/app", config[:repository]
+    assert_equal "localhost:5000/app:#{version}", config[:absolute_image]
     assert_equal "app-#{version}", config[:service_with_version]
     assert_equal [], config[:volume_args]
     assert_equal({ user: "root", port: 22, keepalive: true, keepalive_interval: 30, log_level: :fatal }, config[:ssh_options])
