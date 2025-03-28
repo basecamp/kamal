@@ -48,6 +48,20 @@ class ConfigurationEnvTest < ActiveSupport::TestCase
     end
   end
 
+  test "aliased secrets" do
+    with_test_secrets("secrets" => "ALIASED_PASSWORD=hello") do
+      config = {
+        "secret" => [ "PASSWORD:ALIASED_PASSWORD" ],
+        "clear" => {}
+      }
+
+      assert_config \
+        config: config,
+        clear: {},
+        secrets: { "PASSWORD" => "hello" }
+    end
+  end
+
   private
     def assert_config(config:, clear: {}, secrets: {})
       env = Kamal::Configuration::Env.new config: config, secrets: Kamal::Secrets.new
