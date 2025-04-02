@@ -52,6 +52,17 @@ proxy:
   # Defaults to `false`:
   ssl: true
 
+  # Custom SSL certificate
+  #
+  # In scenarios where Let's Encrypt is not an option, or you already have your own
+  # certificates from a different Certificate Authority, you can configure kamal-proxy
+  # to load the certificate and the corresponding private key from disk.
+  #
+  # The certificate must be in PEM format and contain the full chain. The private key
+  # must also be in PEM format.
+  ssl_certificate_path: /path/to/certificate
+  ssl_private_key_path: /path/to/key
+
   # SSL redirect
   #
   # By default, kamal-proxy will redirect all HTTP requests to HTTPS when SSL is enabled.
