@@ -26,6 +26,7 @@ class Kamal::Secrets::Adapters::AwsSecretsManager < Kamal::Secrets::Adapters::Ba
     def get_from_secrets_manager(secrets, account: nil)
       args = [ "aws", "secretsmanager", "batch-get-secret-value", "--secret-id-list" ] + secrets.map(&:shellescape)
       args += [ "--profile", account.shellescape ] if account
+      args += [ "--output", "json" ]
       cmd = args.join(" ")
 
       `#{cmd}`.tap do |secrets|
