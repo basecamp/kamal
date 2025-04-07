@@ -21,7 +21,7 @@ class Kamal::Commands::Registry < Kamal::Commands::Base
 
     combine \
       docker(:start, "kamal-docker-registry"),
-      docker(:run, "--detach", "-p", "127.0.0.1:#{registry_config.local_port}:5000", "--name", "kamal-docker-registry", "registry:3.0.0-rc.4"),
+      docker(:run, "--detach", "-p", "127.0.0.1:#{registry_config.local_port}:5000", "--name", "kamal-docker-registry", "registry:3.0.0"),
       by: "||"
   end
 
