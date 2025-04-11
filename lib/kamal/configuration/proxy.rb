@@ -3,6 +3,7 @@ class Kamal::Configuration::Proxy
 
   DEFAULT_LOG_REQUEST_HEADERS = [ "Cache-Control", "Last-Modified", "User-Agent" ]
   CONTAINER_NAME = "kamal-proxy"
+  LOADBALANCER_CONTAINER_NAME = "kamal-loadbalancer"
 
   delegate :argumentize, :optionize, to: Kamal::Utils
 
@@ -26,10 +27,23 @@ class Kamal::Configuration::Proxy
     proxy_config["hosts"] || proxy_config["host"]&.split(",") || []
   end
 
+  def loadbalancer
+    proxy_config["loadbalancer"]
+  end
+
+  def load_balancing?
+    effective_loadbalancer.present?
+  end
+
+  def effective_loadbalancer
+    return loadbalancer if loadbalancer.present?
+    return config.primary_role.hosts.first if Array(config.primary_role.hosts).size > 1
+
+    nil
+  end
+
   def deploy_options
-    {
-      host: hosts,
-      tls: proxy_config["ssl"].presence,
+    opts = {
       "deploy-timeout": seconds_duration(config.deploy_timeout),
       "drain-timeout": seconds_duration(config.drain_timeout),
       "health-check-interval": seconds_duration(proxy_config.dig("healthcheck", "interval")),
@@ -46,6 +60,13 @@ class Kamal::Configuration::Proxy
       "log-request-header": proxy_config.dig("logging", "request_headers") || DEFAULT_LOG_REQUEST_HEADERS,
       "log-response-header": proxy_config.dig("logging", "response_headers")
     }.compact
+
+    unless load_balancing?
+      opts[:host] = hosts
+      opts[:tls] = proxy_config["ssl"].presence
+    end
+
+    opts
   end
 
   def deploy_command_args(target:)

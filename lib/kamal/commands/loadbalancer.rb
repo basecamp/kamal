@@ -1,15 +1,25 @@
-class Kamal::Commands::Proxy < Kamal::Commands::Base
+class Kamal::Commands::Loadbalancer < Kamal::Commands::Base
   delegate :argumentize, :optionize, to: Kamal::Utils
+
+  attr_reader :loadbalancer_config
+
+  def initialize(config, loadbalancer_config: nil)
+    super(config)
+    @loadbalancer_config = loadbalancer_config
+  end
 
   def run
     pipe \
-      [ :echo, "\$\(#{get_boot_options.join(" ")}\) #{config.proxy_image}" ],
+      [ :echo, "basecamp/kamal-proxy:lb" ],
       xargs(docker(:run,
         "--name", container_name,
         "--network", "kamal",
         "--detach",
         "--restart", "unless-stopped",
-        "--volume", "kamal-proxy-config:/home/kamal-proxy/.config/kamal-proxy"))
+        "--publish", "80:80",
+        "--publish", "443:443",
+        "--label", "org.opencontainers.image.title=kamal-loadbalancer",
+        "--volume", "kamal-loadbalancer-config:/home/kamal-loadbalancer/.config/kamal-loadbalancer"))
   end
 
   def start
@@ -22,6 +32,19 @@ class Kamal::Commands::Proxy < Kamal::Commands::Base
 
   def start_or_run
     combine start, run, by: "||"
+  end
+
+  def deploy(targets: [])
+    target_args = targets.map { |t| "#{t}:80" }
+
+    hosts = loadbalancer_config.hosts
+
+    options = []
+    options << "--target=#{target_args.join(',')}"
+    options << "--host=#{hosts.join(',')}"
+    options << "--tls" if loadbalancer_config.ssl?
+
+    docker :exec, container_name, "kamal-proxy", "deploy", loadbalancer_config.config.service, *options
   end
 
   def info
@@ -48,40 +71,23 @@ class Kamal::Commands::Proxy < Kamal::Commands::Base
   end
 
   def remove_container
-    docker :container, :prune, "--force", "--filter", "label=org.opencontainers.image.title=kamal-proxy"
+    docker :container, :prune, "--force", "--filter", "label=org.opencontainers.image.title=kamal-loadbalancer"
   end
 
   def remove_image
-    docker :image, :prune, "--all", "--force", "--filter", "label=org.opencontainers.image.title=kamal-proxy"
+    docker :image, :prune, "--all", "--force", "--filter", "label=org.opencontainers.image.title=kamal-loadbalancer"
   end
 
-  def cleanup_traefik
-    chain \
-      docker(:container, :stop, "traefik"),
-      combine(
-        docker(:container, :prune, "--force", "--filter", "label=org.opencontainers.image.title=Traefik"),
-        docker(:image, :prune, "--all", "--force", "--filter", "label=org.opencontainers.image.title=Traefik")
-      )
+  def ensure_directory
+    make_directory loadbalancer_config.directory
   end
 
-  def ensure_proxy_directory
-    make_directory config.proxy_directory
-  end
-
-  def remove_proxy_directory
-    remove_directory config.proxy_directory
-  end
-
-  def get_boot_options
-    combine [ :cat, config.proxy_options_file, "2>", "/dev/null" ], [ :echo, "\"#{config.proxy_options_default.join(" ")}\"" ], by: "||"
-  end
-
-  def reset_boot_options
-    remove_file config.proxy_options_file
+  def remove_directory
+    super(loadbalancer_config.directory)
   end
 
   private
     def container_name
-      config.proxy_container_name
+      loadbalancer_config.container_name
     end
 end
