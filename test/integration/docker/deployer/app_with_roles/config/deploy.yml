@@ -16,6 +16,7 @@ readiness_delay: 0
 proxy:
   host: localhost
   ssl: false
+  loadbalancer: false
   healthcheck:
     interval: 1
     timeout: 1

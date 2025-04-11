@@ -3,7 +3,9 @@ class Kamal::Configuration::Validator::Proxy < Kamal::Configuration::Validator
     unless config.nil?
       super
 
-      if config["host"].blank? && config["hosts"].blank? && config["ssl"]
+      # Skip SSL host validation when a loadbalancer is present
+      # since SSL is disabled when using a loadbalancer
+      if config["host"].blank? && config["hosts"].blank? && config["ssl"] && config["loadbalancer"].blank?
         error "Must set a host to enable automatic SSL"
       end
 

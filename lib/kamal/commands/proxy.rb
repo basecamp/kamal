@@ -105,6 +105,10 @@ class Kamal::Commands::Proxy < Kamal::Commands::Base
     remove_file config.proxy_boot.run_command_file
   end
 
+  def loadbalancer
+    @loadbalancer ||= Kamal::Commands::Loadbalancer.new(config, loadbalancer_config: KAMAL.loadbalancer_config)
+  end
+
   private
     def container_name
       config.proxy_boot.container_name
