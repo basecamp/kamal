@@ -41,6 +41,11 @@ class Kamal::Cli::Main < Kamal::Cli::Base
 
         invoke "kamal:cli:app:boot", [], invoke_options
 
+        if KAMAL.config.proxy.load_balancing?
+          say "Updating loadbalancer configuration...", :magenta
+          invoke "kamal:cli:proxy:loadbalancer", [ "deploy" ], invoke_options
+        end
+
         say "Prune old containers and images...", :magenta
         invoke "kamal:cli:prune:all", [], invoke_options
       end
@@ -70,6 +75,11 @@ class Kamal::Cli::Main < Kamal::Cli::Base
         invoke "kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true)
 
         invoke "kamal:cli:app:boot", [], invoke_options
+
+        if KAMAL.config.proxy.load_balancing?
+          say "Updating loadbalancer configuration...", :magenta
+          invoke "kamal:cli:proxy:loadbalancer", [ "deploy" ], invoke_options
+        end
       end
     end
 
