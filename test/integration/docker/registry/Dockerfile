@@ -1,4 +1,4 @@
-FROM registry
+FROM registry:3
 
 COPY boot.sh .
 
