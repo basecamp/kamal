@@ -2,7 +2,7 @@ require_relative "integration_test"
 
 class MainTest < IntegrationTest
   test "deploy, redeploy, rollback, details and audit" do
-    first_version = latest_app_version
+    first_version = update_app_rev
 
     assert_app_is_down
 
@@ -38,7 +38,7 @@ class MainTest < IntegrationTest
   test "app with roles" do
     @app = "app_with_roles"
 
-    version = latest_app_version
+    version = update_app_rev
 
     assert_app_is_down
 
