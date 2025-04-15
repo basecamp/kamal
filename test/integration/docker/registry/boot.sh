@@ -1,3 +1,3 @@
 #!/bin/sh
 
-exec /entrypoint.sh /etc/docker/registry/config.yml
+exec /entrypoint.sh /etc/distribution/config.yml
