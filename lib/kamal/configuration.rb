@@ -300,6 +300,16 @@ class Kamal::Configuration
     File.join proxy_directory, "image_version"
   end
 
+  def proxy_app_config_directory
+    File.join proxy_directory, "app-config"
+  end
+
+  def proxy_app_config_volume
+    Volume.new \
+      host_path: proxy_app_config_directory,
+      container_path: "/home/kamal-proxy/.app-config"
+  end
+
   def to_h
     {
       roles: role_names,
