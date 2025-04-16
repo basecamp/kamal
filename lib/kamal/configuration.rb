@@ -105,6 +105,10 @@ class Kamal::Configuration
     raw_config.minimum_version
   end
 
+  def service_and_destination
+    [ service, destination ].compact.join("-")
+  end
+
   def roles
     servers.roles
   end
@@ -210,7 +214,7 @@ class Kamal::Configuration
   end
 
   def app_directory
-    File.join apps_directory, [ service, destination ].compact.join("-")
+    File.join apps_directory, service_and_destination
   end
 
   def env_directory
@@ -227,6 +231,10 @@ class Kamal::Configuration
 
   def asset_path
     raw_config.asset_path
+  end
+
+  def error_pages_path
+    raw_config.error_pages_path
   end
 
   def env_tags
@@ -300,14 +308,34 @@ class Kamal::Configuration
     File.join proxy_directory, "image_version"
   end
 
-  def proxy_app_config_directory
-    File.join proxy_directory, "app-config"
+  def proxy_apps_directory
+    File.join proxy_directory, "apps-config"
   end
 
-  def proxy_app_config_volume
+  def proxy_apps_container_directory
+    "/home/kamal-proxy/.apps-config"
+  end
+
+  def proxy_apps_volume
     Volume.new \
-      host_path: proxy_app_config_directory,
-      container_path: "/home/kamal-proxy/.app-config"
+      host_path: proxy_apps_directory,
+      container_path: proxy_apps_container_directory
+  end
+
+  def proxy_app_directory
+    File.join proxy_apps_directory, service_and_destination
+  end
+
+  def proxy_app_container_directory
+    File.join proxy_apps_container_directory, service_and_destination
+  end
+
+  def proxy_error_pages_directory
+    File.join proxy_app_directory, "error_pages"
+  end
+
+  def proxy_error_pages_container_directory
+    File.join proxy_app_container_directory, "error_pages"
   end
 
   def to_h

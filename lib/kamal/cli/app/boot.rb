@@ -70,6 +70,7 @@ class Kamal::Cli::App::Boot
     def stop_old_version(version)
       execute *app.stop(version: version), raise_on_non_zero_exit: false
       execute *app.clean_up_assets if assets?
+      execute *app.clean_up_error_pages if KAMAL.config.error_pages_path
     end
 
     def release_barrier

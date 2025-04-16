@@ -1,4 +1,4 @@
-class Kamal::Cli::App::PrepareAssets
+class Kamal::Cli::App::Assets
   attr_reader :host, :role, :sshkit
   delegate :execute, :capture_with_info, :info, to: :sshkit
   delegate :assets?, to: :role

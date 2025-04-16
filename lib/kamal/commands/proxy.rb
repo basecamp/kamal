@@ -110,6 +110,6 @@ class Kamal::Commands::Proxy < Kamal::Commands::Base
         "--detach",
         "--restart", "unless-stopped",
         "--volume", "kamal-proxy-config:/home/kamal-proxy/.config/kamal-proxy",
-        *config.proxy_app_config_volume.docker_args
+        *config.proxy_apps_volume.docker_args
     end
 end

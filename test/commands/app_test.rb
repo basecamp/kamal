@@ -497,6 +497,30 @@ class CommandsAppTest < ActiveSupport::TestCase
     ], new_command(asset_path: "/public/assets").clean_up_assets
   end
 
+  test "live" do
+    assert_equal \
+      "docker exec kamal-proxy kamal-proxy resume app-web",
+      new_command.live.join(" ")
+  end
+
+  test "maintenance" do
+    assert_equal \
+      "docker exec kamal-proxy kamal-proxy stop app-web",
+      new_command.maintenance.join(" ")
+  end
+
+  test "maintenance with options" do
+    assert_equal \
+      "docker exec kamal-proxy kamal-proxy stop app-web --drain-timeout=\"10s\" --message=\"Hi\"",
+      new_command.maintenance(drain_timeout: 10, message: "Hi").join(" ")
+  end
+
+  test "remove_proxy_app_directory" do
+    assert_equal \
+      "rm -r .kamal/proxy/apps-config/app",
+      new_command.remove_proxy_app_directory.join(" ")
+  end
+
   private
     def new_command(role: "web", host: "1.1.1.1", **additional_config)
       config = Kamal::Configuration.new(@config.merge(additional_config), destination: @destination, version: "999")
