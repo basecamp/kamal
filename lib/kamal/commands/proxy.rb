@@ -2,7 +2,7 @@ class Kamal::Commands::Proxy < Kamal::Commands::Base
   delegate :argumentize, :optionize, to: Kamal::Utils
 
   def run
-    pipe echo_boot_config, xargs(docker_run)
+    pipe boot_config, xargs(docker_run)
   end
 
   def start
@@ -24,7 +24,7 @@ class Kamal::Commands::Proxy < Kamal::Commands::Base
   def version
     pipe \
       docker(:inspect, container_name, "--format '{{.Config.Image}}'"),
-      [ :cut, "-d:", "-f2" ]
+      [ :awk, "-F:", "'{print \$NF}'" ]
   end
 
   def logs(timestamps: true, since: nil, lines: nil, grep: nil, grep_options: nil)
@@ -65,12 +65,32 @@ class Kamal::Commands::Proxy < Kamal::Commands::Base
     remove_directory config.proxy_directory
   end
 
-  def get_boot_options
-    combine [ :cat, config.proxy_options_file, "2>", "/dev/null" ], [ :echo, "\"#{config.proxy_options_default.join(" ")}\"" ], by: "||"
+  def boot_config
+    [ :echo, "#{substitute(read_boot_options)} #{substitute(read_image)}:#{substitute(read_image_version)}" ]
+  end
+
+  def read_boot_options
+    read_file(config.proxy_options_file, default: config.proxy_options_default.join(" "))
+  end
+
+  def read_image
+    read_file(config.proxy_image_file, default: config.proxy_image_default)
+  end
+
+  def read_image_version
+    read_file(config.proxy_image_version_file, default: Kamal::Configuration::PROXY_MINIMUM_VERSION)
   end
 
   def reset_boot_options
     remove_file config.proxy_options_file
+  end
+
+  def reset_image
+    remove_file config.proxy_image_file
+  end
+
+  def reset_image_version
+    remove_file config.proxy_image_version_file
   end
 
   private
@@ -78,8 +98,8 @@ class Kamal::Commands::Proxy < Kamal::Commands::Base
       config.proxy_container_name
     end
 
-    def echo_boot_config
-      [ :echo, "\$\(#{get_boot_options.join(" ")}\) #{config.proxy_image}" ]
+    def read_file(file, default: nil)
+      combine [ :cat, file, "2>", "/dev/null" ], [ :echo, "\"#{default}\"" ], by: "||"
     end
 
     def docker_run

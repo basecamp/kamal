@@ -12,11 +12,11 @@ class IntegrationTest < ActiveSupport::TestCase
 
   teardown do
     unless passed?
-      [ :deployer, :vm1, :vm2, :shared, :load_balancer, :registry ].each do |container|
-        puts
-        puts "Logs for #{container}:"
-        docker_compose :logs, container
-      end
+      # [ :deployer, :vm1, :vm2, :shared, :load_balancer, :registry ].each do |container|
+      #   puts
+      #   puts "Logs for #{container}:"
+      #   docker_compose :logs, container
+      # end
     end
     docker_compose "down -t 1"
   end

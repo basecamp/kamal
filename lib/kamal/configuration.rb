@@ -261,8 +261,16 @@ class Kamal::Configuration
     [ *proxy_publish_args(PROXY_HTTP_PORT, PROXY_HTTPS_PORT), *proxy_logging_args(PROXY_LOG_MAX_SIZE) ]
   end
 
-  def proxy_image
-    "basecamp/kamal-proxy:#{PROXY_MINIMUM_VERSION}"
+  def proxy_repository_name
+    "basecamp"
+  end
+
+  def proxy_image_name
+    "kamal-proxy"
+  end
+
+  def proxy_image_default
+    "#{proxy_repository_name}/#{proxy_image_name}"
   end
 
   def proxy_container_name
@@ -275,6 +283,14 @@ class Kamal::Configuration
 
   def proxy_options_file
     File.join proxy_directory, "options"
+  end
+
+  def proxy_image_file
+    File.join proxy_directory, "image"
+  end
+
+  def proxy_image_version_file
+    File.join proxy_directory, "image_version"
   end
 
   def to_h
