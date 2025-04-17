@@ -31,6 +31,8 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
   option :registry, type: :string, default: nil, desc: "Registry to use for the proxy image"
   option :repository, type: :string, default: nil, desc: "Repository for the proxy image"
   option :image_version, type: :string, default: nil, desc: "Version of the proxy to run"
+  option :metrics_port, type: :numeric, default: nil, desc: "Port to report prometheus metrics on"
+  option :debug, type: :boolean, default: false, desc: "Whether to run the proxy in debug mode"
   option :docker_options, type: :array, default: [], desc: "Docker options to pass to the proxy container", banner: "option=value option2=value2"
   def boot_config(subcommand)
     proxy_boot_config = KAMAL.config.proxy_boot
@@ -51,6 +53,9 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
 
       image_version = options[:image_version]
 
+      run_command_options = { debug: options[:debug] || nil, "metrics-port": options[:metrics_port] }.compact
+      run_command = "kamal-proxy run #{Kamal::Utils.optionize(run_command_options).join(" ")}" if run_command_options.any?
+
       on(KAMAL.proxy_hosts) do |host|
         execute(*KAMAL.proxy.ensure_proxy_directory)
         if boot_options != proxy_boot_config.default_boot_options
@@ -70,6 +75,12 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
         else
           execute *KAMAL.proxy.reset_image_version, raise_on_non_zero_exit: false
         end
+
+        if run_command
+          upload! StringIO.new(run_command), KAMAL.config.proxy_run_command_file
+        else
+          execute *KAMAL.proxy.reset_run_command, raise_on_non_zero_exit: false
+        end
       end
     when "get"
 
@@ -81,6 +92,7 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
         execute *KAMAL.proxy.reset_boot_options, raise_on_non_zero_exit: false
         execute *KAMAL.proxy.reset_image, raise_on_non_zero_exit: false
         execute *KAMAL.proxy.reset_image_version, raise_on_non_zero_exit: false
+        execute *KAMAL.proxy.reset_run_command, raise_on_non_zero_exit: false
       end
     else
       raise ArgumentError, "Unknown boot_config subcommand #{subcommand}"
