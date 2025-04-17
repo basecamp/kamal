@@ -39,6 +39,7 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
       boot_options = [
         *(KAMAL.config.proxy_publish_args(options[:http_port], options[:https_port], options[:publish_host_ip]) if options[:publish]),
         *(KAMAL.config.proxy_logging_args(options[:log_max_size])),
+        *("--expose=#{options[:metrics_port]}" if options[:metrics_port]),
         *options[:docker_options].map { |option| "--#{option}" }
       ]
 
