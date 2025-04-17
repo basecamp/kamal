@@ -1,7 +1,5 @@
 service: app_with_proxied_accessory
 image: app_with_proxied_accessory
-servers:
-  - vm1
 env:
   clear:
     CLEAR_TOKEN: 4321
@@ -24,15 +22,13 @@ accessories:
     service: custom-busybox
     image: registry:4443/busybox:1.36.0
     cmd: sh -c 'echo "Starting busybox..."; trap exit term; while true; do sleep 1; done'
-    roles:
-      - web
+    host: vm1
   netcat:
     service: netcat
     image: registry:4443/busybox:1.36.0
     cmd: >
       sh -c 'echo "Starting netcat..."; while true; do echo -e "HTTP/1.1 200 OK\r\nContent-Length: 11\r\n\r\nHello Ruby" | nc -l -p 80; done'
-    roles:
-      - web
+    host: vm1
     port: 12345:80
     proxy:
       host: netcat
