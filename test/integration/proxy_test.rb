@@ -6,6 +6,8 @@ class ProxyTest < IntegrationTest
   end
 
   test "boot, reboot, stop, start, restart, logs, remove" do
+    kamal :proxy, :boot_config, :set, "--registry", "registry:4443"
+
     kamal :proxy, :boot
     assert_proxy_running
 
@@ -46,7 +48,7 @@ class ProxyTest < IntegrationTest
     logs = kamal :proxy, :logs, capture: true
     assert_match /No previous state to restore/, logs
 
-    kamal :proxy, :boot_config, :set, "--docker-options='sysctl net.ipv4.ip_local_port_range=\"10000 60999\"'"
+    kamal :proxy, :boot_config, :set, "--registry", "registry:4443", "--docker-options='sysctl net.ipv4.ip_local_port_range=\"10000 60999\"'"
     assert_docker_options_in_file
 
     kamal :proxy, :reboot, "-y"

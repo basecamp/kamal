@@ -321,7 +321,7 @@ class CliBuildTest < CliTestCase
 
   private
     def run_command(*command, fixture: :with_accessories)
-      stdouted { Kamal::Cli::Build.start([ *command, "-c", "test/fixtures/deploy_#{fixture}.yml" ]) }
+      stdouted { stderred { Kamal::Cli::Build.start([ *command, "-c", "test/fixtures/deploy_#{fixture}.yml" ]) } }
     end
 
     def stub_dependency_checks

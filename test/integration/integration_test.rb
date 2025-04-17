@@ -11,7 +11,7 @@ class IntegrationTest < ActiveSupport::TestCase
   end
 
   teardown do
-    unless passed?
+    if !passed? && ENV["DEBUG"]
       [ :deployer, :vm1, :vm2, :shared, :load_balancer, :registry ].each do |container|
         puts
         puts "Logs for #{container}:"
@@ -25,8 +25,8 @@ class IntegrationTest < ActiveSupport::TestCase
     def docker_compose(*commands, capture: false, raise_on_error: true)
       command = "TEST_ID=#{ENV["TEST_ID"]} docker compose #{commands.join(" ")}"
       succeeded = false
-      if capture
-        result = stdouted { succeeded = system("cd test/integration && #{command}") }
+      if capture || !ENV["DEBUG"]
+        result = stdouted { stderred { succeeded = system("cd test/integration && #{command}") } }
       else
         succeeded = system("cd test/integration && #{command}")
       end
