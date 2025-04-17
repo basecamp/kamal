@@ -192,6 +192,19 @@ class CliAppTest < CliTestCase
     Thread.report_on_exception = true
   end
 
+  test "boot with error pages" do
+    with_error_pages(directory: "public") do
+      stub_running
+      run_command("boot", config: :with_error_pages).tap do |output|
+        assert_match /Uploading .*kamal-error-pages.*\/latest to \.kamal\/proxy\/apps-config\/app\/error_pages/, output
+        assert_match "docker tag dhh/app:latest dhh/app:latest", output
+        assert_match /docker run --detach --restart unless-stopped --name app-web-latest --network kamal --hostname 1.1.1.1-[0-9a-f]{12} /, output
+        assert_match "docker container ls --all --filter name=^app-web-123$ --quiet | xargs docker stop", output
+        assert_match "Running /usr/bin/env find .kamal/proxy/apps-config/app/error_pages -mindepth 1 -maxdepth 1 ! -name latest -exec rm -rf {} + on 1.1.1.1", output
+      end
+    end
+  end
+
   test "start" do
     SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info).returns("999") # old version
 
@@ -244,9 +257,11 @@ class CliAppTest < CliTestCase
 
   test "remove" do
     run_command("remove").tap do |output|
-      assert_match /#{Regexp.escape("sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting' | head -1 | xargs docker stop")}/, output
-      assert_match /#{Regexp.escape("docker container prune --force --filter label=service=app")}/, output
-      assert_match /#{Regexp.escape("docker image prune --all --force --filter label=service=app")}/, output
+      assert_match "sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting' | head -1 | xargs docker stop", output
+      assert_match "docker container prune --force --filter label=service=app", output
+      assert_match "docker image prune --all --force --filter label=service=app", output
+      assert_match "rm -r .kamal/apps/app on 1.1.1.1", output
+      assert_match "rm -r .kamal/proxy/apps-config/app on 1.1.1.1", output
     end
   end
 
@@ -265,6 +280,13 @@ class CliAppTest < CliTestCase
   test "remove_images" do
     run_command("remove_images").tap do |output|
       assert_match "docker image prune --all --force --filter label=service=app", output
+    end
+  end
+
+  test "remove_app_directories" do
+    run_command("remove_app_directories").tap do |output|
+      assert_match "rm -r .kamal/apps/app on 1.1.1.1", output
+      assert_match "rm -r .kamal/proxy/apps-config/app on 1.1.1.1", output
     end
   end
 
@@ -434,6 +456,24 @@ class CliAppTest < CliTestCase
     run_command("boot", config: :with_proxy_roles, host: nil).tap do |output|
       assert_match "docker exec kamal-proxy kamal-proxy deploy app-web --target=\"123:80\" --deploy-timeout=\"6s\" --drain-timeout=\"30s\" --target-timeout=\"10s\" --buffer-requests --buffer-responses --log-request-header=\"Cache-Control\" --log-request-header=\"Last-Modified\" --log-request-header=\"User-Agent\"", output
       assert_match "docker exec kamal-proxy kamal-proxy deploy app-web2 --target=\"123:80\" --deploy-timeout=\"6s\" --drain-timeout=\"30s\" --target-timeout=\"15s\" --buffer-requests --buffer-responses --log-request-header=\"Cache-Control\" --log-request-header=\"Last-Modified\" --log-request-header=\"User-Agent\"", output
+    end
+  end
+
+  test "live" do
+    run_command("live").tap do |output|
+      assert_match "docker exec kamal-proxy kamal-proxy resume app-web on 1.1.1.1", output
+    end
+  end
+
+  test "maintenance" do
+    run_command("maintenance").tap do |output|
+      assert_match "docker exec kamal-proxy kamal-proxy stop app-web --drain-timeout=\"30s\" on 1.1.1.1", output
+    end
+  end
+
+  test "maintenance with options" do
+    run_command("maintenance", "--message", "Hello", "--drain_timeout", "10").tap do |output|
+      assert_match "docker exec kamal-proxy kamal-proxy stop app-web --drain-timeout=\"10s\" --message=\"Hello\" on 1.1.1.1", output
     end
   end
 

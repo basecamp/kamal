@@ -37,6 +37,7 @@ proxy:
       - X-Request-Start
 
 asset_path: /usr/share/nginx/html/versions
+error_pages_path: error_pages
 
 registry:
   server: registry:4443

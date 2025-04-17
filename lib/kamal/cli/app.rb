@@ -8,8 +8,10 @@ class Kamal::Cli::App < Kamal::Cli::Base
 
         # Assets are prepared in a separate step to ensure they are on all hosts before booting
         on(KAMAL.hosts) do
+          Kamal::Cli::App::ErrorPages.new(host, self).run
+
           KAMAL.roles_on(host).each do |role|
-            Kamal::Cli::App::PrepareAssets.new(host, role, self).run
+            Kamal::Cli::App::Assets.new(host, role, self).run
           end
         end
 
@@ -249,7 +251,37 @@ class Kamal::Cli::App < Kamal::Cli::Base
       stop
       remove_containers
       remove_images
-      remove_app_directory
+      remove_app_directories
+    end
+  end
+
+  desc "live", "Set the app to live mode"
+  def live
+    with_lock do
+      on(KAMAL.proxy_hosts) do |host|
+        roles = KAMAL.roles_on(host)
+
+        roles.each do |role|
+          execute *KAMAL.app(role: role, host: host).live if role.running_proxy?
+        end
+      end
+    end
+  end
+
+  desc "maintenance", "Set the app to maintenance mode"
+  option :drain_timeout, type: :numeric, desc: "How long to allow in-flight requests to complete (defaults to drain_timeout from config)"
+  option :message, type: :string, desc: "Message to display to clients while stopped"
+  def maintenance
+    maintenance_options = { drain_timeout: options[:drain_timeout] || KAMAL.config.drain_timeout, message: options[:message] }
+
+    with_lock do
+      on(KAMAL.proxy_hosts) do |host|
+        roles = KAMAL.roles_on(host)
+
+        roles.each do |role|
+          execute *KAMAL.app(role: role, host: host).maintenance(**maintenance_options) if role.running_proxy?
+        end
+      end
     end
   end
 
@@ -291,16 +323,19 @@ class Kamal::Cli::App < Kamal::Cli::Base
     end
   end
 
-  desc "remove_app_directory", "Remove the service directory from servers", hide: true
-  def remove_app_directory
+  desc "remove_app_directories", "Remove the app directories from servers", hide: true
+  def remove_app_directories
     with_lock do
       on(KAMAL.hosts) do |host|
         roles = KAMAL.roles_on(host)
 
         roles.each do |role|
-          execute *KAMAL.auditor.record("Removed #{KAMAL.config.app_directory} on all servers", role: role), verbosity: :debug
+          execute *KAMAL.auditor.record("Removed #{KAMAL.config.app_directory}", role: role), verbosity: :debug
           execute *KAMAL.server.remove_app_directory, raise_on_non_zero_exit: false
         end
+
+        execute *KAMAL.auditor.record("Removed #{KAMAL.config.app_directory}"), verbosity: :debug
+        execute *KAMAL.app.remove_proxy_app_directory, raise_on_non_zero_exit: false
       end
     end
   end
