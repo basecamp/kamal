@@ -1,4 +1,6 @@
 class Kamal::Cli::Proxy < Kamal::Cli::Base
+  delegate :older_version?, to: Kamal::Utils
+
   desc "boot", "Boot proxy on servers"
   def boot
     with_lock do
@@ -13,7 +15,7 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
 
         version = capture_with_info(*KAMAL.proxy.version).strip.presence
 
-        if version && Kamal::Utils.older_version?(version, Kamal::Configuration::PROXY_MINIMUM_VERSION)
+        if version && version != "next" && older_version?(version, Kamal::Configuration::PROXY_MINIMUM_VERSION)
           raise "kamal-proxy version #{version} is too old, run `kamal proxy reboot` in order to update to at least #{Kamal::Configuration::PROXY_MINIMUM_VERSION}"
         end
         execute *KAMAL.proxy.start_or_run
