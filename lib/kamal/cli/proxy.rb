@@ -1,6 +1,4 @@
 class Kamal::Cli::Proxy < Kamal::Cli::Base
-  delegate :older_version?, to: Kamal::Utils
-
   desc "boot", "Boot proxy on servers"
   def boot
     with_lock do
@@ -15,7 +13,7 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
 
         version = capture_with_info(*KAMAL.proxy.version).strip.presence
 
-        if version && version != "next" && older_version?(version, Kamal::Configuration::PROXY_MINIMUM_VERSION)
+        if version && version != "next" && Kamal::Utils.older_version?(version, Kamal::Configuration::PROXY_MINIMUM_VERSION)
           raise "kamal-proxy version #{version} is too old, run `kamal proxy reboot` in order to update to at least #{Kamal::Configuration::PROXY_MINIMUM_VERSION}"
         end
         execute *KAMAL.proxy.start_or_run
@@ -42,17 +40,17 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
         *options[:docker_options].map { |option| "--#{option}" }
       ]
 
-      default_boot_options = [
-        *(KAMAL.config.proxy_publish_args(Kamal::Configuration::PROXY_HTTP_PORT, Kamal::Configuration::PROXY_HTTPS_PORT, nil)),
-        *(KAMAL.config.proxy_logging_args(Kamal::Configuration::PROXY_LOG_MAX_SIZE)),
-      ]
+      image = [
+        options[:registry].presence,
+        options[:repository].presence || KAMAL.config.proxy_repository_name,
+        KAMAL.config.proxy_image_name
+      ].compact.join("/")
 
-      image = [ options[:registry].presence, options[:repository] || KAMAL.config.proxy_repository_name, KAMAL.config.proxy_image_name ].compact.join("/")
       image_version = options[:image_version]
 
       on(KAMAL.proxy_hosts) do |host|
         execute(*KAMAL.proxy.ensure_proxy_directory)
-        if boot_options != default_boot_options
+        if boot_options != KAMAL.config.proxy_default_boot_options
           upload! StringIO.new(boot_options.join(" ")), KAMAL.config.proxy_options_file
         else
           execute *KAMAL.proxy.reset_boot_options, raise_on_non_zero_exit: false

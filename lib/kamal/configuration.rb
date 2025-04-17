@@ -257,6 +257,13 @@ class Kamal::Configuration
     argumentize "--log-opt", "max-size=#{max_size}" if max_size.present?
   end
 
+  def proxy_default_boot_options
+    [
+      *(KAMAL.config.proxy_publish_args(Kamal::Configuration::PROXY_HTTP_PORT, Kamal::Configuration::PROXY_HTTPS_PORT, nil)),
+      *(KAMAL.config.proxy_logging_args(Kamal::Configuration::PROXY_LOG_MAX_SIZE))
+    ]
+  end
+
   def proxy_options_default
     [ *proxy_publish_args(PROXY_HTTP_PORT, PROXY_HTTPS_PORT), *proxy_logging_args(PROXY_LOG_MAX_SIZE) ]
   end
