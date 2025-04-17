@@ -13,7 +13,7 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
 
         version = capture_with_info(*KAMAL.proxy.version).strip.presence
 
-        if version && version != "next" && Kamal::Utils.older_version?(version, Kamal::Configuration::PROXY_MINIMUM_VERSION)
+        if version && Kamal::Utils.older_version?(version, Kamal::Configuration::PROXY_MINIMUM_VERSION)
           raise "kamal-proxy version #{version} is too old, run `kamal proxy reboot` in order to update to at least #{Kamal::Configuration::PROXY_MINIMUM_VERSION}"
         end
         execute *KAMAL.proxy.start_or_run
