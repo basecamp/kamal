@@ -372,7 +372,7 @@ class CliProxyTest < CliTestCase
     run_command("boot_config", "set", "--metrics_port", "9000", "--debug", "true").tap do |output|
       %w[ 1.1.1.1 1.1.1.2 ].each do |host|
         assert_match "Running /usr/bin/env mkdir -p .kamal/proxy on #{host}", output
-        assert_match "Running /usr/bin/env rm .kamal/proxy/options on #{host}", output
+        assert_match "Uploading \"--publish 80:80 --publish 443:443 --log-opt max-size=10m --expose=9000\" to .kamal/proxy/options on #{host}", output
         assert_match "Running /usr/bin/env rm .kamal/proxy/image on #{host}", output
         assert_match "Running /usr/bin/env rm .kamal/proxy/image_version on #{host}", output
         assert_match "Uploading \"kamal-proxy run --debug --metrics-port \\\"9000\\\"\" to .kamal/proxy/run_command on #{host}", output
@@ -383,7 +383,7 @@ class CliProxyTest < CliTestCase
   test "boot_config set all" do
     run_command("boot_config", "set", "--docker_options", "label=foo=bar", "--registry", "myreg", "--repository", "myrepo", "--image_version", "0.9.9", "--metrics_port", "9000", "--debug", "true").tap do |output|
       %w[ 1.1.1.1 1.1.1.2 ].each do |host|
-        assert_match "Uploading \"--publish 80:80 --publish 443:443 --log-opt max-size=10m --label=foo=bar\" to .kamal/proxy/options on #{host}", output
+        assert_match "Uploading \"--publish 80:80 --publish 443:443 --log-opt max-size=10m --expose=9000 --label=foo=bar\" to .kamal/proxy/options on #{host}", output
         assert_match "Uploading \"myreg/myrepo/kamal-proxy\" to .kamal/proxy/image on #{host}", output
         assert_match "Uploading \"0.9.9\" to .kamal/proxy/image_version on #{host}", output
         assert_match "Uploading \"kamal-proxy run --debug --metrics-port \\\"9000\\\"\" to .kamal/proxy/run_command on #{host}", output
