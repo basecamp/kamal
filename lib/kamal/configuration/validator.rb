@@ -168,4 +168,10 @@ class Kamal::Configuration::Validator
       unknown_keys.reject! { |key| extension?(key) } if allow_extensions?
       unknown_keys_error unknown_keys if unknown_keys.present?
     end
+
+    def validate_docker_options!(options)
+      if options
+        error "Cannot set restart policy in docker options, unless-stopped is required" if options["restart"]
+      end
+    end
 end

@@ -187,4 +187,12 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
     assert @config.accessory(:monitoring).running_proxy?
     assert_equal [ "monitoring.example.com" ], @config.accessory(:monitoring).proxy.hosts
   end
+
+  test "can't set restart in options" do
+    @deploy[:accessories]["mysql"]["options"] = { "restart" => "always" }
+
+    assert_raises Kamal::ConfigurationError, "servers/workers: Cannot set restart policy in docker options, unless-stopped is required" do
+      Kamal::Configuration.new(@deploy)
+    end
+  end
 end
