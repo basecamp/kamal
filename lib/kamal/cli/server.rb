@@ -2,6 +2,8 @@ class Kamal::Cli::Server < Kamal::Cli::Base
   desc "exec", "Run a custom command on the server (use --help to show options)"
   option :interactive, type: :boolean, aliases: "-i", default: false, desc: "Run the command interactively (use for console/bash)"
   def exec(*cmd)
+    pre_connect_if_required
+
     cmd = Kamal::Utils.join_commands(cmd)
     hosts = KAMAL.hosts
 

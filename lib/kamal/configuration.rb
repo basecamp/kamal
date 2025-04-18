@@ -68,7 +68,7 @@ class Kamal::Configuration
     @env = Env.new(config: @raw_config.env || {}, secrets: secrets)
 
     @logging = Logging.new(logging_config: @raw_config.logging)
-    @proxy = Proxy.new(config: self, proxy_config: @raw_config.proxy || {})
+    @proxy = Proxy.new(config: self, proxy_config: @raw_config.key?(:proxy) ? @raw_config.proxy : {})
     @ssh = Ssh.new(config: self)
     @sshkit = Sshkit.new(config: self)
 
