@@ -70,9 +70,9 @@ class Kamal::Cli::Build < Kamal::Cli::Base
       say "Pulling image on #{first_hosts.join(", ")} to seed the #{"mirror".pluralize(first_hosts.count)}...", :magenta
       pull_on_hosts(first_hosts)
       say "Pulling image on remaining hosts...", :magenta
-      pull_on_hosts(KAMAL.hosts - first_hosts)
+      pull_on_hosts(KAMAL.app_hosts - first_hosts)
     else
-      pull_on_hosts(KAMAL.hosts)
+      pull_on_hosts(KAMAL.app_hosts)
     end
   end
 
@@ -163,9 +163,9 @@ class Kamal::Cli::Build < Kamal::Cli::Base
     end
 
     def mirror_hosts
-      if KAMAL.hosts.many?
+      if KAMAL.app_hosts.many?
         mirror_hosts = Concurrent::Hash.new
-        on(KAMAL.hosts) do |host|
+        on(KAMAL.app_hosts) do |host|
           first_mirror = capture_with_info(*KAMAL.builder.first_mirror).strip.presence
           mirror_hosts[first_mirror] ||= host.to_s if first_mirror
         rescue SSHKit::Command::Failed => e
@@ -193,7 +193,7 @@ class Kamal::Cli::Build < Kamal::Cli::Base
     end
 
     def login_to_registry_remotely
-      on(KAMAL.hosts) do
+      on(KAMAL.app_hosts) do
         execute *KAMAL.registry.login
       end
     end
