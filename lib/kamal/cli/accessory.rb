@@ -275,11 +275,7 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
     end
 
     def accessory_hosts(accessory)
-      if KAMAL.specific_hosts&.any?
-        KAMAL.specific_hosts & accessory.hosts
-      else
-        accessory.hosts
-      end
+      KAMAL.accessory_hosts & accessory.hosts
     end
 
     def remove_accessory(name)
