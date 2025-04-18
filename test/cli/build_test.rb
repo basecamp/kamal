@@ -145,6 +145,9 @@ class CliBuildTest < CliTestCase
         .with { |*args| args[0..1] == [ :docker, :login ] }
 
       SSHKit::Backend::Abstract.any_instance.expects(:execute)
+      .with(:docker, :start, "kamal-docker-registry", "||", :docker, :run, "--detach", "-p", "127.0.0.1:5000:5000", "--name", "kamal-docker-registry", "registry:3")
+
+      SSHKit::Backend::Abstract.any_instance.expects(:execute)
         .with(:docker, :buildx, :rm, "kamal-local-registry-docker-container")
 
       SSHKit::Backend::Abstract.any_instance.expects(:execute)
