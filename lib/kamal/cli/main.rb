@@ -194,10 +194,10 @@ class Kamal::Cli::Main < Kamal::Cli::Base
     confirming "This will replace Traefik with kamal-proxy and restart all accessories" do
       with_lock do
         if options[:rolling]
-          (KAMAL.hosts | KAMAL.accessory_hosts).each do |host|
+          KAMAL.hosts.each do |host|
             KAMAL.with_specific_hosts(host) do
               say "Upgrading #{host}...", :magenta
-              if KAMAL.hosts.include?(host)
+              if KAMAL.app_hosts.include?(host)
                 invoke "kamal:cli:proxy:upgrade", [], options.merge(confirmed: true, rolling: false)
                 reset_invocation(Kamal::Cli::Proxy)
               end
@@ -253,7 +253,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
   private
     def container_available?(version)
       begin
-        on(KAMAL.hosts) do
+        on(KAMAL.app_hosts) do
           KAMAL.roles_on(host).each do |role|
             container_id = capture_with_info(*KAMAL.app(role: role, host: host).container_id_for_version(version))
             raise "Container not found" unless container_id.present?

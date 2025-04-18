@@ -5,7 +5,7 @@ require "active_support/core_ext/object/blank"
 class Kamal::Commander
   attr_accessor :verbosity, :holding_lock, :connected
   attr_reader :specific_roles, :specific_hosts
-  delegate :hosts, :roles, :primary_host, :primary_role, :roles_on, :proxy_hosts, :accessory_hosts, to: :specifics
+  delegate :hosts, :roles, :primary_host, :primary_role, :roles_on, :app_hosts, :proxy_hosts, :accessory_hosts, to: :specifics
 
   def initialize
     reset

@@ -60,7 +60,7 @@ class MainTest < IntegrationTest
     version = latest_app_version
 
     assert_equal [ "web" ], config[:roles]
-    assert_equal [ "vm1", "vm2" ], config[:hosts]
+    assert_equal [ "vm1", "vm2", "vm3" ], config[:hosts]
     assert_equal "vm1", config[:primary_host]
     assert_equal version, config[:version]
     assert_equal "registry:4443/app", config[:repository]
@@ -88,8 +88,6 @@ class MainTest < IntegrationTest
   end
 
   test "setup and remove" do
-    @app = "app_with_roles"
-
     kamal :proxy, :boot_config, "set",
       "--publish=false",
       "--docker-options=label=traefik.http.services.kamal_proxy.loadbalancer.server.scheme=http",
@@ -172,21 +170,25 @@ class MainTest < IntegrationTest
       assert_equal "200", Net::HTTP.get_response(URI.parse("http://#{app_host}:12345/versions/.hidden")).code
     end
 
-    def vm1_image_ids
-      docker_compose("exec vm1 docker image ls -q", capture: true).strip.split("\n")
+    def image_ids(vm:)
+      docker_compose("exec #{vm} docker image ls -q", capture: true).strip.split("\n")
     end
 
-    def vm1_container_ids
-      docker_compose("exec vm1 docker ps -a -q", capture: true).strip.split("\n")
+    def container_ids(vm:)
+      docker_compose("exec #{vm} docker ps -a -q", capture: true).strip.split("\n")
     end
 
     def assert_no_images_or_containers
-      assert vm1_image_ids.empty?
-      assert vm1_container_ids.empty?
+      [ :vm1, :vm2, :vm3 ].each do |vm|
+        assert image_ids(vm: vm).empty?
+        assert container_ids(vm: vm).empty?
+      end
     end
 
     def assert_images_and_containers
-      assert vm1_image_ids.any?
-      assert vm1_container_ids.any?
+      [ :vm1, :vm2, :vm3 ].each do |vm|
+        assert image_ids(vm: vm).any?
+        assert container_ids(vm: vm).any?
+      end
     end
 end

@@ -125,6 +125,10 @@ class Kamal::Configuration
     (roles + accessories).flat_map(&:hosts).uniq
   end
 
+  def app_hosts
+    roles.flat_map(&:hosts).uniq
+  end
+
   def primary_host
     primary_role&.primary_host
   end
