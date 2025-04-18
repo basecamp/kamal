@@ -149,8 +149,12 @@ class Kamal::Configuration
     proxy_roles.flat_map(&:name)
   end
 
+  def proxy_accessories
+    accessories.select(&:running_proxy?)
+  end
+
   def proxy_hosts
-    proxy_roles.flat_map(&:hosts).uniq
+    (proxy_roles.flat_map(&:hosts) + proxy_accessories.flat_map(&:hosts)).uniq
   end
 
   def repository
@@ -367,22 +371,26 @@ class Kamal::Configuration
     end
 
     def ensure_required_keys_present
-      %i[ service image registry servers ].each do |key|
+      %i[ service image registry ].each do |key|
         raise Kamal::ConfigurationError, "Missing required configuration for #{key}" unless raw_config[key].present?
       end
 
-      unless role(primary_role_name).present?
-        raise Kamal::ConfigurationError, "The primary_role #{primary_role_name} isn't defined"
-      end
+      if raw_config.servers.nil?
+        raise Kamal::ConfigurationError, "No servers or accessories specified" unless raw_config.accessories.present?
+      else
+        unless role(primary_role_name).present?
+          raise Kamal::ConfigurationError, "The primary_role #{primary_role_name} isn't defined"
+        end
 
-      if primary_role.hosts.empty?
-        raise Kamal::ConfigurationError, "No servers specified for the #{primary_role.name} primary_role"
-      end
+        if primary_role.hosts.empty?
+          raise Kamal::ConfigurationError, "No servers specified for the #{primary_role.name} primary_role"
+        end
 
-      unless allow_empty_roles?
-        roles.each do |role|
-          if role.hosts.empty?
-            raise Kamal::ConfigurationError, "No servers specified for the #{role.name} role. You can ignore this with allow_empty_roles: true"
+        unless allow_empty_roles?
+          roles.each do |role|
+            if role.hosts.empty?
+              raise Kamal::ConfigurationError, "No servers specified for the #{role.name} role. You can ignore this with allow_empty_roles: true"
+            end
           end
         end
       end

@@ -13,6 +13,13 @@ class Kamal::Configuration::Servers
 
   private
     def role_names
-      servers_config.is_a?(Array) ? [ "web" ] : servers_config.keys.sort
+      case servers_config
+      when Array
+        [ "web" ]
+      when NilClass
+        []
+      else
+        servers_config.keys.sort
+      end
     end
 end

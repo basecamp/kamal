@@ -30,7 +30,7 @@ class ConfigurationTest < ActiveSupport::TestCase
   %i[ service image registry ].each do |key|
     test "#{key} config required" do
       assert_raise(Kamal::ConfigurationError) do
-        Kamal::Configuration.new @deploy.tap { _1.delete key }
+        Kamal::Configuration.new @deploy.tap { |config| config.delete key }
       end
     end
   end
@@ -38,21 +38,36 @@ class ConfigurationTest < ActiveSupport::TestCase
   %w[ username password ].each do |key|
     test "registry #{key} required" do
       assert_raise(Kamal::ConfigurationError) do
-        Kamal::Configuration.new @deploy.tap { _1[:registry].delete key }
+        Kamal::Configuration.new @deploy.tap { |config| config[:registry].delete key }
       end
     end
   end
 
   test "service name valid" do
     assert_nothing_raised do
-      Kamal::Configuration.new(@deploy.tap { _1[:service] = "hey-app1_primary" })
-      Kamal::Configuration.new(@deploy.tap { _1[:service] = "MyApp" })
+      Kamal::Configuration.new(@deploy.tap { |config| config[:service] = "hey-app1_primary" })
+      Kamal::Configuration.new(@deploy.tap { |config| config[:service] = "MyApp" })
     end
   end
 
   test "service name invalid" do
     assert_raise(Kamal::ConfigurationError) do
-      Kamal::Configuration.new @deploy.tap { _1[:service] = "app.com" }
+      Kamal::Configuration.new @deploy.tap { |config| config[:service] = "app.com" }
+    end
+  end
+
+  test "servers required" do
+    assert_raise(Kamal::ConfigurationError) do
+      Kamal::Configuration.new @deploy.tap { |config| config.delete(:servers) }
+    end
+  end
+
+  test "servers not required with accessories" do
+    assert_nothing_raised do
+      @deploy.delete(:servers)
+      @deploy[:accessories] = { "foo" => { "image" => "foo/bar", "host" => "1.1.1.1" } }
+
+      Kamal::Configuration.new(@deploy)
     end
   end
 
@@ -250,7 +265,7 @@ class ConfigurationTest < ActiveSupport::TestCase
   test "destination required" do
     dest_config_file = Pathname.new(File.expand_path("fixtures/deploy_for_required_dest.yml", __dir__))
 
-    assert_raises(Kamal::ConfigurationError) do
+    assert_raises(ArgumentError, "You must specify a destination") do
       config = Kamal::Configuration.create_from config_file: dest_config_file
     end
 
