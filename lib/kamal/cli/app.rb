@@ -127,6 +127,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
       say "Get most recent version available as an image...", :magenta unless options[:version]
       using_version(version_or_latest) do |version|
         say "Launching interactive command with version #{version} via SSH from new container on #{KAMAL.primary_host}...", :magenta
+        on(KAMAL.primary_host) { execute *KAMAL.registry.login }
         run_locally do
           exec KAMAL.app(role: KAMAL.primary_role, host: KAMAL.primary_host).execute_in_new_container_over_ssh(cmd, env: env)
         end
@@ -152,6 +153,8 @@ class Kamal::Cli::App < Kamal::Cli::Base
       using_version(version_or_latest) do |version|
         say "Launching command with version #{version} from new container...", :magenta
         on(KAMAL.app_hosts) do |host|
+          execute *KAMAL.registry.login
+
           roles = KAMAL.roles_on(host)
 
           roles.each do |role|

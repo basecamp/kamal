@@ -152,6 +152,7 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
 
       when options[:interactive]
         say "Launching interactive command via SSH from new container...", :magenta
+        on(accessory.hosts.first) { execute *KAMAL.registry.login }
         run_locally { exec accessory.execute_in_new_container_over_ssh(cmd) }
 
       when options[:reuse]
@@ -164,6 +165,7 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
       else
         say "Launching command from new container...", :magenta
         on(hosts) do |host|
+          execute *KAMAL.registry.login
           execute *KAMAL.auditor.record("Executed cmd '#{cmd}' on #{name} accessory"), verbosity: :debug
           puts_by_host host, capture_with_info(*accessory.execute_in_new_container(cmd))
         end
