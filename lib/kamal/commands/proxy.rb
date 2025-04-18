@@ -66,7 +66,7 @@ class Kamal::Commands::Proxy < Kamal::Commands::Base
   end
 
   def boot_config
-    [ :echo, "#{substitute(read_boot_options)} #{substitute(read_image)}:#{substitute(read_image_version)}" ]
+    [ :echo, "#{substitute(read_boot_options)} #{substitute(read_image)}:#{substitute(read_image_version)} #{substitute(read_run_command)}" ]
   end
 
   def read_boot_options
@@ -81,6 +81,10 @@ class Kamal::Commands::Proxy < Kamal::Commands::Base
     read_file(config.proxy_image_version_file, default: Kamal::Configuration::PROXY_MINIMUM_VERSION)
   end
 
+  def read_run_command
+    read_file(config.proxy_run_command_file)
+  end
+
   def reset_boot_options
     remove_file config.proxy_options_file
   end
@@ -91,6 +95,10 @@ class Kamal::Commands::Proxy < Kamal::Commands::Base
 
   def reset_image_version
     remove_file config.proxy_image_version_file
+  end
+
+  def reset_run_command
+    remove_file config.proxy_run_command_file
   end
 
   private

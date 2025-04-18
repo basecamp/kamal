@@ -316,6 +316,10 @@ class Kamal::Configuration
     File.join proxy_directory, "image_version"
   end
 
+  def proxy_run_command_file
+    File.join proxy_directory, "run_command"
+  end
+
   def proxy_apps_directory
     File.join proxy_directory, "apps-config"
   end

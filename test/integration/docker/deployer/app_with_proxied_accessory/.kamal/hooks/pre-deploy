@@ -1,0 +1,4 @@
+#!/bin/sh
+set -e
+
+kamal proxy boot_config set --registry registry:4443
