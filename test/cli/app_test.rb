@@ -334,18 +334,24 @@ class CliAppTest < CliTestCase
   end
 
   test "exec interactive" do
+    Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
     SSHKit::Backend::Abstract.any_instance.expects(:exec)
       .with("ssh -t root@1.1.1.1 -p 22 'docker run -it --rm --network kamal --env-file .kamal/apps/app/env/roles/web.env --log-opt max-size=\"10m\" dhh/app:latest ruby -v'")
+
     run_command("exec", "-i", "ruby -v").tap do |output|
+      assert_hook_ran "pre-connect", output
       assert_match "Get most recent version available as an image...", output
       assert_match "Launching interactive command with version latest via SSH from new container on 1.1.1.1...", output
     end
   end
 
   test "exec interactive with reuse" do
+    Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
     SSHKit::Backend::Abstract.any_instance.expects(:exec)
       .with("ssh -t root@1.1.1.1 -p 22 'docker exec -it app-web-999 ruby -v'")
+
     run_command("exec", "-i", "--reuse", "ruby -v").tap do |output|
+      assert_hook_ran "pre-connect", output
       assert_match "Get current version of running container...", output
       assert_match "Running /usr/bin/env sh -c 'docker ps --latest --format '\\''{{.Names}}'\\'' --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --format '\\''{{.Names}}'\\'' --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting' | head -1 | while read line; do echo ${line#app-web-}; done on 1.1.1.1", output
       assert_match "Launching interactive command with version 999 via SSH from existing container on 1.1.1.1...", output
