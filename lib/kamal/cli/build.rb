@@ -15,6 +15,8 @@ class Kamal::Cli::Build < Kamal::Cli::Base
     cli = self
 
     ensure_docker_installed
+    login_to_registry_locally
+
     run_hook "pre-build"
 
     uncommitted_changes = Kamal::Git.uncommitted_changes
@@ -61,6 +63,8 @@ class Kamal::Cli::Build < Kamal::Cli::Base
 
   desc "pull", "Pull app image from registry onto servers"
   def pull
+    login_to_registry_remotely
+
     if (first_hosts = mirror_hosts).any?
       #  Pull on a single host per mirror first to seed them
       say "Pulling image on #{first_hosts.join(", ")} to seed the #{"mirror".pluralize(first_hosts.count)}...", :magenta
@@ -179,6 +183,18 @@ class Kamal::Cli::Build < Kamal::Cli::Base
         execute *KAMAL.builder.clean, raise_on_non_zero_exit: false
         execute *KAMAL.builder.pull
         execute *KAMAL.builder.validate_image
+      end
+    end
+
+    def login_to_registry_locally
+      run_locally do
+        execute *KAMAL.registry.login
+      end
+    end
+
+    def login_to_registry_remotely
+      on(KAMAL.hosts) do
+        execute *KAMAL.registry.login
       end
     end
 end

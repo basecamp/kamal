@@ -57,6 +57,7 @@ class CliBuildTest < CliTestCase
       stub_setup
 
       SSHKit::Backend::Abstract.any_instance.expects(:execute).with(:docker, "--version", "&&", :docker, :buildx, "version")
+      SSHKit::Backend::Abstract.any_instance.stubs(:execute).with { |*args| args[0..1] == [ :docker, :login ] }
 
       SSHKit::Backend::Abstract.any_instance.expects(:execute)
         .with(:git, "-C", "#{Dir.tmpdir}/kamal-clones/app-#{pwd_sha}", :clone, Dir.pwd, "--recurse-submodules")
@@ -103,6 +104,7 @@ class CliBuildTest < CliTestCase
       stub_setup
 
       SSHKit::Backend::Abstract.any_instance.expects(:execute).with(:docker, "--version", "&&", :docker, :buildx, "version")
+      SSHKit::Backend::Abstract.any_instance.stubs(:execute).with { |*args| args[0..1] == [ :docker, :login ] }
 
       SSHKit::Backend::Abstract.any_instance.expects(:execute)
         .with(:git, "-C", "#{Dir.tmpdir}/kamal-clones/app-#{pwd_sha}", :clone, Dir.pwd, "--recurse-submodules")
@@ -138,6 +140,9 @@ class CliBuildTest < CliTestCase
 
       SSHKit::Backend::Abstract.any_instance.expects(:execute)
         .with(:docker, "--version", "&&", :docker, :buildx, "version")
+
+      SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+        .with { |*args| args[0..1] == [ :docker, :login ] }
 
       SSHKit::Backend::Abstract.any_instance.expects(:execute)
         .with(:docker, :buildx, :rm, "kamal-local-docker-container")
