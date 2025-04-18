@@ -17,6 +17,9 @@ class AccessoryTest < IntegrationTest
     logs = kamal :accessory, :logs, :busybox, capture: true
     assert_match /Starting busybox.../, logs
 
+    boot = kamal :accessory, :boot, :busybox, capture: true
+    assert_match /Skipping booting `busybox` on vm1, vm2, a container already exists/, boot
+
     kamal :accessory, :remove, :busybox, "-y"
     assert_accessory_not_running :busybox
   end

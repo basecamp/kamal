@@ -1,4 +1,5 @@
 require "active_support/core_ext/array/conversions"
+require "concurrent/array"
 
 class Kamal::Cli::Accessory < Kamal::Cli::Base
   desc "boot [NAME]", "Boot new accessory service on host (use NAME=all to boot all accessories)"
@@ -10,6 +11,16 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
         prepare(name) if prepare
 
         with_accessory(name) do |accessory, hosts|
+          booted_hosts = Concurrent::Array.new
+          on(hosts) do |host|
+            booted_hosts << host.to_s if capture_with_info(*accessory.info(all: true, quiet: true)).strip.presence
+          end
+
+          if booted_hosts.any?
+            say "Skipping booting `#{name}` on #{booted_hosts.sort.join(", ")}, a container already exists", :yellow
+            hosts -= booted_hosts
+          end
+
           directories(name)
           upload(name)
 
