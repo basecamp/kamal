@@ -20,9 +20,6 @@ class Kamal::Cli::Main < Kamal::Cli::Base
     runtime = print_runtime do
       invoke_options = deploy_options
 
-      say "Log into image registry...", :magenta
-      invoke "kamal:cli:registry:login", [], invoke_options.merge(skip_local: options[:skip_push])
-
       if options[:skip_push]
         say "Pull app image...", :magenta
         invoke "kamal:cli:build:pull", [], invoke_options
@@ -52,7 +49,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
     run_hook "post-deploy", secrets: true, runtime: runtime.round.to_s
   end
 
-  desc "redeploy", "Deploy app to servers without bootstrapping servers, starting kamal-proxy, pruning, and registry login"
+  desc "redeploy", "Deploy app to servers without bootstrapping servers, starting kamal-proxy and pruning"
   option :skip_push, aliases: "-P", type: :boolean, default: false, desc: "Skip image build and push"
   def redeploy
     runtime = print_runtime do
