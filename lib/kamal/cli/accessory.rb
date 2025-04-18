@@ -141,6 +141,8 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
   option :interactive, aliases: "-i", type: :boolean, default: false, desc: "Execute command over ssh for an interactive shell (use for console/bash)"
   option :reuse, type: :boolean, default: false, desc: "Reuse currently running container instead of starting a new one"
   def exec(name, *cmd)
+    pre_connect_if_required
+
     cmd = Kamal::Utils.join_commands(cmd)
     with_accessory(name) do |accessory, hosts|
       case

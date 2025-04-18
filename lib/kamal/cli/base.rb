@@ -147,12 +147,16 @@ module Kamal::Cli
       end
 
       def on(*args, &block)
+        pre_connect_if_required
+
+        super
+      end
+
+      def pre_connect_if_required
         if !KAMAL.connected?
           run_hook "pre-connect"
           KAMAL.connected = true
         end
-
-        super
       end
 
       def command
