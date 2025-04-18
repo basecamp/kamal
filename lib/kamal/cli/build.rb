@@ -71,9 +71,9 @@ class Kamal::Cli::Build < Kamal::Cli::Base
         say "Pulling image on #{first_hosts.join(", ")} to seed the #{"mirror".pluralize(first_hosts.count)}...", :magenta
         pull_on_hosts(first_hosts)
         say "Pulling image on remaining hosts...", :magenta
-        pull_on_hosts(KAMAL.hosts - first_hosts)
+        pull_on_hosts(KAMAL.app_hosts - first_hosts)
       else
-        pull_on_hosts(KAMAL.hosts)
+        pull_on_hosts(KAMAL.app_hosts)
       end
     end
   end
