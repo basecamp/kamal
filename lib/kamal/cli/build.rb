@@ -190,7 +190,11 @@ class Kamal::Cli::Build < Kamal::Cli::Base
 
     def login_to_registry_locally
       run_locally do
-        execute *KAMAL.registry.login
+        if KAMAL.registry.local?
+          execute *KAMAL.registry.setup
+        else
+          execute *KAMAL.registry.login
+        end
       end
     end
 
