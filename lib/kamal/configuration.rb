@@ -144,6 +144,10 @@ class Kamal::Configuration
   def proxy_roles
     roles.select(&:running_proxy?)
   end
+  
+  def load_balancing?
+    proxy&.load_balancing?
+  end
 
   def proxy_role_names
     proxy_roles.flat_map(&:name)
@@ -298,6 +302,10 @@ class Kamal::Configuration
 
   def proxy_directory
     File.join run_directory, "proxy"
+  end
+
+  def loadbalancer_directory
+    File.join run_directory, "loadbalancer"
   end
 
   def proxy_options_file

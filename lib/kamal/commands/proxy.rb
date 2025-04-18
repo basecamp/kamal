@@ -9,8 +9,8 @@ class Kamal::Commands::Proxy < Kamal::Commands::Base
     docker :container, :start, container_name
   end
 
-  def stop(name: container_name)
-    docker :container, :stop, name
+  def stop(name = nil)
+    docker :container, :stop, name || container_name
   end
 
   def start_or_run
