@@ -141,6 +141,9 @@ class CliBuildTest < CliTestCase
       SSHKit::Backend::Abstract.any_instance.expects(:execute)
         .with(:docker, "--version", "&&", :docker, :buildx, "version")
 
+      SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+        .with { |*args| args[0..1] == [ :docker, :login ] }
+
       SSHKit::Backend::Abstract.any_instance.expects(:execute)
         .with(:docker, :buildx, :rm, "kamal-local-registry-docker-container")
 
@@ -151,7 +154,7 @@ class CliBuildTest < CliTestCase
         .with(:docker, :buildx, :inspect, "kamal-local-registry-docker-container")
         .raises(SSHKit::Command::Failed.new("no builder"))
 
-      SSHKit::Backend::Abstract.any_instance.expects(:execute).with { |*args| args.first.start_with?("git") }
+      SSHKit::Backend::Abstract.any_instance.expects(:execute).with { |*args| args.first.to_s.start_with?("git") }
 
       SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
         .with(:git, "-C", anything, :"rev-parse", :HEAD)
