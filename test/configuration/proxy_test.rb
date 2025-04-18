@@ -38,6 +38,13 @@ class ConfigurationProxyTest < ActiveSupport::TestCase
     assert_not config.proxy.ssl?
   end
 
+  test "false not allowed" do
+    @deploy[:proxy] = false
+    assert_raises(Kamal::ConfigurationError, "proxy: should be a hash") do
+      config.proxy
+    end
+  end
+
   private
     def config
       Kamal::Configuration.new(@deploy)

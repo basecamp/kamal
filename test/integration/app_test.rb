@@ -48,9 +48,36 @@ class AppTest < IntegrationTest
     assert_match "App Host: vm1", exec_output
     assert_match /1 root      0:\d\d nginx/, exec_output
 
+    kamal :app, :maintenance
+    assert_app_in_maintenance
+
+    kamal :app, :live
+    assert_app_is_up
+
     kamal :app, :remove
 
     assert_app_not_found
     assert_app_directory_removed
+  end
+
+  test "custom error pages" do
+    @app = "app_with_roles"
+
+    kamal :deploy
+    assert_app_is_up
+
+    kamal :app, :maintenance
+    assert_app_in_maintenance message: "Custom Maintenance Page"
+
+    kamal :app, :live
+    kamal :app, :maintenance, "--message", "\"Testing Maintence Mode\""
+    assert_app_in_maintenance message: "Custom Maintenance Page: Testing Maintence Mode"
+
+    second_version = update_app_rev
+
+    kamal :redeploy
+
+    kamal :app, :maintenance
+    assert_app_in_maintenance message: "Custom Maintenance Page"
   end
 end

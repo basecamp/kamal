@@ -18,6 +18,10 @@ class Kamal::Commander::Specifics
     roles.select { |role| role.hosts.include?(host.to_s) }
   end
 
+  def app_hosts
+    config.app_hosts & specified_hosts
+  end
+
   def proxy_hosts
     config.proxy_hosts & specified_hosts
   end

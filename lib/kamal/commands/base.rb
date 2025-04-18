@@ -68,6 +68,10 @@ module Kamal::Commands
         combine *commands, by: "||"
       end
 
+      def substitute(*commands)
+        "\$\(#{commands.join(" ")}\)"
+      end
+
       def xargs(command)
         [ :xargs, command ].flatten
       end

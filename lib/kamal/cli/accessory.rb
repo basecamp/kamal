@@ -1,4 +1,5 @@
 require "active_support/core_ext/array/conversions"
+require "concurrent/array"
 
 class Kamal::Cli::Accessory < Kamal::Cli::Base
   desc "boot [NAME]", "Boot new accessory service on host (use NAME=all to boot all accessories)"
@@ -10,6 +11,16 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
         prepare(name) if prepare
 
         with_accessory(name) do |accessory, hosts|
+          booted_hosts = Concurrent::Array.new
+          on(hosts) do |host|
+            booted_hosts << host.to_s if capture_with_info(*accessory.info(all: true, quiet: true)).strip.presence
+          end
+
+          if booted_hosts.any?
+            say "Skipping booting `#{name}` on #{booted_hosts.sort.join(", ")}, a container already exists", :yellow
+            hosts -= booted_hosts
+          end
+
           directories(name)
           upload(name)
 
@@ -130,6 +141,8 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
   option :interactive, aliases: "-i", type: :boolean, default: false, desc: "Execute command over ssh for an interactive shell (use for console/bash)"
   option :reuse, type: :boolean, default: false, desc: "Reuse currently running container instead of starting a new one"
   def exec(name, *cmd)
+    pre_connect_if_required
+
     cmd = Kamal::Utils.join_commands(cmd)
     with_accessory(name) do |accessory, hosts|
       case
@@ -139,6 +152,7 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
 
       when options[:interactive]
         say "Launching interactive command via SSH from new container...", :magenta
+        on(accessory.hosts.first) { execute *KAMAL.registry.login }
         run_locally { exec accessory.execute_in_new_container_over_ssh(cmd) }
 
       when options[:reuse]
@@ -151,6 +165,7 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
       else
         say "Launching command from new container...", :magenta
         on(hosts) do |host|
+          execute *KAMAL.registry.login
           execute *KAMAL.auditor.record("Executed cmd '#{cmd}' on #{name} accessory"), verbosity: :debug
           puts_by_host host, capture_with_info(*accessory.execute_in_new_container(cmd))
         end
@@ -275,11 +290,7 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
     end
 
     def accessory_hosts(accessory)
-      if KAMAL.specific_hosts&.any?
-        KAMAL.specific_hosts & accessory.hosts
-      else
-        accessory.hosts
-      end
+      KAMAL.accessory_hosts & accessory.hosts
     end
 
     def remove_accessory(name)

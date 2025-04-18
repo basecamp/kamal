@@ -4,7 +4,7 @@ class AwsSecretsManagerAdapterTest < SecretAdapterTestCase
   test "fails when errors are present" do
     stub_ticks.with("aws --version 2> /dev/null")
     stub_ticks
-      .with("aws secretsmanager batch-get-secret-value --secret-id-list unknown1 unknown2 --profile default")
+      .with("aws secretsmanager batch-get-secret-value --secret-id-list unknown1 unknown2 --profile default --output json")
       .returns(<<~JSON)
         {
           "SecretValues": [],
@@ -33,7 +33,7 @@ class AwsSecretsManagerAdapterTest < SecretAdapterTestCase
   test "fetch" do
     stub_ticks.with("aws --version 2> /dev/null")
     stub_ticks
-      .with("aws secretsmanager batch-get-secret-value --secret-id-list secret/KEY1 secret/KEY2 secret2/KEY3 --profile default")
+      .with("aws secretsmanager batch-get-secret-value --secret-id-list secret/KEY1 secret/KEY2 secret2/KEY3 --profile default --output json")
       .returns(<<~JSON)
         {
           "SecretValues": [
@@ -76,7 +76,7 @@ class AwsSecretsManagerAdapterTest < SecretAdapterTestCase
   test "fetch with string value" do
     stub_ticks.with("aws --version 2> /dev/null")
     stub_ticks
-      .with("aws secretsmanager batch-get-secret-value --secret-id-list secret secret2/KEY1 --profile default")
+      .with("aws secretsmanager batch-get-secret-value --secret-id-list secret secret2/KEY1 --profile default --output json")
       .returns(<<~JSON)
         {
           "SecretValues": [
@@ -118,7 +118,7 @@ class AwsSecretsManagerAdapterTest < SecretAdapterTestCase
   test "fetch with secret names" do
     stub_ticks.with("aws --version 2> /dev/null")
     stub_ticks
-      .with("aws secretsmanager batch-get-secret-value --secret-id-list secret/KEY1 secret/KEY2 --profile default")
+      .with("aws secretsmanager batch-get-secret-value --secret-id-list secret/KEY1 secret/KEY2 --profile default --output json")
       .returns(<<~JSON)
         {
           "SecretValues": [
@@ -159,7 +159,7 @@ class AwsSecretsManagerAdapterTest < SecretAdapterTestCase
   test "fetch without account option omits --profile" do
     stub_ticks.with("aws --version 2> /dev/null")
     stub_ticks
-      .with("aws secretsmanager batch-get-secret-value --secret-id-list secret/KEY1 secret/KEY2")
+      .with("aws secretsmanager batch-get-secret-value --secret-id-list secret/KEY1 secret/KEY2 --output json")
       .returns(<<~JSON)
         {
           "SecretValues": [
