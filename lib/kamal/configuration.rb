@@ -12,6 +12,8 @@ class Kamal::Configuration
   attr_reader :destination, :raw_config, :secrets
   attr_reader :accessories, :aliases, :boot, :builder, :env, :logging, :proxy, :servers, :ssh, :sshkit, :registry
 
+  delegate :container_name, to: :proxy, prefix: true
+
   include Validation
 
   PROXY_MINIMUM_VERSION = "v0.8.7"
@@ -294,10 +296,6 @@ class Kamal::Configuration
 
   def proxy_image_default
     "#{proxy_repository_name}/#{proxy_image_name}"
-  end
-
-  def proxy_container_name
-    "kamal-proxy"
   end
 
   def proxy_directory
