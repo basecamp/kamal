@@ -11,7 +11,7 @@ class IntegrationTest < ActiveSupport::TestCase
   end
 
   teardown do
-    unless passed?
+    if !passed? && ENV["DEBUG_CONTAINER_LOGS"]
       [ :deployer, :vm1, :vm2, :shared, :load_balancer, :registry ].each do |container|
         puts
         puts "Logs for #{container}:"
@@ -25,8 +25,8 @@ class IntegrationTest < ActiveSupport::TestCase
     def docker_compose(*commands, capture: false, raise_on_error: true)
       command = "TEST_ID=#{ENV["TEST_ID"]} docker compose #{commands.join(" ")}"
       succeeded = false
-      if capture
-        result = stdouted { succeeded = system("cd test/integration && #{command}") }
+      if capture || !ENV["DEBUG"]
+        result = stdouted { stderred { succeeded = system("cd test/integration && #{command}") } }
       else
         succeeded = system("cd test/integration && #{command}")
       end
@@ -45,15 +45,22 @@ class IntegrationTest < ActiveSupport::TestCase
     end
 
     def assert_app_is_down
-      response = app_response
-      debug_response_code(response, "502")
-      assert_equal "502", response.code
+      assert_app_error_code("502")
+    end
+
+    def assert_app_in_maintenance(message: nil)
+      assert_app_error_code("503", message: message)
     end
 
     def assert_app_not_found
+      assert_app_error_code("404")
+    end
+
+    def assert_app_error_code(code, message: nil)
       response = app_response
-      debug_response_code(response, "404")
-      assert_equal "404", response.code
+      debug_response_code(response, code)
+      assert_equal code, response.code
+      assert_match message, response.body.strip if message
     end
 
     def assert_app_is_up(version: nil, app: @app)

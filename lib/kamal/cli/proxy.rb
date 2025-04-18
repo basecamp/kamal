@@ -27,6 +27,9 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
   option :http_port, type: :numeric, default: Kamal::Configuration::PROXY_HTTP_PORT, desc: "HTTP port to publish on the host"
   option :https_port, type: :numeric, default: Kamal::Configuration::PROXY_HTTPS_PORT, desc: "HTTPS port to publish on the host"
   option :log_max_size, type: :string, default: Kamal::Configuration::PROXY_LOG_MAX_SIZE, desc: "Max size of proxy logs"
+  option :registry, type: :string, default: nil, desc: "Registry to use for the proxy image"
+  option :repository, type: :string, default: nil, desc: "Repository for the proxy image"
+  option :image_version, type: :string, default: nil, desc: "Version of the proxy to run"
   option :docker_options, type: :array, default: [], desc: "Docker options to pass to the proxy container", banner: "option=value option2=value2"
   def boot_config(subcommand)
     case subcommand
@@ -37,17 +40,43 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
         *options[:docker_options].map { |option| "--#{option}" }
       ]
 
+      image = [
+        options[:registry].presence,
+        options[:repository].presence || KAMAL.config.proxy_repository_name,
+        KAMAL.config.proxy_image_name
+      ].compact.join("/")
+
+      image_version = options[:image_version]
+
       on(KAMAL.proxy_hosts) do |host|
         execute(*KAMAL.proxy.ensure_proxy_directory)
-        upload! StringIO.new(boot_options.join(" ")), KAMAL.config.proxy_options_file
+        if boot_options != KAMAL.config.proxy_default_boot_options
+          upload! StringIO.new(boot_options.join(" ")), KAMAL.config.proxy_options_file
+        else
+          execute *KAMAL.proxy.reset_boot_options, raise_on_non_zero_exit: false
+        end
+
+        if image != KAMAL.config.proxy_image_default
+          upload! StringIO.new(image), KAMAL.config.proxy_image_file
+        else
+          execute *KAMAL.proxy.reset_image, raise_on_non_zero_exit: false
+        end
+
+        if image_version
+          upload! StringIO.new(image_version), KAMAL.config.proxy_image_version_file
+        else
+          execute *KAMAL.proxy.reset_image_version, raise_on_non_zero_exit: false
+        end
       end
     when "get"
       on(KAMAL.proxy_hosts) do |host|
-        puts "Host #{host}: #{capture_with_info(*KAMAL.proxy.get_boot_options)}"
+        puts "Host #{host}: #{capture_with_info(*KAMAL.proxy.boot_config)}"
       end
     when "reset"
       on(KAMAL.proxy_hosts) do |host|
-        execute *KAMAL.proxy.reset_boot_options
+        execute *KAMAL.proxy.reset_boot_options, raise_on_non_zero_exit: false
+        execute *KAMAL.proxy.reset_image, raise_on_non_zero_exit: false
+        execute *KAMAL.proxy.reset_image_version, raise_on_non_zero_exit: false
       end
     else
       raise ArgumentError, "Unknown boot_config subcommand #{subcommand}"

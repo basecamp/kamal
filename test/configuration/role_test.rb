@@ -258,6 +258,14 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
     assert_equal "18s", config_with_roles.role(:workers).proxy.deploy_options[:"target-timeout"]
   end
 
+  test "can't set restart in options" do
+    @deploy_with_roles[:servers]["workers"]["options"] = { "restart" => "always" }
+
+    assert_raises Kamal::ConfigurationError, "servers/workers: Cannot set restart policy in docker options, unless-stopped is required" do
+      Kamal::Configuration.new(@deploy_with_roles)
+    end
+  end
+
   private
     def config
       Kamal::Configuration.new(@deploy)

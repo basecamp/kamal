@@ -105,6 +105,10 @@ class Kamal::Configuration
     raw_config.minimum_version
   end
 
+  def service_and_destination
+    [ service, destination ].compact.join("-")
+  end
+
   def roles
     servers.roles
   end
@@ -119,6 +123,10 @@ class Kamal::Configuration
 
   def all_hosts
     (roles + accessories).flat_map(&:hosts).uniq
+  end
+
+  def app_hosts
+    roles.flat_map(&:hosts).uniq
   end
 
   def primary_host
@@ -145,8 +153,12 @@ class Kamal::Configuration
     proxy_roles.flat_map(&:name)
   end
 
+  def proxy_accessories
+    accessories.select(&:running_proxy?)
+  end
+
   def proxy_hosts
-    proxy_roles.flat_map(&:hosts).uniq
+    (proxy_roles.flat_map(&:hosts) + proxy_accessories.flat_map(&:hosts)).uniq
   end
 
   def image
@@ -217,7 +229,7 @@ class Kamal::Configuration
   end
 
   def app_directory
-    File.join apps_directory, [ service, destination ].compact.join("-")
+    File.join apps_directory, service_and_destination
   end
 
   def env_directory
@@ -234,6 +246,10 @@ class Kamal::Configuration
 
   def asset_path
     raw_config.asset_path
+  end
+
+  def error_pages_path
+    raw_config.error_pages_path
   end
 
   def env_tags
@@ -264,12 +280,27 @@ class Kamal::Configuration
     argumentize "--log-opt", "max-size=#{max_size}" if max_size.present?
   end
 
+  def proxy_default_boot_options
+    [
+      *(KAMAL.config.proxy_publish_args(Kamal::Configuration::PROXY_HTTP_PORT, Kamal::Configuration::PROXY_HTTPS_PORT, nil)),
+      *(KAMAL.config.proxy_logging_args(Kamal::Configuration::PROXY_LOG_MAX_SIZE))
+    ]
+  end
+
   def proxy_options_default
     [ *proxy_publish_args(PROXY_HTTP_PORT, PROXY_HTTPS_PORT), *proxy_logging_args(PROXY_LOG_MAX_SIZE) ]
   end
 
-  def proxy_image
-    "basecamp/kamal-proxy:#{PROXY_MINIMUM_VERSION}"
+  def proxy_repository_name
+    "basecamp"
+  end
+
+  def proxy_image_name
+    "kamal-proxy"
+  end
+
+  def proxy_image_default
+    "#{proxy_repository_name}/#{proxy_image_name}"
   end
 
   def proxy_container_name
@@ -282,6 +313,44 @@ class Kamal::Configuration
 
   def proxy_options_file
     File.join proxy_directory, "options"
+  end
+
+  def proxy_image_file
+    File.join proxy_directory, "image"
+  end
+
+  def proxy_image_version_file
+    File.join proxy_directory, "image_version"
+  end
+
+  def proxy_apps_directory
+    File.join proxy_directory, "apps-config"
+  end
+
+  def proxy_apps_container_directory
+    "/home/kamal-proxy/.apps-config"
+  end
+
+  def proxy_apps_volume
+    Volume.new \
+      host_path: proxy_apps_directory,
+      container_path: proxy_apps_container_directory
+  end
+
+  def proxy_app_directory
+    File.join proxy_apps_directory, service_and_destination
+  end
+
+  def proxy_app_container_directory
+    File.join proxy_apps_container_directory, service_and_destination
+  end
+
+  def proxy_error_pages_directory
+    File.join proxy_app_directory, "error_pages"
+  end
+
+  def proxy_error_pages_container_directory
+    File.join proxy_app_container_directory, "error_pages"
   end
 
   def to_h
@@ -313,24 +382,28 @@ class Kamal::Configuration
     end
 
     def ensure_required_keys_present
-      %i[ service registry servers ].each do |key|
+      %i[ service registry ].each do |key|
         raise Kamal::ConfigurationError, "Missing required configuration for #{key}" unless raw_config[key].present?
       end
 
-    raise Kamal::ConfigurationError, "Missing required configuration for image" if image.blank?
+      raise Kamal::ConfigurationError, "Missing required configuration for image" if image.blank?
 
-      unless role(primary_role_name).present?
-        raise Kamal::ConfigurationError, "The primary_role #{primary_role_name} isn't defined"
-      end
+      if raw_config.servers.nil?
+        raise Kamal::ConfigurationError, "No servers or accessories specified" unless raw_config.accessories.present?
+      else
+        unless role(primary_role_name).present?
+          raise Kamal::ConfigurationError, "The primary_role #{primary_role_name} isn't defined"
+        end
 
-      if primary_role.hosts.empty?
-        raise Kamal::ConfigurationError, "No servers specified for the #{primary_role.name} primary_role"
-      end
+        if primary_role.hosts.empty?
+          raise Kamal::ConfigurationError, "No servers specified for the #{primary_role.name} primary_role"
+        end
 
-      unless allow_empty_roles?
-        roles.each do |role|
-          if role.hosts.empty?
-            raise Kamal::ConfigurationError, "No servers specified for the #{role.name} role. You can ignore this with allow_empty_roles: true"
+        unless allow_empty_roles?
+          roles.each do |role|
+            if role.hosts.empty?
+              raise Kamal::ConfigurationError, "No servers specified for the #{role.name} role. You can ignore this with allow_empty_roles: true"
+            end
           end
         end
       end

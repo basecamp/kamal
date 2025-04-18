@@ -251,6 +251,19 @@ class CliAccessoryTest < CliTestCase
     end
   end
 
+  test "boot with web role filter" do
+    run_command("boot", "redis", "-r", "web").tap do |output|
+      assert_match "docker run --name app-redis --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 6379:6379 --env-file .kamal/apps/app/env/accessories/redis.env --volume $PWD/app-redis/data:/data --label service=\"app-redis\" redis:latest on 1.1.1.1", output
+      assert_match "docker run --name app-redis --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 6379:6379 --env-file .kamal/apps/app/env/accessories/redis.env --volume $PWD/app-redis/data:/data --label service=\"app-redis\" redis:latest on 1.1.1.2", output
+    end
+  end
+
+  test "boot with workers role filter" do
+    run_command("boot", "redis", "-r", "workers").tap do |output|
+      assert_no_match "docker run", output
+    end
+  end
+
   private
     def run_command(*command)
       stdouted { Kamal::Cli::Accessory.start([ *command, "-c", "test/fixtures/deploy_with_accessories_with_different_registries.yml" ]) }

@@ -37,8 +37,8 @@ class Kamal::Commands::Accessory < Kamal::Commands::Base
     docker :container, :stop, service_name
   end
 
-  def info
-    docker :ps, *service_filter
+  def info(all: false, quiet: false)
+    docker :ps, *("-a" if all), *("-q" if quiet), *service_filter
   end
 
   def logs(timestamps: true, since: nil, lines: nil, grep: nil, grep_options: nil)

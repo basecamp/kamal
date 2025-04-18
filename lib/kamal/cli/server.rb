@@ -3,7 +3,7 @@ class Kamal::Cli::Server < Kamal::Cli::Base
   option :interactive, type: :boolean, aliases: "-i", default: false, desc: "Run the command interactively (use for console/bash)"
   def exec(*cmd)
     cmd = Kamal::Utils.join_commands(cmd)
-    hosts = KAMAL.hosts | KAMAL.accessory_hosts
+    hosts = KAMAL.hosts
 
     case
     when options[:interactive]
@@ -27,7 +27,7 @@ class Kamal::Cli::Server < Kamal::Cli::Base
     with_lock do
       missing = []
 
-      on(KAMAL.hosts | KAMAL.accessory_hosts) do |host|
+      on(KAMAL.hosts) do |host|
         unless execute(*KAMAL.docker.installed?, raise_on_non_zero_exit: false)
           if execute(*KAMAL.docker.superuser?, raise_on_non_zero_exit: false)
             info "Missing Docker on #{host}. Installing…"
