@@ -192,6 +192,21 @@ class CliAppTest < CliTestCase
     Thread.report_on_exception = true
   end
 
+  test "boot with only workers" do
+    Object.any_instance.stubs(:sleep)
+
+    SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info).returns("123") # old version
+
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-workers-latest$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
+      .returns("running").at_least_once # workers health check
+
+    run_command("boot", config: :with_only_workers, host: nil).tap do |output|
+      assert_match /First workers container is healthy on 1.1.1.\d, booting any other roles/, output
+      assert_no_match "kamal-proxy", output
+    end
+  end
+
   test "boot with error pages" do
     with_error_pages(directory: "public") do
       stub_running
