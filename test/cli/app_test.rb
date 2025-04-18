@@ -307,6 +307,7 @@ class CliAppTest < CliTestCase
 
   test "exec" do
     run_command("exec", "ruby -v").tap do |output|
+      assert_match "docker login -u [REDACTED] -p [REDACTED]", output
       assert_match "docker run --rm --network kamal --env-file .kamal/apps/app/env/roles/web.env --log-opt max-size=\"10m\" dhh/app:latest ruby -v", output
     end
   end
@@ -355,6 +356,7 @@ class CliAppTest < CliTestCase
 
     run_command("exec", "-i", "ruby -v").tap do |output|
       assert_hook_ran "pre-connect", output
+      assert_match "docker login -u [REDACTED] -p [REDACTED]", output
       assert_match "Get most recent version available as an image...", output
       assert_match "Launching interactive command with version latest via SSH from new container on 1.1.1.1...", output
     end
