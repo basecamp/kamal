@@ -11,7 +11,7 @@ class IntegrationTest < ActiveSupport::TestCase
   end
 
   teardown do
-    if !passed? && ENV["DEBUG"]
+    if !passed? && ENV["DEBUG_CONTAINER_LOGS"]
       [ :deployer, :vm1, :vm2, :shared, :load_balancer, :registry ].each do |container|
         puts
         puts "Logs for #{container}:"
