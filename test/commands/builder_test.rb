@@ -202,7 +202,10 @@ class CommandsBuilderTest < ActiveSupport::TestCase
 
   private
     def new_builder_command(additional_config = {})
-      Kamal::Commands::Builder.new(Kamal::Configuration.new(@config.deep_merge(additional_config), version: "123"))
+      Kamal::Configuration.new(@config.deep_merge(additional_config), version: "123").then do |config|
+        KAMAL.stubs(:config).returns(config)
+        Kamal::Commands::Builder.new(config)
+      end
     end
 
     def local_arch
