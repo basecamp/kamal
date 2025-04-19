@@ -20,7 +20,7 @@ class Kamal::Configuration::Registry
   end
 
   def local?
-    server&.match?("^localhost[:$]")
+    server.to_s.match?("^localhost[:$]")
   end
 
   def local_port
