@@ -203,6 +203,7 @@ class CommandsBuilderTest < ActiveSupport::TestCase
   private
     def new_builder_command(additional_config = {})
       Kamal::Configuration.new(@config.deep_merge(additional_config), version: "123").then do |config|
+        KAMAL.reset
         KAMAL.stubs(:config).returns(config)
         Kamal::Commands::Builder.new(config)
       end
