@@ -69,6 +69,7 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
         end
       end
     when "get"
+
       on(KAMAL.proxy_hosts) do |host|
         puts "Host #{host}: #{capture_with_info(*KAMAL.proxy.boot_config)}"
       end

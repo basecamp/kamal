@@ -115,6 +115,7 @@ class CliAccessoryTest < CliTestCase
 
   test "exec" do
     run_command("exec", "mysql", "mysql -v").tap do |output|
+      assert_match "docker login private.registry -u [REDACTED] -p [REDACTED]", output
       assert_match "Launching command from new container", output
       assert_match "mysql -v", output
     end
