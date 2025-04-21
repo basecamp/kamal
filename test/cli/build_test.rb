@@ -168,7 +168,7 @@ class CliBuildTest < CliTestCase
         .returns("")
 
       SSHKit::Backend::Abstract.any_instance.expects(:execute)
-        .with(:docker, :buildx, :build, "--output=type=registry", "--platform", "linux/amd64", "--builder", "kamal-local-registry-docker-container", "-t", "localhost:5000/dhh/app:999", "-t", "localhost:5000/dhh/app:latest", "--label", "service=\"app\"", "--file", "Dockerfile", ".")
+        .with(:docker, :buildx, :build, "--output=type=registry", "--platform", "linux/amd64", "--builder", "kamal-local-registry-docker-container", "-t", "localhost:5000/dhh/app:999", "-t", "localhost:5000/dhh/app:latest", "--label", "service=\"app\"", "--file", "Dockerfile", ".", "2>&1")
 
       run_command("push", fixture: :with_local_registry_and_accessories).tap do |output|
         assert_match /WARN Missing compatible builder, so creating a new one first/, output
