@@ -9,7 +9,11 @@ class MainTest < IntegrationTest
     kamal :deploy
     assert_app_is_up version: first_version
     assert_hooks_ran "pre-connect", "pre-build", "pre-deploy", "pre-app-boot", "post-app-boot", "post-deploy"
+
     assert_envs version: first_version
+
+    output = kamal :app, :exec, "--verbose", "ls", "-r", "web", capture: true
+    assert_hook_env_variables output, version: first_version
 
     second_version = update_app_rev
 
@@ -190,5 +194,16 @@ class MainTest < IntegrationTest
         assert image_ids(vm: vm).any?
         assert container_ids(vm: vm).any?
       end
+    end
+
+    def assert_hook_env_variables(output, version:)
+      assert_match "KAMAL_VERSION=#{version}", output
+      assert_match "KAMAL_SERVICE=app", output
+      assert_match "KAMAL_SERVICE_VERSION=app@#{version[0..6]}", output
+      assert_match "KAMAL_COMMAND=app", output
+      assert_match "KAMAL_PERFORMER=deployer@example.com", output
+      assert_match /KAMAL_RECORDED_AT=\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ/, output
+      assert_match "KAMAL_HOSTS=vm1,vm2", output
+      assert_match "KAMAL_ROLES=web", output
     end
 end
