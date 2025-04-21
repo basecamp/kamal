@@ -20,7 +20,8 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
       *([ "--builder", builder_name ] unless docker_driver?),
       *build_tag_options(tag_as_dirty: tag_as_dirty),
       *build_options,
-      build_context
+      build_context,
+      "2>&1"
   end
 
   def pull
