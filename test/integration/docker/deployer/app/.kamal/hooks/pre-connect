@@ -1,4 +1,5 @@
 #!/bin/sh
 
 echo "About to lock..."
+env
 mkdir -p /tmp/${TEST_ID} && touch /tmp/${TEST_ID}/pre-connect
