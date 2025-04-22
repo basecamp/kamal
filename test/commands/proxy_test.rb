@@ -147,6 +147,12 @@ class CommandsProxyTest < ActiveSupport::TestCase
       new_command.reset_image_version.join(" ")
   end
 
+  test "ensure_apps_config_directory" do
+    assert_equal \
+      "mkdir -p .kamal/proxy/apps-config",
+      new_command.ensure_apps_config_directory.join(" ")
+  end
+
   private
     def new_command
       Kamal::Commands::Proxy.new(Kamal::Configuration.new(@config, version: "123"))

@@ -16,6 +16,7 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
         if version && Kamal::Utils.older_version?(version, Kamal::Configuration::PROXY_MINIMUM_VERSION)
           raise "kamal-proxy version #{version} is too old, run `kamal proxy reboot` in order to update to at least #{Kamal::Configuration::PROXY_MINIMUM_VERSION}"
         end
+        execute *KAMAL.proxy.ensure_apps_config_directory
         execute *KAMAL.proxy.start_or_run
       end
     end
@@ -101,6 +102,7 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
             "Stopping and removing kamal-proxy on #{host}, if running..."
             execute *KAMAL.proxy.stop, raise_on_non_zero_exit: false
             execute *KAMAL.proxy.remove_container
+            execute *KAMAL.proxy.ensure_apps_config_directory
 
             execute *KAMAL.proxy.run
 
