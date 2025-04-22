@@ -13,7 +13,7 @@ class Kamal::Commander
 
   def reset
     self.verbosity = :info
-    self.holding_lock = false
+    self.holding_lock = ENV["KAMAL_LOCK"] == "true"
     self.connected = false
     @specifics = @specific_roles = @specific_hosts = nil
     @config = @config_kwargs = nil
