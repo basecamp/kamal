@@ -65,6 +65,10 @@ class Kamal::Commands::Proxy < Kamal::Commands::Base
     remove_directory config.proxy_directory
   end
 
+  def ensure_apps_config_directory
+    make_directory config.proxy_apps_directory
+  end
+
   def boot_config
     [ :echo, "#{substitute(read_boot_options)} #{substitute(read_image)}:#{substitute(read_image_version)}" ]
   end
