@@ -6,7 +6,6 @@ class Kamal::Commands::Accessory < Kamal::Commands::Base
            :network_args, :publish_args, :env_args, :volume_args, :label_args, :option_args,
            :secrets_io, :secrets_path, :env_directory, :proxy, :running_proxy?, :registry,
            to: :accessory_config
-  delegate :proxy_container_name, to: :config
 
   def initialize(config, name:)
     super(config)
