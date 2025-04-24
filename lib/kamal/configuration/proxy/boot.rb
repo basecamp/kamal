@@ -108,7 +108,7 @@ class Kamal::Configuration::Proxy::Boot
 
     def format_bind_ip(ip)
       # Ensure IPv6 address inside square brackets - e.g. [::1]
-      if ip =~ Resolv::IPv6::Regex && ip !~ /\[.*\]/
+      if ip =~ Resolv::IPv6::Regex && ip !~ /\A\[.*\]\z/
         "[#{ip}]"
       else
         ip
