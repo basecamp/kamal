@@ -58,15 +58,15 @@ class Kamal::Commands::Proxy < Kamal::Commands::Base
   end
 
   def ensure_proxy_directory
-    make_directory config.proxy_directory
+    make_directory config.proxy_boot.host_directory
   end
 
   def remove_proxy_directory
-    remove_directory config.proxy_directory
+    remove_directory config.proxy_boot.host_directory
   end
 
   def ensure_apps_config_directory
-    make_directory config.proxy_apps_directory
+    make_directory config.proxy_boot.apps_directory
   end
 
   def boot_config
@@ -74,32 +74,32 @@ class Kamal::Commands::Proxy < Kamal::Commands::Base
   end
 
   def read_boot_options
-    read_file(config.proxy_options_file, default: config.proxy_options_default.join(" "))
+    read_file(config.proxy_boot.options_file, default: config.proxy_boot.default_boot_options.join(" "))
   end
 
   def read_image
-    read_file(config.proxy_image_file, default: config.proxy_image_default)
+    read_file(config.proxy_boot.image_file, default: config.proxy_boot.image_default)
   end
 
   def read_image_version
-    read_file(config.proxy_image_version_file, default: Kamal::Configuration::PROXY_MINIMUM_VERSION)
+    read_file(config.proxy_boot.image_version_file, default: Kamal::Configuration::Proxy::Boot::MINIMUM_VERSION)
   end
 
   def reset_boot_options
-    remove_file config.proxy_options_file
+    remove_file config.proxy_boot.options_file
   end
 
   def reset_image
-    remove_file config.proxy_image_file
+    remove_file config.proxy_boot.image_file
   end
 
   def reset_image_version
-    remove_file config.proxy_image_version_file
+    remove_file config.proxy_boot.image_version_file
   end
 
   private
     def container_name
-      config.proxy_container_name
+      config.proxy_boot.container_name
     end
 
     def read_file(file, default: nil)
@@ -114,6 +114,6 @@ class Kamal::Commands::Proxy < Kamal::Commands::Base
         "--detach",
         "--restart", "unless-stopped",
         "--volume", "kamal-proxy-config:/home/kamal-proxy/.config/kamal-proxy",
-        *config.proxy_apps_volume.docker_args
+        *config.proxy_boot.apps_volume.docker_args
     end
 end

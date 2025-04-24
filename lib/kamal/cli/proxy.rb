@@ -13,8 +13,8 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
 
         version = capture_with_info(*KAMAL.proxy.version).strip.presence
 
-        if version && Kamal::Utils.older_version?(version, Kamal::Configuration::PROXY_MINIMUM_VERSION)
-          raise "kamal-proxy version #{version} is too old, run `kamal proxy reboot` in order to update to at least #{Kamal::Configuration::PROXY_MINIMUM_VERSION}"
+        if version && Kamal::Utils.older_version?(version, Kamal::Configuration::Proxy::Boot::MINIMUM_VERSION)
+          raise "kamal-proxy version #{version} is too old, run `kamal proxy reboot` in order to update to at least #{Kamal::Configuration::Proxy::Boot::MINIMUM_VERSION}"
         end
         execute *KAMAL.proxy.ensure_apps_config_directory
         execute *KAMAL.proxy.start_or_run
@@ -25,46 +25,48 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
   desc "boot_config <set|get|reset>", "Manage kamal-proxy boot configuration"
   option :publish, type: :boolean, default: true, desc: "Publish the proxy ports on the host"
   option :publish_host_ip, type: :string, repeatable: true, default: nil, desc: "Host IP address to bind HTTP/HTTPS traffic to. Defaults to all interfaces"
-  option :http_port, type: :numeric, default: Kamal::Configuration::PROXY_HTTP_PORT, desc: "HTTP port to publish on the host"
-  option :https_port, type: :numeric, default: Kamal::Configuration::PROXY_HTTPS_PORT, desc: "HTTPS port to publish on the host"
-  option :log_max_size, type: :string, default: Kamal::Configuration::PROXY_LOG_MAX_SIZE, desc: "Max size of proxy logs"
+  option :http_port, type: :numeric, default: Kamal::Configuration::Proxy::Boot::DEFAULT_HTTP_PORT, desc: "HTTP port to publish on the host"
+  option :https_port, type: :numeric, default: Kamal::Configuration::Proxy::Boot::DEFAULT_HTTPS_PORT, desc: "HTTPS port to publish on the host"
+  option :log_max_size, type: :string, default: Kamal::Configuration::Proxy::Boot::DEFAULT_LOG_MAX_SIZE, desc: "Max size of proxy logs"
   option :registry, type: :string, default: nil, desc: "Registry to use for the proxy image"
   option :repository, type: :string, default: nil, desc: "Repository for the proxy image"
   option :image_version, type: :string, default: nil, desc: "Version of the proxy to run"
   option :docker_options, type: :array, default: [], desc: "Docker options to pass to the proxy container", banner: "option=value option2=value2"
   def boot_config(subcommand)
+    proxy_boot_config = KAMAL.config.proxy_boot
+
     case subcommand
     when "set"
       boot_options = [
-        *(KAMAL.config.proxy_publish_args(options[:http_port], options[:https_port], options[:publish_host_ip]) if options[:publish]),
-        *(KAMAL.config.proxy_logging_args(options[:log_max_size])),
+        *(proxy_boot_config.publish_args(options[:http_port], options[:https_port], options[:publish_host_ip]) if options[:publish]),
+        *(proxy_boot_config.logging_args(options[:log_max_size])),
         *options[:docker_options].map { |option| "--#{option}" }
       ]
 
       image = [
         options[:registry].presence,
-        options[:repository].presence || KAMAL.config.proxy_repository_name,
-        KAMAL.config.proxy_image_name
+        options[:repository].presence || proxy_boot_config.repository_name,
+        proxy_boot_config.image_name
       ].compact.join("/")
 
       image_version = options[:image_version]
 
       on(KAMAL.proxy_hosts) do |host|
         execute(*KAMAL.proxy.ensure_proxy_directory)
-        if boot_options != KAMAL.config.proxy_default_boot_options
-          upload! StringIO.new(boot_options.join(" ")), KAMAL.config.proxy_options_file
+        if boot_options != proxy_boot_config.default_boot_options
+          upload! StringIO.new(boot_options.join(" ")), proxy_boot_config.options_file
         else
           execute *KAMAL.proxy.reset_boot_options, raise_on_non_zero_exit: false
         end
 
-        if image != KAMAL.config.proxy_image_default
-          upload! StringIO.new(image), KAMAL.config.proxy_image_file
+        if image != proxy_boot_config.image_default
+          upload! StringIO.new(image), proxy_boot_config.image_file
         else
           execute *KAMAL.proxy.reset_image, raise_on_non_zero_exit: false
         end
 
         if image_version
-          upload! StringIO.new(image_version), KAMAL.config.proxy_image_version_file
+          upload! StringIO.new(image_version), proxy_boot_config.image_version_file
         else
           execute *KAMAL.proxy.reset_image_version, raise_on_non_zero_exit: false
         end

@@ -13,7 +13,7 @@ class Kamal::Cli::App::ErrorPages
     if KAMAL.config.error_pages_path
       with_error_pages_tmpdir do |local_error_pages_dir|
         execute *KAMAL.app.create_error_pages_directory
-        upload! local_error_pages_dir, KAMAL.config.proxy_error_pages_directory, mode: "0700", recursive: true
+        upload! local_error_pages_dir, KAMAL.config.proxy_boot.error_pages_directory, mode: "0700", recursive: true
       end
     end
   end
