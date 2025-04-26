@@ -6,11 +6,12 @@ class Kamal::Configuration::Proxy
 
   delegate :argumentize, :optionize, to: Kamal::Utils
 
-  attr_reader :config, :proxy_config
+  attr_reader :config, :proxy_config, :secrets
 
-  def initialize(config:, proxy_config:, context: "proxy")
+  def initialize(config:, proxy_config:, secrets:, context: "proxy")
     @config = config
     @proxy_config = proxy_config
+    @secrets = secrets
     validate! @proxy_config, with: Kamal::Configuration::Validator::Proxy, context: context
   end
 
@@ -26,10 +27,36 @@ class Kamal::Configuration::Proxy
     proxy_config["hosts"] || proxy_config["host"]&.split(",") || []
   end
 
+  def custom_ssl_certificate?
+    proxy_config["certificate_pem"].present? && proxy_config["private_key_pem"].present?
+  end
+
+  def certificate_pem_content
+    secrets[proxy_config["certificate_pem"]]
+  end
+
+  def private_key_pem_content
+    secrets[proxy_config["private_key_pem"]]
+  end
+
+  def certificate_pem
+    tls_file_path("cert.pem")
+  end
+
+  def private_key_pem
+    tls_file_path("key.pem")
+  end
+
+  def tls_file_path(filename)
+    File.join(config.proxy_boot.tls_container_directory, filename) if custom_ssl_certificate?
+  end
+
   def deploy_options
     {
       host: hosts,
       tls: proxy_config["ssl"].presence,
+      "tls-certificate-path": certificate_pem,
+      "tls-private-key-path": private_key_pem,
       "deploy-timeout": seconds_duration(config.deploy_timeout),
       "drain-timeout": seconds_duration(config.drain_timeout),
       "health-check-interval": seconds_duration(proxy_config.dig("healthcheck", "interval")),
@@ -65,7 +92,7 @@ class Kamal::Configuration::Proxy
   end
 
   def merge(other)
-    self.class.new config: config, proxy_config: proxy_config.deep_merge(other.proxy_config)
+    self.class.new config: config, proxy_config: proxy_config.deep_merge(other.proxy_config), secrets: secrets
   end
 
   private

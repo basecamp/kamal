@@ -143,13 +143,17 @@ class CommandsAppTest < ActiveSupport::TestCase
       new_command.deploy(target: "172.1.0.2").join(" ")
   end
 
+  test "set certificate permissions" do
+    assert_equal \
+      "docker exec --user root kamal-proxy chown -R kamal-proxy:kamal-proxy /home/kamal-proxy/.apps-config/app/tls",
+      new_command.set_certificate_permissions.join(" ")
+  end
+
   test "remove" do
     assert_equal \
       "docker exec kamal-proxy kamal-proxy remove app-web",
       new_command.remove.join(" ")
   end
-
-
 
   test "logs" do
     assert_equal \

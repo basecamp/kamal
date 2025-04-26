@@ -16,7 +16,6 @@
 # It is disabled by default on all other roles but can be enabled by setting
 # `proxy: true` or providing a proxy configuration.
 proxy:
-
   # Hosts
   #
   # The hosts that will be used to serve the app. The proxy will only route requests
@@ -51,6 +50,17 @@ proxy:
   #
   # Defaults to `false`:
   ssl: true
+
+  # Custom SSL certificate
+  #
+  # In scenarios where Let's Encrypt is not an option, or you already have your own
+  # certificates from a different Certificate Authority, you can configure kamal-proxy
+  # to load the certificate and the corresponding private key from disk.
+  #
+  # A reference to a secret (in this case, `CERTIFICATE_PEM` and `PRIVATE_KEY_PEM`) will look up the secret
+  # in the local environment:
+  certificate_pem: CERTIFICATE_PEM
+  private_key_pem: PRIVATE_KEY_PEM
 
   # SSL redirect
   #

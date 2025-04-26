@@ -220,6 +220,22 @@ class CliAppTest < CliTestCase
     end
   end
 
+  test "boot with custom ssl certificate" do
+    Kamal::Configuration::Proxy.any_instance.stubs(:custom_ssl_certificate?).returns(true)
+    Kamal::Configuration::Proxy.any_instance.stubs(:certificate_pem_content).returns("CERTIFICATE CONTENT")
+    Kamal::Configuration::Proxy.any_instance.stubs(:private_key_pem_content).returns("PRIVATE KEY CONTENT")
+
+    stub_running
+    run_command("boot", config: :with_proxy).tap do |output|
+      assert_match "Writing SSL certificates for web on 1.1.1.1", output
+      assert_match "mkdir -p .kamal/proxy/apps-config/app/tls", output
+      assert_match "sh -c [REDACTED]", output
+      assert_match "docker exec --user root kamal-proxy chown -R kamal-proxy:kamal-proxy", output
+      assert_match "--tls-certificate-path=\"/home/kamal-proxy/.apps-config/app/tls/cert.pem\"", output
+      assert_match "--tls-private-key-path=\"/home/kamal-proxy/.apps-config/app/tls/key.pem\"", output
+    end
+  end
+
   test "start" do
     SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info).returns("999") # old version
 
