@@ -357,6 +357,49 @@ class Kamal::Cli::App < Kamal::Cli::Base
     end
   end
 
+  desc "visit", "Open the main URL from the deploy config in the browser"
+  def visit
+    # Get host from proxy configuration if available
+    host = 
+      if KAMAL.config.proxy
+        if KAMAL.config.proxy.respond_to?(:hosts) && KAMAL.config.proxy.hosts.any?
+          KAMAL.config.proxy.hosts.first
+        elsif KAMAL.config.proxy.respond_to?(:host) && KAMAL.config.proxy.host.present?
+          KAMAL.config.proxy.host
+        else
+          nil
+        end
+      else
+        nil
+      end
+    
+    # If no host is available, show an error message
+    unless host
+      say "No host found in proxy configuration", :red
+      return
+    end
+    
+    # Determine scheme based on SSL configuration
+    scheme = KAMAL.config.proxy&.ssl? ? "https" : "http"
+    url = "#{scheme}://#{host}"
+    
+    # Determine the appropriate opener command based on OS
+    opener = 
+      case RbConfig::CONFIG["host_os"]
+      when /darwin|mac os/i then "open"
+      when /linux/i then "xdg-open"
+      when /mswin|mingw/i then "start"
+      end
+    
+    # Open the URL or print it if no opener is available
+    if opener
+      say "Opening #{url} in your browser...", :green
+      Kernel.system "#{opener} #{url}"
+    else
+      say "Could not detect platform. Please open this URL manually: #{url}", :yellow
+    end
+  end
+
   private
     def using_version(new_version)
       if new_version
