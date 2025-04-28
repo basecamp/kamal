@@ -48,10 +48,11 @@ class ConfigurationProxyTest < ActiveSupport::TestCase
   test "ssl with certificate and private key from secrets" do
     with_test_secrets("secrets" => "CERT_PEM=certificate\nKEY_PEM=private_key") do
       @deploy[:proxy] = {
-        "ssl" => true,
-        "host" => "example.com",
-        "certificate_pem" => "CERT_PEM",
-        "private_key_pem" => "KEY_PEM"
+        "ssl" => {
+          "certificate_pem" => "CERT_PEM",
+          "private_key_pem" => "KEY_PEM"
+        },
+        "host" => "example.com"
       }
 
       proxy = config.proxy
@@ -60,12 +61,31 @@ class ConfigurationProxyTest < ActiveSupport::TestCase
     end
   end
 
+  test "deploy options with custom ssl certificates" do
+    with_test_secrets("secrets" => "CERT_PEM=certificate\nKEY_PEM=private_key") do
+      @deploy[:proxy] = {
+        "ssl" => {
+          "certificate_pem" => "CERT_PEM",
+          "private_key_pem" => "KEY_PEM"
+        },
+        "host" => "example.com"
+      }
+
+      proxy = config.proxy
+      options = proxy.deploy_options
+      assert_equal true, options[:tls]
+      assert_equal "/home/kamal-proxy/.apps-config/app/tls/cert.pem", options[:"tls-certificate-path"]
+      assert_equal "/home/kamal-proxy/.apps-config/app/tls/key.pem", options[:"tls-private-key-path"]
+    end
+  end
+
   test "ssl with certificate and no private key" do
     with_test_secrets("secrets" => "CERT_PEM=certificate") do
       @deploy[:proxy] = {
-        "ssl" => true,
-        "host" => "example.com",
-        "certificate_pem" => "CERT_PEM"
+        "ssl" => {
+          "certificate_pem" => "CERT_PEM"
+        },
+        "host" => "example.com"
       }
       assert_raises(Kamal::ConfigurationError) { config.proxy.ssl? }
     end
@@ -74,9 +94,10 @@ class ConfigurationProxyTest < ActiveSupport::TestCase
   test "ssl with private key and no certificate" do
     with_test_secrets("secrets" => "KEY_PEM=private_key") do
       @deploy[:proxy] = {
-        "ssl" => true,
-        "host" => "example.com",
-        "private_key_pem" => "KEY_PEM"
+        "ssl" => {
+          "private_key_pem" => "KEY_PEM"
+        },
+        "host" => "example.com"
       }
       assert_raises(Kamal::ConfigurationError) { config.proxy.ssl? }
     end

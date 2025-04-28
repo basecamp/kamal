@@ -49,7 +49,7 @@ proxy:
   # unless you explicitly set `forward_headers: true`
   #
   # Defaults to `false`:
-  ssl: true
+  ssl: ...
 
   # Custom SSL certificate
   #
@@ -59,8 +59,13 @@ proxy:
   #
   # A reference to a secret (in this case, `CERTIFICATE_PEM` and `PRIVATE_KEY_PEM`) will look up the secret
   # in the local environment:
-  certificate_pem: CERTIFICATE_PEM
-  private_key_pem: PRIVATE_KEY_PEM
+  #
+  # Examples:
+  #   ssl: true              # Enable SSL with Let's Encrypt
+  #   ssl: false             # Disable SSL
+  #   ssl:                   # Enable custom SSL
+  #     certificate_pem: CERTIFICATE_PEM
+  #     private_key_pem: PRIVATE_KEY_PEM
 
   # SSL redirect
   #

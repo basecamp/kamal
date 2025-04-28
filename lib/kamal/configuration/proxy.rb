@@ -28,15 +28,21 @@ class Kamal::Configuration::Proxy
   end
 
   def custom_ssl_certificate?
-    proxy_config["certificate_pem"].present? && proxy_config["private_key_pem"].present?
+    ssl = proxy_config["ssl"]
+    return false unless ssl.is_a?(Hash)
+    ssl["certificate_pem"].present? && ssl["private_key_pem"].present?
   end
 
   def certificate_pem_content
-    secrets[proxy_config["certificate_pem"]]
+    ssl = proxy_config["ssl"]
+    return nil unless ssl.is_a?(Hash)
+    secrets[ssl["certificate_pem"]]
   end
 
   def private_key_pem_content
-    secrets[proxy_config["private_key_pem"]]
+    ssl = proxy_config["ssl"]
+    return nil unless ssl.is_a?(Hash)
+    secrets[ssl["private_key_pem"]]
   end
 
   def certificate_pem
@@ -54,7 +60,7 @@ class Kamal::Configuration::Proxy
   def deploy_options
     {
       host: hosts,
-      tls: proxy_config["ssl"].presence,
+      tls: ssl? ? true : nil,
       "tls-certificate-path": certificate_pem,
       "tls-private-key-path": private_key_pem,
       "deploy-timeout": seconds_duration(config.deploy_timeout),
