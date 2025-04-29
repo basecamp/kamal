@@ -371,7 +371,7 @@ class CliProxyTest < CliTestCase
 
   test "boot_config get" do
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:echo, "$(cat .kamal/proxy/options 2> /dev/null || echo \"--publish 80:80 --publish 443:443 --log-opt max-size=10m\") $(cat .kamal/proxy/image 2> /dev/null || echo \"basecamp/kamal-proxy\"):$(cat .kamal/proxy/image_version 2> /dev/null || echo \"v0.8.7\")")
+      .with(:echo, "$(cat .kamal/proxy/options 2> /dev/null || echo \"--publish 80:80 --publish 443:443 --log-opt max-size=10m\") $(cat .kamal/proxy/image 2> /dev/null || echo \"basecamp/kamal-proxy\"):$(cat .kamal/proxy/image_version 2> /dev/null || echo \"#{Kamal::Configuration::Proxy::Boot::MINIMUM_VERSION}\")")
       .returns("--publish 80:80 --publish 8443:443 --label=foo=bar basecamp/kamal-proxy:v1.0.0")
       .twice
 
