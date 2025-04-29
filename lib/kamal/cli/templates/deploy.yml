@@ -44,10 +44,10 @@ builder:
 #    DB_NAME_PREFIX: *service
 #
 #    # A web-app DB_HOST variable can be set here to the name of the database accessory container, which by default
-     # is the service name set above, hyphenated with the database accessory YAML key set below
-     # (e.g. my-app-db or my-app-postgres). If this is done, the app and the database containers will communicate
-     # through the Docker private-IP network, and there is no need to expose the database to either the host
-     # or the world by setting its accessory port below.
+#    # is the service name set above, hyphenated with the database accessory YAML key set below
+#    # (e.g. my-app-db or my-app-postgres). If this is done, the app and the database containers will communicate
+#    # through the Docker private-IP network, and there is no need to expose the database to either the host
+#    # or the world by setting its accessory port below.
 #    # Alternatively, this variable can be set to an IP address or hostname.
 #    # Or instead of using a variable, the database hostname can be set directly in the web-app.
 #    DB_HOST: my-app-db
@@ -129,11 +129,11 @@ servers:
 #    # The port that will be opened and published for this accessory.
 #    # If not set, no port will be opened nor published.
 #    # A setting of "<external-IP>:<external-port>:<container-port>" will expose the accessory to the given
-     # external IP and port. For example, "127.0.0.1:3306:3306" will only expose the accessory to the host.
+#    # external IP and port. For example, "127.0.0.1:3306:3306" will only expose the accessory to the host.
 #    # A numeric-only setting is equivalent to "0.0.0.0:<port>:<port>", exposing the accessory to all
-     # IP addresses unless blocked by another firewall.
+#    # IP addresses unless blocked by another firewall.
 #    # Whatever the setting, communication is available on the Docker private IP network via the accessory
-     # container name <service-name><accessory-YAML-key> (my-app-db in this example).
+#    # container name <service-name><accessory-YAML-key> (my-app-db in this example).
 #    port: 3306
 #
 #    # The web-app environment variables above are not propagated to accessories.
@@ -152,8 +152,8 @@ servers:
 #       - config/mysql/production.cnf:/etc/mysql/my.cnf
 #       - db/production.sql:/docker-entrypoint-initdb.d/setup.sql
 #
-#     # Link host directories with accessory container absolute paths to persist data over accessory
-      # container lifetimes. Host directories are created if absent.
+#     # Link host directories with accessory container absolute paths to persist data across accessory
+#     # container lifetimes. Host directories are created if absent.
 #     directories:
 #       # If not an absolute path, the key part of the value below uses the host directory
 #       # ~<ssh-user>/<accessory-container-name>/<key>
