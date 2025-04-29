@@ -43,11 +43,11 @@ builder:
 #    DB_USER: *service
 #    DB_NAME_PREFIX: *service
 #
-#    # A web-app DB_HOST variable can be set here to the name of the database accessory container, which by default
-#    # is the service name set above, hyphenated with the database accessory YAML key set below
-#    # (e.g. my-app-db or my-app-postgres). If this is done, the app and the database containers will communicate
-#    # through the Docker private-IP network, and there is no need to expose the database to either the host
-#    # or the world by setting its accessory port below.
+#    # A web-app DB_HOST variable (or a variable with a different name) could be set here to the name of the
+#    # database accessory container, which by default is the service name set above, hyphenated with the
+#    # database accessory YAML key set below (e.g. my-app-db or my-app-postgres).
+#    # If this is done, the app and the database containers will communicate through the Docker private-IP network,
+#    # and there is no need to expose the database to either the host or the world by setting its accessory port below.
 #    # Alternatively, this variable can be set to an IP address or hostname.
 #    # Or instead of using a variable, the database hostname can be set directly in the web-app.
 #    DB_HOST: my-app-db
