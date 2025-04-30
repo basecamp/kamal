@@ -33,10 +33,6 @@ module Kamal::Commands::App::Proxy
     [ :sh, "-c", Kamal::Utils.sensitive("cat > #{config.proxy_boot.tls_directory}/key.pem << 'KAMAL_KEY_EOF'\n#{content}\nKAMAL_KEY_EOF", redaction: "cat > #{config.proxy_boot.tls_directory}/key.pem << 'KAMAL_KEY_EOF'\n[PRIVATE KEY CONTENT REDACTED]\nKAMAL_KEY_EOF") ]
   end
 
-  def set_certificate_permissions
-    [ :docker, :exec, "--user", "root", proxy_container_name, "chown", "-R", "kamal-proxy:kamal-proxy", config.proxy_boot.tls_container_directory ]
-  end
-
   private
     def proxy_exec(*command)
       docker :exec, proxy_container_name, "kamal-proxy", *command

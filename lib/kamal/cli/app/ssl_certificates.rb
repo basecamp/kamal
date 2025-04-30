@@ -18,7 +18,6 @@ class Kamal::Cli::App::SslCertificates
       if key_content = role.proxy.private_key_pem_content
         execute *app.write_private_key_file(key_content)
       end
-      execute *app.set_certificate_permissions
     end
   end
 
