@@ -1,9 +1,9 @@
 # This YAML file is used by Kamal to configure its deployment of this web-app to one or more servers by building
-# a Docker image of the app container via a Dockerfile and a clone of the app-code repository, pushing
-# this image to an image repository, then deploying this image to the configured servers, along with any accessory
-# images configured here (such as a database), and an optional Kamal-Proxy container to act as the single web
-# listener and optional single SSL (https) processor and certificate manager, which then transfers unencrypted
-# HTTP to and from web-app containers.
+# a Docker image of the app container via a Dockerfile and a local clone of the app-code repository (changes don't
+# need to be first pushed to any remote), pushing this image to an image repository, then deploying this image
+# to the configured servers, along with any accessory images configured here (such as a database), and an optional
+# Kamal-Proxy container to act as the single web listener and optional single SSL (https) processor and
+# certificate manager, which then transfers unencrypted HTTP to and from web-app containers.
 #
 # This file is similar to a Docker Compose YAML file, but does not currently support interpolation of
 # environment variables. YAML anchors (&anchor) and aliases (*anchor) are however available to reduce
@@ -14,7 +14,8 @@
 
 
 # The name of your application.
-# This is only directly used to uniquely name the web-app image/container and its accessory containers.
+# This is only directly used to uniquely prefix the name of the web-app image/container
+# and its accessory containers.
 #
 service: my-app &service
 
@@ -46,9 +47,9 @@ builder:
 #    # A web-app DB_HOST variable (or a variable with a different name) could be set here to the name of the
 #    # database accessory container, which by default is the service name set above, hyphenated with the
 #    # database accessory YAML key set below (e.g. my-app-db or my-app-postgres).
-#    # If this variable is used by the web-app, the app and the database containers will communicate through
-#    # the Docker private-IP network, and there is no need to expose the database to either the host or the world
-#    # by setting its accessory port below.
+#    # If such a variable setting is used by the web-app, the app and the database containers will communicate
+#    # through the Docker private-IP network, and there is no need to expose the database to either
+#    # the host or the world by setting its accessory port below.
 #    # Alternatively, this variable can be set to an IP address or hostname.
 #    # Or instead of using a variable, the database hostname can be set directly in the web-app.
 #    DB_HOST: my-app-db
@@ -60,15 +61,15 @@ builder:
 
 # Map one or more persistent storage volumes between a web-app container path and the host filesystem.
 # The host filesytem path before the colon can either be an absolute path or a volume identifier,
-# the latter form being mapped to the /var/lib/docker/volumes/<identifier> host path.
+# the latter form being mapped to the /var/lib/docker/volumes/<identifier>/_data host path.
 #
 #volumes:
 #  - "app_storage:/app/storage"
 
 
 # Bridge fingerprinted assets, like JS and CSS, between versions to avoid
-# hitting 404 on in-flight requests. Combines all files from new and old
-# version inside the asset_path.
+# hitting 404 on in-flight requests. Combines all files from the new and old
+# versions inside the asset_path.
 #
 #asset_path: /app/public/assets
 
@@ -134,7 +135,7 @@ servers:
 #    # A numeric-only setting is equivalent to "0.0.0.0:<port>:<port>", exposing the accessory to all
 #    # IP addresses unless blocked by another firewall.
 #    # Whatever the setting, communication is available on the Docker private IP network via the accessory
-#    # container name <service-name><accessory-YAML-key> (my-app-db in this example).
+#    # container name <service-name>-<accessory-YAML-key> (my-app-db in this example).
 #    port: 3306
 #
 #    # The web-app environment variables above are not propagated to accessories.
