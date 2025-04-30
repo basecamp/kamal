@@ -1,9 +1,10 @@
-# This YAML file is used by Kamal to configure its deployment of this web-app to one or more servers by building
-# a Docker image of the app container via a Dockerfile and a local clone of the app-code repository (changes don't
-# need to be first pushed to any remote), pushing this image to an image repository, then deploying this image
-# to the configured servers, along with any accessory images configured here (such as a database), and an optional
-# Kamal-Proxy container to act as the single web listener and optional single SSL (https) processor and
-# certificate manager, which then transfers unencrypted HTTP to and from web-app containers.
+# This YAML file is used by Kamal to configure its deployment of this web-app to one or more servers.
+# Kamal builds a Docker image of the app itself via a Dockerfile and a local clone of the app-code repository
+# (changes don't need to be first pushed to any remote), then pushes this image to the image repository
+# configured here. Kamal then deploys the web-app image it built to the list of servers given here.
+# Kamal can also deploy optional accessory images configured here (such as a database),
+# plus an optional Kamal-Proxy container to act as the single web listener and optional single SSL (https)
+# processor and certificate manager, which then transfers unencrypted HTTP to and from the web-app containers.
 #
 # This file is similar to a Docker Compose YAML file, but does not currently support interpolation of
 # environment variables. YAML anchors (&anchor) and aliases (*anchor) are however available to reduce
