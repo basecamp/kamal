@@ -78,7 +78,7 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
         end
 
         if run_command
-          upload! StringIO.new(run_command), KAMAL.config.proxy_run_command_file
+          upload! StringIO.new(run_command), proxy_boot_config.run_command_file
         else
           execute *KAMAL.proxy.reset_run_command, raise_on_non_zero_exit: false
         end

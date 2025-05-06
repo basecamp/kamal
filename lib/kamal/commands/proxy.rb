@@ -86,7 +86,7 @@ class Kamal::Commands::Proxy < Kamal::Commands::Base
   end
 
   def read_run_command
-    read_file(config.proxy_run_command_file)
+    read_file(config.proxy_boot.run_command_file)
   end
 
   def reset_boot_options
@@ -102,7 +102,7 @@ class Kamal::Commands::Proxy < Kamal::Commands::Base
   end
 
   def reset_run_command
-    remove_file config.proxy_run_command_file
+    remove_file config.proxy_boot.run_command_file
   end
 
   private

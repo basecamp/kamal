@@ -66,6 +66,10 @@ class Kamal::Configuration::Proxy::Boot
     File.join host_directory, "image_version"
   end
 
+  def run_command_file
+    File.join host_directory, "run_command"
+  end
+
   def apps_directory
     File.join host_directory, "apps-config"
   end
