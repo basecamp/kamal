@@ -133,7 +133,13 @@ module Kamal::Cli
 
       def run_hook(hook, **extra_details)
         if !options[:skip_hooks] && KAMAL.hook.hook_exists?(hook)
-          details = { hosts: KAMAL.hosts.join(","), roles: KAMAL.specific_roles&.join(","), command: command, subcommand: subcommand }.compact
+          details = {
+            hosts: KAMAL.hosts.join(","),
+            roles: KAMAL.specific_roles&.join(","),
+            lock: KAMAL.holding_lock?.to_s,
+            command: command,
+            subcommand: subcommand
+          }.compact
 
           say "Running the #{hook} hook...", :magenta
           with_env KAMAL.hook.env(**details, **extra_details) do

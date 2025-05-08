@@ -43,7 +43,7 @@ class CliMainTest < CliTestCase
     with_test_secrets("secrets" => "DB_PASSWORD=secret") do
       invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false, "verbose" => true }
 
-        Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:deliver", [], invoke_options)
+      Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:deliver", [], invoke_options)
       Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:proxy:boot", [], invoke_options)
       Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true))
       Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:boot", [], invoke_options)
@@ -53,7 +53,7 @@ class CliMainTest < CliTestCase
 
       run_command("deploy", "--verbose").tap do |output|
         assert_hook_ran "pre-connect", output
-          assert_match /Build and push app image/, output
+        assert_match /Build and push app image/, output
         assert_hook_ran "pre-deploy", output
         assert_match /Ensure kamal-proxy is running/, output
         assert_match /Detect stale containers/, output
@@ -113,6 +113,32 @@ class CliMainTest < CliTestCase
 
     assert_raises(Kamal::Cli::LockError) do
       run_command("deploy")
+    end
+  end
+
+  test "deploy when inheriting lock" do
+    Thread.report_on_exception = false
+
+    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false }
+
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:deliver", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:proxy:boot", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true))
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:boot", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:prune:all", [], invoke_options)
+
+    Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
+
+    with_kamal_lock_env do
+      KAMAL.reset
+      run_command("deploy").tap do |output|
+        assert_no_match /Acquiring the deploy lock/, output
+        assert_match /Build and push app image/, output
+        assert_match /Ensure kamal-proxy is running/, output
+        assert_match /Detect stale containers/, output
+        assert_match /Prune old containers and images/, output
+        assert_no_match /Releasing the deploy lock/, output
+      end
     end
   end
 
@@ -561,5 +587,12 @@ class CliMainTest < CliTestCase
 
     def assert_file(file, content)
       assert_match content, File.read(file)
+    end
+
+    def with_kamal_lock_env
+      ENV["KAMAL_LOCK"] = "true"
+      yield
+    ensure
+      ENV.delete("KAMAL_LOCK")
     end
 end

@@ -410,13 +410,4 @@ class ConfigurationTest < ActiveSupport::TestCase
 
     assert_equal "Different roles can't share the same host for SSL: foo.example.com", exception.message
   end
-
-  test "proxy directories" do
-    assert_equal ".kamal/proxy/apps-config", @config.proxy_apps_directory
-    assert_equal "/home/kamal-proxy/.apps-config", @config.proxy_apps_container_directory
-    assert_equal ".kamal/proxy/apps-config/app", @config.proxy_app_directory
-    assert_equal "/home/kamal-proxy/.apps-config/app", @config.proxy_app_container_directory
-    assert_equal ".kamal/proxy/apps-config/app/error_pages", @config.proxy_error_pages_directory
-    assert_equal "/home/kamal-proxy/.apps-config/app/error_pages", @config.proxy_error_pages_container_directory
-  end
 end

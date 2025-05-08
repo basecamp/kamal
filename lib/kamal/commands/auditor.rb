@@ -1,5 +1,6 @@
 class Kamal::Commands::Auditor < Kamal::Commands::Base
   attr_reader :details
+  delegate :escape_shell_value, to: Kamal::Utils
 
   def initialize(config, **details)
     super(config)
@@ -9,11 +10,8 @@ class Kamal::Commands::Auditor < Kamal::Commands::Base
   # Runs remotely
   def record(line, **details)
     combine \
-      [ :mkdir, "-p", config.run_directory ],
-      append(
-        [ :echo, audit_tags(**details).except(:version, :service_version, :service).to_s, line ],
-        audit_log_file
-      )
+      make_run_directory,
+      append([ :echo, escape_shell_value(audit_line(line, **details)) ], audit_log_file)
   end
 
   def reveal
@@ -29,5 +27,13 @@ class Kamal::Commands::Auditor < Kamal::Commands::Base
 
     def audit_tags(**details)
       tags(**self.details, **details)
+    end
+
+    def make_run_directory
+      [ :mkdir, "-p", config.run_directory ]
+    end
+
+    def audit_line(line, **details)
+      "#{audit_tags(**details).except(:version, :service_version, :service)} #{line}"
     end
 end
