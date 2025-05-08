@@ -288,7 +288,7 @@ class CommandsAppTest < ActiveSupport::TestCase
 
   test "execute in new container over ssh" do
     assert_match %r{docker run -it --rm --network kamal --env-file .kamal/apps/app/env/roles/web.env --log-opt max-size="10m" dhh/app:999 bin/rails c},
-      new_command.execute_in_new_container_over_ssh("bin/rails", "c", env: {})
+      stub_stdin_tty { new_command.execute_in_new_container_over_ssh("bin/rails", "c", env: {}) }
   end
 
   test "execute in new container over ssh with tags" do
@@ -296,18 +296,23 @@ class CommandsAppTest < ActiveSupport::TestCase
     @config[:env]["tags"] = { "tag1" => { "ENV1" => "value1" } }
 
     assert_equal "ssh -t root@1.1.1.1 -p 22 'docker run -it --rm --network kamal --env ENV1=\"value1\" --env-file .kamal/apps/app/env/roles/web.env --log-opt max-size=\"10m\" dhh/app:999 bin/rails c'",
-      new_command.execute_in_new_container_over_ssh("bin/rails", "c", env: {})
+      stub_stdin_tty { new_command.execute_in_new_container_over_ssh("bin/rails", "c", env: {}) }
   end
 
   test "execute in new container with custom options over ssh" do
     @config[:servers] = { "web" => { "hosts" => [ "1.1.1.1" ], "options" => { "mount" => "somewhere", "cap-add" => true } } }
     assert_match %r{docker run -it --rm --network kamal --env-file .kamal/apps/app/env/roles/web.env --log-opt max-size=\"10m\" --mount \"somewhere\" --cap-add dhh/app:999 bin/rails c},
-      new_command.execute_in_new_container_over_ssh("bin/rails", "c", env: {})
+      stub_stdin_tty { new_command.execute_in_new_container_over_ssh("bin/rails", "c", env: {}) }
   end
 
   test "execute in existing container over ssh" do
     assert_match %r{docker exec -it app-web-999 bin/rails c},
-      new_command.execute_in_existing_container_over_ssh("bin/rails", "c", env: {})
+      stub_stdin_tty { new_command.execute_in_existing_container_over_ssh("bin/rails", "c", env: {}) }
+  end
+
+  test "execute in existing container with piped input over ssh" do
+    assert_match %r{docker exec -i app-web-999 bin/rails c},
+      stub_stdin_file { new_command.execute_in_existing_container_over_ssh("bin/rails", "c", env: {}) }
   end
 
   test "run over ssh" do

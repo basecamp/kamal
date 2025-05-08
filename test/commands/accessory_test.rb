@@ -118,14 +118,21 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
   test "execute in new container over ssh" do
     new_command(:mysql).stub(:run_over_ssh, ->(cmd) { cmd.join(" ") }) do
       assert_match %r{docker run -it --rm --network kamal --env MYSQL_ROOT_HOST=\"%\" --env-file .kamal/apps/app/env/accessories/mysql.env private.registry/mysql:8.0 mysql -u root},
-        new_command(:mysql).execute_in_new_container_over_ssh("mysql", "-u", "root")
+        stub_stdin_tty { new_command(:mysql).execute_in_new_container_over_ssh("mysql", "-u", "root") }
     end
   end
 
   test "execute in existing container over ssh" do
     new_command(:mysql).stub(:run_over_ssh, ->(cmd) { cmd.join(" ") }) do
       assert_match %r{docker exec -it app-mysql mysql -u root},
-        new_command(:mysql).execute_in_existing_container_over_ssh("mysql", "-u", "root")
+        stub_stdin_tty { new_command(:mysql).execute_in_existing_container_over_ssh("mysql", "-u", "root") }
+    end
+  end
+
+  test "execute in existing container with piped input over ssh" do
+    new_command(:mysql).stub(:run_over_ssh, ->(cmd) { cmd.join(" ") }) do
+      assert_match %r{docker exec -i app-mysql mysql -u root},
+        stub_stdin_file { new_command(:mysql).execute_in_existing_container_over_ssh("mysql", "-u", "root") }
     end
   end
 
