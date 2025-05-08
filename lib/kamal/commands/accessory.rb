@@ -55,14 +55,14 @@ class Kamal::Commands::Accessory < Kamal::Commands::Base
 
   def execute_in_existing_container(*command, interactive: false)
     docker :exec,
-      ("-it" if interactive),
+      (docker_interactive_args if interactive),
       service_name,
       *command
   end
 
   def execute_in_new_container(*command, interactive: false)
     docker :run,
-      ("-it" if interactive),
+      (docker_interactive_args if interactive),
       "--rm",
       *network_args,
       *env_args,

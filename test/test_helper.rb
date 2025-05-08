@@ -3,6 +3,7 @@ require "active_support/test_case"
 require "active_support/testing/autorun"
 require "active_support/testing/stream"
 require "rails/test_unit/line_filtering"
+require "pty"
 require "debug"
 require "mocha/minitest" # using #stubs that can alter returns
 require "minitest/autorun" # using #stub that take args
@@ -46,6 +47,27 @@ class ActiveSupport::TestCase
 
     def stderred
       capture(:stderr) { yield }.strip
+    end
+
+    def stub_stdin_tty
+      PTY.open do |master, slave|
+        stub_stdin(master) { yield }
+      end
+    end
+    
+    def stub_stdin_file
+      File.open("/dev/null", "r") do |file|
+        stub_stdin(file) { yield }
+      end
+    end
+    
+    def stub_stdin(io)
+      original_stdin = STDIN.dup
+      STDIN.reopen(io)
+      yield
+    ensure
+      STDIN.reopen(original_stdin)
+      original_stdin.close
     end
 
     def with_test_secrets(**files)
