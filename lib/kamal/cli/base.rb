@@ -187,7 +187,7 @@ module Kamal::Cli
       def arguments
         @kamal_arguments ||= begin
           invocation_class, invocation_commands = *first_invocation
-          invocation_commands
+          invocation_commands.join(",")
         end
       end
 
