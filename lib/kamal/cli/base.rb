@@ -186,7 +186,7 @@ module Kamal::Cli
 
       def arguments
         @kamal_arguments ||= begin
-          instance_variable_get("@_invocations").values.flatten.compact
+          instance_variable_get("@_invocations").values.flatten.compact.join(",")
         end
       end
 
