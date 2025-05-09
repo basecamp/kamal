@@ -32,7 +32,7 @@ class Kamal::Configuration::Accessory
   end
 
   def hosts
-    hosts_from_host || hosts_from_hosts || hosts_from_roles
+    hosts_from_host || hosts_from_hosts || hosts_from_roles || hosts_from_tags
   end
 
   def port
@@ -203,6 +203,12 @@ class Kamal::Configuration::Accessory
     def hosts_from_roles
       if accessory_config.key?("roles")
         accessory_config["roles"].flat_map { |role| config.role(role)&.hosts }
+      end
+    end
+
+    def hosts_from_tags
+      if accessory_config.key?("tags")
+        accessory_config["tags"].flat_map { |tag| config.tag(tag)&.hosts }
       end
     end
 

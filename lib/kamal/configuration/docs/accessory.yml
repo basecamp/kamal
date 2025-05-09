@@ -46,13 +46,15 @@ accessories:
 
     # Accessory hosts
     #
-    # Specify one of `host`, `hosts`, or `roles`:
+    # Specify one of `host`, `hosts`, `roles`, or `tags`:
     host: mysql-db1
     hosts:
       - mysql-db1
       - mysql-db2
     roles:
       - mysql
+    tags:
+      - writer
 
     # Custom command
     #

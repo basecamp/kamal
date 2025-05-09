@@ -7,7 +7,7 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
       image: "dhh/app",
       registry: { "username" => "dhh", "password" => "secret" },
       servers: {
-        "web" => [ "1.1.1.1", "1.1.1.2" ],
+        "web" => [ { "1.1.1.1" => "writer" }, { "1.1.1.2" => "reader" } ],
         "workers" => [ "1.1.1.3", "1.1.1.4" ]
       },
       builder: { "arch" => "amd64" },
@@ -70,6 +70,10 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
           "proxy" => {
             "host" => "monitoring.example.com"
           }
+        },
+        "proxy" => {
+          "image" => "proxy:latest",
+          "tags" => [ "writer" ]
         }
       }
     }
@@ -117,14 +121,14 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
     end
   end
 
-  test "setting host, hosts and roles" do
+  test "setting host, hosts, roles and tags" do
     @deploy[:accessories]["mysql"]["hosts"] = [ "mysql-db1" ]
     @deploy[:accessories]["mysql"]["roles"] = [ "db" ]
 
     exception = assert_raises(Kamal::ConfigurationError) do
       Kamal::Configuration.new(@deploy)
     end
-    assert_equal "accessories/mysql: specify one of `host`, `hosts` or `roles`", exception.message
+    assert_equal "accessories/mysql: specify one of `host`, `hosts`, `roles` or `tags`", exception.message
   end
 
   test "all hosts" do
