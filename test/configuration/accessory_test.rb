@@ -8,7 +8,7 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
       registry: { "username" => "dhh", "password" => "secret" },
       servers: {
         "web" => [ { "1.1.1.1" => "writer" }, { "1.1.1.2" => "reader" } ],
-        "workers" => [ "1.1.1.3", "1.1.1.4" ]
+        "workers" => [ { "1.1.1.3" => "writer" }, "1.1.1.4" ]
       },
       builder: { "arch" => "amd64" },
       env: { "REDIS_URL" => "redis://x/y" },
@@ -111,7 +111,7 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
     assert_equal [ "1.1.1.5" ], @config.accessory(:mysql).hosts
     assert_equal [ "1.1.1.6", "1.1.1.7" ], @config.accessory(:redis).hosts
     assert_equal [ "1.1.1.1", "1.1.1.2" ], @config.accessory(:monitoring).hosts
-    assert_equal [ "1.1.1.1" ], @config.accessory(:proxy).hosts
+    assert_equal [ "1.1.1.1", "1.1.1.3" ], @config.accessory(:proxy).hosts
   end
 
   test "missing host" do
