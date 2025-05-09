@@ -53,8 +53,10 @@ accessories:
       - mysql-db2
     roles:
       - mysql
+    tag: writer
     tags:
       - writer
+      - reader
 
     # Custom command
     #

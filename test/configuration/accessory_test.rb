@@ -73,7 +73,11 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
         },
         "proxy" => {
           "image" => "proxy:latest",
-          "tags" => [ "writer" ]
+          "tags" => [ "writer", "reader" ]
+        },
+        "logger" => {
+          "image" => "logger:latest",
+          "tag" => "writer"
         }
       }
     }
@@ -111,7 +115,7 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
     assert_equal [ "1.1.1.5" ], @config.accessory(:mysql).hosts
     assert_equal [ "1.1.1.6", "1.1.1.7" ], @config.accessory(:redis).hosts
     assert_equal [ "1.1.1.1", "1.1.1.2" ], @config.accessory(:monitoring).hosts
-    assert_equal [ "1.1.1.1", "1.1.1.3" ], @config.accessory(:proxy).hosts
+    assert_equal [ "1.1.1.1", "1.1.1.3", "1.1.1.2" ], @config.accessory(:proxy).hosts
   end
 
   test "missing host" do
@@ -129,7 +133,7 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
     exception = assert_raises(Kamal::ConfigurationError) do
       Kamal::Configuration.new(@deploy)
     end
-    assert_equal "accessories/mysql: specify one of `host`, `hosts`, `roles` or `tags`", exception.message
+    assert_equal "accessories/mysql: specify one of `host`, `hosts`, `roles`, `tag` or `tags`", exception.message
   end
 
   test "all hosts" do

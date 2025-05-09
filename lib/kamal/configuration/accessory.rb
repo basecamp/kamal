@@ -207,7 +207,9 @@ class Kamal::Configuration::Accessory
     end
 
     def hosts_from_tags
-      if accessory_config.key?("tags")
+      if accessory_config.key?("tag")
+        extract_hosts_from_config_with_tag(accessory_config["tag"])
+      elsif accessory_config.key?("tags")
         accessory_config["tags"].flat_map { |tag| extract_hosts_from_config_with_tag(tag) }
       end
     end
