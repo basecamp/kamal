@@ -213,16 +213,12 @@ class Kamal::Configuration::Accessory
     end
 
     def extract_hosts_from_config_with_tag(tag)
-      if config.raw_config.servers.is_a?(Hash)
-        config.raw_config.servers.flat_map do |role, servers_in_role|
+      if (servers_with_roles = config.raw_config.servers).is_a?(Hash)
+        servers_with_roles.flat_map do |role, servers_in_role|
           servers_in_role.collect do |host|
-            if host.is_a?(Hash) && host.values.first.include?(tag)
-              host.keys.first
-            end
-          end
-        end.compact
-      else
-        []
+            host.keys.first if host.is_a?(Hash) && host.values.first.include?(tag)
+          end.compact
+        end
       end
     end
 
