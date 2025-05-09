@@ -116,6 +116,7 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
     assert_equal [ "1.1.1.6", "1.1.1.7" ], @config.accessory(:redis).hosts
     assert_equal [ "1.1.1.1", "1.1.1.2" ], @config.accessory(:monitoring).hosts
     assert_equal [ "1.1.1.1", "1.1.1.3", "1.1.1.2" ], @config.accessory(:proxy).hosts
+    assert_equal [ "1.1.1.1", "1.1.1.3" ], @config.accessory(:logger).hosts
   end
 
   test "missing host" do
