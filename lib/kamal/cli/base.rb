@@ -179,7 +179,7 @@ module Kamal::Cli
       def subcommand
         @kamal_subcommand ||= begin
           invocation_class, invocation_commands = *first_invocation
-          invocation_commands[0] if invocation_class != Kamal::Cli::Main
+          invocation_commands[0]
         end
       end
 
