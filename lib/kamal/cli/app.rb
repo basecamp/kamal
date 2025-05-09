@@ -12,6 +12,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
 
           KAMAL.roles_on(host).each do |role|
             Kamal::Cli::App::Assets.new(host, role, self).run
+            Kamal::Cli::App::SslCertificates.new(host, role, self).run
           end
         end
 
