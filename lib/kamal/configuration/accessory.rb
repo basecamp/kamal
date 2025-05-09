@@ -208,7 +208,21 @@ class Kamal::Configuration::Accessory
 
     def hosts_from_tags
       if accessory_config.key?("tags")
-        accessory_config["tags"].flat_map { |tag| config.tag(tag)&.hosts }
+        accessory_config["tags"].flat_map { |tag| extract_hosts_from_config_with_tag(tag) }
+      end
+    end
+
+    def extract_hosts_from_config_with_tag(tag)
+      if config.raw_config.servers.is_a?(Hash)
+        config.raw_config.servers.flat_map do |(role, servers_in_role)|
+          servers_in_role.collect do |host|
+            if host.is_a?(Hash) && host.values.first.include?(tag)
+              host.keys.first
+            end
+          end
+        end.compact
+      else
+        []
       end
     end
 
