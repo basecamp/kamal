@@ -138,7 +138,8 @@ module Kamal::Cli
             roles: KAMAL.specific_roles&.join(","),
             lock: KAMAL.holding_lock?.to_s,
             command: command,
-            subcommand: subcommand
+            subcommand: subcommand,
+            arguments: arguments,
           }.compact
 
           say "Running the #{hook} hook...", :magenta
@@ -180,6 +181,13 @@ module Kamal::Cli
         @kamal_subcommand ||= begin
           invocation_class, invocation_commands = *first_invocation
           invocation_commands[0] if invocation_class != Kamal::Cli::Main
+        end
+      end
+
+      def arguments
+        @kamal_arguments ||= begin
+          invocation_class, invocation_commands = *first_invocation
+          invocation_commands
         end
       end
 
