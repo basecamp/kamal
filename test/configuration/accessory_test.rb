@@ -55,7 +55,7 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
           "service" => "custom-monitoring",
           "image" => "monitoring:latest",
           "registry" => { "server" => "other.registry", "username" => "user", "password" => "pw" },
-          "roles" => [ "web" ],
+          "role" => "web",
           "port" => "4321:4321",
           "labels" => {
             "cache" => "true"
@@ -134,7 +134,7 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
     exception = assert_raises(Kamal::ConfigurationError) do
       Kamal::Configuration.new(@deploy)
     end
-    assert_equal "accessories/mysql: specify one of `host`, `hosts`, `roles`, `tag` or `tags`", exception.message
+    assert_equal "accessories/mysql: specify one of `host`, `hosts`, `role`, `roles`, `tag` or `tags`", exception.message
   end
 
   test "all hosts" do

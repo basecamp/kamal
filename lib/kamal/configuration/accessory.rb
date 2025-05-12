@@ -201,7 +201,9 @@ class Kamal::Configuration::Accessory
     end
 
     def hosts_from_roles
-      if accessory_config.key?("roles")
+      if accessory_config.key?("role")
+       config.role(accessory_config["role"])&.hosts
+      elsif accessory_config.key?("roles")
         accessory_config["roles"].flat_map { |role| config.role(role)&.hosts }
       end
     end
@@ -231,6 +233,8 @@ class Kamal::Configuration::Accessory
     def ensure_valid_roles
       if accessory_config["roles"] && (missing_roles = accessory_config["roles"] - config.roles.map(&:name)).any?
         raise Kamal::ConfigurationError, "accessories/#{name}: unknown roles #{missing_roles.join(", ")}"
+      elsif accessory_config["role"] && !config.role(accessory_config["role"])
+        raise Kamal::ConfigurationError, "accessories/#{name}: unknown role #{accessory_config["role"]}"
       end
     end
 end
