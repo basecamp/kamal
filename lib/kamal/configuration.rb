@@ -10,14 +10,9 @@ class Kamal::Configuration
   delegate :argumentize, :optionize, to: Kamal::Utils
 
   attr_reader :destination, :raw_config, :secrets
-  attr_reader :accessories, :aliases, :boot, :builder, :env, :logging, :proxy, :servers, :ssh, :sshkit, :registry
+  attr_reader :accessories, :aliases, :boot, :builder, :env, :logging, :proxy, :proxy_boot, :servers, :ssh, :sshkit, :registry
 
   include Validation
-
-  PROXY_MINIMUM_VERSION = "v0.8.7"
-  PROXY_HTTP_PORT = 80
-  PROXY_HTTPS_PORT = 443
-  PROXY_LOG_MAX_SIZE = "10m"
 
   class << self
     def create_from(config_file:, destination: nil, version: nil)
@@ -69,6 +64,7 @@ class Kamal::Configuration
 
     @logging = Logging.new(logging_config: @raw_config.logging)
     @proxy = Proxy.new(config: self, proxy_config: @raw_config.key?(:proxy) ? @raw_config.proxy : {})
+    @proxy_boot = Proxy::Boot.new(config: self)
     @ssh = Ssh.new(config: self)
     @sshkit = Sshkit.new(config: self)
 
@@ -264,95 +260,6 @@ class Kamal::Configuration
     env_tags.detect { |t| t.name == name.to_s }
   end
 
-  def proxy_publish_args(http_port, https_port, bind_ips = nil)
-    ensure_valid_bind_ips(bind_ips)
-
-    (bind_ips || [ nil ]).map do |bind_ip|
-      bind_ip = format_bind_ip(bind_ip)
-      publish_http = [ bind_ip, http_port, PROXY_HTTP_PORT ].compact.join(":")
-      publish_https = [ bind_ip, https_port, PROXY_HTTPS_PORT ].compact.join(":")
-
-      argumentize "--publish", [ publish_http, publish_https ]
-    end.join(" ")
-  end
-
-  def proxy_logging_args(max_size)
-    argumentize "--log-opt", "max-size=#{max_size}" if max_size.present?
-  end
-
-  def proxy_default_boot_options
-    [
-      *(KAMAL.config.proxy_publish_args(Kamal::Configuration::PROXY_HTTP_PORT, Kamal::Configuration::PROXY_HTTPS_PORT, nil)),
-      *(KAMAL.config.proxy_logging_args(Kamal::Configuration::PROXY_LOG_MAX_SIZE))
-    ]
-  end
-
-  def proxy_options_default
-    [ *proxy_publish_args(PROXY_HTTP_PORT, PROXY_HTTPS_PORT), *proxy_logging_args(PROXY_LOG_MAX_SIZE) ]
-  end
-
-  def proxy_repository_name
-    "basecamp"
-  end
-
-  def proxy_image_name
-    "kamal-proxy"
-  end
-
-  def proxy_image_default
-    "#{proxy_repository_name}/#{proxy_image_name}"
-  end
-
-  def proxy_container_name
-    "kamal-proxy"
-  end
-
-  def proxy_directory
-    File.join run_directory, "proxy"
-  end
-
-  def proxy_options_file
-    File.join proxy_directory, "options"
-  end
-
-  def proxy_image_file
-    File.join proxy_directory, "image"
-  end
-
-  def proxy_image_version_file
-    File.join proxy_directory, "image_version"
-  end
-
-  def proxy_apps_directory
-    File.join proxy_directory, "apps-config"
-  end
-
-  def proxy_apps_container_directory
-    "/home/kamal-proxy/.apps-config"
-  end
-
-  def proxy_apps_volume
-    Volume.new \
-      host_path: proxy_apps_directory,
-      container_path: proxy_apps_container_directory
-  end
-
-  def proxy_app_directory
-    File.join proxy_apps_directory, service_and_destination
-  end
-
-  def proxy_app_container_directory
-    File.join proxy_apps_container_directory, service_and_destination
-  end
-
-  def proxy_error_pages_directory
-    File.join proxy_app_directory, "error_pages"
-  end
-
-  def proxy_error_pages_container_directory
-    File.join proxy_app_container_directory, "error_pages"
-  end
-
   def to_h
     {
       roles: role_names,
@@ -425,15 +332,6 @@ class Kamal::Configuration
       true
     end
 
-    def ensure_valid_bind_ips(bind_ips)
-      bind_ips.present? && bind_ips.each do |ip|
-        next if ip =~ Resolv::IPv4::Regex || ip =~ Resolv::IPv6::Regex
-        raise ArgumentError, "Invalid publish IP address: #{ip}"
-      end
-
-      true
-    end
-
     def ensure_retain_containers_valid
       raise Kamal::ConfigurationError, "Must retain at least 1 container" if retain_containers < 1
 
@@ -463,15 +361,6 @@ class Kamal::Configuration
       raise Kamal::ConfigurationError, "Different roles can't share the same host for SSL: #{duplicates.join(", ")}" if duplicates.any?
 
       true
-    end
-
-    def format_bind_ip(ip)
-      # Ensure IPv6 address inside square brackets - e.g. [::1]
-      if ip =~ Resolv::IPv6::Regex && ip !~ /\[.*\]/
-        "[#{ip}]"
-      else
-        ip
-      end
     end
 
     def role_names

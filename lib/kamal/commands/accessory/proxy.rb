@@ -1,5 +1,5 @@
 module Kamal::Commands::Accessory::Proxy
-  delegate :proxy_container_name, to: :config
+  delegate :container_name, to: :"config.proxy_boot", prefix: :proxy
 
   def deploy(target:)
     proxy_exec :deploy, service_name, *proxy.deploy_command_args(target: target)
