@@ -41,6 +41,8 @@ class Kamal::Configuration::Proxy
       "buffer-memory": proxy_config.dig("buffering", "memory"),
       "max-request-body": proxy_config.dig("buffering", "max_request_body"),
       "max-response-body": proxy_config.dig("buffering", "max_response_body"),
+      "path-prefix": proxy_config.dig("path_prefix"),
+      "strip-path-prefix": proxy_config.dig("strip_path_prefix"),
       "forward-headers": proxy_config.dig("forward_headers"),
       "tls-redirect": proxy_config.dig("ssl_redirect"),
       "log-request-header": proxy_config.dig("logging", "request_headers") || DEFAULT_LOG_REQUEST_HEADERS,
