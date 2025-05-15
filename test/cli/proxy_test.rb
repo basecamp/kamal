@@ -44,42 +44,20 @@ class CliProxyTest < CliTestCase
   end
 
   test "reboot" do
-    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-123$", "--quiet")
-      .returns("abcdefabcdef")
-      .at_least_once
-
-    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with { |*args| args[0..1] == [ :sh, "-c" ] }
-      .returns("123")
-      .at_least_once
-
     run_command("reboot", "-y").tap do |output|
       assert_match "docker container stop kamal-proxy on 1.1.1.1", output
       assert_match "docker container prune --force --filter label=org.opencontainers.image.title=kamal-proxy on 1.1.1.1", output
       assert_match "mkdir -p .kamal/proxy/apps-config on 1.1.1.1", output
       assert_match "echo $(cat .kamal/proxy/options 2> /dev/null || echo \"--publish 80:80 --publish 443:443 --log-opt max-size=10m\") $(cat .kamal/proxy/image 2> /dev/null || echo \"basecamp/kamal-proxy\"):$(cat .kamal/proxy/image_version 2> /dev/null || echo \"#{Kamal::Configuration::Proxy::Boot::MINIMUM_VERSION}\") $(cat .kamal/proxy/run_command 2> /dev/null || echo \"\") | xargs docker run --name kamal-proxy --network kamal --detach --restart unless-stopped --volume kamal-proxy-config:/home/kamal-proxy/.config/kamal-proxy --volume $(pwd)/.kamal/proxy/apps-config:/home/kamal-proxy/.apps-config on 1.1.1.1", output
-      assert_match "docker exec kamal-proxy kamal-proxy deploy app-web --target=\"abcdefabcdef:80\" --deploy-timeout=\"6s\" --drain-timeout=\"30s\" --buffer-requests --buffer-responses --log-request-header=\"Cache-Control\" --log-request-header=\"Last-Modified\" --log-request-header=\"User-Agent\" on 1.1.1.1", output
 
       assert_match "docker container stop kamal-proxy on 1.1.1.2", output
       assert_match "docker container prune --force --filter label=org.opencontainers.image.title=kamal-proxy on 1.1.1.2", output
       assert_match "mkdir -p .kamal/proxy/apps-config on 1.1.1.1", output
       assert_match "echo $(cat .kamal/proxy/options 2> /dev/null || echo \"--publish 80:80 --publish 443:443 --log-opt max-size=10m\") $(cat .kamal/proxy/image 2> /dev/null || echo \"basecamp/kamal-proxy\"):$(cat .kamal/proxy/image_version 2> /dev/null || echo \"#{Kamal::Configuration::Proxy::Boot::MINIMUM_VERSION}\") $(cat .kamal/proxy/run_command 2> /dev/null || echo \"\") | xargs docker run --name kamal-proxy --network kamal --detach --restart unless-stopped --volume kamal-proxy-config:/home/kamal-proxy/.config/kamal-proxy --volume $(pwd)/.kamal/proxy/apps-config:/home/kamal-proxy/.apps-config on 1.1.1.2", output
-      assert_match "docker exec kamal-proxy kamal-proxy deploy app-web --target=\"abcdefabcdef:80\" --deploy-timeout=\"6s\" --drain-timeout=\"30s\" --buffer-requests --buffer-responses --log-request-header=\"Cache-Control\" --log-request-header=\"Last-Modified\" --log-request-header=\"User-Agent\" on 1.1.1.2", output
     end
   end
 
   test "reboot --rolling" do
-    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-123$", "--quiet")
-      .returns("abcdefabcdef")
-      .at_least_once
-
-    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with { |*args| args[0..1] == [ :sh, "-c" ] }
-      .returns("123")
-      .at_least_once
-
     run_command("reboot", "--rolling", "-y").tap do |output|
       assert_match "Running docker container prune --force --filter label=org.opencontainers.image.title=kamal-proxy on 1.1.1.1", output
     end
