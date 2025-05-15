@@ -264,6 +264,28 @@ class CliAppTest < CliTestCase
     end
   end
 
+  test "deleted_roles" do
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+                             .with(:docker, :ps, "--filter", "label=service=app", "--format", "\"{{.Names}}\"", raise_on_non_zero_exit: false)
+                             .returns("app-deleted-role--version\napp-deleted-role-2--version\n")
+
+
+    run_command("deleted_roles").tap do |output|
+      assert_match /Detected container for deleted role deleted-role/, output
+    end
+  end
+
+  test "stop deleted_roles" do
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+                             .with(:docker, :ps, "--filter", "label=service=app", "--format", "\"{{.Names}}\"", raise_on_non_zero_exit: false)
+                             .returns("app-deleted-role--version\napp-deleted-role-2--version\n")
+
+
+    run_command("deleted_roles", "--stop").tap do |output|
+      assert_match /Stopping stale container for deleted role deleted-role/, output
+    end
+  end
+
   test "details" do
     run_command("details").tap do |output|
       assert_match "docker ps --filter label=service=app --filter label=destination= --filter label=role=web", output
