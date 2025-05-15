@@ -149,6 +149,12 @@ class CommanderTest < ActiveSupport::TestCase
     assert_equal [], @kamal.accessory_hosts
   end
 
+  test "primary role hosts are first" do
+    configure_with(:deploy_with_roles_workers_primary)
+    assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3", "1.1.1.4" ], @kamal.hosts
+    assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3", "1.1.1.4" ], @kamal.app_hosts
+  end
+
   private
     def configure_with(variant)
       @kamal = Kamal::Commander.new.tap do |kamal|
