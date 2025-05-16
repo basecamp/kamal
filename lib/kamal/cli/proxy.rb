@@ -120,18 +120,6 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
             execute *KAMAL.proxy.ensure_apps_config_directory
 
             execute *KAMAL.proxy.run
-
-            KAMAL.roles_on(host).select(&:running_proxy?).each do |role|
-              app = KAMAL.app(role: role, host: host)
-
-              version = capture_with_info(*app.current_running_version, raise_on_non_zero_exit: false).strip
-              endpoint = capture_with_info(*app.container_id_for_version(version)).strip
-
-              if endpoint.present?
-                info "Deploying #{endpoint} for role `#{role}` on #{host}..."
-                execute *app.deploy(target: endpoint)
-              end
-            end
           end
           run_hook "post-proxy-reboot", hosts: host_list
         end

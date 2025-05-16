@@ -1,0 +1,19 @@
+service: app
+image: dhh/app
+servers:
+  workers:
+    - 1.1.1.1
+    - 1.1.1.2
+  web:
+    - 1.1.1.3
+    - 1.1.1.4
+env:
+  REDIS_URL: redis://x/y
+registry:
+  server: registry.digitalocean.com
+  username: user
+  password: pw
+builder:
+  arch: amd64
+deploy_timeout: 1
+primary_role: workers
