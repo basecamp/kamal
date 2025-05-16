@@ -21,6 +21,7 @@ class CliBuildTest < CliTestCase
         .returns("")
 
       run_command("push", "--verbose").tap do |output|
+        assert_hook_ran "pre-connect", output
         assert_hook_ran "pre-build", output
         assert_match /Cloning repo into build directory/, output
         assert_match /git -C #{Dir.tmpdir}\/kamal-clones\/app-#{pwd_sha} clone #{Dir.pwd}/, output
