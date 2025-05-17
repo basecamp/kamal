@@ -1,7 +1,7 @@
 require "active_support/core_ext/string/filters"
 
 class Kamal::Commands::Builder < Kamal::Commands::Base
-  delegate :create, :remove, :push, :clean, :pull, :info, :inspect_builder, :validate_image, :first_mirror, to: :target
+  delegate :create, :remove, :dev, :push, :clean, :pull, :info, :inspect_builder, :validate_image, :first_mirror, to: :target
   delegate :local?, :remote?, :cloud?, to: "config.builder"
 
   include Clone

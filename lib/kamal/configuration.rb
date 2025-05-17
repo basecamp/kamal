@@ -10,14 +10,9 @@ class Kamal::Configuration
   delegate :argumentize, :optionize, to: Kamal::Utils
 
   attr_reader :destination, :raw_config, :secrets
-  attr_reader :accessories, :aliases, :boot, :builder, :env, :logging, :proxy, :servers, :ssh, :sshkit, :registry
+  attr_reader :accessories, :aliases, :boot, :builder, :env, :logging, :proxy, :proxy_boot, :servers, :ssh, :sshkit, :registry
 
   include Validation
-
-  PROXY_MINIMUM_VERSION = "v0.8.4"
-  PROXY_HTTP_PORT = 80
-  PROXY_HTTPS_PORT = 443
-  PROXY_LOG_MAX_SIZE = "10m"
 
   class << self
     def create_from(config_file:, destination: nil, version: nil)
@@ -68,7 +63,8 @@ class Kamal::Configuration
     @env = Env.new(config: @raw_config.env || {}, secrets: secrets)
 
     @logging = Logging.new(logging_config: @raw_config.logging)
-    @proxy = Proxy.new(config: self, proxy_config: @raw_config.proxy || {})
+    @proxy = Proxy.new(config: self, proxy_config: @raw_config.proxy)
+    @proxy_boot = Proxy::Boot.new(config: self)
     @ssh = Ssh.new(config: self)
     @sshkit = Sshkit.new(config: self)
 
@@ -105,6 +101,10 @@ class Kamal::Configuration
     raw_config.minimum_version
   end
 
+  def service_and_destination
+    [ service, destination ].compact.join("-")
+  end
+
   def roles
     servers.roles
   end
@@ -119,6 +119,10 @@ class Kamal::Configuration
 
   def all_hosts
     (roles + accessories).flat_map(&:hosts).uniq
+  end
+
+  def app_hosts
+    roles.flat_map(&:hosts).uniq
   end
 
   def primary_host
@@ -145,8 +149,12 @@ class Kamal::Configuration
     proxy_roles.flat_map(&:name)
   end
 
+  def proxy_accessories
+    accessories.select(&:running_proxy?)
+  end
+
   def proxy_hosts
-    proxy_roles.flat_map(&:hosts).uniq
+    (proxy_roles.flat_map(&:hosts) + proxy_accessories.flat_map(&:hosts)).uniq
   end
 
   def repository
@@ -210,7 +218,7 @@ class Kamal::Configuration
   end
 
   def app_directory
-    File.join apps_directory, [ service, destination ].compact.join("-")
+    File.join apps_directory, service_and_destination
   end
 
   def env_directory
@@ -229,6 +237,10 @@ class Kamal::Configuration
     raw_config.asset_path
   end
 
+  def error_pages_path
+    raw_config.error_pages_path
+  end
+
   def env_tags
     @env_tags ||= if (tags = raw_config.env["tags"])
       tags.collect { |name, config| Env::Tag.new(name, config: config, secrets: secrets) }
@@ -239,42 +251,6 @@ class Kamal::Configuration
 
   def env_tag(name)
     env_tags.detect { |t| t.name == name.to_s }
-  end
-
-  def proxy_publish_args(http_port, https_port, bind_ips = nil)
-    ensure_valid_bind_ips(bind_ips)
-
-    (bind_ips || [ nil ]).map do |bind_ip|
-      bind_ip = format_bind_ip(bind_ip)
-      publish_http = [ bind_ip, http_port, PROXY_HTTP_PORT ].compact.join(":")
-      publish_https = [ bind_ip, https_port, PROXY_HTTPS_PORT ].compact.join(":")
-
-      argumentize "--publish", [ publish_http, publish_https ]
-    end.join(" ")
-  end
-
-  def proxy_logging_args(max_size)
-    argumentize "--log-opt", "max-size=#{max_size}" if max_size.present?
-  end
-
-  def proxy_options_default
-    [ *proxy_publish_args(PROXY_HTTP_PORT, PROXY_HTTPS_PORT), *proxy_logging_args(PROXY_LOG_MAX_SIZE) ]
-  end
-
-  def proxy_image
-    "basecamp/kamal-proxy:#{PROXY_MINIMUM_VERSION}"
-  end
-
-  def proxy_container_name
-    "kamal-proxy"
-  end
-
-  def proxy_directory
-    File.join run_directory, "proxy"
-  end
-
-  def proxy_options_file
-    File.join proxy_directory, "options"
   end
 
   def to_h
@@ -306,22 +282,26 @@ class Kamal::Configuration
     end
 
     def ensure_required_keys_present
-      %i[ service image registry servers ].each do |key|
+      %i[ service image registry ].each do |key|
         raise Kamal::ConfigurationError, "Missing required configuration for #{key}" unless raw_config[key].present?
       end
 
-      unless role(primary_role_name).present?
-        raise Kamal::ConfigurationError, "The primary_role #{primary_role_name} isn't defined"
-      end
+      if raw_config.servers.nil?
+        raise Kamal::ConfigurationError, "No servers or accessories specified" unless raw_config.accessories.present?
+      else
+        unless role(primary_role_name).present?
+          raise Kamal::ConfigurationError, "The primary_role #{primary_role_name} isn't defined"
+        end
 
-      if primary_role.hosts.empty?
-        raise Kamal::ConfigurationError, "No servers specified for the #{primary_role.name} primary_role"
-      end
+        if primary_role.hosts.empty?
+          raise Kamal::ConfigurationError, "No servers specified for the #{primary_role.name} primary_role"
+        end
 
-      unless allow_empty_roles?
-        roles.each do |role|
-          if role.hosts.empty?
-            raise Kamal::ConfigurationError, "No servers specified for the #{role.name} role. You can ignore this with allow_empty_roles: true"
+        unless allow_empty_roles?
+          roles.each do |role|
+            if role.hosts.empty?
+              raise Kamal::ConfigurationError, "No servers specified for the #{role.name} role. You can ignore this with allow_empty_roles: true"
+            end
           end
         end
       end
@@ -338,15 +318,6 @@ class Kamal::Configuration
     def ensure_valid_kamal_version
       if minimum_version && Gem::Version.new(minimum_version) > Gem::Version.new(Kamal::VERSION)
         raise Kamal::ConfigurationError, "Current version is #{Kamal::VERSION}, minimum required is #{minimum_version}"
-      end
-
-      true
-    end
-
-    def ensure_valid_bind_ips(bind_ips)
-      bind_ips.present? && bind_ips.each do |ip|
-        next if ip =~ Resolv::IPv4::Regex || ip =~ Resolv::IPv6::Regex
-        raise ArgumentError, "Invalid publish IP address: #{ip}"
       end
 
       true
@@ -381,15 +352,6 @@ class Kamal::Configuration
       raise Kamal::ConfigurationError, "Different roles can't share the same host for SSL: #{duplicates.join(", ")}" if duplicates.any?
 
       true
-    end
-
-    def format_bind_ip(ip)
-      # Ensure IPv6 address inside square brackets - e.g. [::1]
-      if ip =~ Resolv::IPv6::Regex && ip !~ /\[.*\]/
-        "[#{ip}]"
-      else
-        ip
-      end
     end
 
     def role_names

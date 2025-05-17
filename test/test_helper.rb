@@ -36,6 +36,10 @@ class ActiveSupport::TestCase
   extend Rails::LineFiltering
 
   private
+    setup do
+      SSHKit::Backend::Netssh.pool.close_connections
+    end
+
     def stdouted
       capture(:stdout) { yield }.strip
     end
@@ -54,9 +58,7 @@ class ActiveSupport::TestCase
     def setup_test_secrets(**files)
       @original_pwd = Dir.pwd
       @secrets_tmpdir = Dir.mktmpdir
-      fixtures_dup = File.join(@secrets_tmpdir, "test")
-      FileUtils.mkdir_p(fixtures_dup)
-      FileUtils.cp_r("test/fixtures/", fixtures_dup)
+      copy_fixtures(@secrets_tmpdir)
 
       Dir.chdir(@secrets_tmpdir)
       FileUtils.mkdir_p(".kamal")
@@ -70,6 +72,30 @@ class ActiveSupport::TestCase
     def teardown_test_secrets
       Dir.chdir(@original_pwd)
       FileUtils.rm_rf(@secrets_tmpdir)
+    end
+
+    def with_error_pages(directory:)
+      error_pages_tmpdir = Dir.mktmpdir
+
+      Dir.mktmpdir do |tmpdir|
+        copy_fixtures(tmpdir)
+
+        Dir.chdir(tmpdir) do
+          FileUtils.mkdir_p(directory)
+          Dir.chdir(directory) do
+            File.write("404.html", "404 page")
+            File.write("503.html", "503 page")
+          end
+
+          yield
+        end
+      end
+    end
+
+    def copy_fixtures(to_dir)
+      new_test_dir = File.join(to_dir, "test")
+      FileUtils.mkdir_p(new_test_dir)
+      FileUtils.cp_r("test/fixtures/", new_test_dir)
     end
 end
 

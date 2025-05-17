@@ -11,11 +11,15 @@ class Kamal::Commander::Specifics
     @primary_role = primary_or_first_role(roles_on(primary_host))
 
     stable_sort!(roles) { |role| role == primary_role ? 0 : 1 }
-    stable_sort!(hosts) { |host| roles_on(host).any? { |role| role == primary_role } ? 0 : 1 }
+    sort_primary_role_hosts_first!(hosts)
   end
 
   def roles_on(host)
     roles.select { |role| role.hosts.include?(host.to_s) }
+  end
+
+  def app_hosts
+    @app_hosts ||= sort_primary_role_hosts_first!(config.app_hosts & specified_hosts)
   end
 
   def proxy_hosts
@@ -50,5 +54,9 @@ class Kamal::Commander::Specifics
       else
         specified_hosts
       end
+    end
+
+    def sort_primary_role_hosts_first!(hosts)
+      stable_sort!(hosts) { |host| roles_on(host).any? { |role| role == primary_role } ? 0 : 1 }
     end
 end

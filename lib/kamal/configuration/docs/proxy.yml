@@ -10,11 +10,6 @@
 # They are application-specific, so they are not shared when multiple applications
 # run on the same proxy.
 #
-# The proxy is enabled by default on the primary role but can be disabled by
-# setting `proxy: false`.
-#
-# It is disabled by default on all other roles but can be enabled by setting
-# `proxy: true` or providing a proxy configuration.
 proxy:
 
   # Hosts
@@ -51,6 +46,13 @@ proxy:
   #
   # Defaults to `false`:
   ssl: true
+
+  # SSL redirect
+  #
+  # By default, kamal-proxy will redirect all HTTP requests to HTTPS when SSL is enabled.
+  # If you prefer that HTTP traffic is passed through to your application (along with
+  # HTTPS traffic), you can disable this redirect by setting `ssl_redirect: false`:
+  ssl_redirect: false
 
   # Forward headers
   #
@@ -106,3 +108,30 @@ proxy:
     response_headers:
       - X-Request-ID
       - X-Request-Start
+
+# Enabling/disabling the proxy on roles
+#
+# The proxy is enabled by default on the primary role but can be disabled by
+# setting `proxy: false` in the primary role's configuration.
+#
+# ```yaml
+# servers:
+#   web:
+#     hosts:
+#      - ...
+#     proxy: false
+# ```
+#
+# It is disabled by default on all other roles but can be enabled by setting
+# `proxy: true` or providing a proxy configuration for that role.
+#
+# ```yaml
+# servers:
+#   web:
+#     hosts:
+#      - ...
+#   web2:
+#     hosts:
+#      - ...
+#     proxy: true
+# ```

@@ -104,28 +104,6 @@ class CommanderTest < ActiveSupport::TestCase
     assert_equal [ "web", "workers" ], @kamal.roles_on("1.1.1.1").map(&:name)
   end
 
-  test "default group strategy" do
-    assert_empty @kamal.boot_strategy
-  end
-
-  test "specific limit group strategy" do
-    configure_with(:deploy_with_boot_strategy)
-
-    assert_equal({ in: :groups, limit: 3, wait: 2 }, @kamal.boot_strategy)
-  end
-
-  test "percentage-based group strategy" do
-    configure_with(:deploy_with_percentage_boot_strategy)
-
-    assert_equal({ in: :groups, limit: 1, wait: 2 }, @kamal.boot_strategy)
-  end
-
-  test "percentage-based group strategy limit is at least 1" do
-    configure_with(:deploy_with_low_percentage_boot_strategy)
-
-    assert_equal({ in: :groups, limit: 1, wait: 2 }, @kamal.boot_strategy)
-  end
-
   test "try to match the primary role from a list of specific roles" do
     configure_with(:deploy_primary_web_role_override)
 
@@ -169,6 +147,12 @@ class CommanderTest < ActiveSupport::TestCase
 
     @kamal.specific_roles = [ "workers" ]
     assert_equal [], @kamal.accessory_hosts
+  end
+
+  test "primary role hosts are first" do
+    configure_with(:deploy_with_roles_workers_primary)
+    assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3", "1.1.1.4" ], @kamal.hosts
+    assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3", "1.1.1.4" ], @kamal.app_hosts
   end
 
   private

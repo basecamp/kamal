@@ -8,19 +8,23 @@ class MainTest < IntegrationTest
 
     kamal :deploy
     assert_app_is_up version: first_version
-    assert_hooks_ran "pre-connect", "pre-build", "pre-deploy", "post-deploy"
+    assert_hooks_ran "pre-connect", "pre-build", "pre-deploy", "pre-app-boot", "post-app-boot", "post-deploy"
+
     assert_envs version: first_version
+
+    output = kamal :app, :exec, "--verbose", "ls", "-r", "web", capture: true
+    assert_hook_env_variables output, version: first_version
 
     second_version = update_app_rev
 
     kamal :redeploy
     assert_app_is_up version: second_version
-    assert_hooks_ran "pre-connect", "pre-build", "pre-deploy", "post-deploy"
+    assert_hooks_ran "pre-connect", "pre-build", "pre-deploy", "pre-app-boot", "post-app-boot", "post-deploy"
 
     assert_accumulated_assets first_version, second_version
 
     kamal :rollback, first_version
-    assert_hooks_ran "pre-connect", "pre-deploy", "post-deploy"
+    assert_hooks_ran "pre-connect", "pre-deploy", "pre-app-boot", "post-app-boot", "post-deploy"
     assert_app_is_up version: first_version
 
     details = kamal :details, capture: true
@@ -28,7 +32,7 @@ class MainTest < IntegrationTest
     assert_match /Proxy Host: vm2/, details
     assert_match /App Host: vm1/, details
     assert_match /App Host: vm2/, details
-    assert_match /basecamp\/kamal-proxy:#{Kamal::Configuration::PROXY_MINIMUM_VERSION}/, details
+    assert_match /basecamp\/kamal-proxy:#{Kamal::Configuration::Proxy::Boot::MINIMUM_VERSION}/, details
     assert_match /registry:4443\/app:#{first_version}/, details
 
     audit = kamal :audit, capture: true
@@ -60,7 +64,7 @@ class MainTest < IntegrationTest
     version = latest_app_version
 
     assert_equal [ "web" ], config[:roles]
-    assert_equal [ "vm1", "vm2" ], config[:hosts]
+    assert_equal [ "vm1", "vm2", "vm3" ], config[:hosts]
     assert_equal "vm1", config[:primary_host]
     assert_equal version, config[:version]
     assert_equal "registry:4443/app", config[:repository]
@@ -88,8 +92,6 @@ class MainTest < IntegrationTest
   end
 
   test "setup and remove" do
-    @app = "app_with_roles"
-
     kamal :proxy, :boot_config, "set",
       "--publish=false",
       "--docker-options=label=traefik.http.services.kamal_proxy.loadbalancer.server.scheme=http",
@@ -172,21 +174,36 @@ class MainTest < IntegrationTest
       assert_equal "200", Net::HTTP.get_response(URI.parse("http://#{app_host}:12345/versions/.hidden")).code
     end
 
-    def vm1_image_ids
-      docker_compose("exec vm1 docker image ls -q", capture: true).strip.split("\n")
+    def image_ids(vm:)
+      docker_compose("exec #{vm} docker image ls -q", capture: true).strip.split("\n")
     end
 
-    def vm1_container_ids
-      docker_compose("exec vm1 docker ps -a -q", capture: true).strip.split("\n")
+    def container_ids(vm:)
+      docker_compose("exec #{vm} docker ps -a -q", capture: true).strip.split("\n")
     end
 
     def assert_no_images_or_containers
-      assert vm1_image_ids.empty?
-      assert vm1_container_ids.empty?
+      [ :vm1, :vm2, :vm3 ].each do |vm|
+        assert image_ids(vm: vm).empty?
+        assert container_ids(vm: vm).empty?
+      end
     end
 
     def assert_images_and_containers
-      assert vm1_image_ids.any?
-      assert vm1_container_ids.any?
+      [ :vm1, :vm2, :vm3 ].each do |vm|
+        assert image_ids(vm: vm).any?
+        assert container_ids(vm: vm).any?
+      end
+    end
+
+    def assert_hook_env_variables(output, version:)
+      assert_match "KAMAL_VERSION=#{version}", output
+      assert_match "KAMAL_SERVICE=app", output
+      assert_match "KAMAL_SERVICE_VERSION=app@#{version[0..6]}", output
+      assert_match "KAMAL_COMMAND=app", output
+      assert_match "KAMAL_PERFORMER=deployer@example.com", output
+      assert_match /KAMAL_RECORDED_AT=\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\dZ/, output
+      assert_match "KAMAL_HOSTS=vm1,vm2", output
+      assert_match "KAMAL_ROLES=web", output
     end
 end

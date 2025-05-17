@@ -16,6 +16,8 @@ class Kamal::Configuration::Accessory
       context: "accessories/#{name}",
       with: Kamal::Configuration::Validator::Accessory
 
+    ensure_valid_roles
+
     @env = initialize_env
     @proxy = initialize_proxy if running_proxy?
     @registry = initialize_registry if accessory_config["registry"].present?
@@ -30,7 +32,7 @@ class Kamal::Configuration::Accessory
   end
 
   def hosts
-    hosts_from_host || hosts_from_hosts || hosts_from_roles
+    hosts_from_host || hosts_from_hosts || hosts_from_roles || hosts_from_tags
   end
 
   def port
@@ -199,14 +201,40 @@ class Kamal::Configuration::Accessory
     end
 
     def hosts_from_roles
-      if accessory_config.key?("roles")
-        accessory_config["roles"].flat_map do |role|
-          config.role(role)&.hosts || raise(Kamal::ConfigurationError, "Unknown role in accessories config: '#{role}'")
+      if accessory_config.key?("role")
+       config.role(accessory_config["role"])&.hosts
+      elsif accessory_config.key?("roles")
+        accessory_config["roles"].flat_map { |role| config.role(role)&.hosts }
+      end
+    end
+
+    def hosts_from_tags
+      if accessory_config.key?("tag")
+        extract_hosts_from_config_with_tag(accessory_config["tag"])
+      elsif accessory_config.key?("tags")
+        accessory_config["tags"].flat_map { |tag| extract_hosts_from_config_with_tag(tag) }
+      end
+    end
+
+    def extract_hosts_from_config_with_tag(tag)
+      if (servers_with_roles = config.raw_config.servers).is_a?(Hash)
+        servers_with_roles.flat_map do |role, servers_in_role|
+          servers_in_role.filter_map do |host|
+            host.keys.first if host.is_a?(Hash) && host.values.first.include?(tag)
+          end
         end
       end
     end
 
     def network
       accessory_config["network"] || DEFAULT_NETWORK
+    end
+
+    def ensure_valid_roles
+      if accessory_config["roles"] && (missing_roles = accessory_config["roles"] - config.roles.map(&:name)).any?
+        raise Kamal::ConfigurationError, "accessories/#{name}: unknown roles #{missing_roles.join(", ")}"
+      elsif accessory_config["role"] && !config.role(accessory_config["role"])
+        raise Kamal::ConfigurationError, "accessories/#{name}: unknown role #{accessory_config["role"]}"
+      end
     end
 end

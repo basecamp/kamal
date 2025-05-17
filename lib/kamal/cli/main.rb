@@ -20,9 +20,6 @@ class Kamal::Cli::Main < Kamal::Cli::Base
     runtime = print_runtime do
       invoke_options = deploy_options
 
-      say "Log into image registry...", :magenta
-      invoke "kamal:cli:registry:login", [], invoke_options.merge(skip_local: options[:skip_push])
-
       if options[:skip_push]
         say "Pull app image...", :magenta
         invoke "kamal:cli:build:pull", [], invoke_options
@@ -52,7 +49,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
     run_hook "post-deploy", secrets: true, runtime: runtime.round.to_s
   end
 
-  desc "redeploy", "Deploy app to servers without bootstrapping servers, starting kamal-proxy, pruning, and registry login"
+  desc "redeploy", "Deploy app to servers without bootstrapping servers, starting kamal-proxy and pruning"
   option :skip_push, aliases: "-P", type: :boolean, default: false, desc: "Skip image build and push"
   def redeploy
     runtime = print_runtime do
@@ -197,10 +194,10 @@ class Kamal::Cli::Main < Kamal::Cli::Base
     confirming "This will replace Traefik with kamal-proxy and restart all accessories" do
       with_lock do
         if options[:rolling]
-          (KAMAL.hosts | KAMAL.accessory_hosts).each do |host|
+          KAMAL.hosts.each do |host|
             KAMAL.with_specific_hosts(host) do
               say "Upgrading #{host}...", :magenta
-              if KAMAL.hosts.include?(host)
+              if KAMAL.app_hosts.include?(host)
                 invoke "kamal:cli:proxy:upgrade", [], options.merge(confirmed: true, rolling: false)
                 reset_invocation(Kamal::Cli::Proxy)
               end
@@ -256,7 +253,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
   private
     def container_available?(version)
       begin
-        on(KAMAL.hosts) do
+        on(KAMAL.app_hosts) do
           KAMAL.roles_on(host).each do |role|
             container_id = capture_with_info(*KAMAL.app(role: role, host: host).container_id_for_version(version))
             raise "Container not found" unless container_id.present?
