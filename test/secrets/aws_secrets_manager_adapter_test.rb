@@ -157,8 +157,8 @@ class AwsSecretsManagerAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch without account option omits --profile" do
-    stub_ticks.with("aws --version 2> /dev/null")
-    stub_ticks
+    stub_command(:system).with("aws --version", err: File::NULL)
+    stub_command
       .with("aws secretsmanager batch-get-secret-value --secret-id-list secret/KEY1 secret/KEY2 --output json")
       .returns(<<~JSON)
         {
