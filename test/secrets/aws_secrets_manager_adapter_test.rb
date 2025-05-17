@@ -27,7 +27,7 @@ class AwsSecretsManagerAdapterTest < SecretAdapterTestCase
       JSON.parse(shellunescape(run_command("fetch", "unknown1", "unknown2")))
     end
 
-    assert_equal ["unknown1: Secrets Manager can't find the specified secret.", "unknown2: Secrets Manager can't find the specified secret."].join(" "), error.message
+    assert_equal [ "unknown1: Secrets Manager can't find the specified secret.", "unknown2: Secrets Manager can't find the specified secret." ].join(" "), error.message
   end
 
   test "fetch" do
@@ -191,10 +191,10 @@ class AwsSecretsManagerAdapterTest < SecretAdapterTestCase
 
   def run_command(*command, account: "default")
     stdouted do
-      args = [*command,
+      args = [ *command,
         "-c", "test/fixtures/deploy_with_accessories.yml",
-        "--adapter", "aws_secrets_manager"]
-      args += ["--account", account] if account
+        "--adapter", "aws_secrets_manager" ]
+      args += [ "--account", account ] if account
       Kamal::Cli::Secrets.start(args)
     end
   end
