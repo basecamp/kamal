@@ -17,7 +17,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "thor", "~> 1.3"
   spec.add_dependency "dotenv", "~> 3.1"
   spec.add_dependency "zeitwerk", ">= 2.6.18", "< 3.0"
-  spec.add_dependency "ed25519", "~> 1.2"
+  spec.add_dependency "ed25519", "~> 1.4"
   spec.add_dependency "bcrypt_pbkdf", "~> 1.0"
   spec.add_dependency "concurrent-ruby", "~> 1.2"
   spec.add_dependency "base64", "~> 0.2"

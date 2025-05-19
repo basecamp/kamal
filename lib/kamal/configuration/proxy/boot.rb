@@ -1,5 +1,5 @@
 class Kamal::Configuration::Proxy::Boot
-  MINIMUM_VERSION = "v0.8.7"
+  MINIMUM_VERSION = "v0.9.0"
   DEFAULT_HTTP_PORT = 80
   DEFAULT_HTTPS_PORT = 443
   DEFAULT_LOG_MAX_SIZE = "10m"
@@ -64,6 +64,10 @@ class Kamal::Configuration::Proxy::Boot
 
   def image_version_file
     File.join host_directory, "image_version"
+  end
+
+  def run_command_file
+    File.join host_directory, "run_command"
   end
 
   def apps_directory

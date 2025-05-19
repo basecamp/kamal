@@ -5,7 +5,7 @@ class CliProxyTest < CliTestCase
     run_command("boot").tap do |output|
       assert_match "docker login", output
       assert_match "mkdir -p .kamal/proxy/apps-config", output
-      assert_match "echo $(cat .kamal/proxy/options 2> /dev/null || echo \"--publish 80:80 --publish 443:443 --log-opt max-size=10m\") $(cat .kamal/proxy/image 2> /dev/null || echo \"basecamp/kamal-proxy\"):$(cat .kamal/proxy/image_version 2> /dev/null || echo \"#{Kamal::Configuration::Proxy::Boot::MINIMUM_VERSION}\") | xargs docker run --name kamal-proxy --network kamal --detach --restart unless-stopped --volume kamal-proxy-config:/home/kamal-proxy/.config/kamal-proxy", output
+      assert_match "echo $(cat .kamal/proxy/options 2> /dev/null || echo \"--publish 80:80 --publish 443:443 --log-opt max-size=10m\") $(cat .kamal/proxy/image 2> /dev/null || echo \"basecamp/kamal-proxy\"):$(cat .kamal/proxy/image_version 2> /dev/null || echo \"#{Kamal::Configuration::Proxy::Boot::MINIMUM_VERSION}\") $(cat .kamal/proxy/run_command 2> /dev/null || echo \"\") | xargs docker run --name kamal-proxy --network kamal --detach --restart unless-stopped --volume kamal-proxy-config:/home/kamal-proxy/.config/kamal-proxy", output
     end
   end
 
@@ -19,7 +19,7 @@ class CliProxyTest < CliTestCase
     exception = assert_raises do
       run_command("boot").tap do |output|
         assert_match "docker login", output
-        assert_match "echo $(cat .kamal/proxy/options 2> /dev/null || echo \"--publish 80:80 --publish 443:443 --log-opt max-size=10m\") $(cat .kamal/proxy/image 2> /dev/null || echo \"basecamp/kamal-proxy\"):$(cat .kamal/proxy/image_version 2> /dev/null || echo \"#{Kamal::Configuration::Proxy::Boot::MINIMUM_VERSION}\") | xargs docker run --name kamal-proxy --network kamal --detach --restart unless-stopped --volume kamal-proxy-config:/home/kamal-proxy/.config/kamal-proxy", output
+        assert_match "echo $(cat .kamal/proxy/options 2> /dev/null || echo \"--publish 80:80 --publish 443:443 --log-opt max-size=10m\") $(cat .kamal/proxy/image 2> /dev/null || echo \"basecamp/kamal-proxy\"):$(cat .kamal/proxy/image_version 2> /dev/null || echo \"#{Kamal::Configuration::Proxy::Boot::MINIMUM_VERSION}\") $(cat .kamal/proxy/run_command 2> /dev/null || echo \"\") | xargs docker run --name kamal-proxy --network kamal --detach --restart unless-stopped --volume kamal-proxy-config:/home/kamal-proxy/.config/kamal-proxy", output
       end
     end
 
@@ -37,49 +37,27 @@ class CliProxyTest < CliTestCase
 
     run_command("boot").tap do |output|
       assert_match "docker login", output
-      assert_match "docker container start kamal-proxy || echo $(cat .kamal/proxy/options 2> /dev/null || echo \"--publish 80:80 --publish 443:443 --log-opt max-size=10m\") $(cat .kamal/proxy/image 2> /dev/null || echo \"basecamp/kamal-proxy\"):$(cat .kamal/proxy/image_version 2> /dev/null || echo \"#{Kamal::Configuration::Proxy::Boot::MINIMUM_VERSION}\") | xargs docker run --name kamal-proxy --network kamal --detach --restart unless-stopped --volume kamal-proxy-config:/home/kamal-proxy/.config/kamal-proxy", output
+      assert_match "docker container start kamal-proxy || echo $(cat .kamal/proxy/options 2> /dev/null || echo \"--publish 80:80 --publish 443:443 --log-opt max-size=10m\") $(cat .kamal/proxy/image 2> /dev/null || echo \"basecamp/kamal-proxy\"):$(cat .kamal/proxy/image_version 2> /dev/null || echo \"#{Kamal::Configuration::Proxy::Boot::MINIMUM_VERSION}\") $(cat .kamal/proxy/run_command 2> /dev/null || echo \"\") | xargs docker run --name kamal-proxy --network kamal --detach --restart unless-stopped --volume kamal-proxy-config:/home/kamal-proxy/.config/kamal-proxy", output
     end
   ensure
     Thread.report_on_exception = false
   end
 
   test "reboot" do
-    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-123$", "--quiet")
-      .returns("abcdefabcdef")
-      .at_least_once
-
-    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with { |*args| args[0..1] == [ :sh, "-c" ] }
-      .returns("123")
-      .at_least_once
-
     run_command("reboot", "-y").tap do |output|
       assert_match "docker container stop kamal-proxy on 1.1.1.1", output
       assert_match "docker container prune --force --filter label=org.opencontainers.image.title=kamal-proxy on 1.1.1.1", output
       assert_match "mkdir -p .kamal/proxy/apps-config on 1.1.1.1", output
-      assert_match "echo $(cat .kamal/proxy/options 2> /dev/null || echo \"--publish 80:80 --publish 443:443 --log-opt max-size=10m\") $(cat .kamal/proxy/image 2> /dev/null || echo \"basecamp/kamal-proxy\"):$(cat .kamal/proxy/image_version 2> /dev/null || echo \"#{Kamal::Configuration::Proxy::Boot::MINIMUM_VERSION}\") | xargs docker run --name kamal-proxy --network kamal --detach --restart unless-stopped --volume kamal-proxy-config:/home/kamal-proxy/.config/kamal-proxy --volume $(pwd)/.kamal/proxy/apps-config:/home/kamal-proxy/.apps-config on 1.1.1.1", output
-      assert_match "docker exec kamal-proxy kamal-proxy deploy app-web --target=\"abcdefabcdef:80\" --deploy-timeout=\"6s\" --drain-timeout=\"30s\" --buffer-requests --buffer-responses --log-request-header=\"Cache-Control\" --log-request-header=\"Last-Modified\" --log-request-header=\"User-Agent\" on 1.1.1.1", output
+      assert_match "echo $(cat .kamal/proxy/options 2> /dev/null || echo \"--publish 80:80 --publish 443:443 --log-opt max-size=10m\") $(cat .kamal/proxy/image 2> /dev/null || echo \"basecamp/kamal-proxy\"):$(cat .kamal/proxy/image_version 2> /dev/null || echo \"#{Kamal::Configuration::Proxy::Boot::MINIMUM_VERSION}\") $(cat .kamal/proxy/run_command 2> /dev/null || echo \"\") | xargs docker run --name kamal-proxy --network kamal --detach --restart unless-stopped --volume kamal-proxy-config:/home/kamal-proxy/.config/kamal-proxy --volume $(pwd)/.kamal/proxy/apps-config:/home/kamal-proxy/.apps-config on 1.1.1.1", output
 
       assert_match "docker container stop kamal-proxy on 1.1.1.2", output
       assert_match "docker container prune --force --filter label=org.opencontainers.image.title=kamal-proxy on 1.1.1.2", output
       assert_match "mkdir -p .kamal/proxy/apps-config on 1.1.1.1", output
-      assert_match "echo $(cat .kamal/proxy/options 2> /dev/null || echo \"--publish 80:80 --publish 443:443 --log-opt max-size=10m\") $(cat .kamal/proxy/image 2> /dev/null || echo \"basecamp/kamal-proxy\"):$(cat .kamal/proxy/image_version 2> /dev/null || echo \"#{Kamal::Configuration::Proxy::Boot::MINIMUM_VERSION}\") | xargs docker run --name kamal-proxy --network kamal --detach --restart unless-stopped --volume kamal-proxy-config:/home/kamal-proxy/.config/kamal-proxy --volume $(pwd)/.kamal/proxy/apps-config:/home/kamal-proxy/.apps-config on 1.1.1.2", output
-      assert_match "docker exec kamal-proxy kamal-proxy deploy app-web --target=\"abcdefabcdef:80\" --deploy-timeout=\"6s\" --drain-timeout=\"30s\" --buffer-requests --buffer-responses --log-request-header=\"Cache-Control\" --log-request-header=\"Last-Modified\" --log-request-header=\"User-Agent\" on 1.1.1.2", output
+      assert_match "echo $(cat .kamal/proxy/options 2> /dev/null || echo \"--publish 80:80 --publish 443:443 --log-opt max-size=10m\") $(cat .kamal/proxy/image 2> /dev/null || echo \"basecamp/kamal-proxy\"):$(cat .kamal/proxy/image_version 2> /dev/null || echo \"#{Kamal::Configuration::Proxy::Boot::MINIMUM_VERSION}\") $(cat .kamal/proxy/run_command 2> /dev/null || echo \"\") | xargs docker run --name kamal-proxy --network kamal --detach --restart unless-stopped --volume kamal-proxy-config:/home/kamal-proxy/.config/kamal-proxy --volume $(pwd)/.kamal/proxy/apps-config:/home/kamal-proxy/.apps-config on 1.1.1.2", output
     end
   end
 
   test "reboot --rolling" do
-    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-123$", "--quiet")
-      .returns("abcdefabcdef")
-      .at_least_once
-
-    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with { |*args| args[0..1] == [ :sh, "-c" ] }
-      .returns("123")
-      .at_least_once
-
     run_command("reboot", "--rolling", "-y").tap do |output|
       assert_match "Running docker container prune --force --filter label=org.opencontainers.image.title=kamal-proxy on 1.1.1.1", output
     end
@@ -199,7 +177,7 @@ class CliProxyTest < CliTestCase
       assert_match "/usr/bin/env mkdir -p .kamal", output
       assert_match "docker network create kamal", output
       assert_match "docker login -u [REDACTED] -p [REDACTED]", output
-      assert_match "docker container start kamal-proxy || echo $(cat .kamal/proxy/options 2> /dev/null || echo \"--publish 80:80 --publish 443:443 --log-opt max-size=10m\") $(cat .kamal/proxy/image 2> /dev/null || echo \"basecamp/kamal-proxy\"):$(cat .kamal/proxy/image_version 2> /dev/null || echo \"#{Kamal::Configuration::Proxy::Boot::MINIMUM_VERSION}\") | xargs docker run --name kamal-proxy --network kamal --detach --restart unless-stopped --volume kamal-proxy-config:/home/kamal-proxy/.config/kamal-proxy", output
+      assert_match "docker container start kamal-proxy || echo $(cat .kamal/proxy/options 2> /dev/null || echo \"--publish 80:80 --publish 443:443 --log-opt max-size=10m\") $(cat .kamal/proxy/image 2> /dev/null || echo \"basecamp/kamal-proxy\"):$(cat .kamal/proxy/image_version 2> /dev/null || echo \"#{Kamal::Configuration::Proxy::Boot::MINIMUM_VERSION}\") $(cat .kamal/proxy/run_command 2> /dev/null || echo \"\") | xargs docker run --name kamal-proxy --network kamal --detach --restart unless-stopped --volume kamal-proxy-config:/home/kamal-proxy/.config/kamal-proxy", output
       assert_match "/usr/bin/env mkdir -p .kamal", output
       assert_match %r{docker rename app-web-latest app-web-latest_replaced_.*}, output
       assert_match "/usr/bin/env mkdir -p .kamal/apps/app/env/roles", output
@@ -243,7 +221,9 @@ class CliProxyTest < CliTestCase
         assert_match "Running /usr/bin/env mkdir -p .kamal/proxy on #{host}", output
         assert_match "Running /usr/bin/env rm .kamal/proxy/options on #{host}", output
         assert_match "Running /usr/bin/env rm .kamal/proxy/image on #{host}", output
-        assert_match "Running /usr/bin/env rm .kamal/proxy/image_version on #{host}", output      end
+        assert_match "Running /usr/bin/env rm .kamal/proxy/image_version on #{host}", output
+        assert_match "Running /usr/bin/env rm .kamal/proxy/run_command on #{host}", output
+      end
     end
   end
 
@@ -254,6 +234,7 @@ class CliProxyTest < CliTestCase
         assert_match "Uploading \"--log-opt max-size=10m\" to .kamal/proxy/options on #{host}", output
         assert_match "Running /usr/bin/env rm .kamal/proxy/image on #{host}", output
         assert_match "Running /usr/bin/env rm .kamal/proxy/image_version on #{host}", output
+        assert_match "Running /usr/bin/env rm .kamal/proxy/run_command on #{host}", output
       end
     end
   end
@@ -265,6 +246,7 @@ class CliProxyTest < CliTestCase
         assert_match "Uploading \"--publish 80:80 --publish 443:443 --log-opt max-size=100m\" to .kamal/proxy/options on #{host}", output
         assert_match "Running /usr/bin/env rm .kamal/proxy/image on #{host}", output
         assert_match "Running /usr/bin/env rm .kamal/proxy/image_version on #{host}", output
+        assert_match "Running /usr/bin/env rm .kamal/proxy/run_command on #{host}", output
       end
     end
   end
@@ -276,6 +258,7 @@ class CliProxyTest < CliTestCase
         assert_match "Uploading \"--publish 80:80 --publish 443:443\" to .kamal/proxy/options on #{host}", output
         assert_match "Running /usr/bin/env rm .kamal/proxy/image on #{host}", output
         assert_match "Running /usr/bin/env rm .kamal/proxy/image_version on #{host}", output
+        assert_match "Running /usr/bin/env rm .kamal/proxy/run_command on #{host}", output
       end
     end
   end
@@ -322,6 +305,7 @@ class CliProxyTest < CliTestCase
         assert_match "Uploading \"--publish 80:80 --publish 443:443 --log-opt max-size=10m --label=foo=bar --add_host=thishost:thathost\" to .kamal/proxy/options on #{host}", output
         assert_match "Running /usr/bin/env rm .kamal/proxy/image on #{host}", output
         assert_match "Running /usr/bin/env rm .kamal/proxy/image_version on #{host}", output
+        assert_match "Running /usr/bin/env rm .kamal/proxy/run_command on #{host}", output
       end
     end
   end
@@ -333,6 +317,7 @@ class CliProxyTest < CliTestCase
         assert_match "Running /usr/bin/env rm .kamal/proxy/options on #{host}", output
         assert_match "Uploading \"myreg/basecamp/kamal-proxy\" to .kamal/proxy/image on #{host}", output
         assert_match "Running /usr/bin/env rm .kamal/proxy/image_version on #{host}", output
+        assert_match "Running /usr/bin/env rm .kamal/proxy/run_command on #{host}", output
       end
     end
   end
@@ -344,6 +329,7 @@ class CliProxyTest < CliTestCase
         assert_match "Running /usr/bin/env rm .kamal/proxy/options on #{host}", output
         assert_match "Uploading \"myrepo/kamal-proxy\" to .kamal/proxy/image on #{host}", output
         assert_match "Running /usr/bin/env rm .kamal/proxy/image_version on #{host}", output
+        assert_match "Running /usr/bin/env rm .kamal/proxy/run_command on #{host}", output
       end
     end
   end
@@ -355,23 +341,37 @@ class CliProxyTest < CliTestCase
         assert_match "Running /usr/bin/env rm .kamal/proxy/options on #{host}", output
         assert_match "Running /usr/bin/env rm .kamal/proxy/image on #{host}", output
         assert_match "Uploading \"0.9.9\" to .kamal/proxy/image_version on #{host}", output
+        assert_match "Running /usr/bin/env rm .kamal/proxy/run_command on #{host}", output
+      end
+    end
+  end
+
+  test "boot_config set run_command" do
+    run_command("boot_config", "set", "--metrics_port", "9000", "--debug", "true").tap do |output|
+      %w[ 1.1.1.1 1.1.1.2 ].each do |host|
+        assert_match "Running /usr/bin/env mkdir -p .kamal/proxy on #{host}", output
+        assert_match "Uploading \"--publish 80:80 --publish 443:443 --log-opt max-size=10m --expose=9000\" to .kamal/proxy/options on #{host}", output
+        assert_match "Running /usr/bin/env rm .kamal/proxy/image on #{host}", output
+        assert_match "Running /usr/bin/env rm .kamal/proxy/image_version on #{host}", output
+        assert_match "Uploading \"kamal-proxy run --debug --metrics-port \\\"9000\\\"\" to .kamal/proxy/run_command on #{host}", output
       end
     end
   end
 
   test "boot_config set all" do
-    run_command("boot_config", "set", "--docker_options", "label=foo=bar", "--registry", "myreg", "--repository", "myrepo", "--image_version", "0.9.9").tap do |output|
+    run_command("boot_config", "set", "--docker_options", "label=foo=bar", "--registry", "myreg", "--repository", "myrepo", "--image_version", "0.9.9", "--metrics_port", "9000", "--debug", "true").tap do |output|
       %w[ 1.1.1.1 1.1.1.2 ].each do |host|
-        assert_match "Uploading \"--publish 80:80 --publish 443:443 --log-opt max-size=10m --label=foo=bar\" to .kamal/proxy/options on #{host}", output
+        assert_match "Uploading \"--publish 80:80 --publish 443:443 --log-opt max-size=10m --expose=9000 --label=foo=bar\" to .kamal/proxy/options on #{host}", output
         assert_match "Uploading \"myreg/myrepo/kamal-proxy\" to .kamal/proxy/image on #{host}", output
         assert_match "Uploading \"0.9.9\" to .kamal/proxy/image_version on #{host}", output
+        assert_match "Uploading \"kamal-proxy run --debug --metrics-port \\\"9000\\\"\" to .kamal/proxy/run_command on #{host}", output
       end
     end
   end
 
   test "boot_config get" do
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:echo, "$(cat .kamal/proxy/options 2> /dev/null || echo \"--publish 80:80 --publish 443:443 --log-opt max-size=10m\") $(cat .kamal/proxy/image 2> /dev/null || echo \"basecamp/kamal-proxy\"):$(cat .kamal/proxy/image_version 2> /dev/null || echo \"v0.8.7\")")
+      .with(:echo, "$(cat .kamal/proxy/options 2> /dev/null || echo \"--publish 80:80 --publish 443:443 --log-opt max-size=10m\") $(cat .kamal/proxy/image 2> /dev/null || echo \"basecamp/kamal-proxy\"):$(cat .kamal/proxy/image_version 2> /dev/null || echo \"#{Kamal::Configuration::Proxy::Boot::MINIMUM_VERSION}\") $(cat .kamal/proxy/run_command 2> /dev/null || echo \"\")")
       .returns("--publish 80:80 --publish 8443:443 --label=foo=bar basecamp/kamal-proxy:v1.0.0")
       .twice
 

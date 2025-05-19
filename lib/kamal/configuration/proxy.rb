@@ -11,6 +11,7 @@ class Kamal::Configuration::Proxy
   def initialize(config:, proxy_config:, secrets:, context: "proxy")
     @config = config
     @proxy_config = proxy_config
+    @proxy_config = {} if @proxy_config.nil?
     @secrets = secrets
     validate! @proxy_config, with: Kamal::Configuration::Validator::Proxy, context: context
   end

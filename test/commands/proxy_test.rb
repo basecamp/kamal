@@ -15,7 +15,7 @@ class CommandsProxyTest < ActiveSupport::TestCase
 
   test "run" do
     assert_equal \
-      "echo $(cat .kamal/proxy/options 2> /dev/null || echo \"--publish 80:80 --publish 443:443 --log-opt max-size=10m\") $(cat .kamal/proxy/image 2> /dev/null || echo \"basecamp/kamal-proxy\"):$(cat .kamal/proxy/image_version 2> /dev/null || echo \"#{Kamal::Configuration::Proxy::Boot::MINIMUM_VERSION}\") | xargs docker run --name kamal-proxy --network kamal --detach --restart unless-stopped --volume kamal-proxy-config:/home/kamal-proxy/.config/kamal-proxy --volume $(pwd)/.kamal/proxy/apps-config:/home/kamal-proxy/.apps-config",
+      "echo $(cat .kamal/proxy/options 2> /dev/null || echo \"--publish 80:80 --publish 443:443 --log-opt max-size=10m\") $(cat .kamal/proxy/image 2> /dev/null || echo \"basecamp/kamal-proxy\"):$(cat .kamal/proxy/image_version 2> /dev/null || echo \"#{Kamal::Configuration::Proxy::Boot::MINIMUM_VERSION}\") $(cat .kamal/proxy/run_command 2> /dev/null || echo \"\") | xargs docker run --name kamal-proxy --network kamal --detach --restart unless-stopped --volume kamal-proxy-config:/home/kamal-proxy/.config/kamal-proxy --volume $(pwd)/.kamal/proxy/apps-config:/home/kamal-proxy/.apps-config",
       new_command.run.join(" ")
   end
 
@@ -23,7 +23,7 @@ class CommandsProxyTest < ActiveSupport::TestCase
     @config.delete(:proxy)
 
     assert_equal \
-      "echo $(cat .kamal/proxy/options 2> /dev/null || echo \"--publish 80:80 --publish 443:443 --log-opt max-size=10m\") $(cat .kamal/proxy/image 2> /dev/null || echo \"basecamp/kamal-proxy\"):$(cat .kamal/proxy/image_version 2> /dev/null || echo \"#{Kamal::Configuration::Proxy::Boot::MINIMUM_VERSION}\") | xargs docker run --name kamal-proxy --network kamal --detach --restart unless-stopped --volume kamal-proxy-config:/home/kamal-proxy/.config/kamal-proxy --volume $(pwd)/.kamal/proxy/apps-config:/home/kamal-proxy/.apps-config",
+      "echo $(cat .kamal/proxy/options 2> /dev/null || echo \"--publish 80:80 --publish 443:443 --log-opt max-size=10m\") $(cat .kamal/proxy/image 2> /dev/null || echo \"basecamp/kamal-proxy\"):$(cat .kamal/proxy/image_version 2> /dev/null || echo \"#{Kamal::Configuration::Proxy::Boot::MINIMUM_VERSION}\") $(cat .kamal/proxy/run_command 2> /dev/null || echo \"\") | xargs docker run --name kamal-proxy --network kamal --detach --restart unless-stopped --volume kamal-proxy-config:/home/kamal-proxy/.config/kamal-proxy --volume $(pwd)/.kamal/proxy/apps-config:/home/kamal-proxy/.apps-config",
       new_command.run.join(" ")
   end
 
@@ -129,6 +129,12 @@ class CommandsProxyTest < ActiveSupport::TestCase
       new_command.read_image_version.join(" ")
   end
 
+  test "read_run_command" do
+    assert_equal \
+      "cat .kamal/proxy/run_command 2> /dev/null || echo \"\"",
+      new_command.read_run_command.join(" ")
+  end
+
   test "reset_boot_options" do
     assert_equal \
       "rm .kamal/proxy/options",
@@ -151,6 +157,12 @@ class CommandsProxyTest < ActiveSupport::TestCase
     assert_equal \
       "mkdir -p .kamal/proxy/apps-config",
       new_command.ensure_apps_config_directory.join(" ")
+  end
+
+  test "reset_run_command" do
+    assert_equal \
+      "rm .kamal/proxy/run_command",
+      new_command.reset_run_command.join(" ")
   end
 
   private
