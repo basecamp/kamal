@@ -21,6 +21,18 @@ module Kamal::Commands::App::Proxy
     remove_directory config.proxy_boot.app_directory
   end
 
+  def create_ssl_directory
+    make_directory(config.proxy_boot.tls_directory)
+  end
+
+  def write_certificate_file(content)
+    [ :sh, "-c", Kamal::Utils.sensitive("cat > #{config.proxy_boot.tls_directory}/cert.pem << 'KAMAL_CERT_EOF'\n#{content}\nKAMAL_CERT_EOF", redaction: "cat > #{config.proxy_boot.tls_directory}/cert.pem << 'KAMAL_CERT_EOF'\n[CERTIFICATE CONTENT REDACTED]\nKAMAL_CERT_EOF") ]
+  end
+
+  def write_private_key_file(content)
+    [ :sh, "-c", Kamal::Utils.sensitive("cat > #{config.proxy_boot.tls_directory}/key.pem << 'KAMAL_KEY_EOF'\n#{content}\nKAMAL_KEY_EOF", redaction: "cat > #{config.proxy_boot.tls_directory}/key.pem << 'KAMAL_KEY_EOF'\n[PRIVATE KEY CONTENT REDACTED]\nKAMAL_KEY_EOF") ]
+  end
+
   private
     def proxy_exec(*command)
       docker :exec, proxy_container_name, "kamal-proxy", *command
