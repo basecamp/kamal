@@ -1,7 +1,7 @@
 module Kamal::Commands::App::Execution
   def execute_in_existing_container(*command, interactive: false, env:)
     docker :exec,
-      ("-it" if interactive),
+      (docker_interactive_args if interactive),
       *argumentize("--env", env),
       container_name,
       *command
@@ -9,7 +9,7 @@ module Kamal::Commands::App::Execution
 
   def execute_in_new_container(*command, interactive: false, detach: false, env:)
     docker :run,
-      ("-it" if interactive),
+      (docker_interactive_args if interactive),
       ("--detach" if detach),
       ("--rm" unless detach),
       "--network", "kamal",
