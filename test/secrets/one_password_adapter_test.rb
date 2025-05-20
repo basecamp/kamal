@@ -2,10 +2,10 @@ require "test_helper"
 
 class SecretsOnePasswordAdapterTest < SecretAdapterTestCase
   test "fetch" do
-    stub_ticks.with("op --version 2> /dev/null")
-    stub_ticks.with("op account get --account myaccount 2> /dev/null")
+    stub_command(:system).with("op --version", err: File::NULL)
+    stub_command(:system).with("op account get --account myaccount", err: File::NULL)
 
-    stub_ticks
+    stub_command
       .with("op item get myitem --vault \"myvault\" --fields \"label=section.SECRET1,label=section.SECRET2,label=section2.SECRET3\" --format \"json\" --account \"myaccount\"")
       .returns(<<~JSON)
         [
@@ -57,10 +57,10 @@ class SecretsOnePasswordAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch with multiple items" do
-    stub_ticks.with("op --version 2> /dev/null")
-    stub_ticks.with("op account get --account myaccount 2> /dev/null")
+    stub_command(:system).with("op --version", err: File::NULL)
+    stub_command(:system).with("op account get --account myaccount", err: File::NULL)
 
-    stub_ticks
+    stub_command
       .with("op item get myitem --vault \"myvault\" --fields \"label=section.SECRET1,label=section.SECRET2\" --format \"json\" --account \"myaccount\"")
       .returns(<<~JSON)
         [
@@ -89,7 +89,7 @@ class SecretsOnePasswordAdapterTest < SecretAdapterTestCase
         ]
       JSON
 
-    stub_ticks
+    stub_command
       .with("op item get myitem2 --vault \"myvault\" --fields \"label=section2.SECRET3\" --format \"json\" --account \"myaccount\"")
       .returns(<<~JSON)
         {
@@ -117,12 +117,12 @@ class SecretsOnePasswordAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch with signin, no session" do
-    stub_ticks.with("op --version 2> /dev/null")
+    stub_command(:system).with("op --version", err: File::NULL)
 
-    stub_ticks_with("op account get --account myaccount 2> /dev/null", succeed: false)
-    stub_ticks_with("op signin --account \"myaccount\" --force --raw", succeed: true).returns("")
+    stub_command_with("op account get --account myaccount", false, :system)
+    stub_command_with("op signin --account \"myaccount\" --force --raw", true).returns("")
 
-    stub_ticks
+    stub_command
       .with("op item get myitem --vault \"myvault\" --fields \"label=section.SECRET1\" --format \"json\" --account \"myaccount\"")
       .returns(single_item_json)
 
@@ -136,12 +136,12 @@ class SecretsOnePasswordAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch with signin and session" do
-    stub_ticks.with("op --version 2> /dev/null")
+    stub_command(:system).with("op --version", err: File::NULL)
 
-    stub_ticks_with("op account get --account myaccount 2> /dev/null", succeed: false)
-    stub_ticks_with("op signin --account \"myaccount\" --force --raw", succeed: true).returns("1234567890")
+    stub_command_with("op account get --account myaccount", false, :system)
+    stub_command_with("op signin --account \"myaccount\" --force --raw", true).returns("1234567890")
 
-    stub_ticks
+    stub_command
       .with("op item get myitem --vault \"myvault\" --fields \"label=section.SECRET1\" --format \"json\" --account \"myaccount\" --session \"1234567890\"")
       .returns(single_item_json)
 
@@ -155,7 +155,7 @@ class SecretsOnePasswordAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch without CLI installed" do
-    stub_ticks_with("op --version 2> /dev/null", succeed: false)
+    stub_command_with("op --version")
 
     error = assert_raises RuntimeError do
       JSON.parse(shellunescape(run_command("fetch", "--from", "op://myvault/myitem", "section/SECRET1", "section/SECRET2", "section2/SECRET3")))

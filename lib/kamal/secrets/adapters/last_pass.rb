@@ -34,7 +34,7 @@ class Kamal::Secrets::Adapters::LastPass < Kamal::Secrets::Adapters::Base
     end
 
     def cli_installed?
-      `lpass --version 2> /dev/null`
+      system("lpass --version", err: File::NULL)
       $?.success?
     end
 end
