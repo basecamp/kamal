@@ -1,101 +1,203 @@
-# Name of your application. Used to uniquely configure containers.
-service: my-app
-
-# Name of the container image.
-image: my-user/my-app
-
-# Deploy to these servers.
-servers:
-  web:
-    - 192.168.0.1
-  # job:
-  #   hosts:
-  #     - 192.168.0.1
-  #   cmd: bin/jobs
-
-# Enable SSL auto certification via Let's Encrypt and allow for multiple apps on a single web server.
-# Remove this section when using multiple web servers and ensure you terminate SSL at your load balancer.
+# This YAML file is used by Kamal to configure its deployment of this web-app to one or more servers.
+# Kamal builds a Docker image of the app itself via a Dockerfile and a local clone of the app-code repository
+# (changes don't need to be first pushed to any remote), then pushes this image to the image repository
+# configured here. Kamal then deploys the web-app image it built to the list of servers given here.
+# Kamal can also deploy optional accessory images configured here (such as a database),
+# plus an optional Kamal-Proxy container to act as the single web listener and optional single SSL (https)
+# processor and certificate manager, which then transfers unencrypted HTTP to and from the web-app containers.
 #
-# Note: If using Cloudflare, set encryption mode in SSL/TLS setting to "Full" to enable CF-to-app encryption.
-proxy:
-  ssl: true
-  host: app.example.com
-  # Proxy connects to your container on port 80 by default.
-  # app_port: 3000
+# This file is similar to a Docker Compose YAML file, but does not currently support interpolation of
+# environment variables. YAML anchors (&anchor) and aliases (*anchor) are however available to reduce
+# duplication, although aliases must substitute for a whole config value rather than a sub-string of such.
+#
+# All available configuration settings beyond those in this example are described at
+# https://kamal-deploy.org/docs/configuration/overview/
 
-# Credentials for your image host.
+
+# The name of your application.
+# This is only directly used to uniquely prefix the name of the web-app image/container
+# and its accessory containers.
+#
+service: my-app &service
+
+
+# Configure the web-app container builder. By default, building is done on the local machine,
+# but remote building is supported.
+#
+# See https://kamal-deploy.org/docs/configuration/builder-examples/ for more information.
+#
+builder:
+  # The CPU architecture of the server to which the app is being deployed. Emulation allows it to be
+  # different to the architecture of the build host.
+  arch: amd64
+
+  # Pass in additional build args needed for your Dockerfile.
+  #args:
+  #  RUBY_VERSION: <%= ENV["RBENV_VERSION"] || ENV["rvm_ruby_string"] || "#{RUBY_ENGINE}-#{RUBY_ENGINE_VERSION}" %>
+
+
+# Inject environment variables into the web-app container.
+# Secret variables are the names of variables set in .kamal/secrets.
+# Both clear and secret variables are made available to any erb-file parsed during app start-up.
+#
+#env:
+#  clear:
+#    DB_USER: *service
+#    DB_NAME_PREFIX: *service
+#
+#    # A web-app DB_HOST variable (or a variable with a different name) could be set here to the name of the
+#    # database accessory container, which by default is the service name set above, hyphenated with the
+#    # database accessory YAML key set below (e.g. my-app-db or my-app-postgres).
+#    # If such a variable setting is used by the web-app, the app and the database containers will communicate
+#    # through the Docker private-IP network, and there is no need to expose the database to either
+#    # the host or the world by setting its accessory port below.
+#    # Alternatively, this variable can be set to an IP address or hostname.
+#    # Or instead of using a variable, the database hostname can be set directly in the web-app.
+#    DB_HOST: my-app-db
+#
+#  secret:
+#    - DB_USER_PASSWORD
+#    - RAILS_MASTER_KEY
+
+
+# Map one or more persistent storage volumes between a web-app container path and the host filesystem.
+# The host filesytem path before the colon can either be an absolute path or a volume identifier,
+# the latter form being mapped to the /var/lib/docker/volumes/<identifier>/_data host path.
+#
+#volumes:
+#  - "app_storage:/app/storage"
+
+
+# Bridge fingerprinted assets, like JS and CSS, between versions to avoid
+# hitting 404 on in-flight requests. Combines all files from the new and old
+# versions inside the asset_path.
+#
+#asset_path: /app/public/assets
+
+
+# The registry that will host the built web-app Docker image.
+#
 registry:
-  # Specify the registry server, if you're not using Docker Hub
-  # server: registry.digitalocean.com / ghcr.io / ...
-  username: my-user
+  # Specify the hostname of the registry, only necessary if not Docker Hub.
+  #server: registry.digitalocean.com / ghcr.io / my-harbor-hostname[:port] / ...
 
-  # Always use an access token rather than real password (pulled from .kamal/secrets).
+  username: my-registry-username
+
+  # The name of the environment variable that holds the password for the above registry username,
+  # as set in .kamal/secrets. If supported by your registry, it's safer to use an access token
+  # rather than a password.
   password:
     - KAMAL_REGISTRY_PASSWORD
 
-# Configure builder setup.
-builder:
-  arch: amd64
-  # Pass in additional build args needed for your Dockerfile.
-  # args:
-  #   RUBY_VERSION: <%= ENV["RBENV_VERSION"] || ENV["rvm_ruby_string"] || "#{RUBY_ENGINE}-#{RUBY_ENGINE_VERSION}" %>
 
-# Inject ENV variables into containers (secrets come from .kamal/secrets).
+# The name of the web-app container image.
+# If a third-party container image registry is being used (as configured above), this is usually of the form
+# <registry-username>/<registry-repository-name>. For the self-hosted Harbor registry, this will instead
+# be <project-name>/<image-name>. The second part of this value will usually be automatically created,
+# and so could be named after the service above.
 #
-# env:
-#   clear:
-#     DB_HOST: 192.168.0.2
-#   secret:
-#     - RAILS_MASTER_KEY
+image: my-user/my-app
+
+
+# Use a different ssh user than root on the server to which you are deploying.
+#
+#ssh:
+#  user: app
+
+
+# Deploy to the servers with the given IP addresses or hostnames. ssh must be able to connect to
+# the given addresss or hostname with the user set above through a server-deployed private key and a
+# local ssh Host config section for the given address or hostname.
+#
+servers:
+  web:
+    - <public-address-or-hostname> &web-server
+  # job:
+  #   hosts:
+  #     - *web-server
+  #   cmd: bin/jobs
+
+
+# Add one or more accessory services.
+#
+#accessories:
+#  db:
+#    # The Docker Hub tagged public image for this accessory.
+#    # Another registry can instead be used: see https://kamal-deploy.org/docs/configuration/accessories/
+#    image: mysql:8.0
+#
+#    # The public address or hostname where this accessory should be deployed.
+#    host: *web-server
+#
+#    # The port that will be opened and published for this accessory.
+#    # If not set, no port will be opened nor published.
+#    # A setting of "<external-IP>:<external-port>:<container-port>" will expose the accessory to the given
+#    # external IP and port. For example, "127.0.0.1:3306:3306" will only expose the accessory to the host.
+#    # A numeric-only setting is equivalent to "0.0.0.0:<port>:<port>", exposing the accessory to all
+#    # IP addresses unless blocked by another firewall.
+#    # Whatever the setting, communication is available on the Docker private IP network via the accessory
+#    # container name <service-name>-<accessory-YAML-key> (my-app-db in this example).
+#    port: 3306
+#
+#    # The web-app environment variables above are not propagated to accessories.
+#    env:
+#      clear:
+#        MYSQL_ROOT_HOST: '%'
+#      # As set in .kamal/secrets.
+#      secret:
+#        - MYSQL_ROOT_PASSWORD
+#
+#     # List any files from the dev repository that you wish copied into a path of this accessory container
+#     # for initialization, etc. The format is <repo-relative-path>:<container-absolute-path>.
+#     # Such a file can be an erb file that will be parsed using only the clear environment
+#     # variables defined above. Secret variables are however made available to script files.
+#     files:
+#       - config/mysql/production.cnf:/etc/mysql/my.cnf
+#       - db/production.sql:/docker-entrypoint-initdb.d/setup.sql
+#
+#     # Link host directories with accessory container absolute paths to persist data across accessory
+#     # container lifetimes. Host directories are created if absent.
+#     directories:
+#       # If not an absolute path, the key part of the value below uses the host directory
+#       # ~<ssh-user>/<accessory-container-name>/<key>
+#       - data:/var/lib/mysql
+#
+#  redis:
+#    image: valkey/valkey:8
+#    host: *web-server
+#    port: 6379
+#    directories:
+#      - data:/data
+
+
+# Configure the Kamal Proxy container, which supports both name-based virtual servers,
+# by routing hostnames to web-apps, and encryption/decryption for the https protocol,
+# including automatically-updated TLS certificates. The proxy will either be deployed to the first
+# listed web-server or no websevvers ("proxy: false"). Ensure you terminate SSL at your load balancer.
+#
+proxy:
+  # If this host field is absent the proxy will route all hostnames to this web-app;
+  # a string will route a single name; or a YAML array of hostnames can be routed.
+  # These routes will be added to a proxy that is already routing other web-apps.
+  host: app.example.com
+
+  # Setting this "true" enables both https processing and auto-certification via Let's Encrypt of all listed hostnames.
+  # If using Cloudflare, set the encryption mode in its SSL/TLS setting to "Full" to enable CF-to-app encryption.
+  ssl: true
+
+  # The proxy connects to web-app containers on port 80 by default.
+  #app_port: 3000
+
+
+# Configure rolling deploys by setting a wait time between batches of restarts.
+#
+#boot:
+#  limit: 10 # Can also specify as a percentage of total hosts, such as "25%"
+#  wait: 2
+
 
 # Aliases are triggered with "bin/kamal <alias>". You can overwrite arguments on invocation:
 # "bin/kamal app logs -r job" will tail logs from the first server in the job section.
 #
-# aliases:
-#   shell: app exec --interactive --reuse "bash"
-
-# Use a different ssh user than root
-#
-# ssh:
-#   user: app
-
-# Use a persistent storage volume.
-#
-# volumes:
-#   - "app_storage:/app/storage"
-
-# Bridge fingerprinted assets, like JS and CSS, between versions to avoid
-# hitting 404 on in-flight requests. Combines all files from new and old
-# version inside the asset_path.
-#
-# asset_path: /app/public/assets
-
-# Configure rolling deploys by setting a wait time between batches of restarts.
-#
-# boot:
-#   limit: 10 # Can also specify as a percentage of total hosts, such as "25%"
-#   wait: 2
-
-# Use accessory services (secrets come from .kamal/secrets).
-#
-# accessories:
-#   db:
-#     image: mysql:8.0
-#     host: 192.168.0.2
-#     port: 3306
-#     env:
-#       clear:
-#         MYSQL_ROOT_HOST: '%'
-#       secret:
-#         - MYSQL_ROOT_PASSWORD
-#     files:
-#       - config/mysql/production.cnf:/etc/mysql/my.cnf
-#       - db/production.sql:/docker-entrypoint-initdb.d/setup.sql
-#     directories:
-#       - data:/var/lib/mysql
-#   redis:
-#     image: valkey/valkey:8
-#     host: 192.168.0.2
-#     port: 6379
-#     directories:
-#       - data:/data
+#aliases:
+#  shell: app exec --interactive --reuse "bash"
