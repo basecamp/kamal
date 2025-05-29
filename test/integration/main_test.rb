@@ -144,6 +144,7 @@ class MainTest < IntegrationTest
 
   private
     def assert_envs(version:)
+      assert_env :KAMAL_HOST, "vm1", version: version, vm: :vm1
       assert_env :CLEAR_TOKEN, "4321", version: version, vm: :vm1
       assert_env :HOST_TOKEN, "abcd", version: version, vm: :vm1
       assert_env :SECRET_TOKEN, "1234 with \"中文\"", version: version, vm: :vm1
