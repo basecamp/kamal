@@ -170,6 +170,8 @@ class Kamal::Configuration::Validator
     end
 
     def validate_labels!(labels)
+      return true if labels.blank?
+
       with_context("labels") do
         labels.each do |key, _|
           with_context(key) do
