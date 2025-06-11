@@ -6,6 +6,8 @@ class Kamal::Configuration::Validator::Accessory < Kamal::Configuration::Validat
       error "specify one of `host`, `hosts`, `role`, `roles`, `tag` or `tags`"
     end
 
+    validate_labels!(config["labels"])
+
     validate_docker_options!(config["options"])
   end
 end

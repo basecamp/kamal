@@ -6,6 +6,7 @@ class Kamal::Configuration::Validator::Role < Kamal::Configuration::Validator
       validate_servers!(config)
     else
       super
+      validate_labels!(config["labels"])
       validate_docker_options!(config["options"])
     end
   end

@@ -169,6 +169,18 @@ class Kamal::Configuration::Validator
       unknown_keys_error unknown_keys if unknown_keys.present?
     end
 
+    def validate_labels!(labels)
+      return true if labels.blank?
+
+      with_context("labels") do
+        labels.each do |key, _|
+          with_context(key) do
+            error "invalid label. destination, role, and service are reserved labels" if %w[destination role service].include?(key)
+          end
+        end
+      end
+    end
+
     def validate_docker_options!(options)
       if options
         error "Cannot set restart policy in docker options, unless-stopped is required" if options["restart"]
