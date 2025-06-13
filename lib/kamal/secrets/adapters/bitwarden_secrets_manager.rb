@@ -66,7 +66,7 @@ class Kamal::Secrets::Adapters::BitwardenSecretsManager < Kamal::Secrets::Adapte
     end
 
     def cli_installed?
-      `bws --version 2> /dev/null`
+      system("bws --version", err: File::NULL)
       $?.success?
     end
 end

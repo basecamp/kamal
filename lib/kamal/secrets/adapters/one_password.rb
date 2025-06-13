@@ -11,7 +11,7 @@ class Kamal::Secrets::Adapters::OnePassword < Kamal::Secrets::Adapters::Base
     end
 
     def loggedin?(account)
-      `op account get --account #{account.shellescape} 2> /dev/null`
+      system("op account get --account #{account.shellescape}", err: File::NULL)
       $?.success?
     end
 
@@ -64,7 +64,7 @@ class Kamal::Secrets::Adapters::OnePassword < Kamal::Secrets::Adapters::Base
     end
 
     def cli_installed?
-      `op --version 2> /dev/null`
+      system("op --version", err: File::NULL)
       $?.success?
     end
 end
