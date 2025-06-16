@@ -87,7 +87,7 @@ class BitwardenSecretsManagerAdapterTest < SecretAdapterTestCase
 
   test "fetch with no access token" do
     stub_ticks.with("bws --version 2> /dev/null")
-    stub_ticks_with("bws run 'echo OK'", succeed: false)
+    stub_ticks_with("bws project list", succeed: false)
 
     error = assert_raises RuntimeError do
       (shellunescape(run_command("fetch", "all")))
@@ -106,7 +106,7 @@ class BitwardenSecretsManagerAdapterTest < SecretAdapterTestCase
 
   private
     def stub_login
-      stub_ticks.with("bws run 'echo OK'").returns("OK")
+      stub_ticks.with("bws project list").returns("OK")
     end
 
     def run_command(*command)
