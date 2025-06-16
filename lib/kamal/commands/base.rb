@@ -122,5 +122,9 @@ module Kamal::Commands
       def ensure_local_buildx_installed
         docker :buildx, "version"
       end
+
+      def docker_interactive_args
+        STDIN.isatty ? "-it" : "-i"
+      end
   end
 end
