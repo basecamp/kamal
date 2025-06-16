@@ -54,13 +54,13 @@ class ActiveSupport::TestCase
         stub_stdin(master) { yield }
       end
     end
-    
+
     def stub_stdin_file
       File.open("/dev/null", "r") do |file|
         stub_stdin(file) { yield }
       end
     end
-    
+
     def stub_stdin(io)
       original_stdin = STDIN.dup
       STDIN.reopen(io)
