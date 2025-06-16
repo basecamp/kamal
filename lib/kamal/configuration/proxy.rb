@@ -6,12 +6,13 @@ class Kamal::Configuration::Proxy
 
   delegate :argumentize, :optionize, to: Kamal::Utils
 
-  attr_reader :config, :proxy_config, :secrets
+  attr_reader :config, :proxy_config, :role_name, :secrets
 
-  def initialize(config:, proxy_config:, secrets:, context: "proxy")
+  def initialize(config:, proxy_config:, role_name: nil, secrets:, context: "proxy")
     @config = config
     @proxy_config = proxy_config
     @proxy_config = {} if @proxy_config.nil?
+    @role_name = role_name
     @secrets = secrets
     validate! @proxy_config, with: Kamal::Configuration::Validator::Proxy, context: context
   end
@@ -46,24 +47,28 @@ class Kamal::Configuration::Proxy
     secrets[ssl["private_key_pem"]]
   end
 
-  def certificate_pem
-    tls_file_path("cert.pem")
+  def host_tls_cert
+    tls_path(config.proxy_boot.tls_directory, "cert.pem")
   end
 
-  def private_key_pem
-    tls_file_path("key.pem")
+  def host_tls_key
+    tls_path(config.proxy_boot.tls_directory, "key.pem")
   end
 
-  def tls_file_path(filename)
-    File.join(config.proxy_boot.tls_container_directory, filename) if custom_ssl_certificate?
+  def container_tls_cert
+    tls_path(config.proxy_boot.tls_container_directory, "cert.pem")
+  end
+
+  def container_tls_key
+    tls_path(config.proxy_boot.tls_container_directory, "key.pem") if custom_ssl_certificate?
   end
 
   def deploy_options
     {
       host: hosts,
       tls: ssl? ? true : nil,
-      "tls-certificate-path": certificate_pem,
-      "tls-private-key-path": private_key_pem,
+      "tls-certificate-path": container_tls_cert,
+      "tls-private-key-path": container_tls_key,
       "deploy-timeout": seconds_duration(config.deploy_timeout),
       "drain-timeout": seconds_duration(config.drain_timeout),
       "health-check-interval": seconds_duration(proxy_config.dig("healthcheck", "interval")),
@@ -101,10 +106,14 @@ class Kamal::Configuration::Proxy
   end
 
   def merge(other)
-    self.class.new config: config, proxy_config: proxy_config.deep_merge(other.proxy_config), secrets: secrets
+    self.class.new config: config, proxy_config: other.proxy_config.deep_merge(proxy_config), role_name: role_name, secrets: secrets
   end
 
   private
+    def tls_path(directory, filename)
+      File.join([ directory, role_name, filename ].compact) if custom_ssl_certificate?
+    end
+
     def seconds_duration(value)
       value ? "#{value}s" : nil
     end

@@ -229,9 +229,9 @@ class CliAppTest < CliTestCase
     run_command("boot", config: :with_proxy).tap do |output|
       assert_match "Writing SSL certificates for web on 1.1.1.1", output
       assert_match "mkdir -p .kamal/proxy/apps-config/app/tls", output
-      assert_match "sh -c [REDACTED]", output
-      assert_match "--tls-certificate-path=\"/home/kamal-proxy/.apps-config/app/tls/cert.pem\"", output
-      assert_match "--tls-private-key-path=\"/home/kamal-proxy/.apps-config/app/tls/key.pem\"", output
+      assert_match "Uploading \"CERTIFICATE CONTENT\" to .kamal/proxy/apps-config/app/tls/web/cert.pem", output
+      assert_match "--tls-certificate-path=\"/home/kamal-proxy/.apps-config/app/tls/web/cert.pem\"", output
+      assert_match "--tls-private-key-path=\"/home/kamal-proxy/.apps-config/app/tls/web/key.pem\"", output
     end
   end
 
