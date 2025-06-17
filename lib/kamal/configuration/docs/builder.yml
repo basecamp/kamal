@@ -8,6 +8,7 @@
 #
 # Options go under the builder key in the root configuration.
 builder:
+
   # Arch
   #
   # The architectures to build for — you can set an array or just a single value.

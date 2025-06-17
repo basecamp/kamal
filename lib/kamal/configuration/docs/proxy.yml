@@ -11,6 +11,7 @@
 # run on the same proxy.
 #
 proxy:
+
   # Hosts
   #
   # The hosts that will be used to serve the app. The proxy will only route requests
@@ -48,9 +49,9 @@ proxy:
 
   # Custom SSL certificate
   #
-  # In some cases, using Let's Encrypt for automatic certificate management is not an 
-  # option, or you may already have SSL certificates issued by a different 
-  # Certificate Authority (CA). Kamal supports loading custom SSL certificates 
+  # In some cases, using Let's Encrypt for automatic certificate management is not an
+  # option, or you may already have SSL certificates issued by a different
+  # Certificate Authority (CA). Kamal supports loading custom SSL certificates
   # directly from secrets.
   #
   # Examples:
@@ -84,12 +85,12 @@ proxy:
 
   # Path-based routing
   #
-  # For applications that split their traffic to different services based on the request path, 
+  # For applications that split their traffic to different services based on the request path,
   # you can use path-based routing to mount services under different path prefixes.
   path_prefix: '/api'
-  # By default, the path prefix will be stripped from the request before it is forwarded upstream. 
-  # So in the example above, a request to /api/users/123 will be forwarded to web-1 as /users/123. 
-  # To instead forward the request with the original path (including the prefix), 
+  # By default, the path prefix will be stripped from the request before it is forwarded upstream.
+  # So in the example above, a request to /api/users/123 will be forwarded to web-1 as /users/123.
+  # To instead forward the request with the original path (including the prefix),
   # specify --strip-path-prefix=false
   strip_path_prefix: false
 
