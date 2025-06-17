@@ -68,7 +68,7 @@ class Kamal::Configuration::Role
   end
 
   def proxy
-    @proxy ||= config.proxy.merge(specialized_proxy) if running_proxy?
+    @proxy ||= specialized_proxy.merge(config.proxy) if running_proxy?
   end
 
   def running_proxy?
@@ -174,6 +174,7 @@ class Kamal::Configuration::Role
           config: config,
           proxy_config: proxy_config,
           secrets: config.secrets,
+          role_name: name,
           context: "servers/#{name}/proxy"
       end
     end

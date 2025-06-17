@@ -1,6 +1,6 @@
 class Kamal::Cli::App::SslCertificates
   attr_reader :host, :role, :sshkit
-  delegate :execute, :info, to: :sshkit
+  delegate :execute, :info, :upload!, to: :sshkit
 
   def initialize(host, role, sshkit)
     @host = host
@@ -13,10 +13,10 @@ class Kamal::Cli::App::SslCertificates
       info "Writing SSL certificates for #{role.name} on #{host}"
       execute *app.create_ssl_directory
       if cert_content = role.proxy.certificate_pem_content
-        execute *app.write_certificate_file(cert_content)
+        upload!(StringIO.new(cert_content), role.proxy.host_tls_cert, mode: "0644")
       end
       if key_content = role.proxy.private_key_pem_content
-        execute *app.write_private_key_file(key_content)
+        upload!(StringIO.new(key_content), role.proxy.host_tls_key, mode: "0644")
       end
     end
   end

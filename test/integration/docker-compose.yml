@@ -41,6 +41,8 @@ services:
       context: docker/vm
     volumes:
       - shared:/shared
+    ports:
+      - "22443:443"
 
   vm2:
     privileged: true
@@ -61,6 +63,7 @@ services:
       context: docker/load_balancer
     ports:
       - "12345:80"
+      - "12443:443"
     depends_on:
       - vm1
       - vm2
