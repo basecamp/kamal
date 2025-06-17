@@ -16,19 +16,21 @@ class Kamal::Secrets::Adapters::OnePassword < Kamal::Secrets::Adapters::Base
     end
 
     def fetch_secrets(secrets, from:, account:, session:)
-      return fetch_all_secrets(from: from, account: account, session: session) if secrets.blank?
+      if secrets.blank?
+        fetch_all_secrets(from: from, account: account, session: session) if secrets.blank?
+      else
+        fetch_specified_secrets(secrets, from: from, account: account, session: session)
+      end
+    end
 
+    def fetch_specified_secrets(secrets, from:, account:, session:)
       {}.tap do |results|
         vaults_items_fields(prefixed_secrets(secrets, from: from)).map do |vault, items|
           items.each do |item, fields|
             fields_json = JSON.parse(op_item_get(vault, item, fields: fields, account: account, session: session))
             fields_json = [ fields_json ] if fields.one?
 
-            fields_json.each do |field_json|
-              # The reference is in the form `op://vault/item/field[/field]`
-              field = field_json["reference"].delete_prefix("op://").delete_suffix("/password")
-              results[field] = field_json["value"]
-            end
+            results.merge!(fields_map(fields_json))
           end
         end
       end
@@ -36,16 +38,11 @@ class Kamal::Secrets::Adapters::OnePassword < Kamal::Secrets::Adapters::Base
 
     def fetch_all_secrets(from:, account:, session:)
       {}.tap do |results|
-        vault_items(from).map do |vault, items|
+        vault_items(from).each do |vault, items|
           items.each do |item|
-
             fields_json = JSON.parse(op_item_get(vault, item, account: account, session: session)).fetch("fields")
 
-            fields_json.each do |field_json|
-              # The reference is in the form `op://vault/item/field[/field]`
-              field = field_json["reference"].delete_prefix("op://").delete_suffix("/password")
-              results[field] = field_json["value"]
-            end
+            results.merge!(fields_map(fields_json))
           end
         end
       end
@@ -72,7 +69,15 @@ class Kamal::Secrets::Adapters::OnePassword < Kamal::Secrets::Adapters::Base
     def vault_items(from)
       from = from.delete_prefix("op://")
       vault, item = from.split("/")
-      { vault => [ item ]}
+      { vault => [ item ] }
+    end
+
+    def fields_map(fields_json)
+      fields_json.to_h do |field_json|
+        # The reference is in the form `op://vault/item/field[/field]`
+        field = field_json["reference"].delete_prefix("op://").delete_suffix("/password")
+        [ field, field_json["value"] ]
+      end
     end
 
     def op_item_get(vault, item, fields: nil, account:, session:)
@@ -84,7 +89,7 @@ class Kamal::Secrets::Adapters::OnePassword < Kamal::Secrets::Adapters::Base
       end
 
       `op item get #{item.shellescape} #{to_options(**options)}`.tap do
-        raise RuntimeError, "Could not read from #{item} in the #{vault} 1Password vault" unless $?.success?
+        raise RuntimeError, "Could not read #{"#{fields.join(", ")} " if fields.present?}from #{item} in the #{vault} 1Password vault" unless $?.success?
       end
     end
 
