@@ -167,7 +167,7 @@ class SecretsOnePasswordAdapterTest < SecretAdapterTestCase
 
     expected_json = {
       "myvault/myitem/section/SECRET1"=>"VALUE1",
-      "myvault/myitem/section/SECRET2"=>"VALUE2",
+      "myvault/myitem/section/SECRET2"=>"VALUE2"
     }
 
     assert_equal expected_json, json
