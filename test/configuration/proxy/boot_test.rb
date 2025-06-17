@@ -25,5 +25,7 @@ class ConfigurationProxyBootTest < ActiveSupport::TestCase
     assert_equal "/home/kamal-proxy/.apps-config/app", @proxy_boot_config.app_container_directory
     assert_equal ".kamal/proxy/apps-config/app/error_pages", @proxy_boot_config.error_pages_directory
     assert_equal "/home/kamal-proxy/.apps-config/app/error_pages", @proxy_boot_config.error_pages_container_directory
+    assert_equal ".kamal/proxy/apps-config/app/tls", @proxy_boot_config.tls_directory
+    assert_equal "/home/kamal-proxy/.apps-config/app/tls", @proxy_boot_config.tls_container_directory
   end
 end

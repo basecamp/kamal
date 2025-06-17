@@ -11,7 +11,6 @@
 # run on the same proxy.
 #
 proxy:
-
   # Hosts
   #
   # The hosts that will be used to serve the app. The proxy will only route requests
@@ -45,7 +44,21 @@ proxy:
   # unless you explicitly set `forward_headers: true`
   #
   # Defaults to `false`:
-  ssl: true
+  ssl: ...
+
+  # Custom SSL certificate
+  #
+  # In some cases, using Let's Encrypt for automatic certificate management is not an 
+  # option, or you may already have SSL certificates issued by a different 
+  # Certificate Authority (CA). Kamal supports loading custom SSL certificates 
+  # directly from secrets.
+  #
+  # Examples:
+  #   ssl: true              # Enable SSL with Let's Encrypt
+  #   ssl: false             # Disable SSL
+  #   ssl:                   # Enable custom SSL
+  #     certificate_pem: CERTIFICATE_PEM
+  #     private_key_pem: PRIVATE_KEY_PEM
 
   # SSL redirect
   #

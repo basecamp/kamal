@@ -386,7 +386,7 @@ class ConfigurationTest < ActiveSupport::TestCase
       Kamal::Configuration.new(@deploy_with_roles)
     end
 
-    assert_equal "SSL is only supported on a single server, found 2 servers for role workers", exception.message
+    assert_equal "SSL is only supported on a single server unless you provide custom certificates, found 2 servers for role workers", exception.message
   end
 
   test "two proxy ssl roles with same host" do

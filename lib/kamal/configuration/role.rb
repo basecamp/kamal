@@ -150,8 +150,8 @@ class Kamal::Configuration::Role
   end
 
   def ensure_one_host_for_ssl
-    if running_proxy? && proxy.ssl? && hosts.size > 1
-      raise Kamal::ConfigurationError, "SSL is only supported on a single server, found #{hosts.size} servers for role #{name}"
+    if running_proxy? && proxy.ssl? && hosts.size > 1 && !proxy.custom_ssl_certificate?
+      raise Kamal::ConfigurationError, "SSL is only supported on a single server unless you provide custom certificates, found #{hosts.size} servers for role #{name}"
     end
   end
 
@@ -173,6 +173,7 @@ class Kamal::Configuration::Role
         @specialized_proxy = Kamal::Configuration::Proxy.new \
           config: config,
           proxy_config: proxy_config,
+          secrets: config.secrets,
           context: "servers/#{name}/proxy"
       end
     end

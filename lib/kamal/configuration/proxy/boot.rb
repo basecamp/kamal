@@ -100,6 +100,14 @@ class Kamal::Configuration::Proxy::Boot
     File.join app_container_directory, "error_pages"
   end
 
+  def tls_directory
+    File.join app_directory, "tls"
+  end
+
+  def tls_container_directory
+    File.join app_container_directory, "tls"
+  end
+
   private
     def ensure_valid_bind_ips(bind_ips)
       bind_ips.present? && bind_ips.each do |ip|
