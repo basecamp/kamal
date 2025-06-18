@@ -47,6 +47,22 @@ proxy:
   # Defaults to `false`:
   ssl: true
 
+  # Custom SSL certificate
+  #
+  # In some cases, using Let's Encrypt for automatic certificate management is not an
+  # option, for example if you are running from host than one host.
+  #
+  # Or you may already have SSL certificates issued by a different Certificate Authority (CA).
+  #
+  # Kamal supports loading custom SSL certificates directly from secrets. You should
+  # pass a hash mapping the `certificate_pem` and `private_key_pem` to the secret names.
+  ssl:
+    certificate_pem: CERTIFICATE_PEM
+    private_key_pem: PRIVATE_KEY_PEM
+  # ### Notes
+  # - If the certificate or key is missing or invalid, deployments will fail.
+  # - Always handle SSL certificates and private keys securely. Avoid hard-coding them in source control.
+
   # SSL redirect
   #
   # By default, kamal-proxy will redirect all HTTP requests to HTTPS when SSL is enabled.
@@ -68,6 +84,17 @@ proxy:
   #
   # How long to wait for requests to complete before timing out, defaults to 30 seconds:
   response_timeout: 10
+
+  # Path-based routing
+  #
+  # For applications that split their traffic to different services based on the request path,
+  # you can use path-based routing to mount services under different path prefixes.
+  path_prefix: '/api'
+  # By default, the path prefix will be stripped from the request before it is forwarded upstream.
+  # So in the example above, a request to /api/users/123 will be forwarded to web-1 as /users/123.
+  # To instead forward the request with the original path (including the prefix),
+  # specify --strip-path-prefix=false
+  strip_path_prefix: false
 
   # Healthcheck
   #

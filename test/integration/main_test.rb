@@ -142,8 +142,19 @@ class MainTest < IntegrationTest
     assert_app_is_up version: first_version
   end
 
+  test "deploy with a custom certificate" do
+    @app = "app_with_custom_certificate"
+
+    first_version = latest_app_version
+
+    kamal :setup
+
+    assert_app_is_up version: first_version, cert: "test/integration/docker/deployer/app_with_custom_certificate/certs/cert.pem"
+  end
+
   private
     def assert_envs(version:)
+      assert_env :KAMAL_HOST, "vm1", version: version, vm: :vm1
       assert_env :CLEAR_TOKEN, "4321", version: version, vm: :vm1
       assert_env :HOST_TOKEN, "abcd", version: version, vm: :vm1
       assert_env :SECRET_TOKEN, "1234 with \"中文\"", version: version, vm: :vm1

@@ -12,7 +12,7 @@ class Kamal::Commands::Accessory < Kamal::Commands::Base
     @accessory_config = config.accessory(name)
   end
 
-  def run
+  def run(host: nil)
     docker :run,
       "--name", service_name,
       "--detach",
@@ -20,6 +20,7 @@ class Kamal::Commands::Accessory < Kamal::Commands::Base
       *network_args,
       *config.logging_args,
       *publish_args,
+      *([ "--env", "KAMAL_HOST=\"#{host}\"" ] if host),
       *env_args,
       *volume_args,
       *label_args,
@@ -55,14 +56,14 @@ class Kamal::Commands::Accessory < Kamal::Commands::Base
 
   def execute_in_existing_container(*command, interactive: false)
     docker :exec,
-      ("-it" if interactive),
+      (docker_interactive_args if interactive),
       service_name,
       *command
   end
 
   def execute_in_new_container(*command, interactive: false)
     docker :run,
-      ("-it" if interactive),
+      (docker_interactive_args if interactive),
       "--rm",
       *network_args,
       *env_args,

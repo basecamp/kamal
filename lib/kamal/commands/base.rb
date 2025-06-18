@@ -84,6 +84,10 @@ module Kamal::Commands
         args.compact.unshift :docker
       end
 
+      def pack(*args)
+        args.compact.unshift :pack
+      end
+
       def git(*args, path: nil)
         [ :git, *([ "-C", path ] if path), *args.compact ]
       end
@@ -121,6 +125,10 @@ module Kamal::Commands
 
       def ensure_local_buildx_installed
         docker :buildx, "version"
+      end
+
+      def docker_interactive_args
+        STDIN.isatty ? "-it" : "-i"
       end
   end
 end

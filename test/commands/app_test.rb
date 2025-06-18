@@ -13,13 +13,13 @@ class CommandsAppTest < ActiveSupport::TestCase
 
   test "run" do
     assert_equal \
-      "docker run --detach --restart unless-stopped --name app-web-999 --network kamal -e KAMAL_CONTAINER_NAME=\"app-web-999\" -e KAMAL_VERSION=\"999\" --env-file .kamal/apps/app/env/roles/web.env --log-opt max-size=\"10m\" --label service=\"app\" --label role=\"web\" --label destination dhh/app:999",
+      "docker run --detach --restart unless-stopped --name app-web-999 --network kamal --env KAMAL_CONTAINER_NAME=\"app-web-999\" --env KAMAL_VERSION=\"999\" --env KAMAL_HOST=\"1.1.1.1\" --env-file .kamal/apps/app/env/roles/web.env --log-opt max-size=\"10m\" --label service=\"app\" --label role=\"web\" --label destination dhh/app:999",
       new_command.run.join(" ")
   end
 
   test "run with hostname" do
     assert_equal \
-      "docker run --detach --restart unless-stopped --name app-web-999 --network kamal --hostname myhost -e KAMAL_CONTAINER_NAME=\"app-web-999\" -e KAMAL_VERSION=\"999\" --env-file .kamal/apps/app/env/roles/web.env --log-opt max-size=\"10m\" --label service=\"app\" --label role=\"web\" --label destination dhh/app:999",
+      "docker run --detach --restart unless-stopped --name app-web-999 --network kamal --hostname myhost --env KAMAL_CONTAINER_NAME=\"app-web-999\" --env KAMAL_VERSION=\"999\" --env KAMAL_HOST=\"1.1.1.1\" --env-file .kamal/apps/app/env/roles/web.env --log-opt max-size=\"10m\" --label service=\"app\" --label role=\"web\" --label destination dhh/app:999",
       new_command.run(hostname: "myhost").join(" ")
   end
 
@@ -27,14 +27,14 @@ class CommandsAppTest < ActiveSupport::TestCase
     @config[:volumes] = [ "/local/path:/container/path" ]
 
     assert_equal \
-      "docker run --detach --restart unless-stopped --name app-web-999 --network kamal -e KAMAL_CONTAINER_NAME=\"app-web-999\" -e KAMAL_VERSION=\"999\" --env-file .kamal/apps/app/env/roles/web.env --log-opt max-size=\"10m\" --volume /local/path:/container/path --label service=\"app\" --label role=\"web\" --label destination dhh/app:999",
+      "docker run --detach --restart unless-stopped --name app-web-999 --network kamal --env KAMAL_CONTAINER_NAME=\"app-web-999\" --env KAMAL_VERSION=\"999\" --env KAMAL_HOST=\"1.1.1.1\" --env-file .kamal/apps/app/env/roles/web.env --log-opt max-size=\"10m\" --volume /local/path:/container/path --label service=\"app\" --label role=\"web\" --label destination dhh/app:999",
       new_command.run.join(" ")
   end
 
   test "run with custom options" do
     @config[:servers] = { "web" => [ "1.1.1.1" ], "jobs" => { "hosts" => [ "1.1.1.2" ], "cmd" => "bin/jobs", "options" => { "mount" => "somewhere", "cap-add" => true } } }
     assert_equal \
-      "docker run --detach --restart unless-stopped --name app-jobs-999 --network kamal -e KAMAL_CONTAINER_NAME=\"app-jobs-999\" -e KAMAL_VERSION=\"999\" --env-file .kamal/apps/app/env/roles/jobs.env --log-opt max-size=\"10m\" --label service=\"app\" --label role=\"jobs\" --label destination --mount \"somewhere\" --cap-add dhh/app:999 bin/jobs",
+      "docker run --detach --restart unless-stopped --name app-jobs-999 --network kamal --env KAMAL_CONTAINER_NAME=\"app-jobs-999\" --env KAMAL_VERSION=\"999\" --env KAMAL_HOST=\"1.1.1.2\" --env-file .kamal/apps/app/env/roles/jobs.env --log-opt max-size=\"10m\" --label service=\"app\" --label role=\"jobs\" --label destination --mount \"somewhere\" --cap-add dhh/app:999 bin/jobs",
       new_command(role: "jobs", host: "1.1.1.2").run.join(" ")
   end
 
@@ -42,7 +42,7 @@ class CommandsAppTest < ActiveSupport::TestCase
     @config[:logging] = { "driver" => "local", "options" => { "max-size" => "100m", "max-file" => "3" } }
 
     assert_equal \
-      "docker run --detach --restart unless-stopped --name app-web-999 --network kamal -e KAMAL_CONTAINER_NAME=\"app-web-999\" -e KAMAL_VERSION=\"999\" --env-file .kamal/apps/app/env/roles/web.env --log-driver \"local\" --log-opt max-size=\"100m\" --log-opt max-file=\"3\" --label service=\"app\" --label role=\"web\" --label destination dhh/app:999",
+      "docker run --detach --restart unless-stopped --name app-web-999 --network kamal --env KAMAL_CONTAINER_NAME=\"app-web-999\" --env KAMAL_VERSION=\"999\" --env KAMAL_HOST=\"1.1.1.1\" --env-file .kamal/apps/app/env/roles/web.env --log-driver \"local\" --log-opt max-size=\"100m\" --log-opt max-file=\"3\" --label service=\"app\" --label role=\"web\" --label destination dhh/app:999",
       new_command.run.join(" ")
   end
 
@@ -51,7 +51,7 @@ class CommandsAppTest < ActiveSupport::TestCase
     @config[:servers] = { "web" => { "hosts" => [ "1.1.1.1" ], "logging" => { "driver" => "local", "options" => { "max-size" => "100m" } } } }
 
     assert_equal \
-      "docker run --detach --restart unless-stopped --name app-web-999 --network kamal -e KAMAL_CONTAINER_NAME=\"app-web-999\" -e KAMAL_VERSION=\"999\" --env-file .kamal/apps/app/env/roles/web.env --log-driver \"local\" --log-opt max-size=\"100m\" --log-opt max-file=\"3\" --label service=\"app\" --label role=\"web\" --label destination dhh/app:999",
+      "docker run --detach --restart unless-stopped --name app-web-999 --network kamal --env KAMAL_CONTAINER_NAME=\"app-web-999\" --env KAMAL_VERSION=\"999\" --env KAMAL_HOST=\"1.1.1.1\" --env-file .kamal/apps/app/env/roles/web.env --log-driver \"local\" --log-opt max-size=\"100m\" --log-opt max-file=\"3\" --label service=\"app\" --label role=\"web\" --label destination dhh/app:999",
       new_command.run.join(" ")
   end
 
@@ -60,7 +60,7 @@ class CommandsAppTest < ActiveSupport::TestCase
     @config[:env]["tags"] = { "tag1" => { "ENV1" => "value1" } }
 
     assert_equal \
-      "docker run --detach --restart unless-stopped --name app-web-999 --network kamal -e KAMAL_CONTAINER_NAME=\"app-web-999\" -e KAMAL_VERSION=\"999\" --env ENV1=\"value1\" --env-file .kamal/apps/app/env/roles/web.env --log-opt max-size=\"10m\" --label service=\"app\" --label role=\"web\" --label destination dhh/app:999",
+      "docker run --detach --restart unless-stopped --name app-web-999 --network kamal --env KAMAL_CONTAINER_NAME=\"app-web-999\" --env KAMAL_VERSION=\"999\" --env KAMAL_HOST=\"1.1.1.1\" --env ENV1=\"value1\" --env-file .kamal/apps/app/env/roles/web.env --log-opt max-size=\"10m\" --label service=\"app\" --label role=\"web\" --label destination dhh/app:999",
       new_command.run.join(" ")
   end
 
@@ -148,8 +148,6 @@ class CommandsAppTest < ActiveSupport::TestCase
       "docker exec kamal-proxy kamal-proxy remove app-web",
       new_command.remove.join(" ")
   end
-
-
 
   test "logs" do
     assert_equal \
@@ -288,7 +286,7 @@ class CommandsAppTest < ActiveSupport::TestCase
 
   test "execute in new container over ssh" do
     assert_match %r{docker run -it --rm --network kamal --env-file .kamal/apps/app/env/roles/web.env --log-opt max-size="10m" dhh/app:999 bin/rails c},
-      new_command.execute_in_new_container_over_ssh("bin/rails", "c", env: {})
+      stub_stdin_tty { new_command.execute_in_new_container_over_ssh("bin/rails", "c", env: {}) }
   end
 
   test "execute in new container over ssh with tags" do
@@ -296,18 +294,23 @@ class CommandsAppTest < ActiveSupport::TestCase
     @config[:env]["tags"] = { "tag1" => { "ENV1" => "value1" } }
 
     assert_equal "ssh -t root@1.1.1.1 -p 22 'docker run -it --rm --network kamal --env ENV1=\"value1\" --env-file .kamal/apps/app/env/roles/web.env --log-opt max-size=\"10m\" dhh/app:999 bin/rails c'",
-      new_command.execute_in_new_container_over_ssh("bin/rails", "c", env: {})
+      stub_stdin_tty { new_command.execute_in_new_container_over_ssh("bin/rails", "c", env: {}) }
   end
 
   test "execute in new container with custom options over ssh" do
     @config[:servers] = { "web" => { "hosts" => [ "1.1.1.1" ], "options" => { "mount" => "somewhere", "cap-add" => true } } }
     assert_match %r{docker run -it --rm --network kamal --env-file .kamal/apps/app/env/roles/web.env --log-opt max-size=\"10m\" --mount \"somewhere\" --cap-add dhh/app:999 bin/rails c},
-      new_command.execute_in_new_container_over_ssh("bin/rails", "c", env: {})
+      stub_stdin_tty { new_command.execute_in_new_container_over_ssh("bin/rails", "c", env: {}) }
   end
 
   test "execute in existing container over ssh" do
     assert_match %r{docker exec -it app-web-999 bin/rails c},
-      new_command.execute_in_existing_container_over_ssh("bin/rails", "c", env: {})
+      stub_stdin_tty { new_command.execute_in_existing_container_over_ssh("bin/rails", "c", env: {}) }
+  end
+
+  test "execute in existing container with piped input over ssh" do
+    assert_match %r{docker exec -i app-web-999 bin/rails c},
+      stub_stdin_file { new_command.execute_in_existing_container_over_ssh("bin/rails", "c", env: {}) }
   end
 
   test "run over ssh" do

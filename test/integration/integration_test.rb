@@ -63,8 +63,8 @@ class IntegrationTest < ActiveSupport::TestCase
       assert_match message, response.body.strip if message
     end
 
-    def assert_app_is_up(version: nil, app: @app)
-      response = app_response(app: app)
+    def assert_app_is_up(version: nil, app: @app, cert: nil)
+      response = app_response(app: app, cert: cert)
       debug_response_code(response, "200")
       assert_equal "200", response.code
       assert_app_version(version, response) if version
@@ -82,8 +82,14 @@ class IntegrationTest < ActiveSupport::TestCase
       assert_equal up_times, up_count
     end
 
-    def app_response(app: @app)
-      Net::HTTP.get_response(URI.parse("http://#{app_host(app)}:12345/version"))
+    def app_response(app: @app, cert: nil)
+      uri = cert ? URI.parse("https://#{app_host(app)}:22443/version") : URI.parse("http://#{app_host(app)}:12345/version")
+
+      if cert
+        https_response_with_cert(uri, cert)
+      else
+        Net::HTTP.get_response(uri)
+      end
     end
 
     def update_app_rev
@@ -189,5 +195,20 @@ class IntegrationTest < ActiveSupport::TestCase
       else
         "localhost"
       end
+    end
+
+    def https_response_with_cert(uri, cert)
+      host = uri.host
+      port = uri.port
+
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = true
+
+      store = OpenSSL::X509::Store.new
+      store.add_cert(OpenSSL::X509::Certificate.new(File.read(cert)))
+      http.cert_store = store
+
+      request = Net::HTTP::Get.new(uri)
+      http.request(request)
     end
 end

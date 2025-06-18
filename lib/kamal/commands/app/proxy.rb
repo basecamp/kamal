@@ -21,6 +21,10 @@ module Kamal::Commands::App::Proxy
     remove_directory config.proxy_boot.app_directory
   end
 
+  def create_ssl_directory
+    make_directory(File.join(config.proxy_boot.tls_directory, role.name))
+  end
+
   private
     def proxy_exec(*command)
       docker :exec, proxy_container_name, "kamal-proxy", *command
