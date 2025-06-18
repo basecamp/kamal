@@ -45,27 +45,23 @@ proxy:
   # unless you explicitly set `forward_headers: true`
   #
   # Defaults to `false`:
-  ssl: ...
+  ssl: true
 
   # Custom SSL certificate
   #
   # In some cases, using Let's Encrypt for automatic certificate management is not an
-  # option, for example if you are running from host than one host. Or you may already
-  # have SSL certificates issued by a different Certificate Authority (CA).
-  # Kamal supports loading custom SSL certificates
-  # directly from secrets.
+  # option, for example if you are running from host than one host.
   #
-  # Examples:
-  #   ssl: true              # Enable SSL with Let's Encrypt
-  #   ssl: false             # Disable SSL
-  #   ssl:                   # Enable custom SSL
-  #     certificate_pem: CERTIFICATE_PEM
-  #     private_key_pem: PRIVATE_KEY_PEM
+  # Or you may already have SSL certificates issued by a different Certificate Authority (CA).
   #
+  # Kamal supports loading custom SSL certificates directly from secrets. You should
+  # pass a hash mapping the `certificate_pem` and `private_key_pem` to the secret names.
+  ssl:
+    certificate_pem: CERTIFICATE_PEM
+    private_key_pem: PRIVATE_KEY_PEM
   # ### Notes
-  # - If the certificate or key is missing or invalid, kamal-proxy will fail to start.
-  # - Always handle SSL certificates and private keys securely. Avoid hard-coding them in deploy.yml files or source control.
-  # - For automated certificate management, consider using the built-in Let's Encrypt integration instead.
+  # - If the certificate or key is missing or invalid, deployments will fail.
+  # - Always handle SSL certificates and private keys securely. Avoid hard-coding them in source control.
 
   # SSL redirect
   #
