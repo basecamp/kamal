@@ -17,7 +17,7 @@ class Kamal::Secrets::Adapters::OnePassword < Kamal::Secrets::Adapters::Base
 
     def fetch_secrets(secrets, from:, account:, session:)
       if secrets.blank?
-        fetch_all_secrets(from: from, account: account, session: session) if secrets.blank?
+        fetch_all_secrets(from: from, account: account, session: session)
       else
         fetch_specified_secrets(secrets, from: from, account: account, session: session)
       end
