@@ -37,9 +37,9 @@ module Kamal::Cli
 
       def load_env
         if destination = options[:destination]
-          Dotenv.load(".env.#{destination}", ".env")
+          Dotenv.overload(".env", ".env.#{destination}")
         else
-          Dotenv.load(".env")
+          Dotenv.overload(".env")
         end
       end
 
