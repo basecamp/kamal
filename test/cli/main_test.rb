@@ -490,6 +490,39 @@ class CliMainTest < CliTestCase
     end
   end
 
+  test "env files overwrite shell environment variables" do
+    ENV["TEST_VAR"] = "shell_value"
+    ENV["AWS_ACCESS_KEY_ID"] = "local_dev_key"
+
+    with_test_dotenv(".env": "TEST_VAR=dotenv_value\nAWS_ACCESS_KEY_ID=production_key") do
+      # Create a simple CLI command instance to trigger load_env
+      Kamal::Cli::Main.new.send(:load_env)
+
+      assert_equal "dotenv_value", ENV["TEST_VAR"]
+      assert_equal "production_key", ENV["AWS_ACCESS_KEY_ID"]
+    end
+  ensure
+    ENV.delete("TEST_VAR")
+    ENV.delete("AWS_ACCESS_KEY_ID")
+  end
+
+  test "destination env files overwrite base env files" do
+    ENV["TEST_VAR"] = "shell_value"
+
+    with_test_dotenv(".env": "TEST_VAR=base_value\nBASE_ONLY=base", ".env.world": "TEST_VAR=world_value\nWORLD_ONLY=world") do
+      # Create CLI command with destination to trigger load_env
+      Kamal::Cli::Main.new([], { destination: "world" }).send(:load_env)
+
+      assert_equal "world_value", ENV["TEST_VAR"]
+      assert_equal "base", ENV["BASE_ONLY"]
+      assert_equal "world", ENV["WORLD_ONLY"]
+    end
+  ensure
+    ENV.delete("TEST_VAR")
+    ENV.delete("BASE_ONLY")
+    ENV.delete("WORLD_ONLY")
+  end
+
   test "remove with confirmation" do
     run_command("remove", "-y", config_file: "deploy_with_accessories").tap do |output|
       assert_match /docker container stop traefik/, output
