@@ -2,8 +2,12 @@ class Kamal::Configuration::Validator::Accessory < Kamal::Configuration::Validat
   def validate!
     super
 
-    if (config.keys & [ "host", "hosts", "roles" ]).size != 1
-      error "specify one of `host`, `hosts` or `roles`"
+    if (config.keys & [ "host", "hosts", "role", "roles", "tag", "tags" ]).size != 1
+      error "specify one of `host`, `hosts`, `role`, `roles`, `tag` or `tags`"
     end
+
+    validate_labels!(config["labels"])
+
+    validate_docker_options!(config["options"])
   end
 end

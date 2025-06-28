@@ -104,7 +104,7 @@ class CliAppTest < CliTestCase
 
     run_command("boot", config: :with_env_tags).tap do |output|
       assert_match "docker tag dhh/app:latest dhh/app:latest", output
-      assert_match %r{docker run --detach --restart unless-stopped --name app-web-latest --network kamal --hostname 1.1.1.1-[0-9a-f]{12} -e KAMAL_CONTAINER_NAME="app-web-latest" -e KAMAL_VERSION="latest" --env TEST="root" --env EXPERIMENT="disabled" --env SITE="site1"}, output
+      assert_match %r{docker run --detach --restart unless-stopped --name app-web-latest --network kamal --hostname 1.1.1.1-[0-9a-f]{12} --env KAMAL_CONTAINER_NAME="app-web-latest" --env KAMAL_VERSION="latest" --env KAMAL_HOST="1.1.1.1" --env TEST="root" --env EXPERIMENT="disabled" --env SITE="site1"}, output
       assert_match "docker container ls --all --filter name=^app-web-123$ --quiet | xargs docker stop", output
     end
   end
@@ -192,6 +192,49 @@ class CliAppTest < CliTestCase
     Thread.report_on_exception = true
   end
 
+  test "boot with only workers" do
+    Object.any_instance.stubs(:sleep)
+
+    SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info).returns("123") # old version
+
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-workers-latest$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
+      .returns("running").at_least_once # workers health check
+
+    run_command("boot", config: :with_only_workers, host: nil).tap do |output|
+      assert_match /First workers container is healthy on 1.1.1.\d, booting any other roles/, output
+      assert_no_match "kamal-proxy", output
+    end
+  end
+
+  test "boot with error pages" do
+    with_error_pages(directory: "public") do
+      stub_running
+      run_command("boot", config: :with_error_pages).tap do |output|
+        assert_match /Uploading .*kamal-error-pages.*\/latest to \.kamal\/proxy\/apps-config\/app\/error_pages/, output
+        assert_match "docker tag dhh/app:latest dhh/app:latest", output
+        assert_match /docker run --detach --restart unless-stopped --name app-web-latest --network kamal --hostname 1.1.1.1-[0-9a-f]{12} /, output
+        assert_match "docker container ls --all --filter name=^app-web-123$ --quiet | xargs docker stop", output
+        assert_match "Running /usr/bin/env find .kamal/proxy/apps-config/app/error_pages -mindepth 1 -maxdepth 1 ! -name latest -exec rm -rf {} + on 1.1.1.1", output
+      end
+    end
+  end
+
+  test "boot with custom ssl certificate" do
+    Kamal::Configuration::Proxy.any_instance.stubs(:custom_ssl_certificate?).returns(true)
+    Kamal::Configuration::Proxy.any_instance.stubs(:certificate_pem_content).returns("CERTIFICATE CONTENT")
+    Kamal::Configuration::Proxy.any_instance.stubs(:private_key_pem_content).returns("PRIVATE KEY CONTENT")
+
+    stub_running
+    run_command("boot", config: :with_proxy).tap do |output|
+      assert_match "Writing SSL certificates for web on 1.1.1.1", output
+      assert_match "mkdir -p .kamal/proxy/apps-config/app/tls", output
+      assert_match "Uploading \"CERTIFICATE CONTENT\" to .kamal/proxy/apps-config/app/tls/web/cert.pem", output
+      assert_match "--tls-certificate-path=\"/home/kamal-proxy/.apps-config/app/tls/web/cert.pem\"", output
+      assert_match "--tls-private-key-path=\"/home/kamal-proxy/.apps-config/app/tls/web/key.pem\"", output
+    end
+  end
+
   test "start" do
     SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info).returns("999") # old version
 
@@ -244,9 +287,11 @@ class CliAppTest < CliTestCase
 
   test "remove" do
     run_command("remove").tap do |output|
-      assert_match /#{Regexp.escape("sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting' | head -1 | xargs docker stop")}/, output
-      assert_match /#{Regexp.escape("docker container prune --force --filter label=service=app")}/, output
-      assert_match /#{Regexp.escape("docker image prune --all --force --filter label=service=app")}/, output
+      assert_match "sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting' | head -1 | xargs docker stop", output
+      assert_match "docker container prune --force --filter label=service=app", output
+      assert_match "docker image prune --all --force --filter label=service=app", output
+      assert_match "rm -r .kamal/apps/app on 1.1.1.1", output
+      assert_match "rm -r .kamal/proxy/apps-config/app on 1.1.1.1", output
     end
   end
 
@@ -268,10 +313,25 @@ class CliAppTest < CliTestCase
     end
   end
 
+  test "remove_app_directories" do
+    run_command("remove_app_directories").tap do |output|
+      assert_match "rm -r .kamal/apps/app on 1.1.1.1", output
+      assert_match "rm -r .kamal/proxy/apps-config/app on 1.1.1.1", output
+    end
+  end
+
   test "exec" do
     run_command("exec", "ruby -v").tap do |output|
+      assert_match "docker login -u [REDACTED] -p [REDACTED]", output
       assert_match "docker run --rm --network kamal --env-file .kamal/apps/app/env/roles/web.env --log-opt max-size=\"10m\" dhh/app:latest ruby -v", output
     end
+  end
+
+  test "exec without command fails" do
+    error = assert_raises(ArgumentError, "Exec requires a command to be specified") do
+      run_command("exec")
+    end
+    assert_equal "No command provided. You must specify a command to execute.", error.message
   end
 
   test "exec separate arguments" do
@@ -312,21 +372,45 @@ class CliAppTest < CliTestCase
   end
 
   test "exec interactive" do
+    Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
     SSHKit::Backend::Abstract.any_instance.expects(:exec)
       .with("ssh -t root@1.1.1.1 -p 22 'docker run -it --rm --network kamal --env-file .kamal/apps/app/env/roles/web.env --log-opt max-size=\"10m\" dhh/app:latest ruby -v'")
-    run_command("exec", "-i", "ruby -v").tap do |output|
-      assert_match "Get most recent version available as an image...", output
-      assert_match "Launching interactive command with version latest via SSH from new container on 1.1.1.1...", output
+
+    stub_stdin_tty do
+      run_command("exec", "-i", "ruby -v").tap do |output|
+        assert_hook_ran "pre-connect", output
+        assert_match "docker login -u [REDACTED] -p [REDACTED]", output
+        assert_match "Get most recent version available as an image...", output
+        assert_match "Launching interactive command with version latest via SSH from new container on 1.1.1.1...", output
+      end
     end
   end
 
   test "exec interactive with reuse" do
+    Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
     SSHKit::Backend::Abstract.any_instance.expects(:exec)
       .with("ssh -t root@1.1.1.1 -p 22 'docker exec -it app-web-999 ruby -v'")
-    run_command("exec", "-i", "--reuse", "ruby -v").tap do |output|
-      assert_match "Get current version of running container...", output
-      assert_match "Running /usr/bin/env sh -c 'docker ps --latest --format '\\''{{.Names}}'\\'' --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --format '\\''{{.Names}}'\\'' --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting' | head -1 | while read line; do echo ${line#app-web-}; done on 1.1.1.1", output
-      assert_match "Launching interactive command with version 999 via SSH from existing container on 1.1.1.1...", output
+
+    stub_stdin_tty do
+      run_command("exec", "-i", "--reuse", "ruby -v").tap do |output|
+        assert_hook_ran "pre-connect", output
+        assert_match "Get current version of running container...", output
+        assert_match "Running /usr/bin/env sh -c 'docker ps --latest --format '\\''{{.Names}}'\\'' --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --format '\\''{{.Names}}'\\'' --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting' | head -1 | while read line; do echo ${line#app-web-}; done on 1.1.1.1", output
+        assert_match "Launching interactive command with version 999 via SSH from existing container on 1.1.1.1...", output
+      end
+    end
+  end
+
+  test "exec interactive with pipe on STDIN" do
+    Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
+    SSHKit::Backend::Abstract.any_instance.expects(:exec)
+      .with("ssh -t root@1.1.1.1 -p 22 'docker exec -i app-web-999 ruby -v'")
+
+    stub_stdin_file do
+      run_command("exec", "-i", "--reuse", "ruby -v").tap do |output|
+        assert_hook_ran "pre-connect", output
+        assert_match "Launching interactive command with version 999 via SSH from existing container on 1.1.1.1...", output
+      end
     end
   end
 
@@ -422,7 +506,7 @@ class CliAppTest < CliTestCase
     run_command("boot", config: :with_proxy).tap do |output|
       assert_match /Renaming container .* to .* as already deployed on 1.1.1.1/, output # Rename
       assert_match /docker rename app-web-latest app-web-latest_replaced_[0-9a-f]{16}/, output
-      assert_match /docker run --detach --restart unless-stopped --name app-web-latest --network kamal --hostname 1.1.1.1-[0-9a-f]{12} -e KAMAL_CONTAINER_NAME="app-web-latest" -e KAMAL_VERSION="latest" --env-file .kamal\/apps\/app\/env\/roles\/web.env --log-opt max-size="10m" --label service="app" --label role="web" --label destination dhh\/app:latest/, output
+      assert_match /docker run --detach --restart unless-stopped --name app-web-latest --network kamal --hostname 1.1.1.1-[0-9a-f]{12} --env KAMAL_CONTAINER_NAME="app-web-latest" --env KAMAL_VERSION="latest" --env KAMAL_HOST="1.1.1.1" --env-file .kamal\/apps\/app\/env\/roles\/web.env --log-opt max-size="10m" --label service="app" --label role="web" --label destination dhh\/app:latest/, output
       assert_match /docker exec kamal-proxy kamal-proxy deploy app-web --target="123:80"/, output
       assert_match "docker container ls --all --filter name=^app-web-123$ --quiet | xargs docker stop", output
     end
@@ -434,6 +518,24 @@ class CliAppTest < CliTestCase
     run_command("boot", config: :with_proxy_roles, host: nil).tap do |output|
       assert_match "docker exec kamal-proxy kamal-proxy deploy app-web --target=\"123:80\" --deploy-timeout=\"6s\" --drain-timeout=\"30s\" --target-timeout=\"10s\" --buffer-requests --buffer-responses --log-request-header=\"Cache-Control\" --log-request-header=\"Last-Modified\" --log-request-header=\"User-Agent\"", output
       assert_match "docker exec kamal-proxy kamal-proxy deploy app-web2 --target=\"123:80\" --deploy-timeout=\"6s\" --drain-timeout=\"30s\" --target-timeout=\"15s\" --buffer-requests --buffer-responses --log-request-header=\"Cache-Control\" --log-request-header=\"Last-Modified\" --log-request-header=\"User-Agent\"", output
+    end
+  end
+
+  test "live" do
+    run_command("live").tap do |output|
+      assert_match "docker exec kamal-proxy kamal-proxy resume app-web on 1.1.1.1", output
+    end
+  end
+
+  test "maintenance" do
+    run_command("maintenance").tap do |output|
+      assert_match "docker exec kamal-proxy kamal-proxy stop app-web --drain-timeout=\"30s\" on 1.1.1.1", output
+    end
+  end
+
+  test "maintenance with options" do
+    run_command("maintenance", "--message", "Hello", "--drain_timeout", "10").tap do |output|
+      assert_match "docker exec kamal-proxy kamal-proxy stop app-web --drain-timeout=\"10s\" --message=\"Hello\" on 1.1.1.1", output
     end
   end
 

@@ -145,7 +145,13 @@ module Kamal::Cli
 
       def run_hook(hook, **extra_details)
         if !options[:skip_hooks] && KAMAL.hook.hook_exists?(hook)
-          details = { hosts: KAMAL.hosts.join(","), command: command, subcommand: subcommand }
+          details = {
+            hosts: KAMAL.hosts.join(","),
+            roles: KAMAL.specific_roles&.join(","),
+            lock: KAMAL.holding_lock?.to_s,
+            command: command,
+            subcommand: subcommand
+          }.compact
 
           say "Running the #{hook} hook...", :magenta
           with_env KAMAL.hook.env(**details, **extra_details) do
@@ -159,12 +165,16 @@ module Kamal::Cli
       end
 
       def on(*args, &block)
+        pre_connect_if_required
+
+        super
+      end
+
+      def pre_connect_if_required
         if !KAMAL.connected?
           run_hook "pre-connect"
           KAMAL.connected = true
         end
-
-        super
       end
 
       def command

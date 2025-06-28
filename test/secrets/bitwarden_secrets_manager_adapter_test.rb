@@ -15,57 +15,111 @@ class BitwardenSecretsManagerAdapterTest < SecretAdapterTestCase
     stub_ticks.with("bws --version 2> /dev/null")
     stub_login
     stub_ticks
-      .with("bws secret list -o env")
-      .returns("KAMAL_REGISTRY_PASSWORD=\"some_password\"\nMY_OTHER_SECRET=\"my=weird\"secret\"")
+      .with("bws secret list")
+      .returns(<<~JSON)
+      [
+        {
+          "key": "KAMAL_REGISTRY_PASSWORD",
+          "value": "some_password"
+        },
+        {
+          "key": "MY_OTHER_SECRET",
+          "value": "my=wierd\\"secret"
+        }
+      ]
+      JSON
 
-    expected = '{"KAMAL_REGISTRY_PASSWORD":"some_password","MY_OTHER_SECRET":"my\=weird\"secret"}'
-    actual = shellunescape(run_command("fetch", "all"))
-    assert_equal expected, actual
+    json = JSON.parse(shellunescape(run_command("fetch", "all")))
+
+    expected_json = {
+      "KAMAL_REGISTRY_PASSWORD"=>"some_password",
+      "MY_OTHER_SECRET"=>"my=wierd\"secret"
+    }
+
+    assert_equal expected_json, json
   end
 
   test "fetch all with from" do
     stub_ticks.with("bws --version 2> /dev/null")
     stub_login
     stub_ticks
-      .with("bws secret list -o env 82aeb5bd-6958-4a89-8197-eacab758acce")
-      .returns("KAMAL_REGISTRY_PASSWORD=\"some_password\"\nMY_OTHER_SECRET=\"my=weird\"secret\"")
+      .with("bws secret list 82aeb5bd-6958-4a89-8197-eacab758acce")
+      .returns(<<~JSON)
+      [
+        {
+          "key": "KAMAL_REGISTRY_PASSWORD",
+          "value": "some_password"
+        },
+        {
+          "key": "MY_OTHER_SECRET",
+          "value": "my=wierd\\"secret"
+        }
+      ]
+      JSON
 
-    expected = '{"KAMAL_REGISTRY_PASSWORD":"some_password","MY_OTHER_SECRET":"my\=weird\"secret"}'
-    actual = shellunescape(run_command("fetch", "all", "--from", "82aeb5bd-6958-4a89-8197-eacab758acce"))
-    assert_equal expected, actual
+    json = JSON.parse(shellunescape(run_command("fetch", "all", "--from", "82aeb5bd-6958-4a89-8197-eacab758acce")))
+
+    expected_json = {
+      "KAMAL_REGISTRY_PASSWORD"=>"some_password",
+      "MY_OTHER_SECRET"=>"my=wierd\"secret"
+    }
+
+    assert_equal expected_json, json
   end
 
   test "fetch item" do
     stub_ticks.with("bws --version 2> /dev/null")
     stub_login
     stub_ticks
-      .with("bws secret get -o env 82aeb5bd-6958-4a89-8197-eacab758acce")
-      .returns("KAMAL_REGISTRY_PASSWORD=\"some_password\"")
+      .with("bws secret get 82aeb5bd-6958-4a89-8197-eacab758acce")
+      .returns(<<~JSON)
+      {
+        "key": "KAMAL_REGISTRY_PASSWORD",
+        "value": "some_password"
+      }
+      JSON
 
-    expected = '{"KAMAL_REGISTRY_PASSWORD":"some_password"}'
-    actual = shellunescape(run_command("fetch", "82aeb5bd-6958-4a89-8197-eacab758acce"))
-    assert_equal expected, actual
+    json = JSON.parse(shellunescape(run_command("fetch", "82aeb5bd-6958-4a89-8197-eacab758acce")))
+    expected_json = {
+      "KAMAL_REGISTRY_PASSWORD"=>"some_password"
+    }
+
+    assert_equal expected_json, json
   end
 
   test "fetch with multiple items" do
     stub_ticks.with("bws --version 2> /dev/null")
     stub_login
     stub_ticks
-      .with("bws secret get -o env 82aeb5bd-6958-4a89-8197-eacab758acce")
-      .returns("KAMAL_REGISTRY_PASSWORD=\"some_password\"")
+      .with("bws secret get 82aeb5bd-6958-4a89-8197-eacab758acce")
+      .returns(<<~JSON)
+      {
+        "key": "KAMAL_REGISTRY_PASSWORD",
+        "value": "some_password"
+      }
+      JSON
     stub_ticks
-      .with("bws secret get -o env 6f8cdf27-de2b-4c77-a35d-07df8050e332")
-      .returns("MY_OTHER_SECRET=\"my=weird\"secret\"")
+      .with("bws secret get 6f8cdf27-de2b-4c77-a35d-07df8050e332")
+      .returns(<<~JSON)
+      {
+        "key": "MY_OTHER_SECRET",
+        "value": "my=wierd\\"secret"
+      }
+      JSON
 
-    expected = '{"KAMAL_REGISTRY_PASSWORD":"some_password","MY_OTHER_SECRET":"my\=weird\"secret"}'
-    actual = shellunescape(run_command("fetch", "82aeb5bd-6958-4a89-8197-eacab758acce", "6f8cdf27-de2b-4c77-a35d-07df8050e332"))
-    assert_equal expected, actual
+    json = JSON.parse(shellunescape(run_command("fetch", "82aeb5bd-6958-4a89-8197-eacab758acce", "6f8cdf27-de2b-4c77-a35d-07df8050e332")))
+    expected_json = {
+      "KAMAL_REGISTRY_PASSWORD"=>"some_password",
+      "MY_OTHER_SECRET"=>"my=wierd\"secret"
+    }
+
+    assert_equal expected_json, json
   end
 
   test "fetch all empty" do
     stub_ticks.with("bws --version 2> /dev/null")
     stub_login
-    stub_ticks_with("bws secret list -o env", succeed: false).returns("Error:\n0: Received error message from server")
+    stub_ticks_with("bws secret list", succeed: false).returns("Error:\n0: Received error message from server")
 
     error = assert_raises RuntimeError do
       (shellunescape(run_command("fetch", "all")))
@@ -76,8 +130,8 @@ class BitwardenSecretsManagerAdapterTest < SecretAdapterTestCase
   test "fetch nonexistent item" do
     stub_ticks.with("bws --version 2> /dev/null")
     stub_login
-    stub_ticks_with("bws secret get -o env 82aeb5bd-6958-4a89-8197-eacab758acce", succeed: false)
-      .returns("ERROR (RuntimeError): Could not read 82aeb5bd-6958-4a89-8197-eacab758acce from Bitwarden Secrets Manager")
+    stub_ticks_with("bws secret get 82aeb5bd-6958-4a89-8197-eacab758acce", succeed: false)
+      .returns("Error:\n0: Received error message from server")
 
     error = assert_raises RuntimeError do
       (shellunescape(run_command("fetch", "82aeb5bd-6958-4a89-8197-eacab758acce")))
@@ -85,9 +139,29 @@ class BitwardenSecretsManagerAdapterTest < SecretAdapterTestCase
     assert_equal("Could not read 82aeb5bd-6958-4a89-8197-eacab758acce from Bitwarden Secrets Manager", error.message)
   end
 
+  test "fetch item with linebreak in value" do
+    stub_ticks.with("bws --version 2> /dev/null")
+    stub_login
+    stub_ticks
+      .with("bws secret get 82aeb5bd-6958-4a89-8197-eacab758acce")
+      .returns(<<~JSON)
+      {
+        "key": "SSH_PRIVATE_KEY",
+        "value": "some_key\\nwith_linebreak"
+      }
+      JSON
+
+    json = JSON.parse(shellunescape(run_command("fetch", "82aeb5bd-6958-4a89-8197-eacab758acce")))
+    expected_json = {
+      "SSH_PRIVATE_KEY"=>"some_key\nwith_linebreak"
+    }
+
+    assert_equal expected_json, json
+  end
+
   test "fetch with no access token" do
     stub_ticks.with("bws --version 2> /dev/null")
-    stub_ticks_with("bws run 'echo OK'", succeed: false)
+    stub_ticks_with("bws project list", succeed: false)
 
     error = assert_raises RuntimeError do
       (shellunescape(run_command("fetch", "all")))
@@ -106,7 +180,7 @@ class BitwardenSecretsManagerAdapterTest < SecretAdapterTestCase
 
   private
     def stub_login
-      stub_ticks.with("bws run 'echo OK'").returns("OK")
+      stub_ticks.with("bws project list").returns("OK")
     end
 
     def run_command(*command)

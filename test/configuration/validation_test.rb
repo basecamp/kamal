@@ -42,6 +42,7 @@ class ConfigurationValidationTest < ActiveSupport::TestCase
     assert_error "servers/web/options: should be a hash", servers: { "web" => { "options" => "" } }
     assert_error "servers/web/logging/options: should be a hash", servers: { "web" => { "logging" => { "options" => "" } } }
     assert_error "servers/web/logging/driver: should be a string", servers: { "web" => { "logging" => { "driver" => [] } } }
+    assert_error "servers/web/labels/service: invalid label. destination, role, and service are reserved labels", servers: { "web" => { "labels" => { "service" => "foo" } } }
     assert_error "servers/web/labels: should be a hash", servers: { "web" => { "labels" => [] } }
     assert_error "servers/web/env: should be a hash", servers: { "web" => { "env" => [] } }
     assert_error "servers/web/env: tags are only allowed in the root env", servers: { "web" => { "hosts" => [ "1.1.1.1" ], "env" => { "tags" => {} } } }
@@ -58,6 +59,7 @@ class ConfigurationValidationTest < ActiveSupport::TestCase
     assert_error "accessories/accessory1: should be a hash", accessories: { "accessory1" => [] }
     assert_error "accessories/accessory1: unknown key: unknown", accessories: { "accessory1" => { "unknown" => "baz" } }
     assert_error "accessories/accessory1/options: should be a hash", accessories: { "accessory1" => { "options" => [] } }
+    assert_error "accessories/accessory1/labels/destination: invalid label. destination, role, and service are reserved labels", accessories: { "accessory1" => { "host" => "host", "labels" => { "destination" => "foo" } } }
     assert_error "accessories/accessory1/host: should be a string", accessories: { "accessory1" => { "host" => [] } }
     assert_error "accessories/accessory1/env: should be a hash", accessories: { "accessory1" => { "env" => [] } }
     assert_error "accessories/accessory1/env: tags are only allowed in the root env", accessories: { "accessory1" => { "host" => "host", "env" => { "tags" => {} } } }
@@ -94,6 +96,7 @@ class ConfigurationValidationTest < ActiveSupport::TestCase
     assert_error "builder/arch: should be an array or a string", builder: { "arch" => {} }
     assert_error "builder/args: should be a hash", builder: { "args" => [ "foo" ] }
     assert_error "builder/cache/options: should be a string", builder: { "cache" => { "options" => [] } }
+    assert_error "builder: buildpacks only support building for one arch", builder: { "arch" => [ "amd64", "arm64" ], "pack" => { "builder" => "heroku/builder:24" } }
   end
 
   private

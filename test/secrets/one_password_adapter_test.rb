@@ -6,7 +6,7 @@ class SecretsOnePasswordAdapterTest < SecretAdapterTestCase
     stub_ticks.with("op account get --account myaccount 2> /dev/null")
 
     stub_ticks
-      .with("op item get myitem --vault \"myvault\" --fields \"label=section.SECRET1,label=section.SECRET2,label=section2.SECRET3\" --format \"json\" --account \"myaccount\"")
+      .with("op item get myitem --vault \"myvault\" --format \"json\" --account \"myaccount\" --fields \"label=section.SECRET1,label=section.SECRET2,label=section2.SECRET3\"")
       .returns(<<~JSON)
         [
           {
@@ -61,7 +61,7 @@ class SecretsOnePasswordAdapterTest < SecretAdapterTestCase
     stub_ticks.with("op account get --account myaccount 2> /dev/null")
 
     stub_ticks
-      .with("op item get myitem --vault \"myvault\" --fields \"label=section.SECRET1,label=section.SECRET2\" --format \"json\" --account \"myaccount\"")
+      .with("op item get myitem --vault \"myvault\" --format \"json\" --account \"myaccount\" --fields \"label=section.SECRET1,label=section.SECRET2\"")
       .returns(<<~JSON)
         [
           {
@@ -90,7 +90,7 @@ class SecretsOnePasswordAdapterTest < SecretAdapterTestCase
       JSON
 
     stub_ticks
-      .with("op item get myitem2 --vault \"myvault\" --fields \"label=section2.SECRET3\" --format \"json\" --account \"myaccount\"")
+      .with("op item get myitem2 --vault \"myvault\" --format \"json\" --account \"myaccount\" --fields \"label=section2.SECRET3\"")
       .returns(<<~JSON)
         {
           "id": "aaaaaaaaaaaaaaaaaaaaaaaaaa",
@@ -116,6 +116,63 @@ class SecretsOnePasswordAdapterTest < SecretAdapterTestCase
     assert_equal expected_json, json
   end
 
+  test "fetch all fields" do
+    stub_ticks.with("op --version 2> /dev/null")
+    stub_ticks.with("op account get --account myaccount 2> /dev/null")
+
+    stub_ticks
+      .with("op item get myitem --vault \"myvault\" --format \"json\" --account \"myaccount\"")
+      .returns(<<~JSON)
+        {
+          "id": "ucbtiii777",
+          "title": "A title",
+          "version": 45,
+          "vault": {
+            "id": "vu7ki98do",
+            "name": "Vault"
+          },
+          "category": "LOGIN",
+          "last_edited_by": "ABCT3684BC",
+          "created_at": "2025-05-22T06:47:01Z",
+          "updated_at": "2025-05-22T00:36:48.02598-07:00",
+          "additional_information": "—",
+          "fields": [
+            {
+              "id": "aaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "section": {
+                "id": "cccccccccccccccccccccccccc",
+                "label": "section"
+              },
+              "type": "CONCEALED",
+              "label": "SECRET1",
+              "value": "VALUE1",
+              "reference": "op://myvault/myitem/section/SECRET1"
+            },
+            {
+              "id": "bbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "section": {
+                "id": "cccccccccccccccccccccccccc",
+                "label": "section"
+              },
+              "type": "CONCEALED",
+              "label": "SECRET2",
+              "value": "VALUE2",
+              "reference": "op://myvault/myitem/section/SECRET2"
+            }
+          ]
+        }
+      JSON
+
+    json = JSON.parse(shellunescape(run_command("fetch", "--from", "op://myvault/myitem")))
+
+    expected_json = {
+      "myvault/myitem/section/SECRET1"=>"VALUE1",
+      "myvault/myitem/section/SECRET2"=>"VALUE2"
+    }
+
+    assert_equal expected_json, json
+  end
+
   test "fetch with signin, no session" do
     stub_ticks.with("op --version 2> /dev/null")
 
@@ -123,7 +180,7 @@ class SecretsOnePasswordAdapterTest < SecretAdapterTestCase
     stub_ticks_with("op signin --account \"myaccount\" --force --raw", succeed: true).returns("")
 
     stub_ticks
-      .with("op item get myitem --vault \"myvault\" --fields \"label=section.SECRET1\" --format \"json\" --account \"myaccount\"")
+      .with("op item get myitem --vault \"myvault\" --format \"json\" --account \"myaccount\" --fields \"label=section.SECRET1\"")
       .returns(single_item_json)
 
     json = JSON.parse(shellunescape(run_command("fetch", "--from", "op://myvault/myitem", "section/SECRET1")))
@@ -142,7 +199,7 @@ class SecretsOnePasswordAdapterTest < SecretAdapterTestCase
     stub_ticks_with("op signin --account \"myaccount\" --force --raw", succeed: true).returns("1234567890")
 
     stub_ticks
-      .with("op item get myitem --vault \"myvault\" --fields \"label=section.SECRET1\" --format \"json\" --account \"myaccount\" --session \"1234567890\"")
+      .with("op item get myitem --vault \"myvault\" --format \"json\" --account \"myaccount\" --session \"1234567890\" --fields \"label=section.SECRET1\"")
       .returns(single_item_json)
 
     json = JSON.parse(shellunescape(run_command("fetch", "--from", "op://myvault/myitem", "section/SECRET1")))

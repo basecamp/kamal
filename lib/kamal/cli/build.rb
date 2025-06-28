@@ -14,7 +14,13 @@ class Kamal::Cli::Build < Kamal::Cli::Base
   def push
     cli = self
 
+    # Ensure pre-connect hooks run before the build, they may needed for a remote builder
+    # or the pre-build hooks.
+    pre_connect_if_required
+
     ensure_docker_installed
+    login_to_registry_locally
+
     run_hook "pre-build"
 
     uncommitted_changes = Kamal::Git.uncommitted_changes
@@ -61,14 +67,16 @@ class Kamal::Cli::Build < Kamal::Cli::Base
 
   desc "pull", "Pull app image from registry onto servers"
   def pull
+    login_to_registry_remotely
+
     if (first_hosts = mirror_hosts).any?
       #  Pull on a single host per mirror first to seed them
       say "Pulling image on #{first_hosts.join(", ")} to seed the #{"mirror".pluralize(first_hosts.count)}...", :magenta
       pull_on_hosts(first_hosts)
       say "Pulling image on remaining hosts...", :magenta
-      pull_on_hosts(KAMAL.hosts - first_hosts)
+      pull_on_hosts(KAMAL.app_hosts - first_hosts)
     else
-      pull_on_hosts(KAMAL.hosts)
+      pull_on_hosts(KAMAL.app_hosts)
     end
   end
 
@@ -159,9 +167,9 @@ class Kamal::Cli::Build < Kamal::Cli::Base
     end
 
     def mirror_hosts
-      if KAMAL.hosts.many?
+      if KAMAL.app_hosts.many?
         mirror_hosts = Concurrent::Hash.new
-        on(KAMAL.hosts) do |host|
+        on(KAMAL.app_hosts) do |host|
           first_mirror = capture_with_info(*KAMAL.builder.first_mirror).strip.presence
           mirror_hosts[first_mirror] ||= host.to_s if first_mirror
         rescue SSHKit::Command::Failed => e
@@ -179,6 +187,18 @@ class Kamal::Cli::Build < Kamal::Cli::Base
         execute *KAMAL.builder.clean, raise_on_non_zero_exit: false
         execute *KAMAL.builder.pull
         execute *KAMAL.builder.validate_image
+      end
+    end
+
+    def login_to_registry_locally
+      run_locally do
+        execute *KAMAL.registry.login
+      end
+    end
+
+    def login_to_registry_remotely
+      on(KAMAL.app_hosts) do
+        execute *KAMAL.registry.login
       end
     end
 end

@@ -6,6 +6,7 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
   delegate :argumentize, to: Kamal::Utils
   delegate \
     :args, :secrets, :dockerfile, :target, :arches, :local_arches, :remote_arches, :remote,
+    :pack?, :pack_builder, :pack_buildpacks,
     :cache_from, :cache_to, :ssh, :provenance, :sbom, :driver, :docker_driver?,
     to: :builder_config
 
@@ -20,7 +21,8 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
       *([ "--builder", builder_name ] unless docker_driver?),
       *build_tag_options(tag_as_dirty: tag_as_dirty),
       *build_options,
-      build_context
+      build_context,
+      "2>&1"
   end
 
   def pull

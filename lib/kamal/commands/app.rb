@@ -1,5 +1,5 @@
 class Kamal::Commands::App < Kamal::Commands::Base
-  include Assets, Containers, Execution, Images, Logging, Proxy
+  include Assets, Containers, ErrorPages, Execution, Images, Logging, Proxy
 
   ACTIVE_DOCKER_STATUSES = [ :running, :restarting ]
 
@@ -20,8 +20,9 @@ class Kamal::Commands::App < Kamal::Commands::Base
       "--name", container_name,
       "--network", "kamal",
       *([ "--hostname", hostname ] if hostname),
-      "-e", "KAMAL_CONTAINER_NAME=\"#{container_name}\"",
-      "-e", "KAMAL_VERSION=\"#{config.version}\"",
+      "--env", "KAMAL_CONTAINER_NAME=\"#{container_name}\"",
+      "--env", "KAMAL_VERSION=\"#{config.version}\"",
+      "--env", "KAMAL_HOST=\"#{host}\"",
       *role.env_args(host),
       *role.logging_args,
       *config.volume_args,

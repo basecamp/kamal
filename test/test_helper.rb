@@ -3,6 +3,7 @@ require "active_support/test_case"
 require "active_support/testing/autorun"
 require "active_support/testing/stream"
 require "rails/test_unit/line_filtering"
+require "pty"
 require "debug"
 require "mocha/minitest" # using #stubs that can alter returns
 require "minitest/autorun" # using #stub that take args
@@ -48,6 +49,27 @@ class ActiveSupport::TestCase
       capture(:stderr) { yield }.strip
     end
 
+    def stub_stdin_tty
+      PTY.open do |master, slave|
+        stub_stdin(master) { yield }
+      end
+    end
+
+    def stub_stdin_file
+      File.open("/dev/null", "r") do |file|
+        stub_stdin(file) { yield }
+      end
+    end
+
+    def stub_stdin(io)
+      original_stdin = STDIN.dup
+      STDIN.reopen(io)
+      yield
+    ensure
+      STDIN.reopen(original_stdin)
+      original_stdin.close
+    end
+
     def with_test_secrets(**files)
       setup_test_secrets(**files)
       yield
@@ -58,9 +80,7 @@ class ActiveSupport::TestCase
     def setup_test_secrets(**files)
       @original_pwd = Dir.pwd
       @secrets_tmpdir = Dir.mktmpdir
-      fixtures_dup = File.join(@secrets_tmpdir, "test")
-      FileUtils.mkdir_p(fixtures_dup)
-      FileUtils.cp_r("test/fixtures/", fixtures_dup)
+      copy_fixtures(@secrets_tmpdir)
 
       Dir.chdir(@secrets_tmpdir)
       FileUtils.mkdir_p(".kamal")
@@ -74,6 +94,30 @@ class ActiveSupport::TestCase
     def teardown_test_secrets
       Dir.chdir(@original_pwd)
       FileUtils.rm_rf(@secrets_tmpdir)
+    end
+
+    def with_error_pages(directory:)
+      error_pages_tmpdir = Dir.mktmpdir
+
+      Dir.mktmpdir do |tmpdir|
+        copy_fixtures(tmpdir)
+
+        Dir.chdir(tmpdir) do
+          FileUtils.mkdir_p(directory)
+          Dir.chdir(directory) do
+            File.write("404.html", "404 page")
+            File.write("503.html", "503 page")
+          end
+
+          yield
+        end
+      end
+    end
+
+    def copy_fixtures(to_dir)
+      new_test_dir = File.join(to_dir, "test")
+      FileUtils.mkdir_p(new_test_dir)
+      FileUtils.cp_r("test/fixtures/", new_test_dir)
     end
 end
 

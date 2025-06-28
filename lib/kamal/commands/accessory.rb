@@ -6,14 +6,13 @@ class Kamal::Commands::Accessory < Kamal::Commands::Base
            :network_args, :publish_args, :env_args, :volume_args, :label_args, :option_args,
            :secrets_io, :secrets_path, :env_directory, :proxy, :running_proxy?, :registry,
            to: :accessory_config
-  delegate :proxy_container_name, to: :config
 
   def initialize(config, name:)
     super(config)
     @accessory_config = config.accessory(name)
   end
 
-  def run
+  def run(host: nil)
     docker :run,
       "--name", service_name,
       "--detach",
@@ -21,6 +20,7 @@ class Kamal::Commands::Accessory < Kamal::Commands::Base
       *network_args,
       *config.logging_args,
       *publish_args,
+      *([ "--env", "KAMAL_HOST=\"#{host}\"" ] if host),
       *env_args,
       *volume_args,
       *label_args,
@@ -37,8 +37,8 @@ class Kamal::Commands::Accessory < Kamal::Commands::Base
     docker :container, :stop, service_name
   end
 
-  def info
-    docker :ps, *service_filter
+  def info(all: false, quiet: false)
+    docker :ps, *("-a" if all), *("-q" if quiet), *service_filter
   end
 
   def logs(timestamps: true, since: nil, lines: nil, grep: nil, grep_options: nil)
@@ -56,14 +56,14 @@ class Kamal::Commands::Accessory < Kamal::Commands::Base
 
   def execute_in_existing_container(*command, interactive: false)
     docker :exec,
-      ("-it" if interactive),
+      (docker_interactive_args if interactive),
       service_name,
       *command
   end
 
   def execute_in_new_container(*command, interactive: false)
     docker :run,
-      ("-it" if interactive),
+      (docker_interactive_args if interactive),
       "--rm",
       *network_args,
       *env_args,

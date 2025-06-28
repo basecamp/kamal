@@ -68,6 +68,10 @@ module Kamal::Commands
         combine *commands, by: "||"
       end
 
+      def substitute(*commands)
+        "\$\(#{commands.join(" ")}\)"
+      end
+
       def xargs(command)
         [ :xargs, command ].flatten
       end
@@ -78,6 +82,10 @@ module Kamal::Commands
 
       def docker(*args)
         args.compact.unshift :docker
+      end
+
+      def pack(*args)
+        args.compact.unshift :pack
       end
 
       def git(*args, path: nil)
@@ -117,6 +125,10 @@ module Kamal::Commands
 
       def ensure_local_buildx_installed
         docker :buildx, "version"
+      end
+
+      def docker_interactive_args
+        STDIN.isatty ? "-it" : "-i"
       end
   end
 end

@@ -7,8 +7,8 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
       image: "dhh/app",
       registry: { "username" => "dhh", "password" => "secret" },
       servers: {
-        "web" => [ "1.1.1.1", "1.1.1.2" ],
-        "workers" => [ "1.1.1.3", "1.1.1.4" ]
+        "web" => [ { "1.1.1.1" => "writer" }, { "1.1.1.2" => "reader" } ],
+        "workers" => [ { "1.1.1.3" => "writer" }, "1.1.1.4" ]
       },
       builder: { "arch" => "amd64" },
       env: { "REDIS_URL" => "redis://x/y" },
@@ -55,7 +55,7 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
           "service" => "custom-monitoring",
           "image" => "monitoring:latest",
           "registry" => { "server" => "other.registry", "username" => "user", "password" => "pw" },
-          "roles" => [ "web" ],
+          "role" => "web",
           "port" => "4321:4321",
           "labels" => {
             "cache" => "true"
@@ -70,6 +70,14 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
           "proxy" => {
             "host" => "monitoring.example.com"
           }
+        },
+        "proxy" => {
+          "image" => "proxy:latest",
+          "tags" => [ "writer", "reader" ]
+        },
+        "logger" => {
+          "image" => "logger:latest",
+          "tag" => "writer"
         }
       }
     }
@@ -107,6 +115,8 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
     assert_equal [ "1.1.1.5" ], @config.accessory(:mysql).hosts
     assert_equal [ "1.1.1.6", "1.1.1.7" ], @config.accessory(:redis).hosts
     assert_equal [ "1.1.1.1", "1.1.1.2" ], @config.accessory(:monitoring).hosts
+    assert_equal [ "1.1.1.1", "1.1.1.3", "1.1.1.2" ], @config.accessory(:proxy).hosts
+    assert_equal [ "1.1.1.1", "1.1.1.3" ], @config.accessory(:logger).hosts
   end
 
   test "missing host" do
@@ -117,14 +127,14 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
     end
   end
 
-  test "setting host, hosts and roles" do
+  test "setting host, hosts, roles and tags" do
     @deploy[:accessories]["mysql"]["hosts"] = [ "mysql-db1" ]
     @deploy[:accessories]["mysql"]["roles"] = [ "db" ]
 
     exception = assert_raises(Kamal::ConfigurationError) do
       Kamal::Configuration.new(@deploy)
     end
-    assert_equal "accessories/mysql: specify one of `host`, `hosts` or `roles`", exception.message
+    assert_equal "accessories/mysql: specify one of `host`, `hosts`, `role`, `roles`, `tag` or `tags`", exception.message
   end
 
   test "all hosts" do
@@ -186,5 +196,13 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
   test "proxy" do
     assert @config.accessory(:monitoring).running_proxy?
     assert_equal [ "monitoring.example.com" ], @config.accessory(:monitoring).proxy.hosts
+  end
+
+  test "can't set restart in options" do
+    @deploy[:accessories]["mysql"]["options"] = { "restart" => "always" }
+
+    assert_raises Kamal::ConfigurationError, "servers/workers: Cannot set restart policy in docker options, unless-stopped is required" do
+      Kamal::Configuration.new(@deploy)
+    end
   end
 end

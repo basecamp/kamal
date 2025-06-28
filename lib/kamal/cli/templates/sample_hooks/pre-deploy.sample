@@ -13,7 +13,7 @@
 # KAMAL_HOSTS
 # KAMAL_COMMAND
 # KAMAL_SUBCOMMAND
-# KAMAL_ROLE (if set)
+# KAMAL_ROLES (if set)
 # KAMAL_DESTINATION (if set)
 
 # Only check the build status for production deployments
@@ -43,7 +43,7 @@ class GithubStatusChecks
   attr_reader :remote_url, :git_sha, :github_client, :combined_status
 
   def initialize
-    @remote_url = `git config --get remote.origin.url`.strip.delete_prefix("https://github.com/")
+    @remote_url = github_repo_from_remote_url
     @git_sha = `git rev-parse HEAD`.strip
     @github_client = Octokit::Client.new(access_token: ENV["GITHUB_TOKEN"])
     refresh!
@@ -77,16 +77,29 @@ class GithubStatusChecks
       "Build not started..."
     end
   end
+
+  private
+    def github_repo_from_remote_url
+      url = `git config --get remote.origin.url`.strip.delete_suffix(".git")
+      if url.start_with?("https://github.com/")
+        url.delete_prefix("https://github.com/")
+      elsif url.start_with?("git@github.com:")
+        url.delete_prefix("git@github.com:")
+      else
+        url
+      end
+    end
 end
 
 
 $stdout.sync = true
 
-puts "Checking build status..."
-attempts = 0
-checks = GithubStatusChecks.new
-
 begin
+  puts "Checking build status..."
+
+  attempts = 0
+  checks = GithubStatusChecks.new
+
   loop do
     case checks.state
     when "success"

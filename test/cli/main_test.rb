@@ -21,7 +21,6 @@ class CliMainTest < CliTestCase
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:server:bootstrap", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:accessory:boot", [ "all" ], invoke_options)
     # deploy
-    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:registry:login", [], invoke_options.merge(skip_local: true))
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:pull", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:proxy:boot", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true))
@@ -32,7 +31,6 @@ class CliMainTest < CliTestCase
       assert_match /Ensure Docker is installed.../, output
       # deploy
       assert_match /Acquiring the deploy lock/, output
-      assert_match /Log into image registry/, output
       assert_match /Pull app image/, output
       assert_match /Ensure kamal-proxy is running/, output
       assert_match /Detect stale containers/, output
@@ -45,7 +43,6 @@ class CliMainTest < CliTestCase
     with_test_secrets("secrets" => "DB_PASSWORD=secret") do
       invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false, "verbose" => true }
 
-      Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:registry:login", [], invoke_options.merge(skip_local: false))
       Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:deliver", [], invoke_options)
       Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:proxy:boot", [], invoke_options)
       Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true))
@@ -56,7 +53,6 @@ class CliMainTest < CliTestCase
 
       run_command("deploy", "--verbose").tap do |output|
         assert_hook_ran "pre-connect", output
-        assert_match /Log into image registry/, output
         assert_match /Build and push app image/, output
         assert_hook_ran "pre-deploy", output
         assert_match /Ensure kamal-proxy is running/, output
@@ -70,7 +66,6 @@ class CliMainTest < CliTestCase
   test "deploy with skip_push" do
     invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false }
 
-    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:registry:login", [], invoke_options.merge(skip_local: true))
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:pull", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:proxy:boot", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true))
@@ -79,7 +74,6 @@ class CliMainTest < CliTestCase
 
     run_command("deploy", "--skip_push").tap do |output|
       assert_match /Acquiring the deploy lock/, output
-      assert_match /Log into image registry/, output
       assert_match /Pull app image/, output
       assert_match /Ensure kamal-proxy is running/, output
       assert_match /Detect stale containers/, output
@@ -122,6 +116,32 @@ class CliMainTest < CliTestCase
     end
   end
 
+  test "deploy when inheriting lock" do
+    Thread.report_on_exception = false
+
+    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false }
+
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:deliver", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:proxy:boot", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true))
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:boot", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:prune:all", [], invoke_options)
+
+    Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
+
+    with_kamal_lock_env do
+      KAMAL.reset
+      run_command("deploy").tap do |output|
+        assert_no_match /Acquiring the deploy lock/, output
+        assert_match /Build and push app image/, output
+        assert_match /Ensure kamal-proxy is running/, output
+        assert_match /Detect stale containers/, output
+        assert_match /Prune old containers and images/, output
+        assert_no_match /Releasing the deploy lock/, output
+      end
+    end
+  end
+
   test "deploy error when locking" do
     Thread.report_on_exception = false
 
@@ -153,11 +173,11 @@ class CliMainTest < CliTestCase
     end
   end
 
-  test "deploy errors during outside section leave remove lock" do
-    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false, :skip_local => false }
+  test "deploy errors during outside section leave remote lock" do
+    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false }
 
     Kamal::Cli::Main.any_instance.expects(:invoke)
-      .with("kamal:cli:registry:login", [], invoke_options.merge(skip_local: false))
+      .with("kamal:cli:build:deliver", [], invoke_options)
       .raises(RuntimeError)
 
     assert_not KAMAL.holding_lock?
@@ -170,7 +190,6 @@ class CliMainTest < CliTestCase
   test "deploy with skipped hooks" do
     invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => true }
 
-    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:registry:login", [], invoke_options.merge(skip_local: false))
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:deliver", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:proxy:boot", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true))
@@ -185,7 +204,6 @@ class CliMainTest < CliTestCase
   test "deploy with missing secrets" do
     invoke_options = { "config_file" => "test/fixtures/deploy_with_secrets.yml", "version" => "999", "skip_hooks" => false }
 
-    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:registry:login", [], invoke_options.merge(skip_local: false))
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:deliver", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:proxy:boot", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true))
@@ -611,5 +629,12 @@ class CliMainTest < CliTestCase
 
     def assert_file(file, content)
       assert_match content, File.read(file)
+    end
+
+    def with_kamal_lock_env
+      ENV["KAMAL_LOCK"] = "true"
+      yield
+    ensure
+      ENV.delete("KAMAL_LOCK")
     end
 end
