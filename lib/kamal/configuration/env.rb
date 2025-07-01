@@ -27,7 +27,7 @@ class Kamal::Configuration::Env
   end
 
   def to_h
-    clear.merge(secrets.to_h)
+    clear.merge(aliased_secrets)
   end
 
   private

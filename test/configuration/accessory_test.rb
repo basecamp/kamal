@@ -163,13 +163,16 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
   end
 
   test "dynamic file expansion" do
-    with_test_secrets("secrets" => "MYSQL_ROOT_PASSWORD=secret123") do
-      @deploy[:accessories]["mysql"]["files"] << "test/fixtures/files/structure.sql.erb:/docker-entrypoint-initdb.d/structure.sql"
+    @deploy[:accessories]["mysql"]["env"]["secret"] << "ENV_VAR:SECRET_VAR"
+    @deploy[:accessories]["mysql"]["files"] << "test/fixtures/files/structure.sql.erb:/docker-entrypoint-initdb.d/structure.sql"
+
+    with_test_secrets("secrets" => "MYSQL_ROOT_PASSWORD=secret123\nSECRET_VAR=secret_env_value") do
       @config = Kamal::Configuration.new(@deploy)
 
       assert_match "This was dynamically expanded", @config.accessory(:mysql).files.keys[2].read
       assert_match "%", @config.accessory(:mysql).files.keys[2].read
       assert_match "secret123", @config.accessory(:mysql).files.keys[2].read
+      assert_match "secret_env_value", @config.accessory(:mysql).files.keys[2].read
     end
   end
 
