@@ -9,7 +9,7 @@ class Kamal::Secrets::Adapters::BitwardenSecretsManager < Kamal::Secrets::Adapte
     LIST_COMMAND = "secret list"
     GET_COMMAND = "secret get"
 
-    def fetch_secrets(secrets, from:, account:, session:)
+    def fetch_secrets(secrets, from:, server_url:, **)
       raise RuntimeError, "You must specify what to retrieve from Bitwarden Secrets Manager" if secrets.length == 0
 
       secrets = prefixed_secrets(secrets, from: from)
@@ -18,13 +18,13 @@ class Kamal::Secrets::Adapters::BitwardenSecretsManager < Kamal::Secrets::Adapte
       {}.tap do |results|
         if command.nil?
           secrets.each do |secret_uuid|
-            item_json = run_command("#{GET_COMMAND} #{secret_uuid.shellescape}")
+            item_json = run_command("#{GET_COMMAND} #{secret_uuid.shellescape}", server_url: server_url)
             raise RuntimeError, "Could not read #{secret_uuid} from Bitwarden Secrets Manager" unless $?.success?
             item_json = JSON.parse(item_json)
             results[item_json["key"]] = item_json["value"]
           end
         else
-          items_json = run_command(command)
+          items_json = run_command(command, server_url: server_url)
           raise RuntimeError, "Could not read secrets from Bitwarden Secrets Manager" unless $?.success?
 
           JSON.parse(items_json).each do |item_json|
@@ -45,13 +45,14 @@ class Kamal::Secrets::Adapters::BitwardenSecretsManager < Kamal::Secrets::Adapte
       end
     end
 
-    def run_command(command, session: nil)
-      full_command = [ "bws", command ].join(" ")
-      `#{full_command}`
+    def run_command(command, server_url: nil)
+      full_command = [ "bws", command ]
+      full_command << "--server-url=#{server_url}" if server_url
+      `#{full_command.join(" ")}`
     end
 
-    def login(account)
-      run_command("project list")
+    def login(_account, server_url: nil)
+      run_command("project list", server_url: server_url)
       raise RuntimeError, "Could not authenticate to Bitwarden Secrets Manager. Did you set a valid access token?" unless $?.success?
     end
 

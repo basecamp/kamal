@@ -1,6 +1,6 @@
 class Kamal::Secrets::Adapters::LastPass < Kamal::Secrets::Adapters::Base
   private
-    def login(account)
+    def login(account, **)
       unless loggedin?(account)
         `lpass login #{account.shellescape}`
         raise RuntimeError, "Failed to login to LastPass" unless $?.success?
@@ -11,7 +11,7 @@ class Kamal::Secrets::Adapters::LastPass < Kamal::Secrets::Adapters::Base
       `lpass status --color never`.strip == "Logged in as #{account}."
     end
 
-    def fetch_secrets(secrets, from:, account:, session:)
+    def fetch_secrets(secrets, from:, **)
       secrets = prefixed_secrets(secrets, from: from)
       items = `lpass show #{secrets.map(&:shellescape).join(" ")} --json`
       raise RuntimeError, "Could not read #{secrets} from LastPass" unless $?.success?
