@@ -2,7 +2,7 @@ class Kamal::Secrets::Adapters::OnePassword < Kamal::Secrets::Adapters::Base
   delegate :optionize, to: Kamal::Utils
 
   private
-    def login(account)
+    def login(account, **)
       unless loggedin?(account)
         `op signin #{to_options(account: account, force: true, raw: true)}`.tap do
           raise RuntimeError, "Failed to login to 1Password" unless $?.success?
@@ -15,7 +15,7 @@ class Kamal::Secrets::Adapters::OnePassword < Kamal::Secrets::Adapters::Base
       $?.success?
     end
 
-    def fetch_secrets(secrets, from:, account:, session:)
+    def fetch_secrets(secrets, from:, account:, session:, **)
       if secrets.blank?
         fetch_all_secrets(from: from, account: account, session: session)
       else
