@@ -16,7 +16,7 @@ class Kamal::Cli::App::SslCertificates
         upload!(StringIO.new(cert_content), role.proxy.host_tls_cert, mode: "0644")
       end
       if key_content = role.proxy.private_key_pem_content
-        upload!(StringIO.new(key_content), role.proxy.host_tls_key, mode: "0644")
+        upload!(StringIO.new(key_content), role.proxy.host_tls_key, mode: "0600")
       end
     end
   end
