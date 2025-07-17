@@ -31,6 +31,24 @@ class CliBuildTest < CliTestCase
     end
   end
 
+  test "push with remote builder checks both the builder and the remote context" do
+    with_build_directory do |build_directory|
+      Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
+
+      SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+        .with(:git, "-C", anything, :"rev-parse", :HEAD)
+        .returns(Kamal::Git.revision)
+
+      SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+        .with(:git, "-C", anything, :status, "--porcelain")
+        .returns("")
+
+      run_command("push", "--verbose", fixture: :with_remote_builder).tap do |output|
+        assert_match "docker buildx inspect kamal-remote-ssh---app-1-1-1-5 | grep -q Endpoint:.*kamal-remote-ssh---app-1-1-1-5-context && docker context inspect kamal-remote-ssh---app-1-1-1-5-context --format '{{.Endpoints.docker.Host}}' | grep -xq ssh://app@1.1.1.5 || (echo no compatible builder && exit 1)", output
+      end
+    end
+  end
+
   test "push --output=docker" do
     with_build_directory do |build_directory|
       Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
