@@ -105,14 +105,14 @@ accessories:
     # You can specify directories to mount into the container. They will be created on the host
     # before being mounted:
     directories:
-      - mysql-logs:/var/log/mysql
+      - /path/to/mysql-logs:/var/log/mysql
 
     # Volumes
     #
     # Any other volumes to mount, in addition to the files and directories.
     # They are not created or copied before mounting:
     volumes:
-      - /path/to/mysql-logs:/var/log/mysql
+      - mysql-logs:/var/log/mysql
 
     # Network
     #
