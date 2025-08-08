@@ -139,7 +139,7 @@ module Kamal::Cli
             lock: KAMAL.holding_lock?.to_s,
             command: command,
             subcommand: subcommand,
-            arguments: arguments,
+            arguments: arguments
           }.compact
 
           say "Running the #{hook} hook...", :magenta
