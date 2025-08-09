@@ -125,7 +125,7 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
   desc "restart [NAME]", "Restart existing accessory container on host"
   def restart(name)
     with_lock do
-      stop(name)
+      stop(name, send_hook: false)
       start(name)
     end
   end
