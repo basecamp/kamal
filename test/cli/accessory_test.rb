@@ -170,6 +170,16 @@ class CliAccessoryTest < CliTestCase
     assert_match "docker logs app-mysql --timestamps --tail 10 --follow 2>&1 | grep \"hey\" -C 2", run_command("logs", "mysql", "--follow", "--grep", "hey", "--grep-options", "-C 2")
   end
 
+  test "logs with follow respects hosts param" do
+    SSHKit::Backend::Abstract.any_instance.stubs(:exec)
+      .with("ssh -t root@1.1.1.2 -p 22 'docker logs app-redis --timestamps --tail 10 --follow 2>&1'")
+
+    run_command("logs", "redis", "--follow", "--hosts", "1.1.1.2").tap do |output|
+      assert_match "Following logs on 1.1.1.2...", output
+      assert_match "ssh -t root@1.1.1.2 -p 22 'docker logs app-redis --timestamps --tail 10 --follow 2>&1'", output
+    end
+  end
+
   test "remove with confirmation" do
     Kamal::Cli::Accessory.any_instance.expects(:stop).with("mysql")
     Kamal::Cli::Accessory.any_instance.expects(:remove_container).with("mysql")
