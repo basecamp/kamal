@@ -142,17 +142,17 @@ class Kamal::Configuration::Accessory
 
     def expand_local_file(local_file)
       if local_file.end_with?("erb")
-        with_clear_env_loaded { read_dynamic_file(local_file) }
+        with_env_loaded { read_dynamic_file(local_file) }
       else
         Pathname.new(File.expand_path(local_file)).to_s
       end
     end
 
-    def with_clear_env_loaded
-      env.clear.each { |k, v| ENV[k] = v }
+    def with_env_loaded
+      env.to_h.each { |k, v| ENV[k] = v }
       yield
     ensure
-      env.clear.each { |k, v| ENV.delete(k) }
+      env.to_h.each { |k, v| ENV.delete(k) }
     end
 
     def read_dynamic_file(local_file)
