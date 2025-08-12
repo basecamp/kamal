@@ -170,6 +170,12 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
       new_command(:mysql).remove_container.join(" ")
   end
 
+  test "pull image" do
+    assert_equal \
+      "docker image pull private.registry/mysql:8.0",
+      new_command(:mysql).pull_image.join(" ")
+  end
+
   test "remove image" do
     assert_equal \
       "docker image rm --force private.registry/mysql:8.0",

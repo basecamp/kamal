@@ -90,6 +90,10 @@ class Kamal::Commands::Accessory < Kamal::Commands::Base
     end
   end
 
+  def pull_image
+    docker :image, :pull, image
+  end
+
   def remove_service_directory
     [ :rm, "-rf", service_name ]
   end

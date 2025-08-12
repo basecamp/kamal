@@ -56,6 +56,7 @@ class CliAccessoryTest < CliTestCase
 
   test "reboot" do
     Kamal::Commands::Registry.any_instance.expects(:login)
+    Kamal::Cli::Accessory.any_instance.expects(:pull_image).with("mysql")
     Kamal::Cli::Accessory.any_instance.expects(:stop).with("mysql")
     Kamal::Cli::Accessory.any_instance.expects(:remove_container).with("mysql")
     Kamal::Cli::Accessory.any_instance.expects(:boot).with("mysql", prepare: false)
@@ -65,12 +66,15 @@ class CliAccessoryTest < CliTestCase
 
   test "reboot all" do
     Kamal::Commands::Registry.any_instance.expects(:login).times(4)
+    Kamal::Cli::Accessory.any_instance.expects(:pull_image).with("mysql")
     Kamal::Cli::Accessory.any_instance.expects(:stop).with("mysql")
     Kamal::Cli::Accessory.any_instance.expects(:remove_container).with("mysql")
     Kamal::Cli::Accessory.any_instance.expects(:boot).with("mysql", prepare: false)
+    Kamal::Cli::Accessory.any_instance.expects(:pull_image).with("redis")
     Kamal::Cli::Accessory.any_instance.expects(:stop).with("redis")
     Kamal::Cli::Accessory.any_instance.expects(:remove_container).with("redis")
     Kamal::Cli::Accessory.any_instance.expects(:boot).with("redis", prepare: false)
+    Kamal::Cli::Accessory.any_instance.expects(:pull_image).with("busybox")
     Kamal::Cli::Accessory.any_instance.expects(:stop).with("busybox")
     Kamal::Cli::Accessory.any_instance.expects(:remove_container).with("busybox")
     Kamal::Cli::Accessory.any_instance.expects(:boot).with("busybox", prepare: false)
@@ -198,6 +202,10 @@ class CliAccessoryTest < CliTestCase
 
   test "remove_container" do
     assert_match "docker container prune --force --filter label=service=app-mysql", run_command("remove_container", "mysql")
+  end
+
+  test "pull_image" do
+    assert_match "docker image pull private.registry/mysql:5.7", run_command("pull_image", "mysql")
   end
 
   test "remove_image" do

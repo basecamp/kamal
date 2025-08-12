@@ -77,6 +77,7 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
         KAMAL.accessory_names.each { |accessory_name| reboot(accessory_name) }
       else
         prepare(name)
+        pull_image(name)
         stop(name)
         remove_container(name)
         boot(name, prepare: false)
@@ -198,6 +199,18 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
 
         on(hosts) do
           puts capture_with_info(*accessory.logs(timestamps: timestamps, since: since, lines: lines, grep: grep, grep_options: grep_options))
+        end
+      end
+    end
+  end
+
+  desc "pull_image [NAME]", "Pull accessory image on host", hide: true
+  def pull_image(name)
+    with_lock do
+      with_accessory(name) do |accessory, hosts|
+        on(hosts) do
+          execute *KAMAL.auditor.record("Pull #{name} accessory image"), verbosity: :debug
+          execute *accessory.pull_image
         end
       end
     end
