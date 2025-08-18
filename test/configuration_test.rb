@@ -262,6 +262,25 @@ class ConfigurationTest < ActiveSupport::TestCase
     end
   end
 
+  test "destination yaml config preserves extension" do
+    dest_config_file = Pathname.new(File.expand_path("fixtures/deploy_for_dest.yaml", __dir__))
+
+    config = Kamal::Configuration.create_from config_file: dest_config_file, destination: "world"
+    assert_equal "2.1.1.1", config.all_hosts.first
+  end
+
+  test "destination file preserves base file extension" do
+    # Test with .yml extension (existing behavior should still work)
+    yml_config_file = Pathname.new(File.expand_path("fixtures/deploy_for_dest.yml", __dir__))
+    config = Kamal::Configuration.create_from config_file: yml_config_file, destination: "world"
+    assert_equal "1.1.1.1", config.all_hosts.first
+
+    # Test with .yaml extension (new behavior)
+    yaml_config_file = Pathname.new(File.expand_path("fixtures/deploy_for_dest.yaml", __dir__))
+    config = Kamal::Configuration.create_from config_file: yaml_config_file, destination: "world"
+    assert_equal "2.1.1.1", config.all_hosts.first
+  end
+
   test "destination required" do
     dest_config_file = Pathname.new(File.expand_path("fixtures/deploy_for_required_dest.yml", __dir__))
 
