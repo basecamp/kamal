@@ -250,6 +250,12 @@ class CliAppTest < CliTestCase
     end
   end
 
+  test "stop with container id" do
+    run_command("stop", "--container-id", "abcd1234").tap do |output|
+      assert_match "abcd1234 | xargs docker stop", output
+    end
+  end
+
   test "stale_containers" do
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
       .with(:docker, :ps, "--filter", "label=service=app", "--filter", "label=destination=", "--filter", "label=role=web", "--format", "\"{{.Names}}\"", "|", "while read line; do echo ${line#app-web-}; done", raise_on_non_zero_exit: false)
