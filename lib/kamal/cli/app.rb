@@ -66,25 +66,13 @@ class Kamal::Cli::App < Kamal::Cli::Base
   end
 
   desc "stop", "Stop app container on servers"
+  option :container_id, desc: "Docker container ID to stop (instead of stopping all containers)"
   def stop
     with_lock do
-      on(KAMAL.app_hosts) do |host|
-        roles = KAMAL.roles_on(host)
-
-        roles.each do |role|
-          app = KAMAL.app(role: role, host: host)
-          execute *KAMAL.auditor.record("Stopped app", role: role), verbosity: :debug
-
-          if role.running_proxy?
-            version = capture_with_info(*app.current_running_version, raise_on_non_zero_exit: false).strip
-            endpoint = capture_with_info(*app.container_id_for_version(version)).strip
-            if endpoint.present?
-              execute *app.remove, raise_on_non_zero_exit: false
-            end
-          end
-
-          execute *app.stop, raise_on_non_zero_exit: false
-        end
+      if options[:container_id]
+        stop_container(options[:container_id])
+      else
+        stop_all_containers
       end
     end
   end
@@ -396,5 +384,38 @@ class Kamal::Cli::App < Kamal::Cli::Base
 
     def host_boot_groups
       KAMAL.config.boot.limit ? KAMAL.app_hosts.each_slice(KAMAL.config.boot.limit).to_a : [ KAMAL.app_hosts ]
+    end
+
+    def stop_container(container_id)
+      on(KAMAL.app_hosts) do |host|
+        roles = KAMAL.roles_on(host)
+
+        roles.each do |role|
+          app = KAMAL.app(role: role, host: host)
+          execute *KAMAL.auditor.record("Stopped container #{container_id}", role: role), verbosity: :debug
+          execute *app.stop_by_container_id(container_id), raise_on_non_zero_exit: false
+        end
+      end
+    end
+
+    def stop_all_containers
+      on(KAMAL.app_hosts) do |host|
+        roles = KAMAL.roles_on(host)
+
+        roles.each do |role|
+          app = KAMAL.app(role: role, host: host)
+          execute *KAMAL.auditor.record("Stopped app", role: role), verbosity: :debug
+
+          if role.running_proxy?
+            version = capture_with_info(*app.current_running_version, raise_on_non_zero_exit: false).strip
+            endpoint = capture_with_info(*app.container_id_for_version(version)).strip
+            if endpoint.present?
+              execute *app.remove, raise_on_non_zero_exit: false
+            end
+          end
+
+          execute *app.stop, raise_on_non_zero_exit: false
+        end
+      end
     end
 end
