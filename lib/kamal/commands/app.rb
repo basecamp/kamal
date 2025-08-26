@@ -23,6 +23,7 @@ class Kamal::Commands::App < Kamal::Commands::Base
       "--env", "KAMAL_CONTAINER_NAME=\"#{container_name}\"",
       "--env", "KAMAL_VERSION=\"#{config.version}\"",
       "--env", "KAMAL_HOST=\"#{host}\"",
+      "--env", "KAMAL_DESTINATION=\"#{config.destination}\"",
       *role.env_args(host),
       *role.logging_args,
       *config.volume_args,
