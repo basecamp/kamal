@@ -14,13 +14,14 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
     docker :image, :rm, "--force", config.absolute_image
   end
 
-  def push(export_action = "registry", tag_as_dirty: false)
+  def push(export_action = "registry", tag_as_dirty: false, no_cache: false)
     docker :buildx, :build,
       "--output=type=#{export_action}",
       *platform_options(arches),
       *([ "--builder", builder_name ] unless docker_driver?),
       *build_tag_options(tag_as_dirty: tag_as_dirty),
       *build_options,
+      *([ "--no-cache" ] if no_cache),
       build_context,
       "2>&1"
   end
