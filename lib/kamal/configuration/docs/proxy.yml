@@ -90,6 +90,7 @@ proxy:
   # For applications that split their traffic to different services based on the request path,
   # you can use path-based routing to mount services under different path prefixes.
   path_prefix: '/api'
+  # ### Note: If using both a proxy with a path_prefix and a proxy without a path_prefix, for 2 different apps, the SSL options (e.g., ssl: true) should be set in the proxy for the app without a path_prefix, so the app above uses SSL by inheritance. Repeating the SSL settings here will cause the deploy to fail with a TLS error in the console.
   # By default, the path prefix will be stripped from the request before it is forwarded upstream.
   # So in the example above, a request to /api/users/123 will be forwarded to web-1 as /users/123.
   # To instead forward the request with the original path (including the prefix),
