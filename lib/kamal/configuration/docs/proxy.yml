@@ -11,7 +11,6 @@
 # run on the same proxy.
 #
 proxy:
-
   # Hosts
   #
   # The hosts that will be used to serve the app. The proxy will only route requests
@@ -50,7 +49,7 @@ proxy:
   # Custom SSL certificate
   #
   # In some cases, using Let's Encrypt for automatic certificate management is not an
-  # option, for example if you are running from host than one host.
+  # option, for example if you are running from more than one host.
   #
   # Or you may already have SSL certificates issued by a different Certificate Authority (CA).
   #
@@ -89,7 +88,15 @@ proxy:
   #
   # For applications that split their traffic to different services based on the request path,
   # you can use path-based routing to mount services under different path prefixes.
-  path_prefix: '/api'
+  # Usage sample: path_prefix: '/api'
+  # You can also specify multiple paths in two ways.
+  # When using path_prefix you can supply multiple routes separated by commas.
+  path_prefix: "/api,/oauth_callback"
+  # You can also specify paths as a list of paths, the configuration will be
+  # rolled together into a comma separated string.
+  path_prefixes:
+    - "/api"
+    - "/oauth_callback"
   # By default, the path prefix will be stripped from the request before it is forwarded upstream.
   # So in the example above, a request to /api/users/123 will be forwarded to web-1 as /users/123.
   # To instead forward the request with the original path (including the prefix),
