@@ -24,6 +24,10 @@ class Kamal::Commands::Builder::Remote < Kamal::Commands::Builder::Base
       by: "||"
   end
 
+  def login_to_registry_locally?
+    false
+  end
+
   private
     def builder_name
       "kamal-remote-#{remote.gsub(/[^a-z0-9_-]/, "-")}"

@@ -44,6 +44,7 @@ class CliBuildTest < CliTestCase
         .returns("")
 
       run_command("push", "--verbose", fixture: :with_remote_builder).tap do |output|
+        assert_no_match "Running docker login -u [REDACTED] -p [REDACTED] as ", output
         assert_match "docker buildx inspect kamal-remote-ssh---app-1-1-1-5 | grep -q Endpoint:.*kamal-remote-ssh---app-1-1-1-5-context && docker context inspect kamal-remote-ssh---app-1-1-1-5-context --format '{{.Endpoints.docker.Host}}' | grep -xq ssh://app@1.1.1.5 || (echo no compatible builder && exit 1)", output
       end
     end
