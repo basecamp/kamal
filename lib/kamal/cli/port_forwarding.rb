@@ -25,7 +25,7 @@ class Kamal::Cli::PortForwarding
   def forward_ports
     @threads = hosts.map do |host|
       Thread.new do
-        Net::SSH.start(host, KAMAL.config.ssh.user, proxy: KAMAL.config.ssh.proxy) do |ssh|
+        Net::SSH.start(host, KAMAL.config.ssh.user, **{ proxy: KAMAL.config.ssh.proxy }.compact) do |ssh|
           ssh.forward.remote(port, "localhost", port, "localhost")
           ssh.loop(0.1) do
             if @done
