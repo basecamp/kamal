@@ -71,10 +71,10 @@ class ConfigurationBuilderTest < ActiveSupport::TestCase
   end
 
   test "setting gha cache" do
-    @deploy[:builder] = { "arch" => "amd64", "cache" => { "type" => "gha", "options" => "mode=max" } }
+    @deploy[:builder] = { "arch" => "amd64", "cache" => { "type" => "gha", "options" => "mode=max,scope=test" } }
 
-    assert_equal "type=gha", config.builder.cache_from
-    assert_equal "type=gha,mode=max", config.builder.cache_to
+    assert_equal "type=gha,scope=test", config.builder.cache_from
+    assert_equal "type=gha,mode=max,scope=test", config.builder.cache_to
   end
 
   test "setting registry cache" do
