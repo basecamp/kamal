@@ -1,10 +1,10 @@
 class Kamal::Secrets::Adapters::Test < Kamal::Secrets::Adapters::Base
   private
-    def login(account)
+    def login(_account, **)
       true
     end
 
-    def fetch_secrets(secrets, from:, account:, session:)
+    def fetch_secrets(secrets, from:, **)
       prefixed_secrets(secrets, from: from).to_h { |secret| [ secret, secret.reverse ] }
     end
 
