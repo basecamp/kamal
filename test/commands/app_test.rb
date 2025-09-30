@@ -100,6 +100,12 @@ class CommandsAppTest < ActiveSupport::TestCase
       new_command.stop(version: "123").join(" ")
   end
 
+  test "stop by container id" do
+    assert_equal \
+      "docker stop abcd1234",
+      new_command.stop_by_container_id("abcd1234").join(" ")
+  end
+
   test "info" do
     assert_equal \
       "docker ps --filter label=service=app --filter label=destination= --filter label=role=web",
