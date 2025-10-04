@@ -96,6 +96,7 @@ class ConfigurationValidationTest < ActiveSupport::TestCase
     assert_error "builder/arch: should be an array or a string", builder: { "arch" => {} }
     assert_error "builder/args: should be a hash", builder: { "args" => [ "foo" ] }
     assert_error "builder/cache/options: should be a string", builder: { "cache" => { "options" => [] } }
+    assert_error "builder: buildpacks only support building for one arch", builder: { "arch" => [ "amd64", "arm64" ], "pack" => { "builder" => "heroku/builder:24" } }
   end
 
   private

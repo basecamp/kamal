@@ -6,6 +6,7 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
   delegate :argumentize, to: Kamal::Utils
   delegate \
     :args, :secrets, :dockerfile, :target, :arches, :local_arches, :remote_arches, :remote,
+    :pack?, :pack_builder, :pack_buildpacks,
     :cache_from, :cache_to, :ssh, :provenance, :sbom, :driver, :docker_driver?,
     to: :builder_config
 
@@ -57,6 +58,10 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
 
   def first_mirror
     docker(:info, "--format '{{index .RegistryConfig.Mirrors 0}}'")
+  end
+
+  def login_to_registry_locally?
+    true
   end
 
   private

@@ -1,8 +1,14 @@
 require "active_support/core_ext/string/filters"
 
 class Kamal::Commands::Builder < Kamal::Commands::Base
-  delegate :create, :remove, :dev, :push, :clean, :pull, :info, :inspect_builder, :validate_image, :first_mirror, to: :target
-  delegate :local?, :remote?, :cloud?, to: "config.builder"
+  delegate \
+    :create, :remove, :dev, :push, :clean, :pull, :info, :inspect_builder,
+    :validate_image, :first_mirror, :login_to_registry_locally?,
+    to: :target
+
+  delegate \
+    :local?, :remote?, :pack?, :cloud?,
+    to: "config.builder"
 
   include Clone
 
@@ -17,6 +23,8 @@ class Kamal::Commands::Builder < Kamal::Commands::Base
       else
         remote
       end
+    elsif pack?
+      pack
     elsif cloud?
       cloud
     else
@@ -34,6 +42,10 @@ class Kamal::Commands::Builder < Kamal::Commands::Base
 
   def hybrid
     @hybrid ||= Kamal::Commands::Builder::Hybrid.new(config)
+  end
+
+  def pack
+    @pack ||= Kamal::Commands::Builder::Pack.new(config)
   end
 
   def cloud

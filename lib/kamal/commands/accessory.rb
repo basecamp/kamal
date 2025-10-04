@@ -56,14 +56,14 @@ class Kamal::Commands::Accessory < Kamal::Commands::Base
 
   def execute_in_existing_container(*command, interactive: false)
     docker :exec,
-      ("-it" if interactive),
+      (docker_interactive_args if interactive),
       service_name,
       *command
   end
 
   def execute_in_new_container(*command, interactive: false)
     docker :run,
-      ("-it" if interactive),
+      (docker_interactive_args if interactive),
       "--rm",
       *network_args,
       *env_args,
@@ -88,6 +88,10 @@ class Kamal::Commands::Accessory < Kamal::Commands::Base
     if !local_file.is_a?(StringIO) && !Pathname.new(local_file).exist?
       raise "Missing file: #{local_file}"
     end
+  end
+
+  def pull_image
+    docker :image, :pull, image
   end
 
   def remove_service_directory

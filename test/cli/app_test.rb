@@ -220,6 +220,21 @@ class CliAppTest < CliTestCase
     end
   end
 
+  test "boot with custom ssl certificate" do
+    Kamal::Configuration::Proxy.any_instance.stubs(:custom_ssl_certificate?).returns(true)
+    Kamal::Configuration::Proxy.any_instance.stubs(:certificate_pem_content).returns("CERTIFICATE CONTENT")
+    Kamal::Configuration::Proxy.any_instance.stubs(:private_key_pem_content).returns("PRIVATE KEY CONTENT")
+
+    stub_running
+    run_command("boot", config: :with_proxy).tap do |output|
+      assert_match "Writing SSL certificates for web on 1.1.1.1", output
+      assert_match "mkdir -p .kamal/proxy/apps-config/app/tls", output
+      assert_match "Uploading \"CERTIFICATE CONTENT\" to .kamal/proxy/apps-config/app/tls/web/cert.pem", output
+      assert_match "--tls-certificate-path=\"/home/kamal-proxy/.apps-config/app/tls/web/cert.pem\"", output
+      assert_match "--tls-private-key-path=\"/home/kamal-proxy/.apps-config/app/tls/web/key.pem\"", output
+    end
+  end
+
   test "start" do
     SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info).returns("999") # old version
 
@@ -361,11 +376,13 @@ class CliAppTest < CliTestCase
     SSHKit::Backend::Abstract.any_instance.expects(:exec)
       .with("ssh -t root@1.1.1.1 -p 22 'docker run -it --rm --network kamal --env-file .kamal/apps/app/env/roles/web.env --log-opt max-size=\"10m\" dhh/app:latest ruby -v'")
 
-    run_command("exec", "-i", "ruby -v").tap do |output|
-      assert_hook_ran "pre-connect", output
-      assert_match "docker login -u [REDACTED] -p [REDACTED]", output
-      assert_match "Get most recent version available as an image...", output
-      assert_match "Launching interactive command with version latest via SSH from new container on 1.1.1.1...", output
+    stub_stdin_tty do
+      run_command("exec", "-i", "ruby -v").tap do |output|
+        assert_hook_ran "pre-connect", output
+        assert_match "docker login -u [REDACTED] -p [REDACTED]", output
+        assert_match "Get most recent version available as an image...", output
+        assert_match "Launching interactive command with version latest via SSH from new container on 1.1.1.1...", output
+      end
     end
   end
 
@@ -374,11 +391,26 @@ class CliAppTest < CliTestCase
     SSHKit::Backend::Abstract.any_instance.expects(:exec)
       .with("ssh -t root@1.1.1.1 -p 22 'docker exec -it app-web-999 ruby -v'")
 
-    run_command("exec", "-i", "--reuse", "ruby -v").tap do |output|
-      assert_hook_ran "pre-connect", output
-      assert_match "Get current version of running container...", output
-      assert_match "Running /usr/bin/env sh -c 'docker ps --latest --format '\\''{{.Names}}'\\'' --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --format '\\''{{.Names}}'\\'' --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting' | head -1 | while read line; do echo ${line#app-web-}; done on 1.1.1.1", output
-      assert_match "Launching interactive command with version 999 via SSH from existing container on 1.1.1.1...", output
+    stub_stdin_tty do
+      run_command("exec", "-i", "--reuse", "ruby -v").tap do |output|
+        assert_hook_ran "pre-connect", output
+        assert_match "Get current version of running container...", output
+        assert_match "Running /usr/bin/env sh -c 'docker ps --latest --format '\\''{{.Names}}'\\'' --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --format '\\''{{.Names}}'\\'' --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting' | head -1 | while read line; do echo ${line#app-web-}; done on 1.1.1.1", output
+        assert_match "Launching interactive command with version 999 via SSH from existing container on 1.1.1.1...", output
+      end
+    end
+  end
+
+  test "exec interactive with pipe on STDIN" do
+    Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
+    SSHKit::Backend::Abstract.any_instance.expects(:exec)
+      .with("ssh -t root@1.1.1.1 -p 22 'docker exec -i app-web-999 ruby -v'")
+
+    stub_stdin_file do
+      run_command("exec", "-i", "--reuse", "ruby -v").tap do |output|
+        assert_hook_ran "pre-connect", output
+        assert_match "Launching interactive command with version 999 via SSH from existing container on 1.1.1.1...", output
+      end
     end
   end
 

@@ -68,7 +68,7 @@ class Kamal::Configuration::Role
   end
 
   def proxy
-    @proxy ||= config.proxy.merge(specialized_proxy) if running_proxy?
+    @proxy ||= specialized_proxy.merge(config.proxy) if running_proxy?
   end
 
   def running_proxy?
@@ -150,9 +150,9 @@ class Kamal::Configuration::Role
   end
 
   def ensure_one_host_for_ssl
-    # Skip SSL validation when a loadbalancer is present, as the loadbalancer handles SSL termination
-    if running_proxy? && proxy.ssl? && hosts.size > 1 && !proxy.loadbalancer.present?
-      raise Kamal::ConfigurationError, "SSL is only supported on a single server, found #{hosts.size} servers for role #{name}"
+    # Skip SSL validation when a loadbalancer is present or custom certificates are provided
+    if running_proxy? && proxy.ssl? && hosts.size > 1 && !proxy.loadbalancer.present? && !proxy.custom_ssl_certificate?
+      raise Kamal::ConfigurationError, "SSL is only supported on a single server unless you provide custom certificates or configure a loadbalancer, found #{hosts.size} servers for role #{name}"
     end
   end
 
@@ -174,6 +174,8 @@ class Kamal::Configuration::Role
         @specialized_proxy = Kamal::Configuration::Proxy.new \
           config: config,
           proxy_config: proxy_config,
+          secrets: config.secrets,
+          role_name: name,
           context: "servers/#{name}/proxy"
       end
     end

@@ -6,8 +6,8 @@ class Kamal::Secrets::Adapters::BitwardenSecretsManager < Kamal::Secrets::Adapte
   private
     LIST_ALL_SELECTOR = "all"
     LIST_ALL_FROM_PROJECT_SUFFIX = "/all"
-    LIST_COMMAND = "secret list -o env"
-    GET_COMMAND = "secret get -o env"
+    LIST_COMMAND = "secret list"
+    GET_COMMAND = "secret get"
 
     def fetch_secrets(secrets, from:, account:, session:)
       raise RuntimeError, "You must specify what to retrieve from Bitwarden Secrets Manager" if secrets.length == 0
@@ -18,17 +18,17 @@ class Kamal::Secrets::Adapters::BitwardenSecretsManager < Kamal::Secrets::Adapte
       {}.tap do |results|
         if command.nil?
           secrets.each do |secret_uuid|
-            secret = run_command("#{GET_COMMAND} #{secret_uuid.shellescape}")
+            item_json = run_command("#{GET_COMMAND} #{secret_uuid.shellescape}")
             raise RuntimeError, "Could not read #{secret_uuid} from Bitwarden Secrets Manager" unless $?.success?
-            key, value = parse_secret(secret)
-            results[key] = value
+            item_json = JSON.parse(item_json)
+            results[item_json["key"]] = item_json["value"]
           end
         else
-          secrets = run_command(command)
+          items_json = run_command(command)
           raise RuntimeError, "Could not read secrets from Bitwarden Secrets Manager" unless $?.success?
-          secrets.split("\n").each do |secret|
-            key, value = parse_secret(secret)
-            results[key] = value
+
+          JSON.parse(items_json).each do |item_json|
+            results[item_json["key"]] = item_json["value"]
           end
         end
       end
@@ -45,19 +45,13 @@ class Kamal::Secrets::Adapters::BitwardenSecretsManager < Kamal::Secrets::Adapte
       end
     end
 
-    def parse_secret(secret)
-      key, value = secret.split("=", 2)
-      value = value.gsub(/^"|"$/, "")
-      [ key, value ]
-    end
-
     def run_command(command, session: nil)
       full_command = [ "bws", command ].join(" ")
       `#{full_command}`
     end
 
     def login(account)
-      run_command("run 'echo OK'")
+      run_command("project list")
       raise RuntimeError, "Could not authenticate to Bitwarden Secrets Manager. Did you set a valid access token?" unless $?.success?
     end
 

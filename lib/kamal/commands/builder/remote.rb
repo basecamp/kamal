@@ -19,9 +19,13 @@ class Kamal::Commands::Builder::Remote < Kamal::Commands::Builder::Base
 
   def inspect_builder
     combine \
-      combine inspect_buildx, inspect_remote_context,
+      combine(inspect_buildx, inspect_remote_context),
       [ "(echo no compatible builder && exit 1)" ],
       by: "||"
+  end
+
+  def login_to_registry_locally?
+    false
   end
 
   private
