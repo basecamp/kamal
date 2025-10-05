@@ -21,3 +21,10 @@ sshkit:
   # Kamal sets a long idle timeout of 900 seconds on connections to try to avoid
   # re-connection storms after an idle period, such as building an image or waiting for CI.
   pool_idle_timeout: 300
+
+  # Default Env
+  #
+  # SSHKit sessions do not inherit the host PATH value. If you need to set custom env vars on 
+  # a SSHKit session, like PATH or DOCKER_DEFAULT_PLATFORM you can map them here.
+  default_env:
+    path: /usr/local/bin:$PATH"
