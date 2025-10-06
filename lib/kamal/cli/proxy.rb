@@ -11,13 +11,13 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
       on(KAMAL.proxy_hosts) do |host|
         execute *KAMAL.registry.login
 
-        version = capture_with_info(*KAMAL.proxy.version).strip.presence
+        version = capture_with_info(*KAMAL.proxy(host).version).strip.presence
 
-        if version && Kamal::Utils.older_version?(version, Kamal::Configuration::Proxy::Boot::MINIMUM_VERSION)
-          raise "kamal-proxy version #{version} is too old, run `kamal proxy reboot` in order to update to at least #{Kamal::Configuration::Proxy::Boot::MINIMUM_VERSION}"
+        if version && Kamal::Utils.older_version?(version, Kamal::Configuration::Proxy::Run::MINIMUM_VERSION)
+          raise "kamal-proxy version #{version} is too old, run `kamal proxy reboot` in order to update to at least #{Kamal::Configuration::Proxy::Run::MINIMUM_VERSION}"
         end
-        execute *KAMAL.proxy.ensure_apps_config_directory
-        execute *KAMAL.proxy.start_or_run
+        execute *KAMAL.proxy(host).ensure_apps_config_directory
+        execute *KAMAL.proxy(host).start_or_run
       end
     end
   end
@@ -25,9 +25,9 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
   desc "boot_config <set|get|reset>", "Manage kamal-proxy boot configuration"
   option :publish, type: :boolean, default: true, desc: "Publish the proxy ports on the host"
   option :publish_host_ip, type: :string, repeatable: true, default: nil, desc: "Host IP address to bind HTTP/HTTPS traffic to. Defaults to all interfaces"
-  option :http_port, type: :numeric, default: Kamal::Configuration::Proxy::Boot::DEFAULT_HTTP_PORT, desc: "HTTP port to publish on the host"
-  option :https_port, type: :numeric, default: Kamal::Configuration::Proxy::Boot::DEFAULT_HTTPS_PORT, desc: "HTTPS port to publish on the host"
-  option :log_max_size, type: :string, default: Kamal::Configuration::Proxy::Boot::DEFAULT_LOG_MAX_SIZE, desc: "Max size of proxy logs"
+  option :http_port, type: :numeric, default: Kamal::Configuration::Proxy::Run::DEFAULT_HTTP_PORT, desc: "HTTP port to publish on the host"
+  option :https_port, type: :numeric, default: Kamal::Configuration::Proxy::Run::DEFAULT_HTTPS_PORT, desc: "HTTPS port to publish on the host"
+  option :log_max_size, type: :string, default: Kamal::Configuration::Proxy::Run::DEFAULT_LOG_MAX_SIZE, desc: "Max size of proxy logs"
   option :registry, type: :string, default: nil, desc: "Registry to use for the proxy image"
   option :repository, type: :string, default: nil, desc: "Repository for the proxy image"
   option :image_version, type: :string, default: nil, desc: "Version of the proxy to run"
@@ -35,6 +35,7 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
   option :debug, type: :boolean, default: false, desc: "Whether to run the proxy in debug mode"
   option :docker_options, type: :array, default: [], desc: "Docker options to pass to the proxy container", banner: "option=value option2=value2"
   def boot_config(subcommand)
+    say "The proxy boot_config command is deprecated - set the config in the deploy YAML at proxy/run instead", :yellow
     proxy_boot_config = KAMAL.config.proxy_boot
 
     case subcommand
@@ -58,42 +59,44 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
       run_command = "kamal-proxy run #{Kamal::Utils.optionize(run_command_options).join(" ")}" if run_command_options.any?
 
       on(KAMAL.proxy_hosts) do |host|
-        execute(*KAMAL.proxy.ensure_proxy_directory)
+        proxy = KAMAL.proxy(host)
+        execute(*proxy.ensure_proxy_directory)
         if boot_options != proxy_boot_config.default_boot_options
           upload! StringIO.new(boot_options.join(" ")), proxy_boot_config.options_file
         else
-          execute *KAMAL.proxy.reset_boot_options, raise_on_non_zero_exit: false
+          execute *proxy.reset_boot_options, raise_on_non_zero_exit: false
         end
 
         if image != proxy_boot_config.image_default
           upload! StringIO.new(image), proxy_boot_config.image_file
         else
-          execute *KAMAL.proxy.reset_image, raise_on_non_zero_exit: false
+          execute *proxy.reset_image, raise_on_non_zero_exit: false
         end
 
         if image_version
           upload! StringIO.new(image_version), proxy_boot_config.image_version_file
         else
-          execute *KAMAL.proxy.reset_image_version, raise_on_non_zero_exit: false
+          execute *proxy.reset_image_version, raise_on_non_zero_exit: false
         end
 
         if run_command
           upload! StringIO.new(run_command), proxy_boot_config.run_command_file
         else
-          execute *KAMAL.proxy.reset_run_command, raise_on_non_zero_exit: false
+          execute *proxy.reset_run_command, raise_on_non_zero_exit: false
         end
       end
     when "get"
 
       on(KAMAL.proxy_hosts) do |host|
-        puts "Host #{host}: #{capture_with_info(*KAMAL.proxy.boot_config)}"
+        puts "Host #{host}: #{capture_with_info(*KAMAL.proxy(host).boot_config)}"
       end
     when "reset"
       on(KAMAL.proxy_hosts) do |host|
-        execute *KAMAL.proxy.reset_boot_options, raise_on_non_zero_exit: false
-        execute *KAMAL.proxy.reset_image, raise_on_non_zero_exit: false
-        execute *KAMAL.proxy.reset_image_version, raise_on_non_zero_exit: false
-        execute *KAMAL.proxy.reset_run_command, raise_on_non_zero_exit: false
+        proxy = KAMAL.proxy(host)
+        execute *proxy.reset_boot_options, raise_on_non_zero_exit: false
+        execute *proxy.reset_image, raise_on_non_zero_exit: false
+        execute *proxy.reset_image_version, raise_on_non_zero_exit: false
+        execute *proxy.reset_run_command, raise_on_non_zero_exit: false
       end
     else
       raise ArgumentError, "Unknown boot_config subcommand #{subcommand}"
@@ -111,15 +114,16 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
           host_list = Array(hosts).join(",")
           run_hook "pre-proxy-reboot", hosts: host_list
           on(hosts) do |host|
+            proxy = KAMAL.proxy(host)
             execute *KAMAL.auditor.record("Rebooted proxy"), verbosity: :debug
             execute *KAMAL.registry.login
 
             "Stopping and removing kamal-proxy on #{host}, if running..."
-            execute *KAMAL.proxy.stop, raise_on_non_zero_exit: false
-            execute *KAMAL.proxy.remove_container
-            execute *KAMAL.proxy.ensure_apps_config_directory
+            execute *proxy.stop, raise_on_non_zero_exit: false
+            execute *proxy.remove_container
+            execute *proxy.ensure_apps_config_directory
 
-            execute *KAMAL.proxy.run
+            execute *proxy.run
           end
           run_hook "post-proxy-reboot", hosts: host_list
         end
@@ -140,16 +144,17 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
         say "Upgrading proxy on #{host_list}...", :magenta
         run_hook "pre-proxy-reboot", hosts: host_list
         on(hosts) do |host|
+          proxy = KAMAL.proxy(host)
           execute *KAMAL.auditor.record("Rebooted proxy"), verbosity: :debug
           execute *KAMAL.registry.login
 
           "Stopping and removing Traefik on #{host}, if running..."
-          execute *KAMAL.proxy.cleanup_traefik
+          execute *proxy.cleanup_traefik
 
           "Stopping and removing kamal-proxy on #{host}, if running..."
-          execute *KAMAL.proxy.stop, raise_on_non_zero_exit: false
-          execute *KAMAL.proxy.remove_container
-          execute *KAMAL.proxy.remove_image
+          execute *proxy.stop, raise_on_non_zero_exit: false
+          execute *proxy.remove_container
+          execute *proxy.remove_image
         end
 
         KAMAL.with_specific_hosts(hosts) do
@@ -172,7 +177,7 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
     with_lock do
       on(KAMAL.proxy_hosts) do |host|
         execute *KAMAL.auditor.record("Started proxy"), verbosity: :debug
-        execute *KAMAL.proxy.start
+        execute *KAMAL.proxy(host).start
       end
     end
   end
@@ -182,7 +187,7 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
     with_lock do
       on(KAMAL.proxy_hosts) do |host|
         execute *KAMAL.auditor.record("Stopped proxy"), verbosity: :debug
-        execute *KAMAL.proxy.stop, raise_on_non_zero_exit: false
+        execute *KAMAL.proxy(host).stop, raise_on_non_zero_exit: false
       end
     end
   end
@@ -198,7 +203,7 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
   desc "details", "Show details about proxy container from servers"
   def details
     quiet = options[:quiet]
-    on(KAMAL.proxy_hosts) { |host| puts_by_host host, capture_with_info(*KAMAL.proxy.info), type: "Proxy", quiet: quiet }
+    on(KAMAL.proxy_hosts) { |host| puts_by_host host, capture_with_info(*KAMAL.proxy(host).info), type: "Proxy", quiet: quiet }
   end
 
   desc "logs", "Show log lines from proxy on servers"
@@ -213,16 +218,17 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
 
     if options[:follow]
       run_locally do
+        proxy = KAMAL.proxy(KAMAL.primary_host)
         info "Following logs on #{KAMAL.primary_host}..."
-        info KAMAL.proxy.follow_logs(host: KAMAL.primary_host, timestamps: timestamps, grep: grep)
-        exec KAMAL.proxy.follow_logs(host: KAMAL.primary_host, timestamps: timestamps, grep: grep)
+        info proxy.follow_logs(host: KAMAL.primary_host, timestamps: timestamps, grep: grep)
+        exec proxy.follow_logs(host: KAMAL.primary_host, timestamps: timestamps, grep: grep)
       end
     else
       since = options[:since]
       lines = options[:lines].presence || ((since || grep) ? nil : 100) # Default to 100 lines if since or grep isn't set
 
       on(KAMAL.proxy_hosts) do |host|
-        puts_by_host host, capture(*KAMAL.proxy.logs(timestamps: timestamps, since: since, lines: lines, grep: grep)), type: "Proxy"
+        puts_by_host host, capture(*KAMAL.proxy(host).logs(timestamps: timestamps, since: since, lines: lines, grep: grep)), type: "Proxy"
       end
     end
   end
@@ -245,7 +251,7 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
     with_lock do
       on(KAMAL.proxy_hosts) do
         execute *KAMAL.auditor.record("Removed proxy container"), verbosity: :debug
-        execute *KAMAL.proxy.remove_container
+        execute *KAMAL.proxy(host).remove_container
       end
     end
   end
@@ -255,7 +261,7 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
     with_lock do
       on(KAMAL.proxy_hosts) do
         execute *KAMAL.auditor.record("Removed proxy image"), verbosity: :debug
-        execute *KAMAL.proxy.remove_image
+        execute *KAMAL.proxy(host).remove_image
       end
     end
   end
@@ -264,7 +270,7 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
   def remove_proxy_directory
     with_lock do
       on(KAMAL.proxy_hosts) do
-        execute *KAMAL.proxy.remove_proxy_directory, raise_on_non_zero_exit: false
+        execute *KAMAL.proxy(host).remove_proxy_directory, raise_on_non_zero_exit: false
       end
     end
   end

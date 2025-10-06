@@ -148,6 +148,39 @@ proxy:
       - X-Request-ID
       - X-Request-Start
 
+  # Run configuration
+  #
+  # These options are used when booting the proxy container.
+  #
+  # `http_port` - default 80
+  # `https_port` - default 443
+  # `metrics_port` - if set, exposes this port for Prometheus metrics
+  # `debug` - if true, enables debug logging
+  # `log_max_size` - maximum size for log files, defaults to "10m"
+  # `publish` - if false, does not publish ports to the host
+  # `bind_ips` - list of IPs to bind to when publishing ports
+  # `registry` - container registry to use for pulling the kamal-proxy image, defaults to Docker Hub
+  # `repository` - container repository to use for pulling the kamal-proxy image, defaults to `basecamp/kamal-proxy`
+  # `version` - version tag of the kamal-proxy image to use
+  # `options` - additional options to pass to `docker run`
+  run:
+    http_port: 8080
+    https_port: 8443
+    metrics_port: 9090
+    debug: true
+    log_max_size: "30m"
+    publish: false
+    bind_ips:
+      - 0.0.0.0
+    registry: registry:4443
+    repository: myrepo/kamal-proxy
+    version: v0.8.0
+    options:
+      label:
+        - custom.label=kamal-proxy
+      memory: 512m
+      cpus: 0.5
+
 # Enabling/disabling the proxy on roles
 #
 # The proxy is enabled by default on the primary role but can be disabled by

@@ -6,8 +6,7 @@ class Kamal::Configuration::Proxy
 
   delegate :argumentize, :optionize, to: Kamal::Utils
 
-  attr_reader :config, :proxy_config, :role_name, :secrets
-
+  attr_reader :config, :proxy_config, :role_name, :run, :secrets
   def initialize(config:, proxy_config:, role_name: nil, secrets:, context: "proxy")
     @config = config
     @proxy_config = proxy_config
@@ -15,6 +14,7 @@ class Kamal::Configuration::Proxy
     @role_name = role_name
     @secrets = secrets
     validate! @proxy_config, with: Kamal::Configuration::Validator::Proxy, context: context
+    @run = Kamal::Configuration::Proxy::Run.new(config, run_config: @proxy_config["run"], context: "#{context}/run") if @proxy_config && @proxy_config["run"].present?
   end
 
   def app_port
