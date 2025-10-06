@@ -118,6 +118,16 @@ class CliBuildTest < CliTestCase
     end
   end
 
+  test "push with no-cache" do
+    Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
+
+    run_command("push", "--no-cache", "--verbose", fixture: :without_clone).tap do |output|
+      assert_hook_ran "pre-build", output
+      assert_match /docker --version && docker buildx version/, output
+      assert_match /docker buildx build --output=type=registry --platform linux\/amd64 --builder kamal-local-docker-container -t dhh\/app:999 -t dhh\/app:latest --label service="app" --file Dockerfile --no-cache . 2>&1 as .*@localhost/, output
+    end
+  end
+
   test "push with corrupt clone" do
     with_build_directory do |build_directory|
       stub_setup
@@ -339,6 +349,18 @@ class CliBuildTest < CliTestCase
         assert_no_match(/Cloning repo into build directory/, output)
         assert_match(/docker --version && docker buildx version/, output)
         assert_match(/docker buildx build --output=type=local --platform linux\/amd64 --builder kamal-local-docker-container -t dhh\/app:999-dirty -t dhh\/app:latest-dirty --label service="app" --file Dockerfile \. 2>&1 as .*@localhost/, output)
+      end
+    end
+  end
+
+  test "dev with no-cache" do
+    with_build_directory do |build_directory|
+      Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
+
+      run_command("dev", "--no-cache", "--verbose").tap do |output|
+        assert_no_match(/Cloning repo into build directory/, output)
+        assert_match(/docker --version && docker buildx version/, output)
+        assert_match(/docker buildx build --output=type=docker --platform linux\/amd64 --builder kamal-local-docker-container -t dhh\/app:999-dirty -t dhh\/app:latest-dirty --label service="app" --file Dockerfile --no-cache \. 2>&1 as .*@localhost/, output)
       end
     end
   end
