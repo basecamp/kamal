@@ -28,6 +28,10 @@ class Kamal::Commands::Builder::Remote < Kamal::Commands::Builder::Base
     false
   end
 
+  def push_env
+    { "BUILDKIT_NO_CLIENT_TOKEN" => "1" }
+  end
+
   private
     def builder_name
       "kamal-remote-#{remote.gsub(/[^a-z0-9_-]/, "-")}"
