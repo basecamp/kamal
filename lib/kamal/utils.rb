@@ -21,11 +21,11 @@ module Kamal::Utils
   end
 
   # Returns a list of shell-dashed option arguments. If the value is true, it's treated like a value-less option.
-  def optionize(args, with: nil)
+  def optionize(args, with: nil, escape: true)
     options = if with
-      flatten_args(args).collect { |(key, value)| value == true ? "--#{key}" : "--#{key}#{with}#{escape_shell_value(value)}" }
+      flatten_args(args).collect { |(key, value)| value == true ? "--#{key}" : "--#{key}#{with}#{escape ? escape_shell_value(value) : value}" }
     else
-      flatten_args(args).collect { |(key, value)| [ "--#{key}", value == true ? nil : escape_shell_value(value) ] }
+      flatten_args(args).collect { |(key, value)| [ "--#{key}", value == true ? nil : escape ? escape_shell_value(value) : value ] }
     end
 
     options.flatten.compact

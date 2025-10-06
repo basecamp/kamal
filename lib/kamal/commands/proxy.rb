@@ -1,8 +1,27 @@
 class Kamal::Commands::Proxy < Kamal::Commands::Base
   delegate :argumentize, :optionize, to: Kamal::Utils
+  attr_reader :proxy_run_config
+
+  def initialize(config, host:)
+    super(config)
+    @proxy_run_config = config.proxy_run(host)
+  end
 
   def run
-    pipe boot_config, xargs(docker_run)
+    if proxy_run_config
+      docker \
+        :run,
+        "--name", container_name,
+        "--network", "kamal",
+        "--detach",
+        "--restart", "unless-stopped",
+        "--volume", "kamal-proxy-config:/home/kamal-proxy/.config/kamal-proxy",
+        *proxy_run_config.docker_options_args,
+        *proxy_run_config.image,
+        *proxy_run_config.run_command
+    else
+      pipe boot_config, xargs(docker_run)
+    end
   end
 
   def start
@@ -82,7 +101,7 @@ class Kamal::Commands::Proxy < Kamal::Commands::Base
   end
 
   def read_image_version
-    read_file(config.proxy_boot.image_version_file, default: Kamal::Configuration::Proxy::Boot::MINIMUM_VERSION)
+    read_file(config.proxy_boot.image_version_file, default: Kamal::Configuration::Proxy::Run::MINIMUM_VERSION)
   end
 
   def read_run_command

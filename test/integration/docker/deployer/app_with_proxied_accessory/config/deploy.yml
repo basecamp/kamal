@@ -31,6 +31,8 @@ accessories:
     host: vm1
     port: 12345:80
     proxy:
+      run:
+        registry: registry:4443
       host: netcat
       ssl: false
       healthcheck:

@@ -109,8 +109,8 @@ class Kamal::Commander
     @commands[:lock] ||= Kamal::Commands::Lock.new(config)
   end
 
-  def proxy
-    @commands[:proxy] ||= Kamal::Commands::Proxy.new(config)
+  def proxy(host)
+    Kamal::Commands::Proxy.new(config, host: host)
   end
 
   def prune

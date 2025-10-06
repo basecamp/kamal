@@ -1,9 +1,4 @@
 class Kamal::Configuration::Proxy::Boot
-  MINIMUM_VERSION = "v0.9.0"
-  DEFAULT_HTTP_PORT = 80
-  DEFAULT_HTTPS_PORT = 443
-  DEFAULT_LOG_MAX_SIZE = "10m"
-
   attr_reader :config
   delegate :argumentize, :optionize, to: Kamal::Utils
 
@@ -16,8 +11,8 @@ class Kamal::Configuration::Proxy::Boot
 
     (bind_ips || [ nil ]).map do |bind_ip|
       bind_ip = format_bind_ip(bind_ip)
-      publish_http = [ bind_ip, http_port, DEFAULT_HTTP_PORT ].compact.join(":")
-      publish_https = [ bind_ip, https_port, DEFAULT_HTTPS_PORT ].compact.join(":")
+      publish_http = [ bind_ip, http_port, Kamal::Configuration::Proxy::Run::DEFAULT_HTTP_PORT ].compact.join(":")
+      publish_https = [ bind_ip, https_port, Kamal::Configuration::Proxy::Run::DEFAULT_HTTPS_PORT ].compact.join(":")
 
       argumentize "--publish", [ publish_http, publish_https ]
     end.join(" ")
@@ -29,8 +24,8 @@ class Kamal::Configuration::Proxy::Boot
 
   def default_boot_options
     [
-      *(publish_args(DEFAULT_HTTP_PORT, DEFAULT_HTTPS_PORT, nil)),
-      *(logging_args(DEFAULT_LOG_MAX_SIZE))
+      *(publish_args(Kamal::Configuration::Proxy::Run::DEFAULT_HTTP_PORT, Kamal::Configuration::Proxy::Run::DEFAULT_HTTPS_PORT, nil)),
+      *(logging_args(Kamal::Configuration::Proxy::Run::DEFAULT_LOG_MAX_SIZE))
     ]
   end
 
