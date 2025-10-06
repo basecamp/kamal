@@ -19,7 +19,7 @@ class Kamal::Cli::Build < Kamal::Cli::Base
     pre_connect_if_required
 
     ensure_docker_installed
-    login_to_registry_locally if KAMAL.builder.login_to_registry_locally?
+    login_to_registry_locally
 
     run_hook "pre-build"
 

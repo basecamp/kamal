@@ -60,10 +60,6 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
     docker(:info, "--format '{{index .RegistryConfig.Mirrors 0}}'")
   end
 
-  def login_to_registry_locally?
-    true
-  end
-
   private
     def build_tag_names(tag_as_dirty: false)
       tag_names = [ config.absolute_image, config.latest_image ]
