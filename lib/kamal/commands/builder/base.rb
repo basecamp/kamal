@@ -64,6 +64,10 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
     true
   end
 
+  def push_env
+    {}
+  end
+
   private
     def build_tag_names(tag_as_dirty: false)
       tag_names = [ config.absolute_image, config.latest_image ]
