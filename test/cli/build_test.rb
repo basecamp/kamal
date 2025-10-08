@@ -165,6 +165,48 @@ class CliBuildTest < CliTestCase
     end
   end
 
+  test "push without builder for local registry" do
+    with_build_directory do |build_directory|
+      stub_setup
+
+      SSHKit::Backend::Abstract.any_instance.expects(:execute)
+        .with(:docker, "--version", "&&", :docker, :buildx, "version")
+
+      SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+        .with { |*args| args[0..1] == [ :docker, :login ] }
+
+      SSHKit::Backend::Abstract.any_instance.expects(:execute)
+      .with(:docker, :start, "kamal-docker-registry", "||", :docker, :run, "--detach", "-p", "127.0.0.1:5000:5000", "--name", "kamal-docker-registry", "registry:3")
+
+      SSHKit::Backend::Abstract.any_instance.expects(:execute)
+        .with(:docker, :buildx, :rm, "kamal-local-registry-docker-container")
+
+      SSHKit::Backend::Abstract.any_instance.expects(:execute)
+        .with(:docker, :buildx, :create, "--name", "kamal-local-registry-docker-container", "--driver=docker-container --driver-opt network=host")
+
+      SSHKit::Backend::Abstract.any_instance.expects(:execute)
+        .with(:docker, :buildx, :inspect, "kamal-local-registry-docker-container")
+        .raises(SSHKit::Command::Failed.new("no builder"))
+
+      SSHKit::Backend::Abstract.any_instance.expects(:execute).with { |*args| args.first.to_s.start_with?("git") }
+
+      SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+        .with(:git, "-C", anything, :"rev-parse", :HEAD)
+        .returns(Kamal::Git.revision)
+
+      SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+        .with(:git, "-C", anything, :status, "--porcelain")
+        .returns("")
+
+      SSHKit::Backend::Abstract.any_instance.expects(:execute)
+        .with(:docker, :buildx, :build, "--output=type=registry", "--platform", "linux/amd64", "--builder", "kamal-local-registry-docker-container", "-t", "localhost:5000/dhh/app:999", "-t", "localhost:5000/dhh/app:latest", "--label", "service=\"app\"", "--file", "Dockerfile", ".", "2>&1")
+
+      run_command("push", fixture: :with_local_registry_and_accessories).tap do |output|
+        assert_match /WARN Missing compatible builder, so creating a new one first/, output
+      end
+    end
+  end
+
   test "push without builder" do
     with_build_directory do |build_directory|
       stub_setup

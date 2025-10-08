@@ -25,13 +25,14 @@ proxy:
 
 # Credentials for your image host.
 registry:
+  server: localhost:5555
   # Specify the registry server, if you're not using Docker Hub
   # server: registry.digitalocean.com / ghcr.io / ...
-  username: my-user
+  # username: my-user
 
   # Always use an access token rather than real password (pulled from .kamal/secrets).
-  password:
-    - KAMAL_REGISTRY_PASSWORD
+  # password:
+  #   - KAMAL_REGISTRY_PASSWORD
 
 # Configure builder setup.
 builder:

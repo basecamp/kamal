@@ -185,7 +185,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
         invoke "kamal:cli:app:remove", [], options.without(:confirmed)
         invoke "kamal:cli:proxy:remove", [], options.without(:confirmed)
         invoke "kamal:cli:accessory:remove", [ "all" ], options
-        invoke "kamal:cli:registry:logout", [], options.without(:confirmed).merge(skip_local: true)
+        invoke "kamal:cli:registry:remove", [], options.without(:confirmed).merge(skip_local: true)
       end
     end
   end

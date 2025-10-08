@@ -6,7 +6,7 @@ require "erb"
 require "net/ssh/proxy/jump"
 
 class Kamal::Configuration
-  delegate :service, :image, :labels, :hooks_path, to: :raw_config, allow_nil: true
+  delegate :service, :labels, :hooks_path, to: :raw_config, allow_nil: true
   delegate :argumentize, :optionize, to: Kamal::Utils
 
   attr_reader :destination, :raw_config, :secrets
@@ -157,6 +157,13 @@ class Kamal::Configuration
     (proxy_roles.flat_map(&:hosts) + proxy_accessories.flat_map(&:hosts)).uniq
   end
 
+  def image
+    name = raw_config&.image.presence
+    name ||= raw_config&.service if registry.local?
+
+    name
+  end
+
   def repository
     [ registry.server, image ].compact.join("/")
   end
@@ -282,9 +289,11 @@ class Kamal::Configuration
     end
 
     def ensure_required_keys_present
-      %i[ service image registry ].each do |key|
+      %i[ service registry ].each do |key|
         raise Kamal::ConfigurationError, "Missing required configuration for #{key}" unless raw_config[key].present?
       end
+
+      raise Kamal::ConfigurationError, "Missing required configuration for image" if image.blank?
 
       if raw_config.servers.nil?
         raise Kamal::ConfigurationError, "No servers or accessories specified" unless raw_config.accessories.present?

@@ -68,16 +68,18 @@ class Kamal::Cli::Build < Kamal::Cli::Base
 
   desc "pull", "Pull app image from registry onto servers"
   def pull
-    login_to_registry_remotely
+    login_to_registry_remotely unless KAMAL.registry.local?
 
-    if (first_hosts = mirror_hosts).any?
-      #  Pull on a single host per mirror first to seed them
-      say "Pulling image on #{first_hosts.join(", ")} to seed the #{"mirror".pluralize(first_hosts.count)}...", :magenta
-      pull_on_hosts(first_hosts)
-      say "Pulling image on remaining hosts...", :magenta
-      pull_on_hosts(KAMAL.app_hosts - first_hosts)
-    else
-      pull_on_hosts(KAMAL.app_hosts)
+    forward_local_registry_port do
+      if (first_hosts = mirror_hosts).any?
+        #  Pull on a single host per mirror first to seed them
+        say "Pulling image on #{first_hosts.join(", ")} to seed the #{"mirror".pluralize(first_hosts.count)}...", :magenta
+        pull_on_hosts(first_hosts)
+        say "Pulling image on remaining hosts...", :magenta
+        pull_on_hosts(KAMAL.app_hosts - first_hosts)
+      else
+        pull_on_hosts(KAMAL.app_hosts)
+      end
     end
   end
 
@@ -194,13 +196,27 @@ class Kamal::Cli::Build < Kamal::Cli::Base
 
     def login_to_registry_locally
       run_locally do
-        execute *KAMAL.registry.login
+        if KAMAL.registry.local?
+          execute *KAMAL.registry.setup
+        else
+          execute *KAMAL.registry.login
+        end
       end
     end
 
     def login_to_registry_remotely
       on(KAMAL.app_hosts) do
         execute *KAMAL.registry.login
+      end
+    end
+
+    def forward_local_registry_port(&block)
+      if KAMAL.config.registry.local?
+        Kamal::Cli::PortForwarding.
+          new(KAMAL.hosts, KAMAL.config.registry.local_port).
+          forward(&block)
+      else
+        yield
       end
     end
 end

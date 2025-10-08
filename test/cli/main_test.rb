@@ -39,6 +39,30 @@ class CliMainTest < CliTestCase
     end
   end
 
+  test "deploy with local registry" do
+    with_test_secrets("secrets" => "DB_PASSWORD=secret") do
+      invoke_options = { "config_file" => "test/fixtures/deploy_with_local_registry.yml", "version" => "999", "skip_hooks" => false, "verbose" => true }
+
+      Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:deliver", [], invoke_options)
+      Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:proxy:boot", [], invoke_options)
+      Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true))
+      Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:boot", [], invoke_options)
+      Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:prune:all", [], invoke_options)
+
+      Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
+
+      run_command("deploy", "--verbose", config_file: "deploy_with_local_registry").tap do |output|
+        assert_hook_ran "pre-connect", output
+        assert_match /Build and push app image/, output
+        assert_hook_ran "pre-deploy", output
+        assert_match /Ensure kamal-proxy is running/, output
+        assert_match /Detect stale containers/, output
+        assert_match /Prune old containers and images/, output
+        assert_hook_ran "post-deploy", output
+      end
+    end
+  end
+
   test "setup with no_cache" do
     invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false, "no_cache" => true }
 
@@ -351,6 +375,16 @@ class CliMainTest < CliTestCase
       assert_match "docker run --detach --restart unless-stopped --name app-web-123", output
       assert_no_match "docker stop", output
     end
+  end
+
+  test "remove" do
+    options = { "config_file" => "test/fixtures/deploy_simple.yml", "skip_hooks" => false, "confirmed" => true }
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:proxy:remove", [], options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:remove", [], options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:accessory:remove", [ "all" ], options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:registry:remove", [], options.merge(skip_local: true))
+
+    run_command("remove", "-y")
   end
 
   test "details" do
