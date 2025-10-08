@@ -63,6 +63,28 @@ class CliMainTest < CliTestCase
     end
   end
 
+  test "setup with no_cache" do
+    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false, "no_cache" => true }
+
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:server:bootstrap", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:accessory:boot", [ "all" ], invoke_options)
+    # deploy
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:deliver", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:proxy:boot", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true))
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:boot", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:prune:all", [], invoke_options)
+
+    run_command("setup", "--no-cache").tap do |output|
+      assert_match /Ensure Docker is installed.../, output
+      # deploy
+      assert_match /Build and push app image/, output
+      assert_match /Ensure kamal-proxy is running/, output
+      assert_match /Detect stale containers/, output
+      assert_match /Prune old containers and images/, output
+    end
+  end
+
   test "deploy" do
     with_test_secrets("secrets" => "DB_PASSWORD=secret") do
       invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false, "verbose" => true }
@@ -103,6 +125,23 @@ class CliMainTest < CliTestCase
       assert_match /Detect stale containers/, output
       assert_match /Prune old containers and images/, output
       assert_match /Releasing the deploy lock/, output
+    end
+  end
+
+  test "deploy with no_cache" do
+    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false, "no_cache" => true }
+
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:deliver", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:proxy:boot", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true))
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:boot", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:prune:all", [], invoke_options)
+
+    run_command("deploy", "--no-cache").tap do |output|
+      assert_match /Build and push app image/, output
+      assert_match /Ensure kamal-proxy is running/, output
+      assert_match /Detect stale containers/, output
+      assert_match /Prune old containers and images/, output
     end
   end
 
@@ -264,6 +303,18 @@ class CliMainTest < CliTestCase
 
     run_command("redeploy", "--skip_push").tap do |output|
       assert_match /Pull app image/, output
+    end
+  end
+
+  test "redeploy with no_cache" do
+    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false, "no_cache" => true }
+
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:deliver", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true))
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:boot", [], invoke_options)
+
+    run_command("redeploy", "--no-cache").tap do |output|
+      assert_match /Build and push app image/, output
     end
   end
 

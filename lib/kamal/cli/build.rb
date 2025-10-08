@@ -11,6 +11,7 @@ class Kamal::Cli::Build < Kamal::Cli::Base
 
   desc "push", "Build and push app image to registry"
   option :output, type: :string, default: "registry", banner: "export_type", desc: "Exported type for the build result, and may be any exported type supported by 'buildx --output'."
+  option :no_cache, type: :boolean, default: false, desc: "Build without using Docker's build cache"
   def push
     cli = self
 
@@ -56,10 +57,10 @@ class Kamal::Cli::Build < Kamal::Cli::Base
         end
 
         # Get the command here to ensure the Dir.chdir doesn't interfere with it
-        push = KAMAL.builder.push(cli.options[:output])
+        push = KAMAL.builder.push(cli.options[:output], no_cache: cli.options[:no_cache])
 
         KAMAL.with_verbosity(:debug) do
-          Dir.chdir(KAMAL.config.builder.build_directory) { execute *push }
+          Dir.chdir(KAMAL.config.builder.build_directory) { execute *push, env: KAMAL.builder.push_env }
         end
       end
     end
@@ -121,6 +122,7 @@ class Kamal::Cli::Build < Kamal::Cli::Base
 
   desc "dev", "Build using the working directory, tag it as dirty, and push to local image store."
   option :output, type: :string, default: "docker", banner: "export_type", desc: "Exported type for the build result, and may be any exported type supported by 'buildx --output'."
+  option :no_cache, type: :boolean, default: false, desc: "Build without using Docker's build cache"
   def dev
     cli = self
 
@@ -146,7 +148,7 @@ class Kamal::Cli::Build < Kamal::Cli::Base
 
     with_env(KAMAL.config.builder.secrets) do
       run_locally do
-        build = KAMAL.builder.push(cli.options[:output], tag_as_dirty: true)
+        build = KAMAL.builder.push(cli.options[:output], tag_as_dirty: true, no_cache: cli.options[:no_cache])
         KAMAL.with_verbosity(:debug) do
           execute(*build)
         end
