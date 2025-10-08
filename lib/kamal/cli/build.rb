@@ -20,7 +20,7 @@ class Kamal::Cli::Build < Kamal::Cli::Base
     pre_connect_if_required
 
     ensure_docker_installed
-    login_to_registry_locally
+    login_to_registry_locally if KAMAL.builder.login_to_registry_locally?
 
     run_hook "pre-build"
 
@@ -60,7 +60,7 @@ class Kamal::Cli::Build < Kamal::Cli::Base
         push = KAMAL.builder.push(cli.options[:output], no_cache: cli.options[:no_cache])
 
         KAMAL.with_verbosity(:debug) do
-          Dir.chdir(KAMAL.config.builder.build_directory) { execute *push }
+          Dir.chdir(KAMAL.config.builder.build_directory) { execute *push, env: KAMAL.builder.push_env }
         end
       end
     end
