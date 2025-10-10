@@ -113,6 +113,14 @@ class Kamal::Commander
     @commands[:proxy] ||= Kamal::Commands::Proxy.new(config)
   end
 
+  def loadbalancer_config
+    @loadbalancer_config ||= Kamal::Configuration::Loadbalancer.new(config: config, proxy_config: config.proxy.proxy_config)
+  end
+
+  def loadbalancer
+    @commands[:loadbalancer] ||= Kamal::Commands::Loadbalancer.new(config, loadbalancer_config: loadbalancer_config)
+  end
+
   def prune
     @commands[:prune] ||= Kamal::Commands::Prune.new(config)
   end
