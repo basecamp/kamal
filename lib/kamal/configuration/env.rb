@@ -1,7 +1,7 @@
 class Kamal::Configuration::Env
   include Kamal::Configuration::Validation
 
-  attr_reader :context, :clear, :secret_keys
+  attr_reader :context, :clear, :secrets, :secret_keys
   delegate :argumentize, to: Kamal::Utils
 
   def initialize(config:, secrets:, context: "env")
@@ -23,12 +23,16 @@ class Kamal::Configuration::Env
   def merge(other)
     self.class.new \
       config: { "clear" => clear.merge(other.clear), "secret" => secret_keys | other.secret_keys },
-      secrets: @secrets
+      secrets: secrets
+  end
+
+  def to_h
+    clear.merge(aliased_secrets)
   end
 
   private
     def aliased_secrets
-      secret_keys.to_h { |key| extract_alias(key) }.transform_values { |secret_key| @secrets[secret_key] }
+      secret_keys.to_h { |key| extract_alias(key) }.transform_values { |secret_key| secrets[secret_key] }
     end
 
     def extract_alias(key)
