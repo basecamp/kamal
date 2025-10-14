@@ -1,7 +1,7 @@
 class Kamal::Commands::Builder::Pack < Kamal::Commands::Builder::Base
-  def push(export_action = "registry")
+  def push(export_action = "registry", tag_as_dirty: false, no_cache: false)
     combine \
-      build,
+      build(tag_as_dirty: tag_as_dirty, no_cache: no_cache),
       export(export_action)
   end
 
@@ -13,15 +13,15 @@ class Kamal::Commands::Builder::Pack < Kamal::Commands::Builder::Base
   alias_method :inspect_builder, :info
 
   private
-    def build
+    def build(tag_as_dirty: false, no_cache: false)
       pack(:build,
         config.repository,
         "--platform", platform,
         "--creation-time", "now",
         "--builder", pack_builder,
         buildpacks,
-        "-t", config.absolute_image,
-        "-t", config.latest_image,
+        *build_tag_options(tag_as_dirty: tag_as_dirty),
+        *([ "--clear-cache" ] if no_cache),
         "--env", "BP_IMAGE_LABELS=service=#{config.service}",
         *argumentize("--env", args),
         *argumentize("--env", secrets, sensitive: true),
