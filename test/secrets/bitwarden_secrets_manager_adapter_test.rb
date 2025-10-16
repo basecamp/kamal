@@ -178,6 +178,27 @@ class BitwardenSecretsManagerAdapterTest < SecretAdapterTestCase
     assert_equal "Bitwarden Secrets Manager CLI is not installed", error.message
   end
 
+  test "fetch with different server-url" do
+    stub_ticks.with("bws --version 2> /dev/null")
+    stub_ticks.with("bws project list --server-url=https://example.com").returns("OK")
+    stub_ticks
+      .with("bws secret get 82aeb5bd-6958-4a89-8197-eacab758acce --server-url=https://example.com")
+      .returns(<<~JSON)
+      {
+        "key": "KAMAL_REGISTRY_PASSWORD",
+        "value": "some_password"
+      }
+      JSON
+
+    json = JSON.parse(shellunescape(run_command("fetch", "82aeb5bd-6958-4a89-8197-eacab758acce",
+      "--server-url", "https://example.com")))
+    expected_json = {
+      "KAMAL_REGISTRY_PASSWORD"=>"some_password"
+    }
+
+    assert_equal expected_json, json
+  end
+
   private
     def stub_login
       stub_ticks.with("bws project list").returns("OK")

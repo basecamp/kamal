@@ -1,6 +1,6 @@
 class Kamal::Secrets::Adapters::GcpSecretManager < Kamal::Secrets::Adapters::Base
   private
-    def login(account)
+    def login(_account, **)
       # Since only the account option is passed from the cli, we'll use it for both account and service account
       # impersonation.
       #
@@ -26,7 +26,7 @@ class Kamal::Secrets::Adapters::GcpSecretManager < Kamal::Secrets::Adapters::Bas
       nil
     end
 
-    def fetch_secrets(secrets, from:, account:, session:)
+    def fetch_secrets(secrets, from:, account:, **)
       user, service_account = parse_account(account)
 
       {}.tap do |results|
