@@ -1,6 +1,7 @@
 class Kamal::Cli::Main < Kamal::Cli::Base
   desc "setup", "Setup all accessories, push the env, and deploy app to servers"
   option :skip_push, aliases: "-P", type: :boolean, default: false, desc: "Skip image build and push"
+  option :no_cache, type: :boolean, default: false, desc: "Build without using Docker's build cache"
   def setup
     print_runtime do
       with_lock do
@@ -16,6 +17,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
 
   desc "deploy", "Deploy app to servers"
   option :skip_push, aliases: "-P", type: :boolean, default: false, desc: "Skip image build and push"
+  option :no_cache, type: :boolean, default: false, desc: "Build without using Docker's build cache"
   def deploy(boot_accessories: false)
     runtime = print_runtime do
       invoke_options = deploy_options
@@ -56,6 +58,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
 
   desc "redeploy", "Deploy app to servers without bootstrapping servers, starting kamal-proxy and pruning"
   option :skip_push, aliases: "-P", type: :boolean, default: false, desc: "Skip image build and push"
+  option :no_cache, type: :boolean, default: false, desc: "Build without using Docker's build cache"
   def redeploy
     runtime = print_runtime do
       invoke_options = deploy_options
@@ -192,7 +195,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
         invoke "kamal:cli:app:remove", [], options.without(:confirmed)
         invoke "kamal:cli:proxy:remove", [], options.without(:confirmed)
         invoke "kamal:cli:accessory:remove", [ "all" ], options
-        invoke "kamal:cli:registry:logout", [], options.without(:confirmed).merge(skip_local: true)
+        invoke "kamal:cli:registry:remove", [], options.without(:confirmed).merge(skip_local: true)
       end
     end
   end
@@ -282,6 +285,8 @@ class Kamal::Cli::Main < Kamal::Cli::Base
     end
 
     def deploy_options
-      { "version" => KAMAL.config.version }.merge(options.without("skip_push"))
+      base_options = options.without("skip_push")
+      base_options = base_options.except("no_cache") unless base_options["no_cache"]
+      { "version" => KAMAL.config.version }.merge(base_options)
     end
 end

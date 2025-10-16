@@ -120,6 +120,16 @@ class CliBuildTest < CliTestCase
     end
   end
 
+  test "push with no-cache" do
+    Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
+
+    run_command("push", "--no-cache", "--verbose", fixture: :without_clone).tap do |output|
+      assert_hook_ran "pre-build", output
+      assert_match /docker --version && docker buildx version/, output
+      assert_match /docker buildx build --output=type=registry --platform linux\/amd64 --builder kamal-local-docker-container -t dhh\/app:999 -t dhh\/app:latest --label service="app" --file Dockerfile --no-cache . 2>&1 as .*@localhost/, output
+    end
+  end
+
   test "push with corrupt clone" do
     with_build_directory do |build_directory|
       stub_setup
@@ -151,6 +161,48 @@ class CliBuildTest < CliTestCase
         assert_match /Cloning repo into build directory `#{build_directory}`\.\.\..*Cloning repo into build directory `#{build_directory}`\.\.\./, output
         assert_match "Resetting local clone as `#{build_directory}` already exists...", output
         assert_match "Error preparing clone: Failed to clone repo: fatal: not a git repository, deleting and retrying...", output
+      end
+    end
+  end
+
+  test "push without builder for local registry" do
+    with_build_directory do |build_directory|
+      stub_setup
+
+      SSHKit::Backend::Abstract.any_instance.expects(:execute)
+        .with(:docker, "--version", "&&", :docker, :buildx, "version")
+
+      SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+        .with { |*args| args[0..1] == [ :docker, :login ] }
+
+      SSHKit::Backend::Abstract.any_instance.expects(:execute)
+      .with(:docker, :start, "kamal-docker-registry", "||", :docker, :run, "--detach", "-p", "127.0.0.1:5000:5000", "--name", "kamal-docker-registry", "registry:3")
+
+      SSHKit::Backend::Abstract.any_instance.expects(:execute)
+        .with(:docker, :buildx, :rm, "kamal-local-registry-docker-container")
+
+      SSHKit::Backend::Abstract.any_instance.expects(:execute)
+        .with(:docker, :buildx, :create, "--name", "kamal-local-registry-docker-container", "--driver=docker-container --driver-opt network=host")
+
+      SSHKit::Backend::Abstract.any_instance.expects(:execute)
+        .with(:docker, :buildx, :inspect, "kamal-local-registry-docker-container")
+        .raises(SSHKit::Command::Failed.new("no builder"))
+
+      SSHKit::Backend::Abstract.any_instance.expects(:execute).with { |*args| args.first.to_s.start_with?("git") }
+
+      SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+        .with(:git, "-C", anything, :"rev-parse", :HEAD)
+        .returns(Kamal::Git.revision)
+
+      SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+        .with(:git, "-C", anything, :status, "--porcelain")
+        .returns("")
+
+      SSHKit::Backend::Abstract.any_instance.expects(:execute)
+        .with(:docker, :buildx, :build, "--output=type=registry", "--platform", "linux/amd64", "--builder", "kamal-local-registry-docker-container", "-t", "localhost:5000/dhh/app:999", "-t", "localhost:5000/dhh/app:latest", "--label", "service=\"app\"", "--file", "Dockerfile", ".", "2>&1", env: {})
+
+      run_command("push", fixture: :with_local_registry_and_accessories).tap do |output|
+        assert_match /WARN Missing compatible builder, so creating a new one first/, output
       end
     end
   end
@@ -341,6 +393,18 @@ class CliBuildTest < CliTestCase
         assert_no_match(/Cloning repo into build directory/, output)
         assert_match(/docker --version && docker buildx version/, output)
         assert_match(/docker buildx build --output=type=local --platform linux\/amd64 --builder kamal-local-docker-container -t dhh\/app:999-dirty -t dhh\/app:latest-dirty --label service="app" --file Dockerfile \. 2>&1 as .*@localhost/, output)
+      end
+    end
+  end
+
+  test "dev with no-cache" do
+    with_build_directory do |build_directory|
+      Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
+
+      run_command("dev", "--no-cache", "--verbose").tap do |output|
+        assert_no_match(/Cloning repo into build directory/, output)
+        assert_match(/docker --version && docker buildx version/, output)
+        assert_match(/docker buildx build --output=type=docker --platform linux\/amd64 --builder kamal-local-docker-container -t dhh\/app:999-dirty -t dhh\/app:latest-dirty --label service="app" --file Dockerfile --no-cache \. 2>&1 as .*@localhost/, output)
       end
     end
   end

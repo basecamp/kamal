@@ -101,7 +101,7 @@ GEM
       date
       stringio
     racc (1.8.1)
-    rack (3.1.16)
+    rack (3.1.17)
     rack-session (2.1.1)
       base64 (>= 0.1.0)
       rack (>= 3.0.0)
