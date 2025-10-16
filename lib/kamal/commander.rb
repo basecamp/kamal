@@ -114,7 +114,7 @@ class Kamal::Commander
   end
 
   def loadbalancer_config
-    @loadbalancer_config ||= Kamal::Configuration::Loadbalancer.new(config: config, proxy_config: config.proxy.proxy_config)
+    @loadbalancer_config ||= Kamal::Configuration::Loadbalancer.new(config: config, proxy_config: config.proxy.proxy_config, secrets: config.secrets)
   end
 
   def loadbalancer

@@ -5,8 +5,8 @@ class Kamal::Configuration::Loadbalancer < Kamal::Configuration::Proxy
     "proxy"
   end
 
-  def initialize(config:, proxy_config:)
-    super(config: config, proxy_config: proxy_config)
+  def initialize(config:, proxy_config:, secrets:)
+    super
   end
 
   def deploy_options
