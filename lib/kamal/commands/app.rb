@@ -47,6 +47,10 @@ class Kamal::Commands::App < Kamal::Commands::Base
       xargs(docker(:stop, *role.stop_args))
   end
 
+  def stop_by_container_id(container_id)
+    docker(:stop, *role.stop_args, container_id)
+  end
+
   def info
     docker :ps, *container_filter_args
   end
