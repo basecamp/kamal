@@ -140,3 +140,11 @@ class SSHKit::Runner::Parallel
 
   prepend CompleteAll
 end
+
+# Avoid net-ssh debug, until https://github.com/net-ssh/net-ssh/pull/953 is merged
+module NetSshForwardingNoPuts
+  def puts(*)
+  end
+end
+
+Net::SSH::Service::Forward.prepend NetSshForwardingNoPuts
