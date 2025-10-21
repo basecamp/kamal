@@ -377,6 +377,51 @@ class CliMainTest < CliTestCase
     end
   end
 
+  test "rollback uses previous_container_version when no version supplied" do
+    Object.any_instance.stubs(:sleep)
+
+    Kamal::Cli::Main.any_instance.stubs(:previous_container_version).returns("123")
+
+    [ "web", "workers" ].each do |role|
+      SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+        .with(:docker, :container, :ls, "--all", "--filter", "name=^app-#{role}-123$", "--quiet", raise_on_non_zero_exit: false)
+        .returns("").at_least_once
+      SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+        .with(:docker, :container, :ls, "--all", "--filter", "name=^app-#{role}-123$", "--quiet")
+        .returns("version-to-rollback\n").at_least_once
+      SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+        .with(:sh, "-c", "'docker ps --latest --format '\\''{{.Names}}'\\'' --filter label=service=app --filter label=destination= --filter label=role=#{role} --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --format '\\''{{.Names}}'\\'' --filter label=service=app --filter label=destination= --filter label=role=#{role} --filter status=running --filter status=restarting'", "|", :head, "-1", "|", "while read line; do echo ${line#app-#{role}-}; done", raise_on_non_zero_exit: false)
+        .returns("version-to-rollback\n").at_least_once
+    end
+
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-workers-123$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
+      .returns("running").at_least_once # health check
+
+    Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
+
+    run_command("rollback", "--verbose", config_file: "deploy_with_accessories").tap do |output|
+      assert_hook_ran "pre-deploy", output
+      assert_match "docker tag dhh/app:123 dhh/app:latest", output
+      assert_match "docker run --detach --restart unless-stopped --name app-web-123", output
+      assert_match "docker container ls --all --filter name=^app-web-version-to-rollback$ --quiet | xargs docker stop", output, "Should stop the container that was previously running"
+      assert_hook_ran "post-deploy", output
+    end
+  end
+
+  test "rollback raises when previous_container_version not found" do
+    Thread.report_on_exception = false
+
+    # previous_container_version returns nil (no candidate present everywhere)
+    Kamal::Cli::Main.any_instance.stubs(:previous_container_version).returns(nil)
+
+    # Expect a RuntimeError with the explicit message from the implementation
+    err = assert_raises(RuntimeError) do
+      run_command("rollback")
+    end
+    assert_match /No previous version found that is present on all hosts\/roles to roll back to/, err.message
+  end
+
   test "remove" do
     options = { "config_file" => "test/fixtures/deploy_simple.yml", "skip_hooks" => false, "confirmed" => true }
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:proxy:remove", [], options)

@@ -80,14 +80,21 @@ class Kamal::Cli::Main < Kamal::Cli::Base
   end
 
   desc "rollback [VERSION]", "Rollback app to VERSION"
-  def rollback(version)
+  def rollback(version = nil)
     rolled_back = false
     runtime = print_runtime do
       with_lock do
         invoke_options = deploy_options
 
+        if version.to_s.strip.empty?
+          version = previous_container_version
+          unless version.present?
+            raise "No previous version found that is present on all hosts/roles to roll back to" unless version.present?
+          end
+          say "Rolling back to previous working version #{version}", :yellow
+        end
+
         KAMAL.config.version = version
-        old_version = nil
 
         if container_available?(version)
           run_hook "pre-deploy", secrets: true
@@ -278,5 +285,38 @@ class Kamal::Cli::Main < Kamal::Cli::Base
       base_options = options.without("skip_push")
       base_options = base_options.except("no_cache") unless base_options["no_cache"]
       { "version" => KAMAL.config.version }.merge(base_options)
+    end
+
+    def previous_container_version
+      versions_per_host_and_role = []
+
+      on(KAMAL.app_hosts) do |host|
+        KAMAL.roles_on(host).each do |role|
+          app = KAMAL.app(role: role, host: host)
+
+          versions_raw = capture_with_info(*app.list_versions("--all"), raise_on_non_zero_exit: false).to_s
+          versions = versions_raw.split("\n").map(&:strip).reject(&:empty?)
+
+          current_raw = capture_with_info(*app.current_running_version, raise_on_non_zero_exit: false).to_s
+          current = current_raw.strip
+
+          rollback_versions = versions - [ current ]
+          versions_per_host_and_role << rollback_versions
+        end
+      end
+
+      return nil if versions_per_host_and_role.empty?
+
+      # Intersection across all role/host remaining lists: require candidate present everywhere
+      intersection = versions_per_host_and_role.reduce { |a, b| a & b } || []
+      return nil if intersection.empty?
+
+      # Choose a version preserving the ordering from lists (assumes list_versions returns newest-first)
+      ordered_versions = versions_per_host_and_role.flatten.uniq
+      version = ordered_versions.find { |v| intersection.include?(v) }
+
+      version.presence
+    rescue SSHKit::Runner::ExecuteError, SSHKit::Runner::MultipleExecuteError
+      raise
     end
 end
