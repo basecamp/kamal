@@ -24,4 +24,26 @@ class Kamal::Cli::Registry < Kamal::Cli::Base
       on(KAMAL.hosts) { execute *KAMAL.registry.logout } unless options[:skip_remote]
     end
   end
+
+  desc "login", "Log in to remote registry locally and remotely"
+  option :skip_local, aliases: "-L", type: :boolean, default: false, desc: "Skip local login"
+  option :skip_remote, aliases: "-R", type: :boolean, default: false, desc: "Skip remote login"
+  def login
+    if KAMAL.registry.local?
+      raise "Cannot use login command with a local registry. Use `kamal registry setup` instead."
+    end
+
+    setup
+  end
+
+  desc "logout", "Log out of remote registry locally and remotely"
+  option :skip_local, aliases: "-L", type: :boolean, default: false, desc: "Skip local login"
+  option :skip_remote, aliases: "-R", type: :boolean, default: false, desc: "Skip remote login"
+  def logout
+    if KAMAL.registry.local?
+      raise "Cannot use logout command with a local registry. Use `kamal registry remove` instead."
+    end
+
+    remove
+  end
 end
