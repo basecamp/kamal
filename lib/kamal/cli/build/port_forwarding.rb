@@ -1,11 +1,14 @@
 require "concurrent/atomic/count_down_latch"
 
-class Kamal::Cli::PortForwarding
-  attr_reader :hosts, :port
+class Kamal::Cli::Build::PortForwarding
+  attr_reader :hosts, :port, :user, :proxy, :ssh_port
 
-  def initialize(hosts, port)
+  def initialize(hosts, port, user: nil, proxy: nil, ssh_port: nil)
     @hosts = hosts
     @port = port
+    @user = user
+    @proxy = proxy
+    @ssh_port = ssh_port
   end
 
   def forward
@@ -29,7 +32,7 @@ class Kamal::Cli::PortForwarding
 
     @threads = hosts.map do |host|
       Thread.new do
-        Net::SSH.start(host, KAMAL.config.ssh.user, **{ proxy: KAMAL.config.ssh.proxy }.compact) do |ssh|
+        Net::SSH.start(host, user, **{ port: ssh_port, proxy: proxy }.compact) do |ssh|
           ssh.forward.remote(port, "localhost", port, "127.0.0.1") do |remote_port, bind_address|
             if remote_port == :error
               raise "Failed to establish port forward on #{host}"
@@ -50,6 +53,6 @@ class Kamal::Cli::PortForwarding
       end
     end
 
-    raise "Timed out waiting for port forwarding to be established" unless ready.wait(10)
+    raise "Timed out waiting for port forwarding to be established" unless ready.wait(30)
   end
 end

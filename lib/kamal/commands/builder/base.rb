@@ -127,6 +127,16 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
       config.builder
     end
 
+    def registry_config
+      config.registry
+    end
+
+    def driver_options
+      if registry_config.local?
+        [ "--driver-opt", "network=host" ]
+      end
+    end
+
     def platform_options(arches)
       argumentize "--platform", arches.map { |arch| "linux/#{arch}" }.join(",") if arches.any?
     end

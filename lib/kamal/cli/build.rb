@@ -1,5 +1,3 @@
-require "uri"
-
 class Kamal::Cli::Build < Kamal::Cli::Base
   class BuildError < StandardError; end
 
@@ -38,29 +36,31 @@ class Kamal::Cli::Build < Kamal::Cli::Base
       say "Building with uncommitted changes:\n #{uncommitted_changes}", :yellow
     end
 
-    with_env(KAMAL.config.builder.secrets) do
-      run_locally do
-        begin
-          execute *KAMAL.builder.inspect_builder
-        rescue SSHKit::Command::Failed => e
-          if e.message =~ /(context not found|no builder|no compatible builder|does not exist)/
-            warn "Missing compatible builder, so creating a new one first"
-            begin
-              cli.remove
-            rescue SSHKit::Command::Failed
-              raise unless e.message =~ /(context not found|no builder|does not exist)/
+    forward_local_registry_port_for_remote_builder do
+      with_env(KAMAL.config.builder.secrets) do
+        run_locally do
+          begin
+            execute *KAMAL.builder.inspect_builder
+          rescue SSHKit::Command::Failed => e
+            if e.message =~ /(context not found|no builder|no compatible builder|does not exist)/
+              warn "Missing compatible builder, so creating a new one first"
+              begin
+                cli.remove
+              rescue SSHKit::Command::Failed
+                raise unless e.message =~ /(context not found|no builder|does not exist)/
+              end
+              cli.create
+            else
+              raise
             end
-            cli.create
-          else
-            raise
           end
-        end
 
-        # Get the command here to ensure the Dir.chdir doesn't interfere with it
-        push = KAMAL.builder.push(cli.options[:output], no_cache: cli.options[:no_cache])
+          # Get the command here to ensure the Dir.chdir doesn't interfere with it
+          push = KAMAL.builder.push(cli.options[:output], no_cache: cli.options[:no_cache])
 
-        KAMAL.with_verbosity(:debug) do
-          Dir.chdir(KAMAL.config.builder.build_directory) { execute *push, env: KAMAL.builder.push_env }
+          KAMAL.with_verbosity(:debug) do
+            Dir.chdir(KAMAL.config.builder.build_directory) { execute *push, env: KAMAL.builder.push_env }
+          end
         end
       end
     end
@@ -70,7 +70,7 @@ class Kamal::Cli::Build < Kamal::Cli::Base
   def pull
     login_to_registry_remotely unless KAMAL.registry.local?
 
-    forward_local_registry_port do
+    forward_local_registry_port(KAMAL.hosts) do
       if (first_hosts = mirror_hosts).any?
         #  Pull on a single host per mirror first to seed them
         say "Pulling image on #{first_hosts.join(", ")} to seed the #{"mirror".pluralize(first_hosts.count)}...", :magenta
@@ -210,11 +210,18 @@ class Kamal::Cli::Build < Kamal::Cli::Base
       end
     end
 
-    def forward_local_registry_port(&block)
+    def forward_local_registry_port_for_remote_builder(&block)
+      if KAMAL.builder.remote?
+        remote_uri = URI(KAMAL.config.builder.remote)
+        forward_local_registry_port([ remote_uri.host ], user: remote_uri.user, proxy: nil, ssh_port: remote_uri.port, &block)
+      else
+        yield
+      end
+    end
+
+    def forward_local_registry_port(hosts, user: KAMAL.config.ssh.user, proxy: KAMAL.config.ssh.proxy, ssh_port: nil, &block)
       if KAMAL.config.registry.local?
-        Kamal::Cli::PortForwarding.
-          new(KAMAL.hosts, KAMAL.config.registry.local_port).
-          forward(&block)
+        PortForwarding.new(hosts, KAMAL.config.registry.local_port, user: user, proxy: proxy, ssh_port: ssh_port).forward(&block)
       else
         yield
       end

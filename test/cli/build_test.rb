@@ -182,7 +182,7 @@ class CliBuildTest < CliTestCase
         .with(:docker, :buildx, :rm, "kamal-local-registry-docker-container")
 
       SSHKit::Backend::Abstract.any_instance.expects(:execute)
-        .with(:docker, :buildx, :create, "--name", "kamal-local-registry-docker-container", "--driver=docker-container --driver-opt network=host")
+        .with(:docker, :buildx, :create, "--name", "kamal-local-registry-docker-container", "--driver=docker-container", "--driver-opt", "network=host")
 
       SSHKit::Backend::Abstract.any_instance.expects(:execute)
         .with(:docker, :buildx, :inspect, "kamal-local-registry-docker-container")
@@ -406,6 +406,41 @@ class CliBuildTest < CliTestCase
         assert_match(/docker --version && docker buildx version/, output)
         assert_match(/docker buildx build --output=type=docker --platform linux\/amd64 --builder kamal-local-docker-container -t dhh\/app:999-dirty -t dhh\/app:latest-dirty --label service="app" --file Dockerfile --no-cache \. 2>&1 as .*@localhost/, output)
       end
+    end
+  end
+
+  test "create with local registry" do
+    run_command("create", fixture: :with_local_registry).tap do |output|
+      assert_match /docker buildx create --name kamal-local-registry-docker-container --driver=docker-container --driver-opt network=host/, output
+    end
+  end
+
+  test "create with local registry and remote builder" do
+    run_command("create", fixture: :with_local_registry_and_remote_builder).tap do |output|
+      # Verify remote builder with local-registry in name
+      assert_match /docker buildx create --name kamal-remote-ssh---app-1-1-1-5-local-registry/, output
+      assert_match /--driver-opt network=host/, output
+    end
+  end
+
+  test "pull with local registry" do
+    # Verify port forwarding is established for all app hosts
+    port_forwarding_mock = mock("port_forwarding")
+    port_forwarding_mock.expects(:forward).yields
+    Kamal::Cli::Build::PortForwarding.expects(:new)
+      .with([ "1.1.1.1", "1.1.1.2" ], 5000, user: "root", proxy: nil, ssh_port: nil)
+      .returns(port_forwarding_mock)
+
+    run_command("pull", fixture: :with_local_registry).tap do |output|
+      assert_match /docker pull localhost:5000\/dhh\/app:999/, output
+    end
+  end
+
+  test "create with local registry and remote builder with custom port" do
+    run_command("create", fixture: :with_local_registry_and_remote_builder_with_port).tap do |output|
+      # Verify remote builder with local-registry in name includes custom port in context name
+      assert_match /docker buildx create --name kamal-remote-ssh---app-1-1-1-5-2222-local-registry/, output
+      assert_match /--driver-opt network=host/, output
     end
   end
 
