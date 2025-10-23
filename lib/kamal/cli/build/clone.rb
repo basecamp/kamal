@@ -1,5 +1,3 @@
-require "uri"
-
 class Kamal::Cli::Build::Clone
   attr_reader :sshkit
   delegate :info, :error, :execute, :capture_with_info, to: :sshkit

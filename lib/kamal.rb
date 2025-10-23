@@ -7,6 +7,7 @@ require "zeitwerk"
 require "yaml"
 require "tmpdir"
 require "pathname"
+require "uri"
 
 loader = Zeitwerk::Loader.for_gem
 loader.ignore(File.join(__dir__, "kamal", "sshkit_with_ext.rb"))

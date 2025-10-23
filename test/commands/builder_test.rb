@@ -241,6 +241,36 @@ class CommandsBuilderTest < ActiveSupport::TestCase
     end
   end
 
+  test "local builder with local registry includes network host driver option" do
+    builder = new_builder_command(registry: { "server" => "localhost:5000" })
+    assert_equal "local", builder.name
+    assert_equal \
+      "docker buildx create --name kamal-local-registry-docker-container --driver=docker-container --driver-opt network=host",
+      builder.create.join(" ")
+  end
+
+  test "remote builder with local registry" do
+    builder = new_builder_command(
+      registry: { "server" => "localhost:5000" },
+      builder: { "arch" => remote_arch, "remote" => "ssh://app@1.1.1.5" }
+    )
+    assert_equal "remote", builder.name
+    assert_equal \
+      "docker context create kamal-remote-ssh---app-1-1-1-5-local-registry-context --description 'kamal-remote-ssh---app-1-1-1-5-local-registry host' --docker 'host=ssh://app@1.1.1.5' ; docker buildx create --name kamal-remote-ssh---app-1-1-1-5-local-registry --driver-opt network=host kamal-remote-ssh---app-1-1-1-5-local-registry-context",
+      builder.create.join(" ")
+  end
+
+  test "hybrid builder with local registry" do
+    builder = new_builder_command(
+      registry: { "server" => "localhost:5000" },
+      builder: { "arch" => [ "amd64", "arm64" ], "remote" => "ssh://app@1.1.1.5" }
+    )
+    assert_equal "hybrid", builder.name
+    assert_equal \
+      "docker buildx create --platform linux/amd64 --name kamal-hybrid-docker-container-ssh---app-1-1-1-5-local-registry --driver=docker-container --driver-opt network=host && docker context create kamal-hybrid-docker-container-ssh---app-1-1-1-5-local-registry-context --description 'kamal-hybrid-docker-container-ssh---app-1-1-1-5-local-registry host' --docker 'host=ssh://app@1.1.1.5' && docker buildx create --platform linux/arm64 --append --name kamal-hybrid-docker-container-ssh---app-1-1-1-5-local-registry --driver-opt network=host kamal-hybrid-docker-container-ssh---app-1-1-1-5-local-registry-context",
+      builder.create.join(" ")
+  end
+
   private
     def new_builder_command(additional_config = {})
       Kamal::Configuration.new(@config.deep_merge(additional_config), version: "123").then do |config|

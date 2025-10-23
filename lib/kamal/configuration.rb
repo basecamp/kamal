@@ -76,6 +76,7 @@ class Kamal::Configuration
     ensure_no_traefik_reboot_hooks
     ensure_one_host_for_ssl_roles
     ensure_unique_hosts_for_ssl_roles
+    ensure_local_registry_remote_builder_has_ssh_url
   end
 
   def version=(version)
@@ -359,6 +360,16 @@ class Kamal::Configuration
       duplicates = hosts.tally.filter_map { |host, count| host if count > 1 }
 
       raise Kamal::ConfigurationError, "Different roles can't share the same host for SSL: #{duplicates.join(", ")}" if duplicates.any?
+
+      true
+    end
+
+    def ensure_local_registry_remote_builder_has_ssh_url
+      if registry.local? && builder.remote?
+        unless URI(builder.remote).scheme == "ssh"
+          raise Kamal::ConfigurationError, "Local registry with remote builder requires an SSH URL (e.g., ssh://user@host)"
+        end
+      end
 
       true
     end

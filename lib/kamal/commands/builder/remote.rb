@@ -34,11 +34,15 @@ class Kamal::Commands::Builder::Remote < Kamal::Commands::Builder::Base
 
   private
     def builder_name
-      "kamal-remote-#{remote.gsub(/[^a-z0-9_-]/, "-")}"
+      "kamal-remote-#{remote_builder_name_suffix}"
     end
 
     def remote_context_name
       "#{builder_name}-context"
+    end
+
+    def remote_builder_name_suffix
+      "#{remote.gsub(/[^a-z0-9_-]/, "-")}#{registry_config.local? ? "-local-registry" : "" }"
     end
 
     def inspect_buildx
@@ -62,7 +66,7 @@ class Kamal::Commands::Builder::Remote < Kamal::Commands::Builder::Base
     end
 
     def create_buildx
-      docker :buildx, :create, "--name", builder_name, remote_context_name
+      docker :buildx, :create, "--name", builder_name, *driver_options, remote_context_name
     end
 
     def remove_buildx
