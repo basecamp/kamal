@@ -428,8 +428,14 @@ class CliBuildTest < CliTestCase
     port_forwarding_mock = mock("port_forwarding")
     port_forwarding_mock.expects(:forward).yields
     Kamal::Cli::Build::PortForwarding.expects(:new)
-      .with([ "1.1.1.1", "1.1.1.2" ], 5000, user: "root", proxy: nil, ssh_port: nil)
-      .returns(port_forwarding_mock)
+      .with([ "1.1.1.1", "1.1.1.2" ], 5000, has_entries(
+        user: "root",
+        port: 22,
+        logger: instance_of(Logger),
+        keepalive: true,
+        keepalive_interval: 30
+      )
+    ).returns(port_forwarding_mock)
 
     run_command("pull", fixture: :with_local_registry).tap do |output|
       assert_match /docker pull localhost:5000\/dhh\/app:999/, output

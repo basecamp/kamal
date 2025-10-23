@@ -70,7 +70,7 @@ class Kamal::Cli::Build < Kamal::Cli::Base
   def pull
     login_to_registry_remotely unless KAMAL.registry.local?
 
-    forward_local_registry_port(KAMAL.hosts) do
+    forward_local_registry_port(KAMAL.hosts, **KAMAL.config.ssh.options) do
       if (first_hosts = mirror_hosts).any?
         #  Pull on a single host per mirror first to seed them
         say "Pulling image on #{first_hosts.join(", ")} to seed the #{"mirror".pluralize(first_hosts.count)}...", :magenta
@@ -213,17 +213,27 @@ class Kamal::Cli::Build < Kamal::Cli::Base
     def forward_local_registry_port_for_remote_builder(&block)
       if KAMAL.builder.remote?
         remote_uri = URI(KAMAL.config.builder.remote)
-        forward_local_registry_port([ remote_uri.host ], user: remote_uri.user, proxy: nil, ssh_port: remote_uri.port, &block)
+        forward_local_registry_port([ remote_uri.host ], **remote_builder_ssh_options(remote_uri), &block)
       else
         yield
       end
     end
 
-    def forward_local_registry_port(hosts, user: KAMAL.config.ssh.user, proxy: KAMAL.config.ssh.proxy, ssh_port: nil, &block)
+    def forward_local_registry_port(hosts, **ssh_options, &block)
       if KAMAL.config.registry.local?
-        PortForwarding.new(hosts, KAMAL.config.registry.local_port, user: user, proxy: proxy, ssh_port: ssh_port).forward(&block)
+        say "Setting up local registry port forwarding to #{hosts.join(', ')}..."
+        PortForwarding.new(hosts, KAMAL.config.registry.local_port, **ssh_options).forward(&block)
       else
         yield
       end
+    end
+
+    def remote_builder_ssh_options(remote_uri)
+      { user: remote_uri.user,
+        port: remote_uri.port,
+        keepalive: KAMAL.config.ssh.options[:keepalive],
+        keepalive_interval: KAMAL.config.ssh.options[:keepalive_interval],
+        logger: KAMAL.config.ssh.options[:logger]
+      }.compact
     end
 end
