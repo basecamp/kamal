@@ -89,20 +89,21 @@ class Kamal::Cli::Main < Kamal::Cli::Base
         if version.to_s.strip.empty?
           version = previous_container_version
           unless version.present?
-            raise "No previous version found that is present on all hosts/roles to roll back to" unless version.present?
+            say "No previous version is available on all hosts — aborting automated rollback. Run `kamal app containers` to list available versions.", :red
           end
-          say "Rolling back to previous working version #{version}", :yellow
         end
 
-        KAMAL.config.version = version
+        if version.present?
+          KAMAL.config.version = version
 
-        if container_available?(version)
-          run_hook "pre-deploy", secrets: true
+          if container_available?(version)
+            run_hook "pre-deploy", secrets: true
 
-          invoke "kamal:cli:app:boot", [], invoke_options.merge(version: version)
-          rolled_back = true
-        else
-          say "The app version '#{version}' is not available as a container (use 'kamal app containers' for available versions)", :red
+            invoke "kamal:cli:app:boot", [], invoke_options.merge(version: version)
+            rolled_back = true
+          else
+            say "The app version '#{version}' is not available as a container (use 'kamal app containers' for available versions)", :red
+          end
         end
       end
     end
@@ -307,14 +308,11 @@ class Kamal::Cli::Main < Kamal::Cli::Base
 
       return nil if versions_per_host_and_role.empty?
 
-      # Intersection across all role/host remaining lists: require candidate present everywhere
       intersection = versions_per_host_and_role.reduce { |a, b| a & b } || []
       return nil if intersection.empty?
 
-      # Choose a version preserving the ordering from lists (assumes list_versions returns newest-first)
       ordered_versions = versions_per_host_and_role.flatten.uniq
       version = ordered_versions.find { |v| intersection.include?(v) }
-
       version.presence
     rescue SSHKit::Runner::ExecuteError, SSHKit::Runner::MultipleExecuteError
       raise

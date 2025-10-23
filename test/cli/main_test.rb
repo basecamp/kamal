@@ -377,7 +377,7 @@ class CliMainTest < CliTestCase
     end
   end
 
-  test "rollback uses previous_container_version when no version supplied" do
+    test "rollback uses previous_container_version when no version supplied" do
     Object.any_instance.stubs(:sleep)
 
     Kamal::Cli::Main.any_instance.stubs(:previous_container_version).returns("123")
@@ -396,7 +396,7 @@ class CliMainTest < CliTestCase
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
       .with(:docker, :container, :ls, "--all", "--filter", "name=^app-workers-123$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
-      .returns("running").at_least_once # health check
+      .returns("running").at_least_once
 
     Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
 
@@ -409,18 +409,18 @@ class CliMainTest < CliTestCase
     end
   end
 
-  test "rollback raises when previous_container_version not found" do
+  test "rollback prints helpful message and returns when previous_container_version not found" do
     Thread.report_on_exception = false
 
-    # previous_container_version returns nil (no candidate present everywhere)
     Kamal::Cli::Main.any_instance.stubs(:previous_container_version).returns(nil)
 
-    # Expect a RuntimeError with the explicit message from the implementation
-    err = assert_raises(RuntimeError) do
-      run_command("rollback")
-    end
-    assert_match /No previous version found that is present on all hosts\/roles to roll back to/, err.message
+    output = run_command("rollback", "--verbose")
+
+    assert_match /No previous version is available on all hosts\s*—\s*aborting automated rollback\./i, output
+    assert_match /kamal app containers/, output, "Message should suggest `kamal app containers`"
+    assert_no_match /docker run --detach --restart unless-stopped/, output
   end
+
 
   test "remove" do
     options = { "config_file" => "test/fixtures/deploy_simple.yml", "skip_hooks" => false, "confirmed" => true }
