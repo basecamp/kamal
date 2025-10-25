@@ -54,7 +54,7 @@ class Kamal::Configuration
 
     # Eager load config to validate it, these are first as they have dependencies later on
     @servers = Servers.new(config: self)
-    @registry = Registry.new(config: @raw_config, secrets: secrets)
+    @registry = Registry.new(config: @raw_config, secrets: secrets, skip_validation: skip_registry_validation?)
 
     @accessories = @raw_config.accessories&.keys&.collect { |name| Accessory.new(name, config: self) } || []
     @aliases = @raw_config.aliases&.keys&.to_h { |name| [ name, Alias.new(name, config: self) ] } || {}
@@ -377,5 +377,9 @@ class Kamal::Configuration
         else
           raise "Can't use commit hash as version, no git repository found in #{Dir.pwd}"
         end
+    end
+
+    def skip_registry_validation?
+      true if raw_config.registry&.dig("skip_validation") == true
     end
 end

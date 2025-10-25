@@ -27,7 +27,7 @@ class ConfigurationTest < ActiveSupport::TestCase
     ENV.delete("VERSION")
   end
 
-  %i[ service image registry ].each do |key|
+    %i[ service image registry ].each do |key|
     test "#{key} config required" do
       assert_raise(Kamal::ConfigurationError) do
         Kamal::Configuration.new @deploy.tap { |config| config.delete key }
@@ -42,6 +42,24 @@ class ConfigurationTest < ActiveSupport::TestCase
       end
     end
   end
+
+  test "invalid registry config still passes validation when skip_validation is true" do
+    assert_nothing_raised do
+      deploy_skip_validation = @deploy.dup.merge(
+        registry: { "skip_validation" => true }
+      )
+      Kamal::Configuration.new(deploy_skip_validation)
+    end
+  end
+
+  test "invalid registry config still passes validation when skip_validation is false" do
+  assert_raises(Kamal::ConfigurationError) do
+    deploy_fail_validation = @deploy.dup.merge(
+      registry: { "skip_validation" => false }
+    )
+    Kamal::Configuration.new(deploy_fail_validation)
+  end
+end
 
   test "image uses service name if registry is local" do
     assert_equal "app", Kamal::Configuration.new(@deploy.tap {

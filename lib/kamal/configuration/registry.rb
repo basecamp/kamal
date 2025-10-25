@@ -1,10 +1,10 @@
 class Kamal::Configuration::Registry
   include Kamal::Configuration::Validation
 
-  def initialize(config:, secrets:, context: "registry")
+  def initialize(config:, secrets:, context: "registry", skip_validation: false)
     @registry_config = config["registry"] || {}
     @secrets = secrets
-    validate! registry_config, context: context, with: Kamal::Configuration::Validator::Registry
+    validate! registry_config, context: context, with: Kamal::Configuration::Validator::Registry unless skip_validation
   end
 
   def server
