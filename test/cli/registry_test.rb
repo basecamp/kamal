@@ -76,6 +76,62 @@ class CliRegistryTest < CliTestCase
     end
   end
 
+  test "login" do
+    run_command("login").tap do |output|
+      assert_match /docker login -u \[REDACTED\] -p \[REDACTED\] as .*@localhost/, output
+      assert_match /docker login -u \[REDACTED\] -p \[REDACTED\] on 1.1.1.\d/, output
+    end
+  end
+
+  test "login skip local" do
+    run_command("login", "-L").tap do |output|
+      assert_no_match /docker login -u \[REDACTED\] -p \[REDACTED\] as .*@localhost/, output
+      assert_match /docker login -u \[REDACTED\] -p \[REDACTED\] on 1.1.1.\d/, output
+    end
+  end
+
+  test "login skip remote" do
+    run_command("login", "-R").tap do |output|
+      assert_match /docker login -u \[REDACTED\] -p \[REDACTED\] as .*@localhost/, output
+      assert_no_match /docker login -u \[REDACTED\] -p \[REDACTED\] on 1.1.1.\d/, output
+    end
+  end
+
+  test "logout" do
+    run_command("logout").tap do |output|
+      assert_match /docker logout as .*@localhost/, output
+      assert_match /docker logout on 1.1.1.\d/, output
+    end
+  end
+
+  test "logout skip local" do
+    run_command("logout", "-L").tap do |output|
+      assert_no_match /docker logout as .*@localhost/, output
+      assert_match /docker logout on 1.1.1.\d/, output
+    end
+  end
+
+  test "logout skip remote" do
+    run_command("logout", "-R").tap do |output|
+      assert_match /docker logout as .*@localhost/, output
+      assert_no_match /docker logout on 1.1.1.\d/, output
+    end
+  end
+
+  test "login with local registry raises error" do
+    error = assert_raises(RuntimeError) do
+      run_command("login", fixture: :with_local_registry)
+    end
+    assert_match /Cannot use login command with a local registry. Use `kamal registry setup` instead./, error.message
+  end
+
+  test "logout with local registry raises error" do
+    error = assert_raises(RuntimeError) do
+      run_command("logout", fixture: :with_local_registry)
+    end
+    assert_match /Cannot use logout command with a local registry. Use `kamal registry remove` instead./, error.message
+  end
+
   private
     def run_command(*command, fixture: :with_accessories)
       stdouted { Kamal::Cli::Registry.start([ *command, "-c", "test/fixtures/deploy_#{fixture}.yml" ]) }
