@@ -27,7 +27,7 @@ class ConfigurationTest < ActiveSupport::TestCase
     ENV.delete("VERSION")
   end
 
-    %i[ service image registry ].each do |key|
+  %i[ service image registry ].each do |key|
     test "#{key} config required" do
       assert_raise(Kamal::ConfigurationError) do
         Kamal::Configuration.new @deploy.tap { |config| config.delete key }
