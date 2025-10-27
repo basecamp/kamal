@@ -24,8 +24,12 @@ class Kamal::Configuration::Validator
             example_value = example[key]
 
             if example_value == "..."
-              unless key.to_s == "proxy" && boolean?(value.class)
-                validate_type! value, *(Array if key == :servers), Hash
+              if key.to_s == "config"
+                validate_ssh_config!(value)
+              else
+                unless key.to_s == "proxy" && boolean?(value.class)
+                  validate_type! value, *(Array if key == :servers), Hash
+                end
               end
             elsif key.to_s == "ssl"
                 validate_type! value, TrueClass, FalseClass, Hash
@@ -129,6 +133,16 @@ class Kamal::Configuration::Validator
       end
     end
 
+    def validate_ssh_config!(config)
+      if config.is_a?(Array)
+        validate_array_of! config, String
+      elsif !!config == config || config.is_a?(String)
+        # Booleans and Strings are allowed
+      else
+        type_error(TrueClass, FalseClass, String, Array)
+      end
+    end
+
     def validate_type!(value, *types)
       type_error(*types) unless types.any? { |type| valid_type?(value, type) }
     end
@@ -138,7 +152,8 @@ class Kamal::Configuration::Validator
     end
 
     def type_error(*expected_types)
-      error "should be #{expected_types.map { |type| type_description(type) }.join(" or ")}"
+      descriptions = expected_types.map { |type| type_description(type) }.uniq
+      error "should be #{descriptions.join(" or ")}"
     end
 
     def unknown_keys_error(unknown_keys)
