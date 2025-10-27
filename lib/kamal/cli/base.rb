@@ -9,7 +9,7 @@ module Kamal::Cli
     def self.dynamic_command_class() Kamal::Cli::Alias::Command end
 
     class_option :verbose, type: :boolean, aliases: "-v", desc: "Detailed logging"
-    class_option :quiet, type: :boolean, aliases: "-q", default: false, desc: "Minimal logging"
+    class_option :quiet, type: :boolean, aliases: "-q", desc: "Minimal logging"
 
     class_option :version, desc: "Run commands against a specific app version"
 

@@ -57,5 +57,6 @@ accessories:
       - web
 aliases:
   whome: version
-  worker_hostname: app exec -r workers -q --reuse hostname
+  worker_hostname: app exec -r workers --reuse hostname
+  worker_hostname_quiet: app exec -r workers -q --reuse hostname
   uname: server exec -q -p uname
