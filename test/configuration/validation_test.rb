@@ -83,6 +83,7 @@ class ConfigurationValidationTest < ActiveSupport::TestCase
   test "ssh" do
     assert_error "ssh: unknown key: foo", ssh: { "foo" => "bar" }
     assert_error "ssh/user: should be a string", ssh: { "user" => [] }
+    assert_error "ssh/config: should be a boolean or a string or an array", ssh: { "config" => 1 }
   end
 
   test "sshkit" do
