@@ -24,12 +24,8 @@ class Kamal::Configuration::Validator
             example_value = example[key]
 
             if example_value == "..."
-              if key.to_s == "config"
-                validate_ssh_config!(value)
-              else
-                unless key.to_s == "proxy" && boolean?(value.class)
-                  validate_type! value, *(Array if key == :servers), Hash
-                end
+              unless key.to_s == "proxy" && boolean?(value.class)
+                validate_type! value, *(Array if key == :servers), Hash
               end
             elsif key.to_s == "ssl"
                 validate_type! value, TrueClass, FalseClass, Hash
@@ -38,6 +34,8 @@ class Kamal::Configuration::Validator
             elsif example_value.is_a?(Array)
               if key == "arch"
                 validate_array_of_or_type! value, example_value.first.class
+              elsif key.to_s == "config"
+                validate_ssh_config!(value)
               else
                 validate_array_of! value, example_value.first.class
               end
@@ -136,7 +134,7 @@ class Kamal::Configuration::Validator
     def validate_ssh_config!(config)
       if config.is_a?(Array)
         validate_array_of! config, String
-      elsif !!config == config || config.is_a?(String)
+      elsif boolean?(config.class) || config.is_a?(String)
         # Booleans and Strings are allowed
       else
         type_error(TrueClass, FalseClass, String, Array)
