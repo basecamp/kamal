@@ -26,6 +26,18 @@ class ConfigurationSshTest < ActiveSupport::TestCase
 
     config = Kamal::Configuration.new(@deploy.tap { |c| c.merge!(ssh: { "port" => 2222 }) })
     assert_equal 2222, config.ssh.options[:port]
+
+    config = Kamal::Configuration.new(@deploy.tap { |c| c.merge!(ssh: { "config" => true }) })
+    assert_equal true, config.ssh.options[:config]
+
+    config = Kamal::Configuration.new(@deploy.tap { |c| c.merge!(ssh: { "config" => false }) })
+    assert_equal false, config.ssh.options[:config]
+
+    config = Kamal::Configuration.new(@deploy.tap { |c| c.merge!(ssh: { "config" => "~/config.mine" }) })
+    assert_equal "~/config.mine", config.ssh.options[:config]
+
+    config = Kamal::Configuration.new(@deploy.tap { |c| c.merge!(ssh: { "config" => [ "~/config.mine.1", "~/config.mine.2" ] }) })
+    assert_equal [ "~/config.mine.1", "~/config.mine.2" ], config.ssh.options[:config]
   end
 
   test "ssh options with proxy host" do
