@@ -112,8 +112,9 @@ class Kamal::Cli::Main < Kamal::Cli::Base
 
   desc "audit", "Show audit log from servers"
   def audit
+    quiet = options[:quiet]
     on(KAMAL.hosts) do |host|
-      puts_by_host host, capture_with_info(*KAMAL.auditor.reveal)
+      puts_by_host host, capture_with_info(*KAMAL.auditor.reveal), quiet: quiet
     end
   end
 

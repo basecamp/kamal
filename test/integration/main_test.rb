@@ -92,6 +92,9 @@ class MainTest < IntegrationTest
 
     output = kamal :uname, "-o", capture: true
     assert_match "App Host: vm1\nGNU/Linux", output
+
+    output = kamal :uname_quiet, "-o", capture: true
+    assert_match "GNU/Linux", output
   end
 
   test "setup and remove" do
