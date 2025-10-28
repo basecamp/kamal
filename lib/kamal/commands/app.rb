@@ -77,6 +77,10 @@ class Kamal::Commands::App < Kamal::Commands::Base
     make_directory role.env_directory
   end
 
+  def all_containers
+    docker :ps, *image_filter_args, "--format", '"{{.Names}}"'
+  end
+
   private
     def latest_image_id
       docker :image, :ls, *argumentize("--filter", "reference=#{config.latest_image}"), "--format", "'{{.ID}}'"
