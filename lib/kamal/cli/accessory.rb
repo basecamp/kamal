@@ -128,12 +128,13 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
 
   desc "details [NAME]", "Show details about accessory on host (use NAME=all to show all accessories)"
   def details(name)
+    quiet = options[:quiet]
     if name == "all"
       KAMAL.accessory_names.each { |accessory_name| details(accessory_name) }
     else
       type = "Accessory #{name}"
       with_accessory(name) do |accessory, hosts|
-        on(hosts) { puts_by_host host, capture_with_info(*accessory.info), type: type }
+        on(hosts) { puts_by_host host, capture_with_info(*accessory.info), type: type, quiet: quiet }
       end
     end
   end
@@ -145,6 +146,8 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
     pre_connect_if_required
 
     cmd = Kamal::Utils.join_commands(cmd)
+    quiet = options[:quiet]
+
     with_accessory(name) do |accessory, hosts|
       case
       when options[:interactive] && options[:reuse]
@@ -160,7 +163,7 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
         say "Launching command from existing container...", :magenta
         on(hosts) do |host|
           execute *KAMAL.auditor.record("Executed cmd '#{cmd}' on #{name} accessory"), verbosity: :debug
-          puts_by_host host, capture_with_info(*accessory.execute_in_existing_container(cmd))
+          puts_by_host host, capture_with_info(*accessory.execute_in_existing_container(cmd)), quiet: quiet
         end
 
       else
@@ -168,7 +171,7 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
         on(hosts) do |host|
           execute *KAMAL.registry.login
           execute *KAMAL.auditor.record("Executed cmd '#{cmd}' on #{name} accessory"), verbosity: :debug
-          puts_by_host host, capture_with_info(*accessory.execute_in_new_container(cmd))
+          puts_by_host host, capture_with_info(*accessory.execute_in_new_container(cmd)), quiet: quiet
         end
       end
     end

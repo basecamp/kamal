@@ -92,11 +92,12 @@ class Kamal::Cli::App < Kamal::Cli::Base
   # FIXME: Drop in favor of just containers?
   desc "details", "Show details about app containers"
   def details
+    quiet = options[:quiet]
     on(KAMAL.app_hosts) do |host|
       roles = KAMAL.roles_on(host)
 
       roles.each do |role|
-        puts_by_host host, capture_with_info(*KAMAL.app(role: role, host: host).info)
+        puts_by_host host, capture_with_info(*KAMAL.app(role: role, host: host).info), quiet: quiet
       end
     end
   end
@@ -120,6 +121,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
     cmd = Kamal::Utils.join_commands(cmd)
     env = options[:env]
     detach = options[:detach]
+    quiet = options[:quiet]
     case
     when options[:interactive] && options[:reuse]
       say "Get current version of running container...", :magenta unless options[:version]
@@ -148,7 +150,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
 
           roles.each do |role|
             execute *KAMAL.auditor.record("Executed cmd '#{cmd}' on app version #{version}", role: role), verbosity: :debug
-            puts_by_host host, capture_with_info(*KAMAL.app(role: role, host: host).execute_in_existing_container(cmd, env: env))
+            puts_by_host host, capture_with_info(*KAMAL.app(role: role, host: host).execute_in_existing_container(cmd, env: env)), quiet: quiet
           end
         end
       end
@@ -164,7 +166,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
 
           roles.each do |role|
             execute *KAMAL.auditor.record("Executed cmd '#{cmd}' on app version #{version}"), verbosity: :debug
-            puts_by_host host, capture_with_info(*KAMAL.app(role: role, host: host).execute_in_new_container(cmd, env: env, detach: detach))
+            puts_by_host host, capture_with_info(*KAMAL.app(role: role, host: host).execute_in_new_container(cmd, env: env, detach: detach)), quiet: quiet
           end
         end
       end
@@ -173,12 +175,14 @@ class Kamal::Cli::App < Kamal::Cli::Base
 
   desc "containers", "Show app containers on servers"
   def containers
-    on(KAMAL.app_hosts) { |host| puts_by_host host, capture_with_info(*KAMAL.app.list_containers) }
+    quiet = options[:quiet]
+    on(KAMAL.app_hosts) { |host| puts_by_host host, capture_with_info(*KAMAL.app.list_containers), quiet: quiet }
   end
 
   desc "stale_containers", "Detect app stale containers"
   option :stop, aliases: "-s", type: :boolean, default: false, desc: "Stop the stale containers found"
   def stale_containers
+    quiet = options[:quiet]
     stop = options[:stop]
 
     with_lock_if_stopping do
@@ -192,10 +196,10 @@ class Kamal::Cli::App < Kamal::Cli::Base
 
           versions.each do |version|
             if stop
-              puts_by_host host, "Stopping stale container for role #{role} with version #{version}"
+              puts_by_host host, "Stopping stale container for role #{role} with version #{version}", quiet: quiet
               execute *app.stop(version: version), raise_on_non_zero_exit: false
             else
-              puts_by_host host,  "Detected stale container for role #{role} with version #{version} (use `kamal app stale_containers --stop` to stop)"
+              puts_by_host host,  "Detected stale container for role #{role} with version #{version} (use `kamal app stale_containers --stop` to stop)", quiet: quiet
             end
           end
         end
@@ -205,7 +209,8 @@ class Kamal::Cli::App < Kamal::Cli::Base
 
   desc "images", "Show app images on servers"
   def images
-    on(KAMAL.app_hosts) { |host| puts_by_host host, capture_with_info(*KAMAL.app.list_images) }
+    quiet = options[:quiet]
+    on(KAMAL.app_hosts) { |host| puts_by_host host, capture_with_info(*KAMAL.app.list_images), quiet: quiet }
   end
 
   desc "logs", "Show log lines from app on servers (use --help to show options)"
@@ -224,6 +229,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
     since = options[:since]
     container_id = options[:container_id]
     timestamps = !options[:skip_timestamps]
+    quiet = options[:quiet]
 
     if options[:follow]
       lines = options[:lines].presence || ((since || grep) ? nil : 10) # Default to 10 lines if since or grep isn't set
@@ -246,9 +252,9 @@ class Kamal::Cli::App < Kamal::Cli::Base
 
         roles.each do |role|
           begin
-            puts_by_host host, capture_with_info(*KAMAL.app(role: role, host: host).logs(container_id: container_id, timestamps: timestamps, since: since, lines: lines, grep: grep, grep_options: grep_options))
+            puts_by_host host, capture_with_info(*KAMAL.app(role: role, host: host).logs(container_id: container_id, timestamps: timestamps, since: since, lines: lines, grep: grep, grep_options: grep_options)), quiet: quiet
           rescue SSHKit::Command::Failed
-            puts_by_host host, "Nothing found"
+            puts_by_host host, "Nothing found", quiet: quiet
           end
         end
       end
@@ -352,9 +358,10 @@ class Kamal::Cli::App < Kamal::Cli::Base
 
   desc "version", "Show app version currently running on servers"
   def version
+    quiet = options[:quiet]
     on(KAMAL.app_hosts) do |host|
       role = KAMAL.roles_on(host).first
-      puts_by_host host, capture_with_info(*KAMAL.app(role: role, host: host).current_running_version).strip
+      puts_by_host host, capture_with_info(*KAMAL.app(role: role, host: host).current_running_version).strip, quiet: quiet
     end
   end
 
