@@ -105,6 +105,35 @@ class ConfigurationProxyTest < ActiveSupport::TestCase
     end
   end
 
+  test "health check host in deploy options" do
+    @deploy[:proxy] = {
+      "host" => "example.com",
+      "healthcheck" => {
+        "path" => "/up",
+        "host" => "example.com"
+      }
+    }
+
+    proxy = config.proxy
+    options = proxy.deploy_options
+    assert_equal "example.com", options[:"health-check-host"]
+    assert_equal "/up", options[:"health-check-path"]
+  end
+
+  test "health check without custom host" do
+    @deploy[:proxy] = {
+      "host" => "example.com",
+      "healthcheck" => {
+        "path" => "/up"
+      }
+    }
+
+    proxy = config.proxy
+    options = proxy.deploy_options
+    assert_nil options[:"health-check-host"]
+    assert_equal "/up", options[:"health-check-path"]
+  end
+
   private
     def config
       Kamal::Configuration.new(@deploy)
