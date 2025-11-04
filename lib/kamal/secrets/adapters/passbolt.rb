@@ -47,12 +47,13 @@ class Kamal::Secrets::Adapters::Passbolt < Kamal::Secrets::Adapters::Base
       end
 
       filter_condition = filter_conditions.any? ? "--filter '#{filter_conditions.join(" || ")}'" : ""
-      items = `passbolt list resources #{filter_condition} #{folders.map { |item| "--folder #{item["id"]}" }.join(" ")} --json`
       raise RuntimeError, "Could not read #{secrets} from Passbolt" unless $?.success?
+filter_condition = filter_conditions.any? ? "--filter '#{filter_conditions.join(" || ")}'" : ""
 
-      items = JSON.parse(items)
-      found_names = items.map { |item| item["name"] }
-      missing_secrets = secret_names - found_names
+  items = `passbolt list resources #{filter_condition} #{folders.map { |item| "--folder #{item["id"].to_s.shellescape}" }.join(" ")} --json`
+  raise RuntimeError, "Could not read #{secrets} from Passbolt" unless $?.success?
+  items = JSON.parse(items)
+  found_names = items.map { |item| item["name"] }
       raise RuntimeError, "Could not find the following secrets in Passbolt: #{missing_secrets.join(", ")}" if missing_secrets.any?
 
       items.to_h { |item| [ item["name"], item["password"] ] }
