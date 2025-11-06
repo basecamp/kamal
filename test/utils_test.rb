@@ -21,6 +21,11 @@ class UtilsTest < ActiveSupport::TestCase
       Kamal::Utils.optionize({ foo: "bar", baz: "qux", quux: true }, with: "=")
   end
 
+  test "optionize reject nil value" do
+    assert_equal [ "--foo", "\"bar\"", "--baz", "\"qux\"" ], \
+      Kamal::Utils.optionize({ foo: "bar", baz: "qux", quux: nil })
+  end
+
   test "no redaction from #to_s" do
     assert_equal "secret", Kamal::Utils.sensitive("secret").to_s
   end
