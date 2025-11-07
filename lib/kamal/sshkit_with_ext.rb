@@ -18,8 +18,11 @@ class SSHKit::Backend::Abstract
     JSON.pretty_generate(JSON.parse(capture(*args, **kwargs)))
   end
 
-  def puts_by_host(host, output, type: "App")
-    puts "#{type} Host: #{host}\n#{output}\n\n"
+  def puts_by_host(host, output, type: "App", quiet: false)
+    unless quiet
+      puts "#{type} Host: #{host}"
+    end
+    puts "#{output}\n\n"
   end
 
   # Our execution pattern is for the CLI execute args lists returned
