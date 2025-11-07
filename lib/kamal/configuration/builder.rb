@@ -177,8 +177,15 @@ class Kamal::Configuration::Builder
       [ server, cache_image ].compact.join("/")
     end
 
+    def cache_options
+      builder_config["cache"]&.fetch("options", nil)
+    end
+
     def cache_from_config_for_gha
-      "type=gha"
+      individual_options = cache_options&.split(",") || []
+      allowed_options = individual_options.select { |option| option =~ /^(url|url_v2|token|scope|timeout)=/ }
+
+      [ "type=gha", *allowed_options ].compact.join(",")
     end
 
     def cache_from_config_for_registry
@@ -186,11 +193,11 @@ class Kamal::Configuration::Builder
     end
 
     def cache_to_config_for_gha
-      [ "type=gha", builder_config["cache"]&.fetch("options", nil) ].compact.join(",")
+      [ "type=gha", cache_options ].compact.join(",")
     end
 
     def cache_to_config_for_registry
-      [ "type=registry", "ref=#{cache_image_ref}", builder_config["cache"]&.fetch("options", nil) ].compact.join(",")
+      [ "type=registry", "ref=#{cache_image_ref}", cache_options ].compact.join(",")
     end
 
     def repo_basename
