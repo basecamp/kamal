@@ -66,13 +66,16 @@ class Kamal::Cli::App < Kamal::Cli::Base
   end
 
   desc "stop", "Stop app container on servers"
+  option :container_id, desc: "Docker container ID to stop (instead of stopping all containers)"
   def stop
+    container_id = options[:container_id]
+
     with_lock do
       on(KAMAL.app_hosts) do |host|
         roles = KAMAL.roles_on(host)
 
         roles.each do |role|
-          app = KAMAL.app(role: role, host: host)
+          app = KAMAL.app(role: role, host: host, container_id: container_id)
           execute *KAMAL.auditor.record("Stopped app", role: role), verbosity: :debug
 
           if role.running_proxy?
