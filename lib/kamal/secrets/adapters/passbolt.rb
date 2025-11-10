@@ -51,6 +51,7 @@ class Kamal::Secrets::Adapters::Passbolt < Kamal::Secrets::Adapters::Base
       raise RuntimeError, "Could not read #{secrets} from Passbolt" unless $?.success?
       items = JSON.parse(items)
       found_names = items.map { |item| item["name"] }
+      missing_secrets = secret_names - found_names
       raise RuntimeError, "Could not find the following secrets in Passbolt: #{missing_secrets.join(", ")}" if missing_secrets.any?
 
       items.to_h { |item| [ item["name"], item["password"] ] }

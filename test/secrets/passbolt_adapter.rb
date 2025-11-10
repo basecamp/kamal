@@ -462,6 +462,21 @@ class PassboltAdapterTest < SecretAdapterTestCase
     assert_equal "Passbolt CLI is not installed", error.message
   end
 
+  test "fetch with special characters in folder id" do
+    stub_ticks_with("passbolt --version 2> /dev/null", succeed: true)
+    stub_ticks_with("passbolt verify", succeed: true)
+
+    stub_ticks.with("passbolt list folders --filter 'Name == \"my-project\"' --json")
+      .returns('[{"id":"abc def-123","folder_parent_id":"","name":"my-project","created_timestamp":"2025-02-21T19:52:50Z","modified_timestamp":"2025-02-21T19:52:50Z"}]')
+
+    stub_ticks.with("passbolt list resources --filter '(Name == \"SECRET1\" && FolderParentID == \"abc\\\\ def-123\")' --folder abc\\ def-123 --json")
+      .returns('[{"id":"dd32963c","folder_parent_id":"abc def-123","name":"SECRET1","username":"","uri":"","password":"secret1","description":"","created_timestamp":"2025-02-21T06:04:23Z","modified_timestamp":"2025-02-21T06:04:23Z"}]')
+
+    json = JSON.parse(shellunescape(run_command("fetch", "my-project/SECRET1")))
+
+    assert_equal({ "SECRET1"=>"secret1" }, json)
+  end
+
   private
     def run_command(*command)
       stdouted do
