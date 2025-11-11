@@ -38,11 +38,45 @@ jobs:
           - Gemfile
           - gemfiles/rails_edge.gemfile
     name: ${{ format('Tests (Ruby {0})', matrix.ruby-version) }}
+jobs:
+  test:
     runs-on: ubuntu-latest
+    services:
+      dind:
+        image: docker:27-dind
+        privileged: true
+        # Tell DinD to avoid overlayfs entirely
+        options: >-
+          --storage-driver vfs
+          --data-root /var/lib/docker-vfs
+          --insecure-registry 127.0.0.1:5000
+          --health-cmd "docker info >/dev/null"
+          --health-interval 2s
+          --health-timeout 2s
+          --health-retries 30
+        env:
+          DOCKER_TLS_CERTDIR: ""   # plain TCP for simplicity
+        ports:
+          - 2375:2375
     env:
+      DOCKER_HOST: tcp://localhost:2375
       BUNDLE_GEMFILE: ${{ github.workspace }}/${{ matrix.gemfile }}
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      # Fresh buildx builder inside DinD (prevents “hangs” after daemon switches)
+      - name: Prepare buildx
+        run: |
+          docker buildx rm --all-inactive --force || true
+          docker buildx create --name ci --driver docker-container --use
+          docker buildx inspect --bootstrap
+
+      # (Optional) sanity check: the same registry image your test starts
+      - name: Smoke test registry
+        run: |
+          docker run -d --rm --name reg -p 127.0.0.1:5000:5000 registry:3
+          docker ps --filter name=reg
+          docker rm -f reg    runs-on: ubuntu-latest
 
       - name: Remove gemfile.lock
         run: rm Gemfile.lock
