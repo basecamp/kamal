@@ -61,8 +61,8 @@ jobs:
     env:
       DOCKER_HOST: tcp://localhost:2375
       BUNDLE_GEMFILE: ${{ github.workspace }}/${{ matrix.gemfile }}
-      DEBUG_CONTAINER_LOGS=1
-      DEBUG=1
+      DEBUG_CONTAINER_LOGS: 1
+      DEBUG: 1
 
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
