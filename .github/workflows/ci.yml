@@ -26,7 +26,10 @@ jobs:
           bundler-cache: true
       - name: Run Rubocop
         run: bundle exec rubocop --parallel
+
   tests:
+    name: ${{ format('Tests (Ruby {0})', matrix.ruby-version) }}
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
@@ -42,7 +45,6 @@ jobs:
     services:
       dind:
         image: docker:27-dind
-        # Tell DinD to avoid overlayfs entirely
         options: >-
           --privileged
           --health-cmd "docker info >/dev/null"
@@ -51,8 +53,8 @@ jobs:
           --health-retries 30
           -v /var/lib/docker-vfs:/var/lib/docker
         env:
-          DOCKER_TLS_CERTDIR: ""
-          DOCKER_DRIVER: vfs               # tells dockerd to use vfs
+          DOCKER_TLS_CERTDIR: ""          # enable plain TCP on 2375
+          DOCKER_DRIVER: vfs              # avoid overlayfs entirely
           DOCKER_DAEMON_ARGS: >-
             --insecure-registry 127.0.0.1:5000
         ports:
@@ -60,25 +62,29 @@ jobs:
     env:
       DOCKER_HOST: tcp://localhost:2375
       BUNDLE_GEMFILE: ${{ github.workspace }}/${{ matrix.gemfile }}
+
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
-      # Fresh buildx builder inside DinD (prevents “hangs” after daemon switches)
-      - name: Prepare buildx
+      - name: Verify Docker in DinD
+        run: |
+          docker info | egrep 'Server Version|Storage Driver|Docker Root Dir' || true
+          docker buildx version
+
+      - name: Prepare buildx (fresh builder inside DinD)
         run: |
           docker buildx rm --all-inactive --force || true
           docker buildx create --name ci --driver docker-container --use
           docker buildx inspect --bootstrap
 
-      # (Optional) sanity check: the same registry image your test starts
-      - name: Smoke test registry
+      - name: Smoke test registry (sanity check)
         run: |
           docker run -d --rm --name reg -p 127.0.0.1:5000:5000 registry:3
           docker ps --filter name=reg
-          docker rm -f reg    runs-on: ubuntu-latest
+          docker rm -f reg
 
-      - name: Remove gemfile.lock
-        run: rm Gemfile.lock
+      - name: Remove Gemfile.lock
+        run: rm -f Gemfile.lock
 
       - name: Install Ruby
         uses: ruby/setup-ruby@d5126b9b3579e429dd52e51e68624dda2e05be25 # v1.267.0
