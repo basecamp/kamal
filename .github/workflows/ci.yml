@@ -45,15 +45,16 @@ jobs:
         # Tell DinD to avoid overlayfs entirely
         options: >-
           --privileged
-          --storage-driver vfs
-          --data-root /var/lib/docker-vfs
-          --insecure-registry 127.0.0.1:5000
           --health-cmd "docker info >/dev/null"
           --health-interval 2s
           --health-timeout 2s
           --health-retries 30
+          -v /var/lib/docker-vfs:/var/lib/docker
         env:
-          DOCKER_TLS_CERTDIR: ""   # plain TCP for simplicity
+          DOCKER_TLS_CERTDIR: ""
+          DOCKER_DRIVER: vfs               # tells dockerd to use vfs
+          DOCKER_DAEMON_ARGS: >-
+            --insecure-registry 127.0.0.1:5000
         ports:
           - 2375:2375
     env:
