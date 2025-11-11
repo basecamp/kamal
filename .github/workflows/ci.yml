@@ -49,7 +49,6 @@ jobs:
           --health-retries 30
           -v /home/runner/docker-data:/var/lib/docker
           -v /home/runner/buildkit:/var/lib/buildkit
-          -v /home/runner/docker-tmp:/tmp
         env:
           DOCKER_TLS_CERTDIR: ""           # plain TCP on 2375
           DOCKER_DRIVER: overlay2          # use overlay2 inside DinD
@@ -61,7 +60,6 @@ jobs:
     env:
       DOCKER_HOST: tcp://localhost:2375
       BUNDLE_GEMFILE: ${{ github.workspace }}/${{ matrix.gemfile }}
-      TMPDIR: /home/runner/docker-tmp
       DEBUG_CONTAINER_LOGS: 1
       DEBUG: 1
 
@@ -76,7 +74,7 @@ jobs:
 
       - name: Prepare buildx (overlayfs snapshotter)
         run: |
-          mkdir -p /home/runner/buildkit /home/runner/docker-data /home/runner/docker-tmp
+          sudo mkdir -p /home/runner/docker-data /home/runner/buildkit
           docker buildx rm --all-inactive --force || true
           docker buildx create \
             --name ci \
