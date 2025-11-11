@@ -62,7 +62,6 @@ jobs:
       DOCKER_HOST: tcp://localhost:2375
       BUNDLE_GEMFILE: ${{ github.workspace }}/${{ matrix.gemfile }}
       TMPDIR: /home/runner/docker-tmp
-      BUNDLE_GEMFILE: ${{ github.workspace }}/${{ matrix.gemfile }}
       DEBUG_CONTAINER_LOGS: 1
       DEBUG: 1
 
