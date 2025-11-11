@@ -51,8 +51,8 @@ jobs:
           -v /home/runner/buildkit:/var/lib/buildkit
           -v /home/runner/docker-tmp:/tmp
         env:
-          DOCKER_TLS_CERTDIR: ""
-          DOCKER_DRIVER: overlay2             # ← use overlay2 inside DinD (not vfs)
+          DOCKER_TLS_CERTDIR: ""           # plain TCP on 2375
+          DOCKER_DRIVER: overlay2          # use overlay2 inside DinD
           DOCKER_DAEMON_ARGS: >-
             --insecure-registry 127.0.0.1:5000
         ports:
@@ -60,6 +60,8 @@ jobs:
 
     env:
       DOCKER_HOST: tcp://localhost:2375
+      BUNDLE_GEMFILE: ${{ github.workspace }}/${{ matrix.gemfile }}
+      TMPDIR: /home/runner/docker-tmp
       BUNDLE_GEMFILE: ${{ github.workspace }}/${{ matrix.gemfile }}
       DEBUG_CONTAINER_LOGS: 1
       DEBUG: 1
@@ -73,16 +75,18 @@ jobs:
           docker info | egrep 'Server Version|Storage Driver|Docker Root Dir'
           df -h /home/runner / || true
 
-      - name: Prepare buildx (native snapshotter, host net)
+      - name: Prepare buildx (overlayfs snapshotter)
         run: |
+          mkdir -p /home/runner/buildkit /home/runner/docker-data /home/runner/docker-tmp
           docker buildx rm --all-inactive --force || true
           docker buildx create \
             --name ci \
             --driver docker-container \
-            --driver-opt env.BUILDKITD_FLAGS="--oci-worker-snapshotter=native" \
             --driver-opt network=host \
+            --driver-opt env.BUILDKITD_FLAGS="--oci-worker-snapshotter=overlayfs --oci-worker-gc-keepstorage=24000" \
             --use
           docker buildx inspect --bootstrap
+          docker info | egrep 'Storage Driver|Docker Root Dir'
 
       - name: Smoke test registry (sanity check)
         run: |
@@ -105,7 +109,6 @@ jobs:
           df -h /var/lib/docker /var/lib/buildkit /tmp || true
           df -i /var/lib/docker /var/lib/buildkit /tmp || true
           docker info | egrep 'Server Version|Storage Driver|Docker Root Dir'
-
 
       - name: Run tests
         run: bin/test
