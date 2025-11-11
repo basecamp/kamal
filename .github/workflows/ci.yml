@@ -3,7 +3,7 @@ on:
   push:
     branches:
       - main
-      - fix-docker-overlayfs
+      - fix-docker-overlay
   pull_request:
   workflow_dispatch:
 
@@ -13,7 +13,7 @@ permissions:
 jobs:
   rubocop:
     name: RuboCop
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     env:
       BUNDLE_ONLY: rubocop
     steps:
@@ -43,24 +43,6 @@ jobs:
       BUNDLE_GEMFILE: ${{ github.workspace }}/${{ matrix.gemfile }}
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-
-      - name: Switch Docker to vfs (clean data-root)
-        run: |
-          sudo mkdir -p /etc/docker
-          cat <<'JSON' | sudo tee /etc/docker/daemon.json
-          {
-            "storage-driver": "vfs",
-            "data-root": "/var/lib/docker-vfs",
-            "features": { "containerd-snapshotter": false }
-          }
-          JSON
-          sudo systemctl restart docker
-          docker info | egrep 'Server Version|Storage Driver|containerd-snapshotter|Docker Root Dir'
-
-      - name: Smoke test registry run
-        run: |
-          docker run --rm -d --name reg -p 127.0.0.1:5000:5000 registry:3
-          docker rm -f reg
 
       - name: Remove gemfile.lock
         run: rm Gemfile.lock
