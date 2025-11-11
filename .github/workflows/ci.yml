@@ -38,8 +38,6 @@ jobs:
           - Gemfile
           - gemfiles/rails_edge.gemfile
     name: ${{ format('Tests (Ruby {0})', matrix.ruby-version) }}
-jobs:
-  test:
     runs-on: ubuntu-latest
     services:
       dind:
