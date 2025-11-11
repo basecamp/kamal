@@ -27,70 +27,71 @@ jobs:
       - name: Run Rubocop
         run: bundle exec rubocop --parallel
 
-  tests:
-    name: ${{ format('Tests (Ruby {0})', matrix.ruby-version) }}
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        ruby-version:
-          - "3.2"
-          - "3.3"
-          - "3.4"
-        gemfile:
-          - Gemfile
-          - gemfiles/rails_edge.gemfile
-    services:
-      dind:
-        image: docker:27-dind
-        options: >-
-          --privileged
-          --health-cmd "docker info >/dev/null"
-          --health-interval 2s
-          --health-timeout 2s
-          --health-retries 30
-          -v /var/lib/docker-vfs:/var/lib/docker
-        env:
-          DOCKER_TLS_CERTDIR: ""          # enable plain TCP on 2375
-          DOCKER_DRIVER: vfs              # avoid overlayfs entirely
-          DOCKER_DAEMON_ARGS: >-
-            --insecure-registry 127.0.0.1:5000
-        ports:
-          - 2375:2375
-    env:
-      DOCKER_HOST: tcp://localhost:2375
-      BUNDLE_GEMFILE: ${{ github.workspace }}/${{ matrix.gemfile }}
+tests:
+  name: ${{ format('Tests (Ruby {0})', matrix.ruby-version) }}
+  runs-on: ubuntu-latest
+  strategy:
+    fail-fast: false
+    matrix:
+      ruby-version: [ "3.2", "3.3", "3.4" ]
+      gemfile: [ Gemfile, gemfiles/rails_edge.gemfile ]
 
-    steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+  # Dedicated host directories for DinD’s image store and /tmp
+  # (host path is on the runner VM; plenty of space vs container’s writable layer)
+  services:
+    dind:
+      image: docker:27-dind
+      options: >-
+        --privileged
+        --health-cmd "docker info >/dev/null"
+        --health-interval 2s
+        --health-timeout 2s
+        --health-retries 30
+        -v /home/runner/docker-vfs:/var/lib/docker
+        -v /home/runner/docker-tmp:/tmp
+      env:
+        DOCKER_TLS_CERTDIR: ""         # plain TCP
+        DOCKER_DRIVER: vfs             # avoid overlayfs entirely
+        DOCKER_DAEMON_ARGS: >-
+          --insecure-registry 127.0.0.1:5000
+      ports:
+        - 2375:2375
 
-      - name: Verify Docker in DinD
-        run: |
-          docker info | egrep 'Server Version|Storage Driver|Docker Root Dir' || true
-          docker buildx version
+  env:
+    DOCKER_HOST: tcp://localhost:2375
+    BUNDLE_GEMFILE: ${{ github.workspace }}/${{ matrix.gemfile }}
 
-      - name: Prepare buildx (fresh builder inside DinD)
-        run: |
-          docker buildx rm --all-inactive --force || true
-          docker buildx create --name ci --driver docker-container --use
-          docker buildx inspect --bootstrap
+  steps:
+    - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
-      - name: Smoke test registry (sanity check)
-        run: |
-          docker run -d --rm --name reg -p 127.0.0.1:5000:5000 registry:3
-          docker ps --filter name=reg
-          docker rm -f reg
+    - name: Verify DinD & disk
+        # quick visibility into available space in the mounted dirs
+      run: |
+        docker info | egrep 'Server Version|Storage Driver|Docker Root Dir'
+        df -h /home/runner / || true
 
-      - name: Remove Gemfile.lock
-        run: rm -f Gemfile.lock
+    - name: Prepare buildx (fresh builder inside DinD)
+      run: |
+        docker buildx rm --all-inactive --force || true
+        docker buildx create --name ci --driver docker-container --use
+        docker buildx inspect --bootstrap
 
-      - name: Install Ruby
-        uses: ruby/setup-ruby@d5126b9b3579e429dd52e51e68624dda2e05be25 # v1.267.0
-        with:
-          ruby-version: ${{ matrix.ruby-version }}
-          bundler-cache: true
+    - name: Smoke test registry (sanity check)
+      run: |
+        docker run -d --rm --name reg -p 127.0.0.1:5000:5000 registry:3
+        docker ps --filter name=reg
+        docker rm -f reg
 
-      - name: Run tests
-        run: bin/test
-        env:
-          RUBYOPT: ${{ startsWith(matrix.ruby-version, '3.4.') && '--enable=frozen-string-literal' || '' }}
+    - name: Remove Gemfile.lock
+      run: rm -f Gemfile.lock
+
+    - name: Install Ruby
+      uses: ruby/setup-ruby@d5126b9b3579e429dd52e51e68624dda2e05be25 # v1.267.0
+      with:
+        ruby-version: ${{ matrix.ruby-version }}
+        bundler-cache: true
+
+    - name: Run tests
+      run: bin/test
+      env:
+        RUBYOPT: ${{ startsWith(matrix.ruby-version, '3.4.') && '--enable=frozen-string-literal' || '' }}
