@@ -44,12 +44,23 @@ jobs:
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
-      - name: Disable containerd snapshotter
+      - name: Switch Docker to vfs (clean data-root)
         run: |
           sudo mkdir -p /etc/docker
-          printf '%s\n' '{"features":{"containerd-snapshotter":false}}' | sudo tee /etc/docker/daemon.json
+          cat <<'JSON' | sudo tee /etc/docker/daemon.json
+          {
+            "storage-driver": "vfs",
+            "data-root": "/var/lib/docker-vfs",
+            "features": { "containerd-snapshotter": false }
+          }
+          JSON
           sudo systemctl restart docker
-          docker info | egrep 'Storage Driver|containerd-snapshotter'
+          docker info | egrep 'Server Version|Storage Driver|containerd-snapshotter|Docker Root Dir'
+
+      - name: Smoke test registry run
+        run: |
+          docker run --rm -d --name reg -p 127.0.0.1:5000:5000 registry:3
+          docker rm -f reg
 
       - name: Remove gemfile.lock
         run: rm Gemfile.lock
