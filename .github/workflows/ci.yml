@@ -42,9 +42,9 @@ jobs:
     services:
       dind:
         image: docker:27-dind
-        privileged: true
         # Tell DinD to avoid overlayfs entirely
         options: >-
+          --privileged
           --storage-driver vfs
           --data-root /var/lib/docker-vfs
           --insecure-registry 127.0.0.1:5000
