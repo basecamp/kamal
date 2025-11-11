@@ -40,8 +40,6 @@ jobs:
         gemfile:
           - Gemfile
           - gemfiles/rails_edge.gemfile
-    name: ${{ format('Tests (Ruby {0})', matrix.ruby-version) }}
-    runs-on: ubuntu-latest
     services:
       dind:
         image: docker:27-dind
