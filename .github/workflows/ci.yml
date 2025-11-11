@@ -47,16 +47,16 @@ jobs:
           --health-interval 2s
           --health-timeout 2s
           --health-retries 30
-          -v /home/runner/docker-vfs:/var/lib/docker
+          -v /home/runner/docker-data:/var/lib/docker
           -v /home/runner/buildkit:/var/lib/buildkit
           -v /home/runner/docker-tmp:/tmp
         env:
           DOCKER_TLS_CERTDIR: ""
-          DOCKER_DRIVER: vfs
+          DOCKER_DRIVER: overlay2             # ← use overlay2 inside DinD (not vfs)
           DOCKER_DAEMON_ARGS: >-
             --insecure-registry 127.0.0.1:5000
-        ports:
-          - 2375:2375
+    ports:
+      - 2375:2375
 
     env:
       DOCKER_HOST: tcp://localhost:2375
@@ -102,6 +102,8 @@ jobs:
           df -h /
           df -h /var/lib/docker /var/lib/buildkit /tmp || true
           df -i /var/lib/docker /var/lib/buildkit /tmp || true
+          docker info | egrep 'Server Version|Storage Driver|Docker Root Dir'
+
 
       - name: Run tests
         run: bin/test
