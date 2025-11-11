@@ -48,10 +48,11 @@ jobs:
           --health-timeout 2s
           --health-retries 30
           -v /home/runner/docker-vfs:/var/lib/docker
+          -v /home/runner/buildkit:/var/lib/buildkit
           -v /home/runner/docker-tmp:/tmp
         env:
-          DOCKER_TLS_CERTDIR: ""         # plain TCP
-          DOCKER_DRIVER: vfs             # avoid overlayfs entirely
+          DOCKER_TLS_CERTDIR: ""
+          DOCKER_DRIVER: vfs
           DOCKER_DAEMON_ARGS: >-
             --insecure-registry 127.0.0.1:5000
         ports:
@@ -70,10 +71,15 @@ jobs:
           docker info | egrep 'Server Version|Storage Driver|Docker Root Dir'
           df -h /home/runner / || true
 
-      - name: Prepare buildx (fresh builder inside DinD)
+      - name: Prepare buildx (native snapshotter, host net)
         run: |
           docker buildx rm --all-inactive --force || true
-          docker buildx create --name ci --driver docker-container --use
+          docker buildx create \
+            --name ci \
+            --driver docker-container \
+            --driver-opt env.BUILDKITD_FLAGS="--oci-worker-snapshotter=native" \
+            --driver-opt network=host \
+            --use
           docker buildx inspect --bootstrap
 
       - name: Smoke test registry (sanity check)
@@ -90,6 +96,12 @@ jobs:
         with:
           ruby-version: ${{ matrix.ruby-version }}
           bundler-cache: true
+
+      - name: Check space inside DinD
+        run: |
+          df -h /
+          df -h /var/lib/docker /var/lib/buildkit /tmp || true
+          df -i /var/lib/docker /var/lib/buildkit /tmp || true
 
       - name: Run tests
         run: bin/test
