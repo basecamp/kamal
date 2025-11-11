@@ -49,4 +49,23 @@ class ConfigurationSshTest < ActiveSupport::TestCase
     config = Kamal::Configuration.new(@deploy.tap { |c| c.merge!(ssh: { "proxy" => "app@1.2.3.4" }) })
     assert_equal "app@1.2.3.4", config.ssh.options[:proxy].jump_proxies
   end
+
+  test "ssh key_data with plain value array" do
+    config = Kamal::Configuration.new(@deploy.tap { |c| c.merge!(ssh: { "key_data" => [ "-----BEGIN OPENSSH PRIVATE KEY-----" ] }) })
+    assert_equal [ "-----BEGIN OPENSSH PRIVATE KEY-----" ], config.ssh.options[:key_data]
+  end
+
+  test "ssh key_data with array containing one secret string" do
+    with_test_secrets("secrets" => "SSH_PRIVATE_KEY=secret_ssh_key") do
+      config = Kamal::Configuration.new(@deploy.tap { |c| c.merge!(ssh: { "key_data" => [ "SSH_PRIVATE_KEY" ] }) })
+      assert_equal [ "secret_ssh_key" ], config.ssh.options[:key_data]
+    end
+  end
+
+  test "ssh key_data with array containing multiple secret strings" do
+    with_test_secrets("secrets" => "SSH_PRIVATE_KEY=secret_ssh_key\nSECOND_KEY=second_secret_ssh_key") do
+      config = Kamal::Configuration.new(@deploy.tap { |c| c.merge!(ssh: { "key_data" => [ "SSH_PRIVATE_KEY", "SECOND_KEY" ] }) })
+      assert_equal [ "secret_ssh_key", "second_secret_ssh_key" ], config.ssh.options[:key_data]
+    end
+  end
 end
