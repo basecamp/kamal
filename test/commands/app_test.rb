@@ -239,7 +239,7 @@ class CommandsAppTest < ActiveSupport::TestCase
 
   test "execute in new container" do
     assert_match \
-      /docker run --rm --name app-web-exec-999-[0-9a-f]{6} --network kamal --env-file .kamal\/apps\/app\/env\/roles\/web.env --log-opt max-size="10m" dhh\/app:999 bin\/rails db:setup/,
+      %r{docker run --rm --name app-web-exec-999-[0-9a-f]{6} --network kamal --env-file .kamal/apps/app/env/roles/web.env --log-opt max-size="10m" dhh/app:999 bin/rails db:setup},
       new_command.execute_in_new_container("bin/rails", "db:setup", env: {}).join(" ")
   end
 
@@ -247,19 +247,19 @@ class CommandsAppTest < ActiveSupport::TestCase
     @config[:logging] = { "driver" => "local", "options" => { "max-size" => "100m", "max-file" => "3" } }
 
     assert_match \
-      /docker run --rm --name app-web-exec-999-[0-9a-f]{6} --network kamal --env-file .kamal\/apps\/app\/env\/roles\/web.env --log-driver "local" --log-opt max-size="100m" --log-opt max-file="3" dhh\/app:999 bin\/rails db:setup/,
+      %r{docker run --rm --name app-web-exec-999-[0-9a-f]{6} --network kamal --env-file .kamal/apps/app/env/roles/web.env --log-driver "local" --log-opt max-size="100m" --log-opt max-file="3" dhh/app:999 bin/rails db:setup},
       new_command.execute_in_new_container("bin/rails", "db:setup", env: {}).join(" ")
   end
 
   test "execute in new container with env" do
     assert_match \
-      /docker run --rm --name app-web-exec-999-[0-9a-f]{6} --network kamal --env-file .kamal\/apps\/app\/env\/roles\/web.env --env foo="bar" --log-opt max-size="10m" dhh\/app:999 bin\/rails db:setup/,
+      %r{docker run --rm --name app-web-exec-999-[0-9a-f]{6} --network kamal --env-file .kamal/apps/app/env/roles/web.env --env foo="bar" --log-opt max-size="10m" dhh/app:999 bin/rails db:setup},
       new_command.execute_in_new_container("bin/rails", "db:setup", env: { "foo" => "bar" }).join(" ")
   end
 
   test "execute in new detached container" do
     assert_match \
-      /docker run --detach --name app-web-exec-999-[0-9a-f]{6} --network kamal --env-file .kamal\/apps\/app\/env\/roles\/web.env --log-opt max-size="10m" dhh\/app:999 bin\/rails db:setup/,
+      %r{docker run --detach --name app-web-exec-999-[0-9a-f]{6} --network kamal --env-file .kamal/apps/app/env/roles/web.env --log-opt max-size="10m" dhh/app:999 bin/rails db:setup},
       new_command.execute_in_new_container("bin/rails", "db:setup", detach: true, env: {}).join(" ")
   end
 
@@ -268,14 +268,14 @@ class CommandsAppTest < ActiveSupport::TestCase
     @config[:env]["tags"] = { "tag1" => { "ENV1" => "value1" } }
 
     assert_match \
-      /docker run --rm --name app-web-exec-999-[0-9a-f]{6} --network kamal --env ENV1="value1" --env-file .kamal\/apps\/app\/env\/roles\/web.env --log-opt max-size="10m" dhh\/app:999 bin\/rails db:setup/,
+      %r{docker run --rm --name app-web-exec-999-[0-9a-f]{6} --network kamal --env ENV1="value1" --env-file .kamal/apps/app/env/roles/web.env --log-opt max-size="10m" dhh/app:999 bin/rails db:setup},
       new_command.execute_in_new_container("bin/rails", "db:setup", env: {}).join(" ")
   end
 
   test "execute in new container with custom options" do
     @config[:servers] = { "web" => { "hosts" => [ "1.1.1.1" ], "options" => { "mount" => "somewhere", "cap-add" => true } } }
     assert_match \
-      /docker run --rm --name app-web-exec-999-[0-9a-f]{6} --network kamal --env-file .kamal\/apps\/app\/env\/roles\/web.env --log-opt max-size="10m" --mount "somewhere" --cap-add dhh\/app:999 bin\/rails db:setup/,
+      %r{docker run --rm --name app-web-exec-999-[0-9a-f]{6} --network kamal --env-file .kamal/apps/app/env/roles/web.env --log-opt max-size="10m" --mount "somewhere" --cap-add dhh/app:999 bin/rails db:setup},
       new_command.execute_in_new_container("bin/rails", "db:setup", env: {}).join(" ")
   end
 
