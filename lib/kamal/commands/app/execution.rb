@@ -33,6 +33,6 @@ module Kamal::Commands::App::Execution
 
   private
     def container_name_for_exec
-      [ role.container_prefix, "exec", config.version ].compact.join("-")
+      [ role.container_prefix, "exec", config.version, SecureRandom.hex(3) ].compact.join("-")
     end
 end
