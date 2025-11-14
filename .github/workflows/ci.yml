@@ -78,4 +78,4 @@ jobs:
         if: always()
         run: |
           df -h
-          du -sh /mnt/docker
+          sudo du -sh /mnt/docker
