@@ -52,6 +52,21 @@ jobs:
           ruby-version: ${{ matrix.ruby-version }}
           bundler-cache: true
 
+      - name: Configure Docker with VFS storage driver
+        run: |
+          sudo systemctl stop docker
+          sudo systemctl stop docker.socket
+          sudo mkdir -p /etc/docker /mnt/docker
+          cat <<'EOF' | sudo tee /etc/docker/daemon.json
+          {
+            "storage-driver": "vfs",
+            "data-root": "/mnt/docker"
+          }
+          EOF
+          sudo rm -rf /var/lib/docker/* /mnt/docker/*
+          sudo systemctl start docker
+          timeout 30 sh -c 'until docker info >/dev/null 2>&1; do sleep 1; done'
+
       - name: Run tests
         run: bin/test
         env:
