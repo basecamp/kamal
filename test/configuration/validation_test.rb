@@ -83,6 +83,7 @@ class ConfigurationValidationTest < ActiveSupport::TestCase
   test "ssh" do
     assert_error "ssh: unknown key: foo", ssh: { "foo" => "bar" }
     assert_error "ssh/user: should be a string", ssh: { "user" => [] }
+    assert_error "ssh/config: should be a boolean or a string or an array", ssh: { "config" => 1 }
   end
 
   test "sshkit" do
@@ -97,6 +98,25 @@ class ConfigurationValidationTest < ActiveSupport::TestCase
     assert_error "builder/args: should be a hash", builder: { "args" => [ "foo" ] }
     assert_error "builder/cache/options: should be a string", builder: { "cache" => { "options" => [] } }
     assert_error "builder: buildpacks only support building for one arch", builder: { "arch" => [ "amd64", "arm64" ], "pack" => { "builder" => "heroku/builder:24" } }
+  end
+
+  test "local registry with remote builder requires ssh url" do
+    remote_arch = Kamal::Utils.docker_arch == "arm64" ? "amd64" : "arm64"
+
+    assert_error "Local registry with remote builder requires an SSH URL (e.g., ssh://user@host)",
+      registry: { "server" => "localhost:5000" },
+      builder: { "arch" => remote_arch, "remote" => "docker-container://remote-builder" }
+
+    # Should not raise error with SSH URL
+    assert_nothing_raised do
+      Kamal::Configuration.new({
+        service: "app",
+        image: "app",
+        registry: { "server" => "localhost:5000" },
+        builder: { "arch" => remote_arch, "remote" => "ssh://user@host" },
+        servers: [ "1.1.1.1" ]
+      })
+    end
   end
 
   private

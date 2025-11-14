@@ -6,6 +6,7 @@ class Kamal::Cli::Server < Kamal::Cli::Base
 
     cmd = Kamal::Utils.join_commands(cmd)
     hosts = KAMAL.hosts
+    quiet = options[:quiet]
 
     case
     when options[:interactive]
@@ -19,7 +20,7 @@ class Kamal::Cli::Server < Kamal::Cli::Base
 
       on(hosts) do |host|
         execute *KAMAL.auditor.record("Executed cmd '#{cmd}' on #{host}"), verbosity: :debug
-        puts_by_host host, capture_with_info(cmd)
+        puts_by_host host, capture_with_info(cmd), quiet: quiet
       end
     end
   end

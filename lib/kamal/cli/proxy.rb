@@ -223,7 +223,8 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
 
   desc "details", "Show details about proxy container from servers"
   def details
-    on(KAMAL.proxy_hosts) { |host| puts_by_host host, capture_with_info(*KAMAL.proxy.info), type: "Proxy" }
+    quiet = options[:quiet]
+    on(KAMAL.proxy_hosts) { |host| puts_by_host host, capture_with_info(*KAMAL.proxy.info), type: "Proxy", quiet: quiet }
 
     if KAMAL.config.proxy.load_balancing?
       on(KAMAL.config.proxy.effective_loadbalancer) do |host|
