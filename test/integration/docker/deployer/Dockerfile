@@ -16,24 +16,19 @@ RUN echo \
 
 RUN apt-get update --fix-missing && apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
-COPY *.sh .
-COPY app/ app/
-COPY app_with_custom_certificate/ app_with_custom_certificate/
-COPY app_with_roles/ app_with_roles/
-COPY app_with_traefik/ app_with_traefik/
-COPY app_with_proxied_accessory/ app_with_proxied_accessory/
+COPY . .
 
-RUN rm -rf /root/.ssh
-RUN ln -s /shared/ssh /root/.ssh
-RUN mkdir -p /etc/docker/certs.d/registry:4443 && ln -s /shared/certs/domain.crt /etc/docker/certs.d/registry:4443/ca.crt
-
-RUN git config --global user.email "deployer@example.com"
-RUN git config --global user.name "Deployer"
-RUN cd app && git init && git add . && git commit -am "Initial version"
-RUN cd app_with_custom_certificate && git init && git add . && git commit -am "Initial version"
-RUN cd app_with_roles && git init && git add . && git commit -am "Initial version"
-RUN cd app_with_traefik && git init && git add . && git commit -am "Initial version"
-RUN cd app_with_proxied_accessory && git init && git add . && git commit -am "Initial version"
+RUN rm -rf /root/.ssh && \
+    ln -s /shared/ssh /root/.ssh && \
+    mkdir -p /etc/docker/certs.d/registry:4443 && \
+    ln -s /shared/certs/domain.crt /etc/docker/certs.d/registry:4443/ca.crt && \
+    git config --global user.email "deployer@example.com" && \
+    git config --global user.name "Deployer" && \
+    cd app && git init && git add . && git commit -am "Initial version" && \
+    cd /app_with_custom_certificate && git init && git add . && git commit -am "Initial version" && \
+    cd /app_with_roles && git init && git add . && git commit -am "Initial version" && \
+    cd /app_with_traefik && git init && git add . && git commit -am "Initial version" && \
+    cd /app_with_proxied_accessory && git init && git add . && git commit -am "Initial version"
 
 HEALTHCHECK --interval=1s CMD pgrep sleep
 
