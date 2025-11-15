@@ -89,6 +89,7 @@ class ConfigurationValidationTest < ActiveSupport::TestCase
   test "sshkit" do
     assert_error "sshkit: unknown key: foo", sshkit: { "foo" => "bar" }
     assert_error "sshkit/max_concurrent_starts: should be an integer", sshkit: { "max_concurrent_starts" => "foo" }
+    assert_error "sshkit/dns_retries: should be an integer", sshkit: { "dns_retries" => "foo" }
   end
 
   test "builder" do
