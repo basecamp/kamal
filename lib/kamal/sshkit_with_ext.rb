@@ -153,7 +153,7 @@ class SSHKit::Backend::Netssh
       def connect_ssh(*args)
         Net::SSH.start(*args)
       end
-    end
+  end
 
   module DnsRetriableConnection
     private
