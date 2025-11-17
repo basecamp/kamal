@@ -123,12 +123,28 @@ class SSHKit::Backend::Netssh
     prepend DnsRetriable
   end
 
+  module ConnectSsh
+    private
+      def connect_ssh(...)
+        Net::SSH.start(...)
+      end
+  end
+  include ConnectSsh
+
+  module DnsRetriableConnection
+    private
+      def connect_ssh(...)
+        self.class.with_dns_retry(host.hostname) { super }
+      end
+  end
+  prepend DnsRetriableConnection
+
   module LimitConcurrentStartsInstance
     private
       def with_ssh(&block)
         host.ssh_options = self.class.config.ssh_options.merge(host.ssh_options || {})
         self.class.pool.with(
-          method(:start_with_concurrency_limit),
+          method(:connect_ssh),
           String(host.hostname),
           host.username,
           host.netssh_options,
@@ -136,10 +152,8 @@ class SSHKit::Backend::Netssh
         )
       end
 
-      def start_with_concurrency_limit(*args)
-        with_concurrency_limit do
-          connect_ssh(*args)
-        end
+      def connect_ssh(...)
+        with_concurrency_limit { super }
       end
 
       def with_concurrency_limit(&block)
@@ -149,20 +163,7 @@ class SSHKit::Backend::Netssh
           yield
         end
       end
-
-      def connect_ssh(*args)
-        Net::SSH.start(*args)
-      end
   end
-
-  module DnsRetriableConnection
-    private
-      def connect_ssh(*args)
-        self.class.with_dns_retry(host.hostname) { super }
-      end
-  end
-
-  prepend DnsRetriableConnection
   prepend LimitConcurrentStartsInstance
 end
 
