@@ -7,6 +7,19 @@ class SecretsTest < ActiveSupport::TestCase
     end
   end
 
+  test "synchronized_fetch" do
+    with_test_secrets("secrets" => "SECRET=ABC") do
+      assert_equal "ABC", Kamal::Secrets.new.send(:synchronized_fetch, "SECRET")
+    end
+  end
+
+  test "key?" do
+    with_test_secrets("secrets" => "SECRET1=ABC") do
+      assert Kamal::Secrets.new.key?("SECRET1")
+      assert_not Kamal::Secrets.new.key?("SECRET2")
+    end
+  end
+
   test "command interpolation" do
     with_test_secrets("secrets" => "SECRET=$(echo ABC)") do
       assert_equal "ABC", Kamal::Secrets.new["SECRET"]
