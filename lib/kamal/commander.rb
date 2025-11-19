@@ -81,8 +81,8 @@ class Kamal::Commander
     config.accessories&.collect(&:name) || []
   end
 
-  def app(role: nil, host: nil)
-    Kamal::Commands::App.new(config, role: role, host: host)
+  def app(role: nil, host: nil, container_id: nil)
+    Kamal::Commands::App.new(config, role: role, host: host, container_id: container_id)
   end
 
   def accessory(name)
