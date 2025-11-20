@@ -36,7 +36,7 @@ class Kamal::Configuration::Role
   end
 
   def env_tags(host)
-    tagged_hosts.fetch(host).collect { |tag| config.env_tag(tag) }
+    tagged_hosts.fetch(host).collect { |tag| config.env_tag(tag) }.compact
   end
 
   def cmd

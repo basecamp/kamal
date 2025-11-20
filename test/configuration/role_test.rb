@@ -29,6 +29,13 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
     assert_equal [ "1.1.1.3", "1.1.1.4" ], config_with_roles.role(:workers).hosts
   end
 
+  test "missing env tag is ignored" do
+    @deploy_with_roles[:servers]["workers"]["hosts"] = [ { "1.1.1.3" => [ "job" ] } ]
+
+    role = Kamal::Configuration.new(@deploy_with_roles).role(:workers)
+    assert_equal "redis://a/b", role.env("1.1.1.3").clear["REDIS_URL"]
+  end
+
   test "cmd" do
     assert_nil config.role(:web).cmd
     assert_equal "bin/jobs", config_with_roles.role(:workers).cmd
