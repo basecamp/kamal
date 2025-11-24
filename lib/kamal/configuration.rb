@@ -32,7 +32,9 @@ class Kamal::Configuration
         if file.exist?
           # Newer Psych doesn't load aliases by default
           load_method = YAML.respond_to?(:unsafe_load) ? :unsafe_load : :load
-          YAML.send(load_method, ERB.new(File.read(file)).result).symbolize_keys
+          template = File.read(file)
+          rendered = ERB.new(template, trim_mode: "-").result
+          YAML.send(load_method, rendered).symbolize_keys
         else
           raise "Configuration file not found in #{file}"
         end
