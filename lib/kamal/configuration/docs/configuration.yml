@@ -82,6 +82,12 @@ asset_path: /path/to/assets
 # See https://kamal-deploy.org/docs/hooks for more information:
 hooks_path: /user_home/kamal/hooks
 
+# Secrets path
+#
+# Path to secrets, defaults to `.kamal/secrets`.
+# Kamal will look for `<secrets_path>-common` and `<secrets_path>` (or `<secrets_path>.<destination>` when using destinations):
+secrets_path: /user_home/kamal/secrets
+
 # Error pages
 #
 # A directory relative to the app root to find error pages for the proxy to serve.

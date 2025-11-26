@@ -6,7 +6,7 @@ class ConfigurationValidationTest < ActiveSupport::TestCase
   end
 
   test "wrong root types" do
-    [ :service, :image, :asset_path, :hooks_path, :primary_role, :minimum_version, :run_directory ].each do |key|
+    [ :service, :image, :asset_path, :hooks_path, :secrets_path, :primary_role, :minimum_version, :run_directory ].each do |key|
       assert_error "#{key}: should be a string", **{ key => [] }
     end
 

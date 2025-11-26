@@ -50,7 +50,7 @@ class Kamal::Configuration
 
     validate! raw_config, example: validation_yml.symbolize_keys, context: "", with: Kamal::Configuration::Validator::Configuration
 
-    @secrets = Kamal::Secrets.new(destination: destination)
+    @secrets = Kamal::Secrets.new(destination: destination, secrets_path: secrets_path)
 
     # Eager load config to validate it, these are first as they have dependencies later on
     @servers = Servers.new(config: self)
@@ -239,6 +239,10 @@ class Kamal::Configuration
 
   def hooks_path
     raw_config.hooks_path || ".kamal/hooks"
+  end
+
+  def secrets_path
+    raw_config.secrets_path || ".kamal/secrets"
   end
 
   def asset_path
