@@ -23,7 +23,7 @@ class Kamal::Configuration::Volume
       if Pathname.new(host_path).absolute?
         host_path
       else
-        File.join "$(pwd)", host_path
+        "$PWD/#{host_path}"
       end
     end
 end

@@ -8,7 +8,7 @@ class ConfigurationVolumeTest < ActiveSupport::TestCase
 
   test "docker args relative" do
     volume = Kamal::Configuration::Volume.new(host_path: "foo/bar", container_path: "/assets")
-    assert_equal [ "--volume", "$(pwd)/foo/bar:/assets" ], volume.docker_args
+    assert_equal [ "--volume", "$PWD/foo/bar:/assets" ], volume.docker_args
   end
 
   test "docker args with options" do

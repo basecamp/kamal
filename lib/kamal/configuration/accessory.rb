@@ -87,12 +87,8 @@ class Kamal::Configuration::Accessory
     end || {}
   end
 
-  def volumes
-    specific_volumes + remote_files_as_volumes + remote_directories_as_volumes
-  end
-
   def volume_args
-    argumentize "--volume", volumes
+    (specific_volumes + file_volumes + directory_volumes).flat_map(&:docker_args)
   end
 
   def option_args
@@ -164,25 +160,41 @@ class Kamal::Configuration::Accessory
     end
 
     def specific_volumes
-      accessory_config["volumes"] || []
+      (accessory_config["volumes"] || []).collect do |volume_string|
+        host_path, container_path, options = volume_string.split(":", 3)
+        Kamal::Configuration::Volume.new \
+          host_path: host_path,
+          container_path: container_path,
+          options: options
+      end
     end
 
-    def remote_files_as_volumes
+    def file_volumes
       accessory_config["files"]&.collect do |local_to_remote_mapping|
         _, remote_file, options = local_to_remote_mapping.split(":", 3)
-        as_volume(service_data_directory + remote_file, remote_file, options)
+        Kamal::Configuration::Volume.new \
+          host_path: service_name + remote_file,
+          container_path: remote_file,
+          options: options
       end || []
     end
 
-    def remote_directories_as_volumes
+    def directory_volumes
       accessory_config["directories"]&.collect do |host_to_container_mapping|
         host_path, container_path, options = host_to_container_mapping.split(":", 3)
-        as_volume(expand_host_path(host_path), container_path, options)
+        Kamal::Configuration::Volume.new \
+          host_path: expand_host_path_for_volume(host_path),
+          container_path: container_path,
+          options: options
       end || []
     end
 
     def expand_host_path(host_path)
       absolute_path?(host_path) ? host_path : File.join(service_data_directory, host_path)
+    end
+
+    def expand_host_path_for_volume(host_path)
+      absolute_path?(host_path) ? host_path : File.join(service_name, host_path)
     end
 
     def absolute_path?(path)
@@ -237,11 +249,5 @@ class Kamal::Configuration::Accessory
       elsif accessory_config["role"] && !config.role(accessory_config["role"])
         raise Kamal::ConfigurationError, "accessories/#{name}: unknown role #{accessory_config["role"]}"
       end
-    end
-
-    def as_volume(local, remote, options)
-      volume_string = "#{local}:#{remote}"
-      volume_string += ":#{options}" if options.present?
-      volume_string
     end
 end

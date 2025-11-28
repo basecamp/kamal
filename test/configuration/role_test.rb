@@ -214,7 +214,7 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
     })
     assert_equal "foo", config_with_assets.role(:web).asset_path
     assert_equal "foo", config_with_assets.role(:workers).asset_path
-    assert_equal [ "--volume", "$(pwd)/.kamal/apps/app/assets/volumes/web-12345:foo" ], config_with_assets.role(:web).asset_volume_args
+    assert_equal [ "--volume", "$PWD/.kamal/apps/app/assets/volumes/web-12345:foo" ], config_with_assets.role(:web).asset_volume_args
     assert_nil config_with_assets.role(:workers).asset_volume_args
     assert config_with_assets.role(:web).assets?
     assert_not config_with_assets.role(:workers).assets?
@@ -224,7 +224,7 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
     })
     assert_equal "bar", config_with_assets.role(:web).asset_path
     assert_nil config_with_assets.role(:workers).asset_path
-    assert_equal [ "--volume", "$(pwd)/.kamal/apps/app/assets/volumes/web-12345:bar" ], config_with_assets.role(:web).asset_volume_args
+    assert_equal [ "--volume", "$PWD/.kamal/apps/app/assets/volumes/web-12345:bar" ], config_with_assets.role(:web).asset_volume_args
     assert_nil config_with_assets.role(:workers).asset_volume_args
     assert config_with_assets.role(:web).assets?
     assert_not config_with_assets.role(:workers).assets?
@@ -241,14 +241,14 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
     })
     assert_equal "/rails/public/assets", config_with_assets.role(:web).asset_path
     assert_equal "z", config_with_assets.role(:web).asset_path_options
-    assert_equal [ "--volume", "$(pwd)/.kamal/apps/app/assets/volumes/web-12345:/rails/public/assets:z" ], config_with_assets.role(:web).asset_volume_args
+    assert_equal [ "--volume", "$PWD/.kamal/apps/app/assets/volumes/web-12345:/rails/public/assets:z" ], config_with_assets.role(:web).asset_volume_args
 
     config_with_assets = Kamal::Configuration.new(@deploy_with_roles.dup.tap { |c|
       c[:servers]["web"] = { "hosts" => [ "1.1.1.1", "1.1.1.2" ], "asset_path" => "/assets:ro,z" }
     })
     assert_equal "/assets", config_with_assets.role(:web).asset_path
     assert_equal "ro,z", config_with_assets.role(:web).asset_path_options
-    assert_equal [ "--volume", "$(pwd)/.kamal/apps/app/assets/volumes/web-12345:/assets:ro,z" ], config_with_assets.role(:web).asset_volume_args
+    assert_equal [ "--volume", "$PWD/.kamal/apps/app/assets/volumes/web-12345:/assets:ro,z" ], config_with_assets.role(:web).asset_volume_args
 
   ensure
     ENV.delete("VERSION")
