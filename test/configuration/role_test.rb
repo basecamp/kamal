@@ -233,6 +233,27 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
     ENV.delete("VERSION")
   end
 
+  test "asset path with mount options" do
+    ENV["VERSION"] = "12345"
+
+    config_with_assets = Kamal::Configuration.new(@deploy_with_roles.dup.tap { |c|
+      c[:asset_path] = "/rails/public/assets:z"
+    })
+    assert_equal "/rails/public/assets", config_with_assets.role(:web).asset_path
+    assert_equal "z", config_with_assets.role(:web).asset_path_options
+    assert_equal [ "--volume", "$(pwd)/.kamal/apps/app/assets/volumes/web-12345:/rails/public/assets:z" ], config_with_assets.role(:web).asset_volume_args
+
+    config_with_assets = Kamal::Configuration.new(@deploy_with_roles.dup.tap { |c|
+      c[:servers]["web"] = { "hosts" => [ "1.1.1.1", "1.1.1.2" ], "asset_path" => "/assets:ro,z" }
+    })
+    assert_equal "/assets", config_with_assets.role(:web).asset_path
+    assert_equal "ro,z", config_with_assets.role(:web).asset_path_options
+    assert_equal [ "--volume", "$(pwd)/.kamal/apps/app/assets/volumes/web-12345:/assets:ro,z" ], config_with_assets.role(:web).asset_volume_args
+
+  ensure
+    ENV.delete("VERSION")
+  end
+
   test "asset extracted path" do
     ENV["VERSION"] = "12345"
     assert_equal ".kamal/apps/app/assets/extracted/web-12345", config_with_roles.role(:web).asset_extracted_directory

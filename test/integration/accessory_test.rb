@@ -4,6 +4,7 @@ class AccessoryTest < IntegrationTest
   test "boot, stop, start, restart, logs, remove" do
     kamal :accessory, :boot, :busybox
     assert_accessory_running :busybox
+    assert_accessory_volume_mount_options :busybox
 
     kamal :accessory, :stop, :busybox
     assert_accessory_not_running :busybox
@@ -57,6 +58,11 @@ class AccessoryTest < IntegrationTest
 
     def assert_accessory_not_running(name)
       assert_no_match /registry:4443\/busybox:1.36.0   "sh -c 'echo \\"Start/, accessory_details(name)
+    end
+
+    def assert_accessory_volume_mount_options(name)
+      mounts = docker_compose("exec vm1 docker inspect custom-busybox --format '{{json .Mounts}}'", capture: true)
+      assert_match %r{/data.*"RW":false}, mounts, "Expected read-only mount option (:ro) to be applied"
     end
 
     def accessory_details(name)

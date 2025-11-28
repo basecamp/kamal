@@ -75,15 +75,15 @@ class Kamal::Configuration::Accessory
 
   def files
     accessory_config["files"]&.to_h do |local_to_remote_mapping|
-      local_file, remote_file = local_to_remote_mapping.split(":")
-      [ expand_local_file(local_file), expand_remote_file(remote_file) ]
+      local_file, remote_file, options = local_to_remote_mapping.split(":", 3)
+      [ expand_local_file(local_file), { path: expand_remote_file(remote_file), options: options } ]
     end || {}
   end
 
   def directories
     accessory_config["directories"]&.to_h do |host_to_container_mapping|
-      host_path, container_path = host_to_container_mapping.split(":")
-      [ expand_host_path(host_path), container_path ]
+      host_path, container_path, options = host_to_container_mapping.split(":", 3)
+      [ expand_host_path(host_path), { path: container_path, options: options } ]
     end || {}
   end
 
@@ -169,15 +169,15 @@ class Kamal::Configuration::Accessory
 
     def remote_files_as_volumes
       accessory_config["files"]&.collect do |local_to_remote_mapping|
-        _, remote_file = local_to_remote_mapping.split(":")
-        "#{service_data_directory + remote_file}:#{remote_file}"
+        _, remote_file, options = local_to_remote_mapping.split(":", 3)
+        as_volume(service_data_directory + remote_file, remote_file, options)
       end || []
     end
 
     def remote_directories_as_volumes
       accessory_config["directories"]&.collect do |host_to_container_mapping|
-        host_path, container_path = host_to_container_mapping.split(":")
-        [ expand_host_path(host_path), container_path ].join(":")
+        host_path, container_path, options = host_to_container_mapping.split(":", 3)
+        as_volume(expand_host_path(host_path), container_path, options)
       end || []
     end
 
@@ -237,5 +237,11 @@ class Kamal::Configuration::Accessory
       elsif accessory_config["role"] && !config.role(accessory_config["role"])
         raise Kamal::ConfigurationError, "accessories/#{name}: unknown role #{accessory_config["role"]}"
       end
+    end
+
+    def as_volume(local, remote, options)
+      volume_string = "#{local}:#{remote}"
+      volume_string += ":#{options}" if options.present?
+      volume_string
     end
 end
