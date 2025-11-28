@@ -144,7 +144,9 @@ module Kamal::Cli
           say "Running the #{hook} hook...", :magenta
           with_env KAMAL.hook.env(**details, **extra_details) do
             run_locally do
-              execute *KAMAL.hook.run(hook)
+              KAMAL.with_verbosity(:debug) do
+                execute *KAMAL.hook.run(hook)
+              end
             end
           rescue SSHKit::Command::Failed => e
             raise HookError.new("Hook `#{hook}` failed:\n#{e.message}")
