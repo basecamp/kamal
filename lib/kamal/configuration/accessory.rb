@@ -74,21 +74,31 @@ class Kamal::Configuration::Accessory
   end
 
   def files
-    accessory_config["files"]&.to_h do |local_to_remote_mapping|
-      local_file, remote_file, options = local_to_remote_mapping.split(":", 3)
-      [ expand_local_file(local_file), { path: expand_remote_file(remote_file), options: options } ]
+    accessory_config["files"]&.to_h do |config|
+      parse_path_config(config, default_mode: "755") do |local, remote|
+        {
+          key: expand_local_file(local),
+          host_path: expand_remote_file(remote),
+          container_path: remote
+        }
+      end
     end || {}
   end
 
   def directories
-    accessory_config["directories"]&.to_h do |host_to_container_mapping|
-      host_path, container_path, options = host_to_container_mapping.split(":", 3)
-      [ expand_host_path(host_path), { path: container_path, options: options } ]
+    accessory_config["directories"]&.to_h do |config|
+      parse_path_config(config, default_mode: nil) do |local, remote|
+        {
+          key: expand_host_path(local),
+          host_path: expand_host_path_for_volume(local),
+          container_path: remote
+        }
+      end
     end || {}
   end
 
   def volume_args
-    (specific_volumes + file_volumes + directory_volumes).flat_map(&:docker_args)
+    (specific_volumes + path_volumes(files) + path_volumes(directories)).flat_map(&:docker_args)
   end
 
   def option_args
@@ -169,24 +179,39 @@ class Kamal::Configuration::Accessory
       end
     end
 
-    def file_volumes
-      accessory_config["files"]&.collect do |local_to_remote_mapping|
-        _, remote_file, options = local_to_remote_mapping.split(":", 3)
+    def path_volumes(paths)
+      paths.map do |local, config|
         Kamal::Configuration::Volume.new \
-          host_path: service_name + remote_file,
-          container_path: remote_file,
-          options: options
-      end || []
+          host_path: config[:host_path],
+          container_path: config[:container_path],
+          options: config[:options]
+      end
     end
 
-    def directory_volumes
-      accessory_config["directories"]&.collect do |host_to_container_mapping|
-        host_path, container_path, options = host_to_container_mapping.split(":", 3)
-        Kamal::Configuration::Volume.new \
-          host_path: expand_host_path_for_volume(host_path),
-          container_path: container_path,
-          options: options
-      end || []
+    def parse_path_config(config, default_mode:)
+      if config.is_a?(Hash)
+        local, remote = config["local"], config["remote"]
+        expanded = yield(local, remote)
+        [
+          expanded[:key],
+          expanded.except(:key).merge(
+            options: config["options"],
+            mode: config["mode"] || default_mode,
+            owner: config["owner"]
+          )
+        ]
+      else
+        local, remote, options = config.split(":", 3)
+        expanded = yield(local, remote)
+        [
+          expanded[:key],
+          expanded.except(:key).merge(
+            options: options,
+            mode: default_mode,
+            owner: nil
+          )
+        ]
+      end
     end
 
     def expand_host_path(host_path)

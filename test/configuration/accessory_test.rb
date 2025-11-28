@@ -172,19 +172,19 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
 
   test "directory with a relative path" do
     @deploy[:accessories]["mysql"]["directories"] = [ "data:/var/lib/mysql" ]
-    assert_equal({ "$PWD/app-mysql/data" => { path: "/var/lib/mysql", options: nil } }, @config.accessory(:mysql).directories)
+    assert_equal({ "$PWD/app-mysql/data" => { host_path: "app-mysql/data", container_path: "/var/lib/mysql", options: nil, mode: nil, owner: nil } }, @config.accessory(:mysql).directories)
   end
 
   test "directory with an absolute path" do
     @deploy[:accessories]["mysql"]["directories"] = [ "/var/data/mysql:/var/lib/mysql" ]
-    assert_equal({ "/var/data/mysql" => { path: "/var/lib/mysql", options: nil } }, @config.accessory(:mysql).directories)
+    assert_equal({ "/var/data/mysql" => { host_path: "/var/data/mysql", container_path: "/var/lib/mysql", options: nil, mode: nil, owner: nil } }, @config.accessory(:mysql).directories)
   end
 
   test "directory with mount options" do
     @deploy[:accessories]["mysql"]["files"] = []
     @deploy[:accessories]["mysql"]["directories"] = [ "data:/var/lib/mysql:z" ]
     config = Kamal::Configuration.new(@deploy)
-    assert_equal({ "$PWD/app-mysql/data" => { path: "/var/lib/mysql", options: "z" } }, config.accessory(:mysql).directories)
+    assert_equal({ "$PWD/app-mysql/data" => { host_path: "app-mysql/data", container_path: "/var/lib/mysql", options: "z", mode: nil, owner: nil } }, config.accessory(:mysql).directories)
     assert_equal [ "--volume", "$PWD/app-mysql/data:/var/lib/mysql:z" ], config.accessory(:mysql).volume_args
   end
 
@@ -195,6 +195,97 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
     files = config.accessory(:mysql).files
     assert_equal "ro,z", files.values.first[:options]
     assert_equal [ "--volume", "$PWD/app-mysql/etc/mysql/my.cnf:/etc/mysql/my.cnf:ro,z" ], config.accessory(:mysql).volume_args
+  end
+
+  test "file with string format has default mode" do
+    @deploy[:accessories]["mysql"]["files"] = [ "config/mysql/my.cnf:/etc/mysql/my.cnf" ]
+    @deploy[:accessories]["mysql"]["directories"] = []
+    config = Kamal::Configuration.new(@deploy)
+    files = config.accessory(:mysql).files
+    assert_equal "755", files.values.first[:mode]
+    assert_nil files.values.first[:owner]
+  end
+
+  test "file with hash format and custom mode" do
+    @deploy[:accessories]["mysql"]["files"] = [
+      { "local" => "config/mysql/my.cnf", "remote" => "/etc/mysql/my.cnf", "mode" => "0600" }
+    ]
+    @deploy[:accessories]["mysql"]["directories"] = []
+    config = Kamal::Configuration.new(@deploy)
+    files = config.accessory(:mysql).files
+    assert_equal "0600", files.values.first[:mode]
+    assert_nil files.values.first[:owner]
+  end
+
+  test "file with hash format and custom owner" do
+    @deploy[:accessories]["mysql"]["files"] = [
+      { "local" => "config/mysql/my.cnf", "remote" => "/etc/mysql/my.cnf", "owner" => "mysql:mysql" }
+    ]
+    @deploy[:accessories]["mysql"]["directories"] = []
+    config = Kamal::Configuration.new(@deploy)
+    files = config.accessory(:mysql).files
+    assert_equal "755", files.values.first[:mode]
+    assert_equal "mysql:mysql", files.values.first[:owner]
+  end
+
+  test "file with hash format and all options" do
+    @deploy[:accessories]["mysql"]["files"] = [
+      { "local" => "config/mysql/my.cnf", "remote" => "/etc/mysql/my.cnf", "mode" => "0640", "owner" => "1000:1000", "options" => "Z" }
+    ]
+    @deploy[:accessories]["mysql"]["directories"] = []
+    config = Kamal::Configuration.new(@deploy)
+    files = config.accessory(:mysql).files
+    file_config = files.values.first
+    assert_equal "0640", file_config[:mode]
+    assert_equal "1000:1000", file_config[:owner]
+    assert_equal "Z", file_config[:options]
+    assert_equal [ "--volume", "$PWD/app-mysql/etc/mysql/my.cnf:/etc/mysql/my.cnf:Z" ], config.accessory(:mysql).volume_args
+  end
+
+  test "file with hash format erb expansion" do
+    @deploy[:accessories]["mysql"]["files"] = [
+      { "local" => "test/fixtures/files/structure.sql.erb", "remote" => "/docker-entrypoint-initdb.d/structure.sql" }
+    ]
+    @deploy[:accessories]["mysql"]["directories"] = []
+    config = Kamal::Configuration.new(@deploy)
+    files = config.accessory(:mysql).files
+    assert_match "This was dynamically expanded", files.keys.first.read
+  end
+
+  test "directory with hash format and custom mode" do
+    @deploy[:accessories]["mysql"]["files"] = []
+    @deploy[:accessories]["mysql"]["directories"] = [
+      { "local" => "data", "remote" => "/var/lib/mysql", "mode" => "0750" }
+    ]
+    config = Kamal::Configuration.new(@deploy)
+    directories = config.accessory(:mysql).directories
+    assert_equal "0750", directories.values.first[:mode]
+    assert_nil directories.values.first[:owner]
+  end
+
+  test "directory with hash format and custom owner" do
+    @deploy[:accessories]["mysql"]["files"] = []
+    @deploy[:accessories]["mysql"]["directories"] = [
+      { "local" => "data", "remote" => "/var/lib/mysql", "owner" => "mysql:mysql" }
+    ]
+    config = Kamal::Configuration.new(@deploy)
+    directories = config.accessory(:mysql).directories
+    assert_nil directories.values.first[:mode]
+    assert_equal "mysql:mysql", directories.values.first[:owner]
+  end
+
+  test "directory with hash format and all options" do
+    @deploy[:accessories]["mysql"]["files"] = []
+    @deploy[:accessories]["mysql"]["directories"] = [
+      { "local" => "data", "remote" => "/var/lib/mysql", "mode" => "0750", "owner" => "1000:1000", "options" => "z" }
+    ]
+    config = Kamal::Configuration.new(@deploy)
+    directories = config.accessory(:mysql).directories
+    dir_config = directories.values.first
+    assert_equal "0750", dir_config[:mode]
+    assert_equal "1000:1000", dir_config[:owner]
+    assert_equal "z", dir_config[:options]
+    assert_equal [ "--volume", "$PWD/app-mysql/data:/var/lib/mysql:z" ], config.accessory(:mysql).volume_args
   end
 
   test "options" do

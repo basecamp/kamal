@@ -5,6 +5,8 @@ class AccessoryTest < IntegrationTest
     kamal :accessory, :boot, :busybox
     assert_accessory_running :busybox
     assert_accessory_volume_mount_options :busybox
+    assert_accessory_file_mode_and_owner :busybox
+    assert_accessory_directory_mode_and_owner :busybox
 
     kamal :accessory, :stop, :busybox
     assert_accessory_not_running :busybox
@@ -63,6 +65,16 @@ class AccessoryTest < IntegrationTest
     def assert_accessory_volume_mount_options(name)
       mounts = docker_compose("exec vm1 docker inspect custom-busybox --format '{{json .Mounts}}'", capture: true)
       assert_match %r{/data.*"RW":false}, mounts, "Expected read-only mount option (:ro) to be applied"
+    end
+
+    def assert_accessory_file_mode_and_owner(name)
+      file_stat = docker_compose("exec vm1 stat -c '%a %u:%g' /root/custom-busybox/etc/busybox.conf", capture: true)
+      assert_match /640 1000:1000/, file_stat, "Expected file to have 640 mode and 1000:1000 owner"
+    end
+
+    def assert_accessory_directory_mode_and_owner(name)
+      dir_stat = docker_compose("exec vm1 stat -c '%a %u:%g' /root/custom-busybox/data", capture: true)
+      assert_match /750 1000:1000/, dir_stat, "Expected directory to have 750 mode and 1000:1000 owner"
     end
 
     def accessory_details(name)
