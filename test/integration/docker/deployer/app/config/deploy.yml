@@ -25,6 +25,8 @@ drain_timeout: 2
 readiness_delay: 0
 proxy:
   host: 127.0.0.1
+  run:
+    registry: registry:4443
 registry:
   server: localhost:5000
 builder:
