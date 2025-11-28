@@ -96,16 +96,24 @@ accessories:
     # They will be uploaded from the local repo to the host and then mounted.
     #
     # ERB files will be evaluated before being copied.
+    #
+    # You can also specify mount options after a third colon, such as `ro` for read-only
+    # or `z`/`Z` for SELinux labels
     files:
       - config/my.cnf.erb:/etc/mysql/my.cnf
-      - config/myoptions.cnf:/etc/mysql/myoptions.cnf
+      - config/myoptions.cnf:/etc/mysql/myoptions.cnf:ro
+      - config/certs:/etc/mysql/certs:ro,Z
 
     # Directories
     #
     # You can specify directories to mount into the container. They will be created on the host
-    # before being mounted:
+    # before being mounted.
+    #
+    # You can also specify mount options after a third colon, such as `ro` for read-only
+    # or `z`/`Z` for SELinux labels:
     directories:
       - mysql-logs:/var/log/mysql
+      - mysql-data:/var/lib/mysql:z
 
     # Volumes
     #

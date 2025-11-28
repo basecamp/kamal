@@ -172,12 +172,29 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
 
   test "directory with a relative path" do
     @deploy[:accessories]["mysql"]["directories"] = [ "data:/var/lib/mysql" ]
-    assert_equal({ "$PWD/app-mysql/data"=>"/var/lib/mysql" }, @config.accessory(:mysql).directories)
+    assert_equal({ "$PWD/app-mysql/data" => { path: "/var/lib/mysql", options: nil } }, @config.accessory(:mysql).directories)
   end
 
   test "directory with an absolute path" do
     @deploy[:accessories]["mysql"]["directories"] = [ "/var/data/mysql:/var/lib/mysql" ]
-    assert_equal({ "/var/data/mysql"=>"/var/lib/mysql" }, @config.accessory(:mysql).directories)
+    assert_equal({ "/var/data/mysql" => { path: "/var/lib/mysql", options: nil } }, @config.accessory(:mysql).directories)
+  end
+
+  test "directory with mount options" do
+    @deploy[:accessories]["mysql"]["files"] = []
+    @deploy[:accessories]["mysql"]["directories"] = [ "data:/var/lib/mysql:z" ]
+    config = Kamal::Configuration.new(@deploy)
+    assert_equal({ "$PWD/app-mysql/data" => { path: "/var/lib/mysql", options: "z" } }, config.accessory(:mysql).directories)
+    assert_equal [ "--volume", "$PWD/app-mysql/data:/var/lib/mysql:z" ], config.accessory(:mysql).volume_args
+  end
+
+  test "file with mount options" do
+    @deploy[:accessories]["mysql"]["files"] = [ "config/mysql/my.cnf:/etc/mysql/my.cnf:ro,z" ]
+    @deploy[:accessories]["mysql"]["directories"] = []
+    config = Kamal::Configuration.new(@deploy)
+    files = config.accessory(:mysql).files
+    assert_equal "ro,z", files.values.first[:options]
+    assert_equal [ "--volume", "$PWD/app-mysql/etc/mysql/my.cnf:/etc/mysql/my.cnf:ro,z" ], config.accessory(:mysql).volume_args
   end
 
   test "options" do

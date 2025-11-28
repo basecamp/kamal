@@ -45,7 +45,8 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
     with_lock do
       with_accessory(name) do |accessory, hosts|
         on(hosts) do
-          accessory.files.each do |(local, remote)|
+          accessory.files.each do |(local, file_config)|
+            remote = file_config[:path]
             accessory.ensure_local_file_present(local)
 
             execute *accessory.make_directory_for(remote)
