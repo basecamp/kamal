@@ -125,6 +125,14 @@ class Kamal::Cli::Main < Kamal::Cli::Base
     end
   end
 
+  desc "completion", "Generate shell completion scripts"
+  option :shell, aliases: "-s", required: true, enum: [ "bash", "zsh" ], desc: "Shell type (bash or zsh)"
+  def completion
+    completion_file = File.join(File.dirname(__FILE__), "../../../completions/kamal.#{options[:shell]}")
+
+    puts File.read(completion_file)
+  end
+
   desc "docs [SECTION]", "Show Kamal configuration documentation"
   def docs(section = nil)
     case section
