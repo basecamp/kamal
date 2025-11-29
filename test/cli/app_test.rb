@@ -285,6 +285,20 @@ class CliAppTest < CliTestCase
     end
   end
 
+  test "open with proxy host domain" do
+    RbConfig::CONFIG.stubs(:[]).with("host_os").returns("linux")
+    Object.any_instance.expects(:system).with("xdg-open", "https://app.example.com")
+
+    run_command("open", config: :with_proxy_host)
+  end
+
+  test "open with primary host IP" do
+    RbConfig::CONFIG.stubs(:[]).with("host_os").returns("linux")
+    Object.any_instance.expects(:system).with("xdg-open", "http://1.1.1.1")
+
+    run_command("open")
+  end
+
   test "remove" do
     run_command("remove").tap do |output|
       assert_match "sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting' | head -1 | xargs docker stop", output
