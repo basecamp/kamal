@@ -1,6 +1,6 @@
 class Kamal::Secrets::Adapters::Bitwarden < Kamal::Secrets::Adapters::Base
   private
-    def login(account)
+    def login(account, **)
       status = run_command("status")
 
       if status["status"] == "unauthenticated"
@@ -21,7 +21,7 @@ class Kamal::Secrets::Adapters::Bitwarden < Kamal::Secrets::Adapters::Base
       session
     end
 
-    def fetch_secrets(secrets, from:, account:, session:)
+    def fetch_secrets(secrets, from:, session:, **)
       {}.tap do |results|
         items_fields(prefixed_secrets(secrets, from: from)).each do |item, fields|
           item_json = run_command("get item #{item.shellescape}", session: session, raw: true)

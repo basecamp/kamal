@@ -14,7 +14,7 @@ class Kamal::Secrets::Adapters::Enpass < Kamal::Secrets::Adapters::Base
   end
 
   private
-    def fetch_secrets(secrets, from:, account:, session:)
+    def fetch_secrets(secrets, from:, **)
       secrets_titles = fetch_secret_titles(secrets)
 
       result = `enpass-cli -json -vault #{from.shellescape} show #{secrets_titles.map(&:shellescape).join(" ")}`.strip
@@ -31,7 +31,7 @@ class Kamal::Secrets::Adapters::Enpass < Kamal::Secrets::Adapters::Base
       $?.success?
     end
 
-    def login(account)
+    def login(_account, **)
       nil
     end
 

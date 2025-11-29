@@ -4,11 +4,11 @@ class Kamal::Secrets::Adapters::AwsSecretsManager < Kamal::Secrets::Adapters::Ba
   end
 
   private
-    def login(_account)
+    def login(_account, **)
       nil
     end
 
-    def fetch_secrets(secrets, from:, account: nil, session:)
+    def fetch_secrets(secrets, from:, account: nil, **)
       {}.tap do |results|
         get_from_secrets_manager(prefixed_secrets(secrets, from: from), account: account).each do |secret|
           secret_name = secret["Name"]
