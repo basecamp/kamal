@@ -136,8 +136,4 @@ class SecretAdapterTestCase < ActiveSupport::TestCase
       stub_ticks.with { |c| c == command && (succeed ? `true` : `false`) }
       Kamal::Secrets::Adapters::Base.any_instance.stubs(:`)
     end
-
-    def shellunescape(string)
-      "\"#{string}\"".undump.gsub(/\\([{}])/, "\\1")
-    end
 end
