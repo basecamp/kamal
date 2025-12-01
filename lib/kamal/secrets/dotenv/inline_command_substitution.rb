@@ -1,4 +1,18 @@
 class Kamal::Secrets::Dotenv::InlineCommandSubstitution
+  # Unlike dotenv, this regex does not match escaped
+  # parentheses when looking for command substitutions.
+  INTERPOLATED_SHELL_COMMAND = /
+    (?<backslash>\\)?          # is it escaped with a backslash?
+    \$                         # literal $
+    (?<cmd>                    # collect command content for eval
+      \(                       # require opening paren
+      (?:\\.|[^()\\]|\g<cmd>)+ # allow any number of non-parens or escaped
+                               # parens (by nesting the <cmd> expression
+                               # recursively)
+      \)                       # require closing paren
+    )
+  /x
+
   class << self
     def install!
       ::Dotenv::Parser.substitutions.map! { |sub| sub == ::Dotenv::Substitutions::Command ? self : sub }
@@ -6,7 +20,7 @@ class Kamal::Secrets::Dotenv::InlineCommandSubstitution
 
     def call(value, env, overwrite: false)
       # Process interpolated shell commands
-      value.gsub(Dotenv::Substitutions::Command.singleton_class::INTERPOLATED_SHELL_COMMAND) do |*|
+      value.gsub(INTERPOLATED_SHELL_COMMAND) do |*|
         # Eliminate opening and closing parentheses
         command = $LAST_MATCH_INFO[:cmd][1..-2]
 
