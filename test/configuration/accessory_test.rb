@@ -253,9 +253,12 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
       { "local" => "test/fixtures/files/structure.sql.erb", "remote" => "/docker-entrypoint-initdb.d/structure.sql" }
     ]
     @deploy[:accessories]["mysql"]["directories"] = []
-    config = Kamal::Configuration.new(@deploy)
-    files = config.accessory(:mysql).files
-    assert_match "This was dynamically expanded", files.keys.first.read
+
+    with_test_secrets("secrets" => "MYSQL_ROOT_PASSWORD=secret123") do
+      config = Kamal::Configuration.new(@deploy)
+      files = config.accessory(:mysql).files
+      assert_match "This was dynamically expanded", files.keys.first.read
+    end
   end
 
   test "directory with hash format and custom mode" do
