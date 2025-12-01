@@ -5,7 +5,7 @@ class EnpassAdapterTest < SecretAdapterTestCase
     stub_ticks_with("enpass-cli version 2> /dev/null", succeed: false)
 
     error = assert_raises RuntimeError do
-      JSON.parse(shellunescape(run_command("fetch", "mynote")))
+      JSON.parse(run_command("fetch", "mynote"))
     end
 
     assert_equal "Enpass CLI is not installed", error.message
@@ -20,7 +20,7 @@ class EnpassAdapterTest < SecretAdapterTestCase
       [{"category":"computer","label":"SECRET_1","login":"","password":"my-password-1","title":"FooBar","type":"password"}]
       JSON
 
-    json = JSON.parse(shellunescape(run_command("fetch", "FooBar/SECRET_1")))
+    json = JSON.parse(run_command("fetch", "FooBar/SECRET_1"))
 
     expected_json = { "FooBar/SECRET_1" => "my-password-1" }
 
@@ -40,7 +40,7 @@ class EnpassAdapterTest < SecretAdapterTestCase
       ]
       JSON
 
-    json = JSON.parse(shellunescape(run_command("fetch", "FooBar/SECRET_1", "FooBar/SECRET_2")))
+    json = JSON.parse(run_command("fetch", "FooBar/SECRET_1", "FooBar/SECRET_2"))
 
     expected_json = { "FooBar/SECRET_1" => "my-password-1", "FooBar/SECRET_2" => "my-password-2" }
 
@@ -61,7 +61,7 @@ class EnpassAdapterTest < SecretAdapterTestCase
       ]
       JSON
 
-    json = JSON.parse(shellunescape(run_command("fetch", "FooBar")))
+    json = JSON.parse(run_command("fetch", "FooBar"))
 
     expected_json = { "FooBar/SECRET_1" => "my-password-1", "FooBar/SECRET_2" => "my-password-2", "FooBar" => "my-password-3" }
 

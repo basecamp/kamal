@@ -6,7 +6,7 @@ class BitwardenSecretsManagerAdapterTest < SecretAdapterTestCase
     stub_login
 
     error = assert_raises RuntimeError do
-      (shellunescape(run_command("fetch")))
+      run_command("fetch")
     end
     assert_equal("You must specify what to retrieve from Bitwarden Secrets Manager", error.message)
   end
@@ -29,7 +29,7 @@ class BitwardenSecretsManagerAdapterTest < SecretAdapterTestCase
       ]
       JSON
 
-    json = JSON.parse(shellunescape(run_command("fetch", "all")))
+    json = JSON.parse(run_command("fetch", "all"))
 
     expected_json = {
       "KAMAL_REGISTRY_PASSWORD"=>"some_password",
@@ -57,7 +57,7 @@ class BitwardenSecretsManagerAdapterTest < SecretAdapterTestCase
       ]
       JSON
 
-    json = JSON.parse(shellunescape(run_command("fetch", "all", "--from", "82aeb5bd-6958-4a89-8197-eacab758acce")))
+    json = JSON.parse(run_command("fetch", "all", "--from", "82aeb5bd-6958-4a89-8197-eacab758acce"))
 
     expected_json = {
       "KAMAL_REGISTRY_PASSWORD"=>"some_password",
@@ -79,7 +79,7 @@ class BitwardenSecretsManagerAdapterTest < SecretAdapterTestCase
       }
       JSON
 
-    json = JSON.parse(shellunescape(run_command("fetch", "82aeb5bd-6958-4a89-8197-eacab758acce")))
+    json = JSON.parse(run_command("fetch", "82aeb5bd-6958-4a89-8197-eacab758acce"))
     expected_json = {
       "KAMAL_REGISTRY_PASSWORD"=>"some_password"
     }
@@ -107,7 +107,7 @@ class BitwardenSecretsManagerAdapterTest < SecretAdapterTestCase
       }
       JSON
 
-    json = JSON.parse(shellunescape(run_command("fetch", "82aeb5bd-6958-4a89-8197-eacab758acce", "6f8cdf27-de2b-4c77-a35d-07df8050e332")))
+    json = JSON.parse(run_command("fetch", "82aeb5bd-6958-4a89-8197-eacab758acce", "6f8cdf27-de2b-4c77-a35d-07df8050e332"))
     expected_json = {
       "KAMAL_REGISTRY_PASSWORD"=>"some_password",
       "MY_OTHER_SECRET"=>"my=wierd\"secret"
@@ -122,7 +122,7 @@ class BitwardenSecretsManagerAdapterTest < SecretAdapterTestCase
     stub_ticks_with("bws secret list", succeed: false).returns("Error:\n0: Received error message from server")
 
     error = assert_raises RuntimeError do
-      (shellunescape(run_command("fetch", "all")))
+      (run_command("fetch", "all"))
     end
     assert_equal("Could not read secrets from Bitwarden Secrets Manager", error.message)
   end
@@ -134,7 +134,7 @@ class BitwardenSecretsManagerAdapterTest < SecretAdapterTestCase
       .returns("Error:\n0: Received error message from server")
 
     error = assert_raises RuntimeError do
-      (shellunescape(run_command("fetch", "82aeb5bd-6958-4a89-8197-eacab758acce")))
+      (run_command("fetch", "82aeb5bd-6958-4a89-8197-eacab758acce"))
     end
     assert_equal("Could not read 82aeb5bd-6958-4a89-8197-eacab758acce from Bitwarden Secrets Manager", error.message)
   end
@@ -151,7 +151,7 @@ class BitwardenSecretsManagerAdapterTest < SecretAdapterTestCase
       }
       JSON
 
-    json = JSON.parse(shellunescape(run_command("fetch", "82aeb5bd-6958-4a89-8197-eacab758acce")))
+    json = JSON.parse(run_command("fetch", "82aeb5bd-6958-4a89-8197-eacab758acce"))
     expected_json = {
       "SSH_PRIVATE_KEY"=>"some_key\nwith_linebreak"
     }
@@ -164,7 +164,7 @@ class BitwardenSecretsManagerAdapterTest < SecretAdapterTestCase
     stub_ticks_with("bws project list", succeed: false)
 
     error = assert_raises RuntimeError do
-      (shellunescape(run_command("fetch", "all")))
+      (run_command("fetch", "all"))
     end
     assert_equal("Could not authenticate to Bitwarden Secrets Manager. Did you set a valid access token?", error.message)
   end
@@ -173,7 +173,7 @@ class BitwardenSecretsManagerAdapterTest < SecretAdapterTestCase
     stub_ticks_with("bws --version 2> /dev/null", succeed: false)
 
     error = assert_raises RuntimeError do
-      shellunescape(run_command("fetch"))
+      run_command("fetch")
     end
     assert_equal "Bitwarden Secrets Manager CLI is not installed", error.message
   end

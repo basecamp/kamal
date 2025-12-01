@@ -8,7 +8,7 @@ class BitwardenAdapterTest < SecretAdapterTestCase
     stub_ticks.with("bw sync").returns("")
     stub_mypassword
 
-    json = JSON.parse(shellunescape(run_command("fetch", "mypassword")))
+    json = JSON.parse(run_command("fetch", "mypassword"))
 
     expected_json = { "mypassword"=>"secret123" }
 
@@ -23,7 +23,7 @@ class BitwardenAdapterTest < SecretAdapterTestCase
     stub_noteitem
 
     error = assert_raises RuntimeError do
-      JSON.parse(shellunescape(run_command("fetch", "mynote")))
+      JSON.parse(run_command("fetch", "mynote"))
     end
     assert_match(/not a login type item/, error.message)
   end
@@ -35,7 +35,7 @@ class BitwardenAdapterTest < SecretAdapterTestCase
     stub_ticks.with("bw sync").returns("")
     stub_myitem
 
-    json = JSON.parse(shellunescape(run_command("fetch", "--from", "myitem", "field1", "field2", "field3")))
+    json = JSON.parse(run_command("fetch", "--from", "myitem", "field1", "field2", "field3"))
 
     expected_json = {
       "myitem/field1"=>"secret1", "myitem/field2"=>"blam", "myitem/field3"=>"fewgrwjgk"
@@ -51,7 +51,7 @@ class BitwardenAdapterTest < SecretAdapterTestCase
     stub_ticks.with("bw sync").returns("")
     stub_noteitem_with_fields
 
-    json = JSON.parse(shellunescape(run_command("fetch", "mynotefields")))
+    json = JSON.parse(run_command("fetch", "mynotefields"))
 
     expected_json = {
       "mynotefields/field1"=>"secret1", "mynotefields/field2"=>"blam", "mynotefields/field3"=>"fewgrwjgk",
@@ -95,7 +95,7 @@ class BitwardenAdapterTest < SecretAdapterTestCase
     JSON
 
 
-    json = JSON.parse(shellunescape(run_command("fetch", "mypassword", "myitem/field1", "myitem/field2", "myitem2/field3")))
+    json = JSON.parse(run_command("fetch", "mypassword", "myitem/field1", "myitem/field2", "myitem2/field3"))
 
     expected_json = {
       "mypassword"=>"secret123", "myitem/field1"=>"secret1", "myitem/field2"=>"blam", "myitem2/field3"=>"fewgrwjgk"
@@ -120,7 +120,7 @@ class BitwardenAdapterTest < SecretAdapterTestCase
     stub_ticks.with("bw sync").returns("")
     stub_mypassword
 
-    json = JSON.parse(shellunescape(run_command("fetch", "mypassword")))
+    json = JSON.parse(run_command("fetch", "mypassword"))
 
     expected_json = { "mypassword"=>"secret123" }
 
@@ -147,7 +147,7 @@ class BitwardenAdapterTest < SecretAdapterTestCase
     stub_ticks.with("bw sync").returns("")
     stub_mypassword
 
-    json = JSON.parse(shellunescape(run_command("fetch", "mypassword")))
+    json = JSON.parse(run_command("fetch", "mypassword"))
 
     expected_json = { "mypassword"=>"secret123" }
 
@@ -174,7 +174,7 @@ class BitwardenAdapterTest < SecretAdapterTestCase
     stub_ticks.with("BW_SESSION=0987654321 bw sync").returns("")
     stub_mypassword(session: "0987654321")
 
-    json = JSON.parse(shellunescape(run_command("fetch", "mypassword")))
+    json = JSON.parse(run_command("fetch", "mypassword"))
 
     expected_json = { "mypassword"=>"secret123" }
 
@@ -185,7 +185,7 @@ class BitwardenAdapterTest < SecretAdapterTestCase
     stub_ticks_with("bw --version 2> /dev/null", succeed: false)
 
     error = assert_raises RuntimeError do
-      JSON.parse(shellunescape(run_command("fetch", "mynote")))
+      JSON.parse(run_command("fetch", "mynote"))
     end
     assert_equal "Bitwarden CLI is not installed", error.message
   end

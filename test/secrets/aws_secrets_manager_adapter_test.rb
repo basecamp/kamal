@@ -24,7 +24,7 @@ class AwsSecretsManagerAdapterTest < SecretAdapterTestCase
       JSON
 
     error = assert_raises RuntimeError do
-      JSON.parse(shellunescape(run_command("fetch", "unknown1", "unknown2")))
+      JSON.parse(run_command("fetch", "unknown1", "unknown2"))
     end
 
     assert_equal [ "unknown1: Secrets Manager can't find the specified secret.", "unknown2: Secrets Manager can't find the specified secret." ].join(" "), error.message
@@ -62,7 +62,7 @@ class AwsSecretsManagerAdapterTest < SecretAdapterTestCase
         }
       JSON
 
-    json = JSON.parse(shellunescape(run_command("fetch", "secret/KEY1", "secret/KEY2", "secret2/KEY3")))
+    json = JSON.parse(run_command("fetch", "secret/KEY1", "secret/KEY2", "secret2/KEY3"))
 
     expected_json = {
       "secret/KEY1"=>"VALUE1",
@@ -105,7 +105,7 @@ class AwsSecretsManagerAdapterTest < SecretAdapterTestCase
         }
       JSON
 
-    json = JSON.parse(shellunescape(run_command("fetch", "secret", "secret2/KEY1")))
+    json = JSON.parse(run_command("fetch", "secret", "secret2/KEY1"))
 
     expected_json = {
       "secret"=>"a-string-secret",
@@ -137,7 +137,7 @@ class AwsSecretsManagerAdapterTest < SecretAdapterTestCase
         }
       JSON
 
-    json = JSON.parse(shellunescape(run_command("fetch", "--from", "secret", "KEY1", "KEY2")))
+    json = JSON.parse(run_command("fetch", "--from", "secret", "KEY1", "KEY2"))
 
     expected_json = {
       "secret/KEY1"=>"VALUE1",
@@ -151,7 +151,7 @@ class AwsSecretsManagerAdapterTest < SecretAdapterTestCase
     stub_ticks_with("aws --version 2> /dev/null", succeed: false)
 
     error = assert_raises RuntimeError do
-      JSON.parse(shellunescape(run_command("fetch", "SECRET1")))
+      JSON.parse(run_command("fetch", "SECRET1"))
     end
     assert_equal "AWS CLI is not installed", error.message
   end
@@ -178,7 +178,7 @@ class AwsSecretsManagerAdapterTest < SecretAdapterTestCase
         }
       JSON
 
-    json = JSON.parse(shellunescape(run_command("fetch", "--from", "secret", "KEY1", "KEY2", account: nil)))
+    json = JSON.parse(run_command("fetch", "--from", "secret", "KEY1", "KEY2", account: nil))
 
     expected_json = {
       "secret/KEY1"=>"VALUE1",
