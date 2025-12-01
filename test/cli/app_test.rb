@@ -295,6 +295,28 @@ class CliAppTest < CliTestCase
     end
   end
 
+  test "remove with role filter does not remove images or app directories" do
+    run_command("remove", "-r", "workers", config: :with_two_roles_one_host).tap do |output|
+      assert_match "docker stop", output
+      assert_match "docker container prune --force --filter label=service=app", output
+      # Images and directories should NOT be removed when other roles remain on the host
+      assert_no_match(/docker image prune --all --force --filter label=service=app/, output)
+      assert_no_match(/rm -r .kamal\/apps\/app/, output)
+      assert_no_match(/rm -r .kamal\/proxy\/apps-config\/app/, output)
+    end
+  end
+
+  test "remove with all roles on host removes images and app directories" do
+    run_command("remove", "-r", "workers,web", config: :with_two_roles_one_host).tap do |output|
+      assert_match "docker stop", output
+      assert_match "docker container prune --force --filter label=service=app", output
+      # Images and directories SHOULD be removed when all roles on host are removed
+      assert_match "docker image prune --all --force --filter label=service=app", output
+      assert_match "rm -r .kamal/apps/app on 1.1.1.1", output
+      assert_match "rm -r .kamal/proxy/apps-config/app on 1.1.1.1", output
+    end
+  end
+
   test "remove_container" do
     run_command("remove_container", "1234567").tap do |output|
       assert_match "docker container ls --all --filter name=^app-web-1234567$ --quiet | xargs docker container rm", output
