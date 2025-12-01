@@ -5,7 +5,9 @@ class Kamal::Secrets::Adapters::Test < Kamal::Secrets::Adapters::Base
     end
 
     def fetch_secrets(secrets, from:, account:, session:)
-      prefixed_secrets(secrets, from: from).to_h { |secret| [ secret, secret.reverse ] }
+      prefixed_secrets(secrets, from: from).to_h do |secret|
+        [ secret, secret.gsub("LPAREN", "(").gsub("RPAREN", ")").reverse ]
+      end
     end
 
     def check_dependencies!
