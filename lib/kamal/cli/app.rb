@@ -332,7 +332,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
   desc "remove_images", "Remove all app images from servers", hide: true
   def remove_images
     with_lock do
-      on(KAMAL.app_hosts) do
+      on(hosts_removing_all_roles) do
         execute *KAMAL.auditor.record("Removed all app images"), verbosity: :debug
         execute *KAMAL.app.remove_images
       end
@@ -342,14 +342,12 @@ class Kamal::Cli::App < Kamal::Cli::Base
   desc "remove_app_directories", "Remove the app directories from servers", hide: true
   def remove_app_directories
     with_lock do
-      on(KAMAL.app_hosts) do |host|
-        roles = KAMAL.roles_on(host)
-
-        roles.each do |role|
+      on(hosts_removing_all_roles) do |host|
+        KAMAL.roles_on(host).each do |role|
           execute *KAMAL.auditor.record("Removed #{KAMAL.config.app_directory}", role: role), verbosity: :debug
-          execute *KAMAL.server.remove_app_directory, raise_on_non_zero_exit: false
         end
 
+        execute *KAMAL.server.remove_app_directory, raise_on_non_zero_exit: false
         execute *KAMAL.auditor.record("Removed #{KAMAL.config.app_directory}"), verbosity: :debug
         execute *KAMAL.app.remove_proxy_app_directory, raise_on_non_zero_exit: false
       end
@@ -366,6 +364,10 @@ class Kamal::Cli::App < Kamal::Cli::Base
   end
 
   private
+    def hosts_removing_all_roles
+      KAMAL.app_hosts.select { |host| KAMAL.roles_on(host).map(&:name).sort == KAMAL.config.host_roles(host.to_s).map(&:name).sort }
+    end
+
     def using_version(new_version)
       if new_version
         begin
