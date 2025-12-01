@@ -1,7 +1,7 @@
 module Kamal::Cli::Healthcheck::Poller
   extend self
 
-  def wait_for_healthy(role, &block)
+  def wait_for_healthy(&block)
     attempt = 1
     timeout_at = Time.now + KAMAL.config.deploy_timeout
     readiness_delay = KAMAL.config.readiness_delay
