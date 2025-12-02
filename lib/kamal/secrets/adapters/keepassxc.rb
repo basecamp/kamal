@@ -44,7 +44,7 @@ class Kamal::Secrets::Adapters::Keepassxc < Kamal::Secrets::Adapters::Base
       if (value = ENV[secret]).present?
         results[secret] = value
       else
-        raise "Secret '#{secret}' is missing in ENV."
+        raise "KeePassXC CLI is not Installed & Secret '#{secret}' is missing in ENV."
       end
     end
   end

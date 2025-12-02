@@ -37,7 +37,7 @@ class KeepassxcAdapterTest < SecretAdapterTestCase
     error = assert_raises(RuntimeError) do
       @keepassxc.fetch(["MISSING_SECRET"], account: "ignore", from: "ignore")
     end
-    assert_match(/Secret 'MISSING_SECRET' is missing in ENV./, error.message)
+    assert_match(/KeePassXC CLI is not Installed & secret 'MISSING_SECRET' is missing in ENV./, error.message)
   end
 
   test "check_dependencies! is no-op (supports fallback)" do
