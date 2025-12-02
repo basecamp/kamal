@@ -1,4 +1,5 @@
 require "open3"
+require "io/console"
 
 class Kamal::Secrets::Adapters::Keepassxc < Kamal::Secrets::Adapters::Base
   # Usage Example:
@@ -6,51 +7,46 @@ class Kamal::Secrets::Adapters::Keepassxc < Kamal::Secrets::Adapters::Base
 
   private
 
-  # 1. Login / Authentication
+  # 1. Dependency Check
+  def check_dependencies!
+    @cli_installed = cli_installed?
+  end
+
+  # 2. Login
   def login(account)
-    # In CI, we don't authenticate. Return a dummy session.
-    return "ci-session" if ci_mode?
+    # If CLI is missing, we skip login (Fallback Mode).
+    return unless @cli_installed
 
-    if ENV["KEEPASS_PWD"] && !ENV["KEEPASS_PWD"].empty?
-      ENV["KEEPASS_PWD"]
-    else
-      ask_for_password(account)
-    end
+    ask_for_password(account)
   end
 
-  # 2. Dispatcher
+  # 3. Fetch
   def fetch_secrets(secrets, from:, account:, session:)
-    if ci_mode?
-      # CI Mode: Passthrough (Strict check)
-      secrets.each_with_object({}) do |secret, results|
-        value = ENV[secret]
-        raise "Missing ENV secret '#{secret}' in CI mode." if value.nil? || value.empty?
-        results[secret] = value
-      end
+    if @cli_installed
+      # Local / CLI Mode
+      fetch_from_cli(secrets, from: from, account: account, session: session)
     else
-      # Local Mode: Fetch secrets.
-      if secrets.empty?
-        raise ArgumentError, "No secrets specified. Please list the attribute names you want to fetch."
-      end
-      fetch_specified_secrets(secrets, from: from, account: account, session: session)
+      # Fallback Mode (CI/Server)
+      fetch_from_env(secrets)
     end
   end
 
-  # 3. Fetch secrets
-  def fetch_specified_secrets(secrets, from:, account:, session:)
+  def fetch_from_cli(secrets, from:, account:, session:)
     secrets.each_with_object({}) do |secret, results|
       # If asking for "password", use standard field, otherwise use Attribute lookup
       attr_flag = (secret == "password") ? [] : ["-a", secret]
-
       results[secret] = run_command("show", account, from, *attr_flag, "-q", "--show-protected", session: session)
     end
   end
 
-  # 4. Check Dependencies
-  def check_dependencies!
-    # BYPASS: Don't check for CLI in CI
-    return if ci_mode?
-    raise "KeePassXC CLI is not installed" unless cli_installed?
+  def fetch_from_env(secrets)
+    secrets.each_with_object({}) do |secret, results|
+      if (value = ENV[secret]).present?
+        results[secret] = value
+      else
+        raise "Secret '#{secret}' is missing in ENV."
+      end
+    end
   end
 
   def cli_installed?
@@ -58,14 +54,7 @@ class Kamal::Secrets::Adapters::Keepassxc < Kamal::Secrets::Adapters::Base
     $?.success?
   end
 
-  # --- Helpers ---
-
-  def ci_mode?
-    ENV["CI"] == "true" || ENV["GITHUB_ACTIONS"] == "true"
-  end
-
   def ask_for_password(account)
-    require "io/console"
     File.open("/dev/tty", "r+") do |tty|
       tty.getpass("Enter KeePassXC Master Password for #{File.basename(account)}: ")
     end
