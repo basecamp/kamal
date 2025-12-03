@@ -210,3 +210,58 @@ module NetSshForwardingNoPuts
 end
 
 Net::SSH::Service::Forward.prepend NetSshForwardingNoPuts
+
+module SSHKitDslRoles
+  # Execute on hosts grouped by role.
+  #
+  # Unlike `on()` which deduplicates hosts, this allows the same host to have
+  # multiple concurrent connections when it appears in multiple roles.
+  #
+  # Options:
+  #   hosts: The hosts to run on (required)
+  #   parallel: When true, each role runs in its own thread with separate
+  #             connections. When false, hosts run in parallel but roles on each
+  #             host run sequentially (default: true)
+  #
+  # Example:
+  #   on_roles(roles) do |host, role|
+  #     # deploy role to host
+  #   end
+  def on_roles(roles, hosts:, parallel: true, &block)
+    if parallel
+      threads = roles.filter_map do |role|
+        if (role_hosts = role.hosts & hosts).any?
+          Thread.new do
+            on(role_hosts) { |host| instance_exec(host, role, &block) }
+          rescue StandardError => e
+            raise SSHKit::Runner::ExecuteError.new(e), "Exception while executing on #{role}: #{e.message}"
+          end
+        end
+      end
+
+      exceptions = []
+      threads.each do |t|
+        begin
+          t.join
+        rescue SSHKit::Runner::ExecuteError => e
+          exceptions << e
+        end
+      end
+
+      if exceptions.one?
+        raise exceptions.first
+      elsif exceptions.many?
+        raise exceptions.first, [ "Exceptions on #{exceptions.count} roles:", exceptions.map(&:message) ].join("\n")
+      end
+    else
+      # Host-first iteration: hosts run in parallel, roles on each host run sequentially
+      on(hosts) do |host|
+        roles.each do |role|
+          instance_exec(host, role, &block) if role.hosts.include?(host.to_s)
+        end
+      end
+    end
+  end
+end
+
+SSHKit::DSL.prepend SSHKitDslRoles
