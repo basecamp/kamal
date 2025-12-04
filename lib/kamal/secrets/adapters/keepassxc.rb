@@ -8,7 +8,7 @@ class Kamal::Secrets::Adapters::Keepassxc < Kamal::Secrets::Adapters::Base
   private
 
   def check_dependencies!
-    raise RuntimeError, "KeePassXC CLI is not installed." unless cli_installed?
+    raise "KeePassXC CLI is not installed." unless cli_installed?
   end
 
   def login(account)
