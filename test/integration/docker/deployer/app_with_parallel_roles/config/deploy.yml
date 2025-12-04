@@ -1,0 +1,35 @@
+service: app_with_parallel_roles
+image: app_with_parallel_roles
+servers:
+  web:
+    hosts:
+      - vm1
+      - vm2
+  workers:
+    hosts:
+      - vm1
+    cmd: sleep infinity
+deploy_timeout: 2
+drain_timeout: 2
+readiness_delay: 0
+boot:
+  parallel_roles: true
+proxy:
+  host: localhost
+  ssl: false
+  healthcheck:
+    interval: 1
+    timeout: 1
+    path: "/up"
+  response_timeout: 2
+  run:
+    registry: registry:4443
+registry:
+  server: registry:4443
+  username: root
+  password: root
+builder:
+  driver: docker
+  arch: <%= Kamal::Utils.docker_arch %>
+  args:
+    COMMIT_SHA: <%= `git rev-parse HEAD` %>

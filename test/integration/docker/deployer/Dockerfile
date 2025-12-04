@@ -28,7 +28,8 @@ RUN rm -rf /root/.ssh && \
     cd /app_with_custom_certificate && git init && git add . && git commit -am "Initial version" && \
     cd /app_with_roles && git init && git add . && git commit -am "Initial version" && \
     cd /app_with_traefik && git init && git add . && git commit -am "Initial version" && \
-    cd /app_with_proxied_accessory && git init && git add . && git commit -am "Initial version"
+    cd /app_with_proxied_accessory && git init && git add . && git commit -am "Initial version" && \
+    cd /app_with_parallel_roles && git init && git add . && git commit -am "Initial version"
 
 HEALTHCHECK --interval=1s CMD pgrep sleep
 

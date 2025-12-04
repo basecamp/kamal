@@ -53,6 +53,24 @@ class CliAppTest < CliTestCase
     end
   end
 
+  test "boot without parallel roles" do
+    # Without parallel_roles: on() called with all hosts, roles sequential per host
+    Kamal::Cli::App.any_instance.expects(:on).with("1.1.1.1").with_block_given.twice
+    Kamal::Cli::App.any_instance.expects(:on).with([ "1.1.1.1", "1.1.1.2", "1.1.1.3" ]).with_block_given.times(4)
+
+    run_command("boot", config: :without_parallel_roles, host: nil)
+  end
+
+  test "boot with parallel roles" do
+    # With parallel_roles: each role gets its own on() call
+    Kamal::Cli::App.any_instance.expects(:on).with("1.1.1.1").with_block_given.twice
+    Kamal::Cli::App.any_instance.expects(:on).with([ "1.1.1.1", "1.1.1.2", "1.1.1.3" ]).with_block_given.times(3)
+    Kamal::Cli::App.any_instance.expects(:on).with([ "1.1.1.1", "1.1.1.2" ]).with_block_given
+    Kamal::Cli::App.any_instance.expects(:on).with([ "1.1.1.1", "1.1.1.3" ]).with_block_given
+
+    run_command("boot", config: :with_parallel_roles, host: nil)
+  end
+
   test "boot errors don't leave lock in place" do
     Kamal::Cli::App.any_instance.expects(:using_version).raises(RuntimeError)
 

@@ -22,4 +22,8 @@ class Kamal::Configuration::Boot
   def wait
     boot_config["wait"]
   end
+
+  def parallel_roles
+    boot_config["parallel_roles"]
+  end
 end
