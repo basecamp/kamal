@@ -3,14 +3,15 @@ class Kamal::Commands::App < Kamal::Commands::Base
 
   ACTIVE_DOCKER_STATUSES = [ :running, :restarting ]
 
-  attr_reader :role, :host
+  attr_reader :role, :host, :container_id
 
   delegate :container_name, to: :role
 
-  def initialize(config, role: nil, host: nil)
+  def initialize(config, role: nil, host: nil, container_id: nil)
     super(config)
     @role = role
     @host = host
+    @container_id = container_id
   end
 
   def run(hostname: nil)
@@ -54,7 +55,7 @@ class Kamal::Commands::App < Kamal::Commands::Base
 
 
   def current_running_container_id
-    current_running_container(format: "--quiet")
+    container_id || current_running_container(format: "--quiet")
   end
 
   def container_id_for_version(version, only_running: false)
