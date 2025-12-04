@@ -114,10 +114,16 @@ proxy:
   # the deploy timeout, with a 5-second timeout for each request.
   #
   # Once the app is up, the proxy will stop hitting the healthcheck endpoint.
+  #
+  # The `host` option allows setting a custom Host header for health check requests.
+  # This is useful when your application validates the Host header (e.g., Django's
+  # ALLOWED_HOSTS, Rails host authorization). Without this, health checks using
+  # internal IPs may be rejected even when the application is healthy.
   healthcheck:
     interval: 3
     path: /health
     timeout: 3
+    host: example.com
 
   # Buffering
   #
