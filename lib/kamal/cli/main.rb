@@ -156,13 +156,13 @@ class Kamal::Cli::Main < Kamal::Cli::Base
       puts "Created .kamal/secrets file"
     end
 
-    unless (hooks_dir = Pathname.new(File.expand_path(".kamal/hooks"))).exist?
-      hooks_dir.mkpath
-      Pathname.new(File.expand_path("templates/sample_hooks", __dir__)).each_child do |sample_hook|
-        FileUtils.cp sample_hook, hooks_dir, preserve: true
-      end
-      puts "Created sample hooks in .kamal/hooks"
+    hooks_dir = Pathname.new(File.expand_path(".kamal/hooks"))
+    puts "Hooks directory already exists in .kamal/hooks" if hooks_dir.exist?
+    hooks_dir.mkpath
+    Pathname.new(File.expand_path("templates/sample_hooks", __dir__)).each_child do |sample_hook|
+      FileUtils.cp sample_hook, hooks_dir, preserve: true
     end
+    puts "Created sample hooks in .kamal/hooks"
 
     if options[:bundle]
       if (binstub = Pathname.new(File.expand_path("bin/kamal"))).exist?
