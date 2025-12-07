@@ -137,17 +137,27 @@ class Kamal::Cli::Main < Kamal::Cli::Base
     puts "No documentation found for #{section}"
   end
 
-  desc "init", "Create config stub in config/deploy.yml and secrets stub in .kamal"
+  desc "init", "Create config stub (default config/deploy.yml) and secrets stub in .kamal"
   option :bundle, type: :boolean, default: false, desc: "Add Kamal to the Gemfile and create a bin/kamal binstub"
   def init
     require "fileutils"
 
-    if (deploy_file = Pathname.new(File.expand_path("config/deploy.yml"))).exist?
-      puts "Config file already exists in config/deploy.yml (remove first to create a new one)"
+    config_file = options[:config_file] || "config/deploy.yml"
+    if (deploy_file = Pathname.new(File.expand_path(config_file))).exist?
+      puts "Config file #{config_file} already exists (remove first to create a new one)"
     else
       FileUtils.mkdir_p deploy_file.dirname
-      FileUtils.cp_r Pathname.new(File.expand_path("templates/deploy.yml", __dir__)), deploy_file
-      puts "Created configuration file in config/deploy.yml"
+      FileUtils.cp Pathname.new(File.expand_path("templates/deploy.yml", __dir__)), deploy_file
+      puts "Created config file #{config_file}"
+    end
+
+    unless (options_file = Pathname.new(File.expand_path(".kamal/options.yml"))).exist?
+      FileUtils.mkdir_p options_file.dirname
+      FileUtils.cp Pathname.new(File.expand_path("templates/options.yml", __dir__)), options_file
+      File.open(options_file, "a") do |file|
+        file.write("config_file: \"#{config_file}\"\n")
+      end
+      puts "Created .kamal/options.yml file"
     end
 
     unless (secrets_file = Pathname.new(File.expand_path(".kamal/secrets"))).exist?
