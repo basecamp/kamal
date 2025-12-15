@@ -152,30 +152,21 @@ proxy:
   #
   # These options are used when booting the proxy container.
   #
-  # `http_port` - default 80
-  # `https_port` - default 443
-  # `metrics_port` - if set, exposes this port for Prometheus metrics
-  # `debug` - if true, enables debug logging
-  # `log_max_size` - maximum size for log files, defaults to "10m"
-  # `publish` - if false, does not publish ports to the host
-  # `bind_ips` - list of IPs to bind to when publishing ports
-  # `registry` - container registry to use for pulling the kamal-proxy image, defaults to Docker Hub
-  # `repository` - container repository to use for pulling the kamal-proxy image, defaults to `basecamp/kamal-proxy`
-  # `version` - version tag of the kamal-proxy image to use
-  # `options` - additional options to pass to `docker run`
   run:
-    http_port: 8080
-    https_port: 8443
-    metrics_port: 9090
-    debug: true
-    log_max_size: "30m"
-    publish: false
-    bind_ips:
+    http_port: 8080                # HTTP port to use (default 80)
+    https_port: 8443               # HTTPS port to use (default 443)
+    metrics_port: 9090             # Port for Prometheus metrics
+    debug: true                    # Debug logging (default: false)
+    log_max_size: "30m"            # Maximum log file size (default: "10m")
+    publish: false                 # Publish ports to the host (default: true)
+    bind_ips:                      # List of IPs to bind to when publishing ports
       - 0.0.0.0
-    registry: registry:4443
-    repository: myrepo/kamal-proxy
-    version: v0.8.0
-    options:
+    registry: registry:4443        # Container registry for the kamal-proxy image
+                                   # (defaults to Docker Hub)
+    repository: myrepo/kamal-proxy # Container repository for the kamal-proxy image
+                                   # (defaults to `basecamp/kamal-proxy`)
+    version: v0.8.0                # Version tag of the kamal-proxy image to use
+    options:                       # Additional options to pass to `docker run`
       label:
         - custom.label=kamal-proxy
       memory: 512m

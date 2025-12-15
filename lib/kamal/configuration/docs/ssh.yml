@@ -61,6 +61,9 @@ ssh:
   # An array of strings, with each element of the array being a secret name.
   key_data:
     - SSH_PRIVATE_KEY
+  # You can also provide raw private key in PEM format, but this is deprecated.
+  key_data:
+    - "-----BEGIN OPENSSH PRIVATE KEY----- ..."
 
   # Config
   #
