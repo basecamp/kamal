@@ -34,7 +34,7 @@ class Kamal::Commands::Builder::Remote < Kamal::Commands::Builder::Base
 
   private
     def builder_name
-      "kamal-remote-#{remote_builder_name_suffix}"
+      namespaced_builder_name("kamal-remote-#{remote_builder_name_suffix}")
     end
 
     def remote_context_name
