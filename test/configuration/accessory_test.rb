@@ -162,6 +162,12 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
     assert_equal [ "--volume", "/var/lib/redis:/data" ], @config.accessory(:redis).volume_args
   end
 
+  test "volume args with docker named volume" do
+    @deploy[:accessories]["redis"]["volumes"] = [ "redis_data:/data" ]
+    config = Kamal::Configuration.new(@deploy)
+    assert_equal [ "--volume", "redis_data:/data" ], config.accessory(:redis).volume_args
+  end
+
   test "dynamic file expansion" do
     @deploy[:accessories]["mysql"]["env"]["secret"] << "ENV_VAR:SECRET_VAR"
     @deploy[:accessories]["mysql"]["files"] << "test/fixtures/files/structure.sql.erb:/docker-entrypoint-initdb.d/structure.sql"

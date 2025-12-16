@@ -98,7 +98,7 @@ class Kamal::Configuration::Accessory
   end
 
   def volume_args
-    (specific_volumes + path_volumes(files) + path_volumes(directories)).flat_map(&:docker_args)
+    argumentize("--volume", specific_volumes) + (path_volumes(files) + path_volumes(directories)).flat_map(&:docker_args)
   end
 
   def option_args
@@ -170,13 +170,7 @@ class Kamal::Configuration::Accessory
     end
 
     def specific_volumes
-      (accessory_config["volumes"] || []).collect do |volume_string|
-        host_path, container_path, options = volume_string.split(":", 3)
-        Kamal::Configuration::Volume.new \
-          host_path: host_path,
-          container_path: container_path,
-          options: options
-      end
+      accessory_config["volumes"] || []
     end
 
     def path_volumes(paths)
