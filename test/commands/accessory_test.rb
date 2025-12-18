@@ -22,6 +22,10 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
             "secret" => [
               "MYSQL_ROOT_PASSWORD"
             ]
+          },
+          "options" => {
+            "cpus" => "4",
+            "memory" => "2GB"
           }
         },
         "redis" => {
@@ -57,7 +61,7 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
 
   test "run" do
     assert_equal \
-      "docker run --name app-mysql --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 3306:3306 --env MYSQL_ROOT_HOST=\"%\" --env-file .kamal/apps/app/env/accessories/mysql.env --label service=\"app-mysql\" private.registry/mysql:8.0",
+      "docker run --name app-mysql --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 3306:3306 --env MYSQL_ROOT_HOST=\"%\" --env-file .kamal/apps/app/env/accessories/mysql.env --label service=\"app-mysql\" --cpus \"4\" --memory \"2GB\" private.registry/mysql:8.0",
       new_command(:mysql).run.join(" ")
 
     assert_equal \
@@ -81,7 +85,7 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
     @config[:accessories]["mysql"]["network"] = "custom"
 
     assert_equal \
-      "docker run --name app-mysql --detach --restart unless-stopped --network custom --log-opt max-size=\"10m\" --publish 3306:3306 --env MYSQL_ROOT_HOST=\"%\" --env-file .kamal/apps/app/env/accessories/mysql.env --label service=\"app-mysql\" private.registry/mysql:8.0",
+      "docker run --name app-mysql --detach --restart unless-stopped --network custom --log-opt max-size=\"10m\" --publish 3306:3306 --env MYSQL_ROOT_HOST=\"%\" --env-file .kamal/apps/app/env/accessories/mysql.env --label service=\"app-mysql\" --cpus \"4\" --memory \"2GB\" private.registry/mysql:8.0",
       new_command(:mysql).run.join(" ")
   end
 
@@ -105,7 +109,7 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
 
   test "execute in new container" do
     assert_equal \
-      "docker run --rm --network kamal --env MYSQL_ROOT_HOST=\"%\" --env-file .kamal/apps/app/env/accessories/mysql.env private.registry/mysql:8.0 mysql -u root",
+      "docker run --rm --network kamal --env MYSQL_ROOT_HOST=\"%\" --env-file .kamal/apps/app/env/accessories/mysql.env --cpus \"4\" --memory \"2GB\" private.registry/mysql:8.0 mysql -u root",
       new_command(:mysql).execute_in_new_container("mysql", "-u", "root").join(" ")
   end
 
@@ -117,7 +121,7 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
 
   test "execute in new container over ssh" do
     new_command(:mysql).stub(:run_over_ssh, ->(cmd) { cmd.join(" ") }) do
-      assert_match %r{docker run -it --rm --network kamal --env MYSQL_ROOT_HOST=\"%\" --env-file .kamal/apps/app/env/accessories/mysql.env private.registry/mysql:8.0 mysql -u root},
+      assert_match %r{docker run -it --rm --network kamal --env MYSQL_ROOT_HOST=\"%\" --env-file .kamal/apps/app/env/accessories/mysql.env --cpus \"4\" --memory \"2GB\" private.registry/mysql:8.0 mysql -u root},
         stub_stdin_tty { new_command(:mysql).execute_in_new_container_over_ssh("mysql", "-u", "root") }
     end
   end
