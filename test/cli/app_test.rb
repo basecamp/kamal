@@ -53,6 +53,24 @@ class CliAppTest < CliTestCase
     end
   end
 
+  test "boot without parallel roles" do
+    # Without parallel_roles: on() called with all hosts, roles sequential per host
+    Kamal::Cli::App.any_instance.expects(:on).with("1.1.1.1").with_block_given.twice
+    Kamal::Cli::App.any_instance.expects(:on).with([ "1.1.1.1", "1.1.1.2", "1.1.1.3" ]).with_block_given.times(4)
+
+    run_command("boot", config: :without_parallel_roles, host: nil)
+  end
+
+  test "boot with parallel roles" do
+    # With parallel_roles: each role gets its own on() call
+    Kamal::Cli::App.any_instance.expects(:on).with("1.1.1.1").with_block_given.twice
+    Kamal::Cli::App.any_instance.expects(:on).with([ "1.1.1.1", "1.1.1.2", "1.1.1.3" ]).with_block_given.times(3)
+    Kamal::Cli::App.any_instance.expects(:on).with([ "1.1.1.1", "1.1.1.2" ]).with_block_given
+    Kamal::Cli::App.any_instance.expects(:on).with([ "1.1.1.1", "1.1.1.3" ]).with_block_given
+
+    run_command("boot", config: :with_parallel_roles, host: nil)
+  end
+
   test "boot errors don't leave lock in place" do
     Kamal::Cli::App.any_instance.expects(:using_version).raises(RuntimeError)
 
@@ -104,7 +122,7 @@ class CliAppTest < CliTestCase
 
     run_command("boot", config: :with_env_tags).tap do |output|
       assert_match "docker tag dhh/app:latest dhh/app:latest", output
-      assert_match %r{docker run --detach --restart unless-stopped --name app-web-latest --network kamal --hostname 1.1.1.1-[0-9a-f]{12} --env KAMAL_CONTAINER_NAME="app-web-latest" --env KAMAL_VERSION="latest" --env KAMAL_HOST="1.1.1.1" --env KAMAL_DESTINATION="" --env TEST="root" --env EXPERIMENT="disabled" --env SITE="site1"}, output
+      assert_match %r{docker run --detach --restart unless-stopped --name app-web-latest --network kamal --hostname 1.1.1.1-[0-9a-f]{12} --env KAMAL_CONTAINER_NAME="app-web-latest" --env KAMAL_VERSION="latest" --env KAMAL_HOST="1.1.1.1" --env TEST="root" --env EXPERIMENT="disabled" --env SITE="site1"}, output
       assert_match "docker container ls --all --filter name=^app-web-123$ --quiet | xargs docker stop", output
     end
   end
@@ -295,6 +313,28 @@ class CliAppTest < CliTestCase
     end
   end
 
+  test "remove with role filter does not remove images or app directories" do
+    run_command("remove", "-r", "workers", config: :with_two_roles_one_host).tap do |output|
+      assert_match "docker stop", output
+      assert_match "docker container prune --force --filter label=service=app", output
+      # Images and directories should NOT be removed when other roles remain on the host
+      assert_no_match(/docker image prune --all --force --filter label=service=app/, output)
+      assert_no_match(/rm -r .kamal\/apps\/app/, output)
+      assert_no_match(/rm -r .kamal\/proxy\/apps-config\/app/, output)
+    end
+  end
+
+  test "remove with all roles on host removes images and app directories" do
+    run_command("remove", "-r", "workers,web", config: :with_two_roles_one_host).tap do |output|
+      assert_match "docker stop", output
+      assert_match "docker container prune --force --filter label=service=app", output
+      # Images and directories SHOULD be removed when all roles on host are removed
+      assert_match "docker image prune --all --force --filter label=service=app", output
+      assert_match "rm -r .kamal/apps/app on 1.1.1.1", output
+      assert_match "rm -r .kamal/proxy/apps-config/app on 1.1.1.1", output
+    end
+  end
+
   test "remove_container" do
     run_command("remove_container", "1234567").tap do |output|
       assert_match "docker container ls --all --filter name=^app-web-1234567$ --quiet | xargs docker container rm", output
@@ -323,7 +363,7 @@ class CliAppTest < CliTestCase
   test "exec" do
     run_command("exec", "ruby -v").tap do |output|
       assert_match "docker login -u [REDACTED] -p [REDACTED]", output
-      assert_match "docker run --rm --network kamal --env-file .kamal/apps/app/env/roles/web.env --log-opt max-size=\"10m\" dhh/app:latest ruby -v", output
+      assert_match %r{docker run --rm --name app-web-exec-latest-[0-9a-f]{6} --network kamal --env-file .kamal/apps/app/env/roles/web.env --log-opt max-size="10m" dhh/app:latest ruby -v}, output
     end
   end
 
@@ -336,13 +376,13 @@ class CliAppTest < CliTestCase
 
   test "exec separate arguments" do
     run_command("exec", "ruby", " -v").tap do |output|
-      assert_match "docker run --rm --network kamal --env-file .kamal/apps/app/env/roles/web.env --log-opt max-size=\"10m\" dhh/app:latest ruby -v", output
+      assert_match %r{docker run --rm --name app-web-exec-latest-[0-9a-f]{6} --network kamal --env-file .kamal/apps/app/env/roles/web.env --log-opt max-size="10m" dhh/app:latest ruby -v}, output
     end
   end
 
   test "exec detach" do
     run_command("exec", "--detach", "ruby -v").tap do |output|
-      assert_match "docker run --detach --network kamal --env-file .kamal/apps/app/env/roles/web.env --log-opt max-size=\"10m\" dhh/app:latest ruby -v", output
+      assert_match %r{docker run --detach --name app-web-exec-latest-[0-9a-f]{6} --network kamal --env-file .kamal/apps/app/env/roles/web.env --log-opt max-size="10m" dhh/app:latest ruby -v}, output
     end
   end
 
@@ -374,7 +414,7 @@ class CliAppTest < CliTestCase
   test "exec interactive" do
     Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
     SSHKit::Backend::Abstract.any_instance.expects(:exec)
-      .with("ssh -t root@1.1.1.1 -p 22 'docker run -it --rm --network kamal --env-file .kamal/apps/app/env/roles/web.env --log-opt max-size=\"10m\" dhh/app:latest ruby -v'")
+      .with(regexp_matches(%r{ssh -t root@1\.1\.1\.1 -p 22 'docker run -it --rm --name app-web-exec-latest-[0-9a-f]{6} --network kamal --env-file .kamal/apps/app/env/roles/web.env --log-opt max-size="10m" dhh/app:latest ruby -v'}))
 
     stub_stdin_tty do
       run_command("exec", "-i", "ruby -v").tap do |output|
@@ -506,7 +546,7 @@ class CliAppTest < CliTestCase
     run_command("boot", config: :with_proxy).tap do |output|
       assert_match /Renaming container .* to .* as already deployed on 1.1.1.1/, output # Rename
       assert_match /docker rename app-web-latest app-web-latest_replaced_[0-9a-f]{16}/, output
-      assert_match /docker run --detach --restart unless-stopped --name app-web-latest --network kamal --hostname 1.1.1.1-[0-9a-f]{12} --env KAMAL_CONTAINER_NAME="app-web-latest" --env KAMAL_VERSION="latest" --env KAMAL_HOST="1.1.1.1" --env KAMAL_DESTINATION="" --env-file .kamal\/apps\/app\/env\/roles\/web.env --log-opt max-size="10m" --label service="app" --label role="web" --label destination dhh\/app:latest/, output
+      assert_match /docker run --detach --restart unless-stopped --name app-web-latest --network kamal --hostname 1.1.1.1-[0-9a-f]{12} --env KAMAL_CONTAINER_NAME="app-web-latest" --env KAMAL_VERSION="latest" --env KAMAL_HOST="1.1.1.1" --env-file .kamal\/apps\/app\/env\/roles\/web.env --log-opt max-size="10m" --label service="app" --label role="web" --label destination dhh\/app:latest/, output
       assert_match /docker exec kamal-proxy kamal-proxy deploy app-web --target="123:80"/, output
       assert_match "docker container ls --all --filter name=^app-web-123$ --quiet | xargs docker stop", output
     end

@@ -36,6 +36,8 @@ class Kamal::Configuration::Validator
                 validate_array_of_or_type! value, example_value.first.class
               elsif key.to_s == "config"
                 validate_ssh_config!(value)
+              elsif key.to_s == "files" || key.to_s == "directories"
+                validate_paths!(value)
               else
                 validate_array_of! value, example_value.first.class
               end
@@ -138,6 +140,24 @@ class Kamal::Configuration::Validator
         # Booleans and Strings are allowed
       else
         type_error(TrueClass, FalseClass, String, Array)
+      end
+    end
+
+    def validate_paths!(paths)
+      validate_type! paths, Array
+
+      paths.each_with_index do |path, index|
+        with_context(index) do
+          validate_type! path, String, Hash
+
+          if path.is_a?(Hash)
+            %w[local remote mode owner options].each do |key|
+              with_context(key) do
+                validate_type! path[key], String if path.key?(key)
+              end
+            end
+          end
+        end
       end
     end
 

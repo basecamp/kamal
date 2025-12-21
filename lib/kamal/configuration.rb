@@ -50,7 +50,7 @@ class Kamal::Configuration
 
     validate! raw_config, example: validation_yml.symbolize_keys, context: "", with: Kamal::Configuration::Validator::Configuration
 
-    @secrets = Kamal::Secrets.new(destination: destination)
+    @secrets = Kamal::Secrets.new(destination: destination, secrets_path: secrets_path)
 
     # Eager load config to validate it, these are first as they have dependencies later on
     @servers = Servers.new(config: self)
@@ -77,6 +77,7 @@ class Kamal::Configuration
     ensure_one_host_for_ssl_roles
     ensure_unique_hosts_for_ssl_roles
     ensure_local_registry_remote_builder_has_ssh_url
+    ensure_no_conflicting_proxy_runs
   end
 
   def version=(version)
@@ -120,6 +121,14 @@ class Kamal::Configuration
 
   def all_hosts
     (roles + accessories).flat_map(&:hosts).uniq
+  end
+
+  def host_roles(host)
+    roles.select { |role| role.hosts.include?(host) }
+  end
+
+  def host_accessories(host)
+    accessories.select { |accessory| accessory.hosts.include?(host) }
   end
 
   def app_hosts
@@ -167,6 +176,11 @@ class Kamal::Configuration
     name ||= raw_config&.service if registry.local?
 
     name
+  end
+
+  def proxy_run(host)
+    # We validate that all the config are identical for a host
+    proxy_runs(host.to_s).first
   end
 
   def repository
@@ -243,6 +257,10 @@ class Kamal::Configuration
 
   def hooks_path
     raw_config.hooks_path || ".kamal/hooks"
+  end
+
+  def secrets_path
+    raw_config.secrets_path || ".kamal/secrets"
   end
 
   def asset_path
@@ -376,6 +394,19 @@ class Kamal::Configuration
       end
 
       true
+    end
+
+    def ensure_no_conflicting_proxy_runs
+      all_hosts.each do |host|
+        run_configs = proxy_runs(host)
+        if run_configs.uniq.size > 1
+          raise Kamal::ConfigurationError, "Conflicting proxy run configurations for host #{host}"
+        end
+      end
+    end
+
+    def proxy_runs(host)
+      (host_roles(host) + host_accessories(host)).map(&:proxy).compact.map(&:run).compact
     end
 
     def role_names

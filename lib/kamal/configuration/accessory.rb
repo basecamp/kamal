@@ -74,25 +74,31 @@ class Kamal::Configuration::Accessory
   end
 
   def files
-    accessory_config["files"]&.to_h do |local_to_remote_mapping|
-      local_file, remote_file = local_to_remote_mapping.split(":")
-      [ expand_local_file(local_file), expand_remote_file(remote_file) ]
+    accessory_config["files"]&.to_h do |config|
+      parse_path_config(config, default_mode: "755") do |local, remote|
+        {
+          key: expand_local_file(local),
+          host_path: expand_remote_file(remote),
+          container_path: remote
+        }
+      end
     end || {}
   end
 
   def directories
-    accessory_config["directories"]&.to_h do |host_to_container_mapping|
-      host_path, container_path = host_to_container_mapping.split(":")
-      [ expand_host_path(host_path), container_path ]
+    accessory_config["directories"]&.to_h do |config|
+      parse_path_config(config, default_mode: nil) do |local, remote|
+        {
+          key: expand_host_path(local),
+          host_path: expand_host_path_for_volume(local),
+          container_path: remote
+        }
+      end
     end || {}
   end
 
-  def volumes
-    specific_volumes + remote_files_as_volumes + remote_directories_as_volumes
-  end
-
   def volume_args
-    argumentize "--volume", volumes
+    argumentize("--volume", specific_volumes) + (path_volumes(files) + path_volumes(directories)).flat_map(&:docker_args)
   end
 
   def option_args
@@ -142,17 +148,17 @@ class Kamal::Configuration::Accessory
 
     def expand_local_file(local_file)
       if local_file.end_with?("erb")
-        with_clear_env_loaded { read_dynamic_file(local_file) }
+        with_env_loaded { read_dynamic_file(local_file) }
       else
         Pathname.new(File.expand_path(local_file)).to_s
       end
     end
 
-    def with_clear_env_loaded
-      env.clear.each { |k, v| ENV[k] = v }
+    def with_env_loaded
+      env.to_h.each { |k, v| ENV[k] = v }
       yield
     ensure
-      env.clear.each { |k, v| ENV.delete(k) }
+      env.to_h.each { |k, v| ENV.delete(k) }
     end
 
     def read_dynamic_file(local_file)
@@ -167,22 +173,47 @@ class Kamal::Configuration::Accessory
       accessory_config["volumes"] || []
     end
 
-    def remote_files_as_volumes
-      accessory_config["files"]&.collect do |local_to_remote_mapping|
-        _, remote_file = local_to_remote_mapping.split(":")
-        "#{service_data_directory + remote_file}:#{remote_file}"
-      end || []
+    def path_volumes(paths)
+      paths.map do |local, config|
+        Kamal::Configuration::Volume.new \
+          host_path: config[:host_path],
+          container_path: config[:container_path],
+          options: config[:options]
+      end
     end
 
-    def remote_directories_as_volumes
-      accessory_config["directories"]&.collect do |host_to_container_mapping|
-        host_path, container_path = host_to_container_mapping.split(":")
-        [ expand_host_path(host_path), container_path ].join(":")
-      end || []
+    def parse_path_config(config, default_mode:)
+      if config.is_a?(Hash)
+        local, remote = config["local"], config["remote"]
+        expanded = yield(local, remote)
+        [
+          expanded[:key],
+          expanded.except(:key).merge(
+            options: config["options"],
+            mode: config["mode"] || default_mode,
+            owner: config["owner"]
+          )
+        ]
+      else
+        local, remote, options = config.split(":", 3)
+        expanded = yield(local, remote)
+        [
+          expanded[:key],
+          expanded.except(:key).merge(
+            options: options,
+            mode: default_mode,
+            owner: nil
+          )
+        ]
+      end
     end
 
     def expand_host_path(host_path)
       absolute_path?(host_path) ? host_path : File.join(service_data_directory, host_path)
+    end
+
+    def expand_host_path_for_volume(host_path)
+      absolute_path?(host_path) ? host_path : File.join(service_name, host_path)
     end
 
     def absolute_path?(path)

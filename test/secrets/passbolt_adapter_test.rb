@@ -50,7 +50,7 @@ class PassboltAdapterTest < SecretAdapterTestCase
       JSON
 
     json = JSON.parse(
-      shellunescape run_command("fetch", "SECRET1", "FSECRET1", "FSECRET2")
+      run_command("fetch", "SECRET1", "FSECRET1", "FSECRET2")
     )
 
     expected_json = {
@@ -121,7 +121,7 @@ class PassboltAdapterTest < SecretAdapterTestCase
       JSON
 
     json = JSON.parse(
-      shellunescape run_command("fetch", "--from", "my-project", "SECRET1", "FSECRET1", "FSECRET2")
+      run_command("fetch", "--from", "my-project", "SECRET1", "FSECRET1", "FSECRET2")
     )
 
     expected_json = {
@@ -192,7 +192,7 @@ class PassboltAdapterTest < SecretAdapterTestCase
       JSON
 
     json = JSON.parse(
-      shellunescape run_command("fetch", "my-project/SECRET1", "my-project/FSECRET1", "my-project/FSECRET2")
+      run_command("fetch", "my-project/SECRET1", "my-project/FSECRET1", "my-project/FSECRET2")
     )
 
     expected_json = {
@@ -270,7 +270,7 @@ class PassboltAdapterTest < SecretAdapterTestCase
       JSON
 
     json = JSON.parse(
-      shellunescape run_command("fetch", "my-project/SECRET1", "my-project/FSECRET1", "other-project/FSECRET2")
+      run_command("fetch", "my-project/SECRET1", "my-project/FSECRET1", "other-project/FSECRET2")
     )
 
     expected_json = {
@@ -355,7 +355,7 @@ class PassboltAdapterTest < SecretAdapterTestCase
       JSON
 
     json = JSON.parse(
-      shellunescape run_command("fetch", "--from", "my-project/subfolder", "SECRET1", "FSECRET1", "FSECRET2")
+      run_command("fetch", "--from", "my-project/subfolder", "SECRET1", "FSECRET1", "FSECRET2")
     )
 
     expected_json = {
@@ -440,7 +440,7 @@ class PassboltAdapterTest < SecretAdapterTestCase
       JSON
 
     json = JSON.parse(
-      shellunescape run_command("fetch", "my-project/subfolder/SECRET1", "my-project/subfolder/FSECRET1", "my-project/subfolder/FSECRET2")
+      run_command("fetch", "my-project/subfolder/SECRET1", "my-project/subfolder/FSECRET1", "my-project/subfolder/FSECRET2")
     )
 
     expected_json = {
@@ -456,7 +456,7 @@ class PassboltAdapterTest < SecretAdapterTestCase
     stub_ticks_with("passbolt --version 2> /dev/null", succeed: false)
 
     error = assert_raises RuntimeError do
-      JSON.parse(shellunescape(run_command("fetch", "HOST", "PORT")))
+      JSON.parse(run_command("fetch", "HOST", "PORT"))
     end
 
     assert_equal "Passbolt CLI is not installed", error.message
@@ -472,7 +472,7 @@ class PassboltAdapterTest < SecretAdapterTestCase
     stub_ticks.with("passbolt list resources --filter '(Name == \"SECRET1\" && FolderParentID == \"abc\\\\ def-123\")' --folder abc\\ def-123 --json")
       .returns('[{"id":"dd32963c","folder_parent_id":"abc def-123","name":"SECRET1","username":"","uri":"","password":"secret1","description":"","created_timestamp":"2025-02-21T06:04:23Z","modified_timestamp":"2025-02-21T06:04:23Z"}]')
 
-    json = JSON.parse(shellunescape(run_command("fetch", "my-project/SECRET1")))
+    json = JSON.parse(run_command("fetch", "my-project/SECRET1"))
 
     assert_equal({ "SECRET1"=>"secret1" }, json)
   end

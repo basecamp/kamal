@@ -1,54 +1,49 @@
 require "test_helper"
 
 class ConfigurationBootTest < ActiveSupport::TestCase
-  test "no group strategy" do
-    deploy = {
-      service: "app", image: "dhh/app", registry: { "username" => "dhh", "password" => "secret" }, builder: { "arch" => "amd64" },
-      servers: { "web" => [ "1.1.1.1", "1.1.1.2" ], "workers" => [ "1.1.1.3", "1.1.1.4" ] }
-    }
-
-    config = Kamal::Configuration.new(deploy)
+  test "no boot config" do
+    config = config_with_boot(nil)
 
     assert_nil config.boot.limit
     assert_nil config.boot.wait
+    assert_nil config.boot.parallel_roles
   end
 
   test "specific limit group strategy" do
-    deploy = {
-      service: "app", image: "dhh/app", registry: { "username" => "dhh", "password" => "secret" }, builder: { "arch" => "amd64" },
-      servers: { "web" => [ "1.1.1.1", "1.1.1.2" ], "workers" => [ "1.1.1.3", "1.1.1.4" ] },
-      boot: { "limit" => 3, "wait" => 2 }
-    }
-
-    config = Kamal::Configuration.new(deploy)
+    config = config_with_boot("limit" => 3, "wait" => 2)
 
     assert_equal 3, config.boot.limit
     assert_equal 2, config.boot.wait
   end
 
   test "percentage-based group strategy" do
-    deploy = {
-      service: "app", image: "dhh/app", registry: { "username" => "dhh", "password" => "secret" }, builder: { "arch" => "amd64" },
-      servers: { "web" => [ "1.1.1.1", "1.1.1.2" ], "workers" => [ "1.1.1.3", "1.1.1.4" ] },
-      boot: { "limit" => "50%", "wait" => 2 }
-    }
-
-    config = Kamal::Configuration.new(deploy)
+    config = config_with_boot("limit" => "50%", "wait" => 2)
 
     assert_equal 2, config.boot.limit
     assert_equal 2, config.boot.wait
   end
 
   test "percentage-based group strategy limit is at least 1" do
-    deploy = {
-      service: "app", image: "dhh/app", registry: { "username" => "dhh", "password" => "secret" }, builder: { "arch" => "amd64" },
-      servers: { "web" => [ "1.1.1.1", "1.1.1.2" ], "workers" => [ "1.1.1.3", "1.1.1.4" ] },
-      boot: { "limit" => "1%", "wait" => 2 }
-    }
-
-    config = Kamal::Configuration.new(deploy)
+    config = config_with_boot("limit" => "1%", "wait" => 2)
 
     assert_equal 1, config.boot.limit
     assert_equal 2, config.boot.wait
   end
+
+  test "parallel_roles" do
+    config = config_with_boot("parallel_roles" => true)
+
+    assert_equal true, config.boot.parallel_roles
+  end
+
+  private
+    def config_with_boot(boot)
+      deploy = {
+        service: "app", image: "dhh/app", registry: { "username" => "dhh", "password" => "secret" }, builder: { "arch" => "amd64" },
+        servers: { "web" => [ "1.1.1.1", "1.1.1.2" ], "workers" => [ "1.1.1.3", "1.1.1.4" ] },
+        boot: boot
+      }.compact
+
+      Kamal::Configuration.new(deploy)
+    end
 end

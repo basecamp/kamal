@@ -45,12 +45,14 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
     with_lock do
       with_accessory(name) do |accessory, hosts|
         on(hosts) do
-          accessory.files.each do |(local, remote)|
+          accessory.files.each do |(local, config)|
+            remote = config[:host_path]
             accessory.ensure_local_file_present(local)
 
             execute *accessory.make_directory_for(remote)
             upload! local, remote
-            execute :chmod, "755", remote
+            execute :chmod, config[:mode], remote
+            execute :chown, config[:owner], remote if config[:owner]
           end
         end
       end
@@ -62,8 +64,10 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
     with_lock do
       with_accessory(name) do |accessory, hosts|
         on(hosts) do
-          accessory.directories.keys.each do |host_path|
-            execute *accessory.make_directory(host_path)
+          accessory.directories.each do |(local, config)|
+            execute *accessory.make_directory(local)
+            execute :chmod, config[:mode], local if config[:mode]
+            execute :chown, config[:owner], local if config[:owner]
           end
         end
       end

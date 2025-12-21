@@ -12,8 +12,9 @@ class Kamal::Cli::Secrets < Kamal::Cli::Base
     end
 
     results = adapter.fetch(secrets, **options.slice(:account, :from).symbolize_keys)
+    json = JSON.dump(results)
 
-    return_or_puts JSON.dump(results).shellescape, inline: options[:inline]
+    return_or_puts options[:inline] ? json.shellescape : json, inline: options[:inline]
   end
 
   desc "extract", "Extract a single secret from the results of a fetch call"

@@ -15,6 +15,10 @@ ActiveSupport::LogSubscriber.logger = ActiveSupport::Logger.new(STDOUT) if ENV["
 # Applies to remote commands only.
 SSHKit.config.backend = SSHKit::Backend::Printer
 
+# Disable connection pooling so we don't spawn the eviction thread as
+# there's no clean way to kill it after each test
+SSHKit::Backend::Netssh.pool = SSHKit::Backend::ConnectionPool.new(0)
+
 class SSHKit::Backend::Printer
   def upload!(local, location, **kwargs)
     local = local.string.inspect if local.respond_to?(:string)
@@ -37,10 +41,6 @@ class ActiveSupport::TestCase
   extend Rails::LineFiltering
 
   private
-    setup do
-      SSHKit::Backend::Netssh.pool.close_connections
-    end
-
     def stdouted
       capture(:stdout) { yield }.strip
     end
@@ -135,9 +135,5 @@ class SecretAdapterTestCase < ActiveSupport::TestCase
       # Sneakily run `false`/`true` after a match to set $? to 1/0
       stub_ticks.with { |c| c == command && (succeed ? `true` : `false`) }
       Kamal::Secrets::Adapters::Base.any_instance.stubs(:`)
-    end
-
-    def shellunescape(string)
-      "\"#{string}\"".undump.gsub(/\\([{}])/, "\\1")
     end
 end

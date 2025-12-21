@@ -36,7 +36,7 @@ class Kamal::Configuration::Role
   end
 
   def env_tags(host)
-    tagged_hosts.fetch(host).collect { |tag| config.env_tag(tag) }
+    tagged_hosts.fetch(host).collect { |tag| config.env_tag(tag) }.compact
   end
 
   def cmd
@@ -127,7 +127,7 @@ class Kamal::Configuration::Role
 
 
   def asset_path
-    specializations["asset_path"] || config.asset_path
+    asset_path_config&.dig(0)
   end
 
   def assets?
@@ -137,8 +137,12 @@ class Kamal::Configuration::Role
   def asset_volume(version = config.version)
     if assets?
       Kamal::Configuration::Volume.new \
-        host_path: asset_volume_directory(version), container_path: asset_path
+        host_path: asset_volume_directory(version), container_path: asset_path, options: asset_path_options
     end
+  end
+
+  def asset_path_options
+    asset_path_config&.dig(1)
   end
 
   def asset_extracted_directory(version = config.version)
@@ -219,5 +223,13 @@ class Kamal::Configuration::Role
         labels.merge!(config.labels) if config.labels.present?
         labels.merge!(specializations["labels"]) if specializations["labels"].present?
       end
+    end
+
+    def asset_path_config
+      raw_path = specializations["asset_path"] || config.asset_path
+      return nil unless raw_path.present?
+
+      parts = raw_path.split(":", 2)
+      [ parts[0], parts[1] ]
     end
 end

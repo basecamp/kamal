@@ -22,6 +22,26 @@ class Kamal::Configuration::Validator::Proxy < Kamal::Configuration::Validator
           error "Missing certificate_pem setting (required when private_key_pem is present)"
         end
       end
+
+      if run_config = config["run"]
+        if run_config["bind_ips"].present?
+          ensure_valid_bind_ips(config["bind_ips"])
+        end
+
+        if run_config["publish"] == false
+          if run_config["bind_ips"].present? || run_config["http_port"].present? || run_config["https_port"].present?
+            error "Cannot set http_port, https_port or bind_ips when publish is false"
+          end
+        end
+      end
     end
   end
+
+  private
+    def ensure_valid_bind_ips(bind_ips)
+      bind_ips.present? && bind_ips.each do |ip|
+        next if ip =~ Resolv::IPv4::Regex || ip =~ Resolv::IPv6::Regex
+        error "Invalid publish IP address: #{ip}"
+      end
+    end
 end

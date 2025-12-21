@@ -22,6 +22,7 @@ class MainTest < IntegrationTest
     assert_hooks_ran "pre-connect", "pre-build", "pre-deploy", "pre-app-boot", "post-app-boot", "post-deploy"
 
     assert_accumulated_assets first_version, second_version
+    assert_asset_volume_read_only second_version
 
     kamal :rollback, first_version
     assert_hooks_ran "pre-connect", "pre-deploy", "pre-app-boot", "post-app-boot", "post-deploy"
@@ -32,7 +33,7 @@ class MainTest < IntegrationTest
     assert_match /Proxy Host: vm2/, details
     assert_match /App Host: vm1/, details
     assert_match /App Host: vm2/, details
-    assert_match /basecamp\/kamal-proxy:#{Kamal::Configuration::Proxy::Boot::MINIMUM_VERSION}/, details
+    assert_match /basecamp\/kamal-proxy:#{Kamal::Configuration::Proxy::Run::MINIMUM_VERSION}/, details
     assert_match /localhost:5000\/app:#{first_version}/, details
 
     audit = kamal :audit, capture: true
@@ -171,6 +172,7 @@ class MainTest < IntegrationTest
       assert_env :INTERPOLATED_SECRET1, "1TERCES_DETALOPRETNI", version: version, vm: :vm2
       assert_env :INTERPOLATED_SECRET2, "2TERCES_DETALOPRETNI", version: version, vm: :vm2
       assert_env :INTERPOLATED_SECRET3, "文中_DETALOPRETNI", version: version, vm: :vm2
+      assert_env :INTERPOLATED_SECRET4, ")(_DETALOPRETNI", version: version, vm: :vm2
     end
 
     def assert_env(key, value, vm:, version:)
@@ -189,6 +191,11 @@ class MainTest < IntegrationTest
       end
 
       assert_equal "200", Net::HTTP.get_response(URI.parse("http://#{app_host}:12345/versions/.hidden")).code
+    end
+
+    def assert_asset_volume_read_only(version)
+      mounts = docker_compose("exec vm1 docker inspect app-web-#{version} --format '{{json .Mounts}}'", capture: true)
+      assert_match %r{/usr/share/nginx/html/versions.*"RW":false}, mounts, "Expected asset volume to be mounted read-only (:ro)"
     end
 
     def image_ids(vm:)

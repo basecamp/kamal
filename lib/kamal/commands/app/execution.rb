@@ -12,6 +12,7 @@ module Kamal::Commands::App::Execution
       (docker_interactive_args if interactive),
       ("--detach" if detach),
       ("--rm" unless detach),
+      "--name", container_name_for_exec,
       "--network", "kamal",
       *role&.env_args(host),
       *argumentize("--env", env),
@@ -22,11 +23,16 @@ module Kamal::Commands::App::Execution
       *command
   end
 
-  def execute_in_existing_container_over_ssh(*command,  env:)
+  def execute_in_existing_container_over_ssh(*command, env:)
     run_over_ssh execute_in_existing_container(*command, interactive: true, env: env), host: host
   end
 
   def execute_in_new_container_over_ssh(*command, env:)
     run_over_ssh execute_in_new_container(*command, interactive: true, env: env), host: host
   end
+
+  private
+    def container_name_for_exec
+      [ role.container_prefix, "exec", config.version, SecureRandom.hex(3) ].compact.join("-")
+    end
 end

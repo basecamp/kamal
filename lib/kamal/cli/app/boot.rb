@@ -56,7 +56,7 @@ class Kamal::Cli::App::Boot
         raise Kamal::Cli::BootError, "Failed to get endpoint for #{role} on #{host}, did the container boot?" if endpoint.empty?
         execute *app.deploy(target: endpoint)
       else
-        Kamal::Cli::Healthcheck::Poller.wait_for_healthy(pause_after_ready: true) { capture_with_info(*app.status(version: version)) }
+        Kamal::Cli::Healthcheck::Poller.wait_for_healthy { capture_with_info(*app.status(version: version)) }
       end
     rescue => e
       error "Failed to boot #{role} on #{host}"

@@ -13,19 +13,22 @@ env:
     - INTERPOLATED_SECRET1
     - INTERPOLATED_SECRET2
     - INTERPOLATED_SECRET3
+    - INTERPOLATED_SECRET4
   tags:
     tag1:
       CLEAR_TAG: tagged
     tag2:
       secret:
         - SECRET_TAG
-asset_path: /usr/share/nginx/html/versions
+asset_path: /usr/share/nginx/html/versions:ro
 deploy_timeout: 2
 drain_timeout: 2
 readiness_delay: 0
 proxy:
   host: 127.0.0.1
   loadbalancer: false
+  run:
+    registry: registry:4443
 registry:
   server: localhost:5000
 builder:
@@ -40,6 +43,17 @@ accessories:
     cmd: sh -c 'echo "Starting busybox..."; trap exit term; while true; do sleep 1; done'
     roles:
       - web
+    files:
+      - local: config/busybox.conf
+        remote: /etc/busybox.conf
+        mode: "0640"
+        owner: "1000:1000"
+    directories:
+      - local: data
+        remote: /data
+        mode: "0750"
+        owner: "1000:1000"
+        options: "ro"
   busybox2:
     service: custom-busybox
     image: registry:4443/busybox:1.36.0
