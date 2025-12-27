@@ -404,6 +404,119 @@ class CliProxyTest < CliTestCase
     end
   end
 
+  # Loadbalancer tests
+  test "boot with loadbalancer" do
+    Kamal::Configuration::Proxy.any_instance.unstub(:load_balancing?)
+
+    run_command("boot", fixture: :with_loadbalancer).tap do |output|
+      assert_match "docker login", output
+      assert_match "mkdir -p .kamal/proxy/apps-config", output
+      # Check loadbalancer is started
+      assert_match "Starting loadbalancer on lb.example.com", output
+      assert_match "docker container start load-balancer || echo basecamp/kamal-proxy:#{Kamal::Configuration::Proxy::Run::MINIMUM_VERSION} | xargs docker run --name load-balancer", output
+    end
+  end
+
+  test "reboot with loadbalancer" do
+    Kamal::Configuration::Proxy.any_instance.unstub(:load_balancing?)
+
+    run_command("reboot", "-y", fixture: :with_loadbalancer).tap do |output|
+      # Check proxy is rebooted on web hosts
+      assert_match "docker container stop kamal-proxy on 1.1.1.1", output
+      assert_match "docker container stop kamal-proxy on 1.1.1.2", output
+
+      # Check loadbalancer is rebooted
+      assert_match "Stopping and removing load-balancer on lb.example.com, if running", output
+      assert_match "docker container stop load-balancer", output
+      assert_match "docker container prune --force --filter label=org.opencontainers.image.title=kamal-loadbalancer", output
+      assert_match "echo basecamp/kamal-proxy:#{Kamal::Configuration::Proxy::Run::MINIMUM_VERSION} | xargs docker run --name load-balancer", output
+    end
+  end
+
+  test "details with loadbalancer" do
+    Kamal::Configuration::Proxy.any_instance.unstub(:load_balancing?)
+
+    run_command("details", fixture: :with_loadbalancer).tap do |output|
+      assert_match "docker ps --filter name=^kamal-proxy$", output
+      assert_match "docker ps --filter name=^load-balancer$", output
+    end
+  end
+
+  test "loadbalancer info" do
+    Kamal::Configuration::Proxy.any_instance.unstub(:load_balancing?)
+
+    SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info)
+      .with(:docker, :ps, "--filter", "name=^load-balancer$")
+      .returns("CONTAINER ID   IMAGE   STATUS")
+
+    run_command("loadbalancer", "info", fixture: :with_loadbalancer).tap do |output|
+      assert_match "Loadbalancer status on lb.example.com", output
+    end
+  end
+
+  test "loadbalancer start" do
+    Kamal::Configuration::Proxy.any_instance.unstub(:load_balancing?)
+
+    run_command("loadbalancer", "start", fixture: :with_loadbalancer).tap do |output|
+      assert_match "docker login", output
+      assert_match "docker container start load-balancer || echo basecamp/kamal-proxy:#{Kamal::Configuration::Proxy::Run::MINIMUM_VERSION} | xargs docker run --name load-balancer", output
+    end
+  end
+
+  test "loadbalancer stop" do
+    Kamal::Configuration::Proxy.any_instance.unstub(:load_balancing?)
+
+    run_command("loadbalancer", "stop", fixture: :with_loadbalancer).tap do |output|
+      assert_match "docker container stop load-balancer", output
+    end
+  end
+
+  test "loadbalancer logs" do
+    Kamal::Configuration::Proxy.any_instance.unstub(:load_balancing?)
+
+    SSHKit::Backend::Abstract.any_instance.stubs(:capture)
+      .with(:docker, :logs, "load-balancer", "--timestamps", "2>&1")
+      .returns("Loadbalancer log entry")
+
+    run_command("loadbalancer", "logs", fixture: :with_loadbalancer).tap do |output|
+      assert_match "Loadbalancer Host: lb.example.com", output
+      assert_match "Loadbalancer log entry", output
+    end
+  end
+
+  test "loadbalancer deploy" do
+    Kamal::Configuration::Proxy.any_instance.unstub(:load_balancing?)
+
+    run_command("loadbalancer", "deploy", fixture: :with_loadbalancer).tap do |output|
+      assert_match "Deploying to loadbalancer on lb.example.com with targets: 1.1.1.1, 1.1.1.2", output
+      assert_match "docker exec load-balancer kamal-proxy deploy app --target=1.1.1.1:80,1.1.1.2:80 --host=app.example.com --tls", output
+    end
+  end
+
+  test "loadbalancer info when not configured" do
+    run_command("loadbalancer", "info").tap do |output|
+      assert_match "Load balancing is not configured", output
+    end
+  end
+
+  test "remove_container with loadbalancer" do
+    Kamal::Configuration::Proxy.any_instance.unstub(:load_balancing?)
+
+    run_command("remove_container", fixture: :with_loadbalancer).tap do |output|
+      assert_match "docker container prune --force --filter label=org.opencontainers.image.title=kamal-proxy", output
+      assert_match "docker container prune --force --filter label=org.opencontainers.image.title=kamal-loadbalancer", output
+    end
+  end
+
+  test "remove_image with loadbalancer" do
+    Kamal::Configuration::Proxy.any_instance.unstub(:load_balancing?)
+
+    run_command("remove_image", fixture: :with_loadbalancer).tap do |output|
+      assert_match "docker image prune --all --force --filter label=org.opencontainers.image.title=kamal-proxy", output
+      assert_match "docker image prune --all --force --filter label=org.opencontainers.image.title=kamal-loadbalancer", output
+    end
+  end
+
   private
     def run_command(*command, fixture: :with_proxy)
       stdouted { Kamal::Cli::Proxy.start([ *command, "-c", "test/fixtures/deploy_#{fixture}.yml" ]) }
