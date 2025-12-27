@@ -90,7 +90,7 @@ class Kamal::Commands::Loadbalancer < Kamal::Commands::Base
     def proxy_image
       [
         loadbalancer_config.config.proxy_boot.image_default,
-        Kamal::Configuration::Proxy::Boot::MINIMUM_VERSION
+        Kamal::Configuration::Proxy::Run::MINIMUM_VERSION
       ].join(":")
     end
 
