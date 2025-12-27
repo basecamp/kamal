@@ -8,7 +8,13 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
         raise unless e.message.include?("already exists")
       end
 
-      on(KAMAL.proxy_hosts) do |host|
+      # Skip proxy on loadbalancer host - the loadbalancer will handle it
+      proxy_hosts = KAMAL.proxy_hosts
+      if KAMAL.config.proxy.loadbalancer_on_proxy_host?
+        proxy_hosts = proxy_hosts - [ KAMAL.config.proxy.effective_loadbalancer ]
+      end
+
+      on(proxy_hosts) do |host|
         execute *KAMAL.registry.login
 
         version = capture_with_info(*KAMAL.proxy(host).version).strip.presence
@@ -24,6 +30,7 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
         on(KAMAL.config.proxy.effective_loadbalancer) do |host|
           info "Starting loadbalancer on #{host}..."
           execute *KAMAL.registry.login
+          execute *KAMAL.loadbalancer.ensure_apps_config_directory
           execute *KAMAL.loadbalancer.start_or_run
         end
       end
@@ -117,8 +124,16 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
   def reboot
     confirming "This will cause a brief outage on each host. Are you sure?" do
       with_lock do
-        host_groups = options[:rolling] ? KAMAL.proxy_hosts : [ KAMAL.proxy_hosts ]
+        # Skip proxy on loadbalancer host - it will be handled by loadbalancer reboot
+        proxy_hosts = KAMAL.proxy_hosts
+        if KAMAL.config.proxy.loadbalancer_on_proxy_host?
+          proxy_hosts = proxy_hosts - [ KAMAL.config.proxy.effective_loadbalancer ]
+        end
+
+        host_groups = options[:rolling] ? proxy_hosts : [ proxy_hosts ]
         host_groups.each do |hosts|
+          next if Array(hosts).empty?
+
           host_list = Array(hosts).join(",")
           run_hook "pre-proxy-reboot", hosts: host_list
           on(hosts) do |host|
@@ -144,9 +159,10 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
             execute *KAMAL.auditor.record("Rebooted loadbalancer"), verbosity: :debug
             execute *KAMAL.registry.login
 
-            info "Stopping and removing load-balancer on #{host}, if running..."
+            info "Stopping and removing #{KAMAL.loadbalancer.container_name} on #{host}, if running..."
             execute *KAMAL.loadbalancer.stop, raise_on_non_zero_exit: false
             execute *KAMAL.loadbalancer.remove_container
+            execute *KAMAL.loadbalancer.ensure_apps_config_directory
 
             execute *KAMAL.loadbalancer.run
           end

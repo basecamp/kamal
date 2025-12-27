@@ -97,6 +97,24 @@ class ConfigurationProxyTest < ActiveSupport::TestCase
     assert_equal [ "app1.example.com" ], config.proxy.deploy_options[:host]
   end
 
+  test "loadbalancer_on_proxy_host? returns true when loadbalancer is a web host" do
+    @deploy[:servers] = { "web" => [ "web1.example.com", "web2.example.com" ] }
+    @deploy[:proxy] = { "loadbalancer" => "web1.example.com" }
+    assert config.proxy.loadbalancer_on_proxy_host?
+  end
+
+  test "loadbalancer_on_proxy_host? returns false when loadbalancer is dedicated host" do
+    @deploy[:servers] = { "web" => [ "web1.example.com", "web2.example.com" ] }
+    @deploy[:proxy] = { "loadbalancer" => "lb.example.com" }
+    assert_not config.proxy.loadbalancer_on_proxy_host?
+  end
+
+  test "loadbalancer_on_proxy_host? returns false when no loadbalancer" do
+    @deploy[:servers] = { "web" => [ "web1.example.com" ] }
+    @deploy[:proxy] = {}
+    assert_not config.proxy.loadbalancer_on_proxy_host?
+  end
+
   test "false not allowed" do
     @deploy[:proxy] = false
     assert_raises(Kamal::ConfigurationError, "proxy: should be a hash") do

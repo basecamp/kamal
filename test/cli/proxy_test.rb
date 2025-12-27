@@ -517,6 +517,42 @@ class CliProxyTest < CliTestCase
     end
   end
 
+  # Shared host tests - loadbalancer on same server as proxy
+  test "boot with loadbalancer on proxy host" do
+    Kamal::Configuration::Proxy.any_instance.unstub(:load_balancing?)
+
+    run_command("boot", fixture: :with_loadbalancer_on_proxy_host).tap do |output|
+      # Proxy should only boot on 1.1.1.2 (not 1.1.1.1 which is loadbalancer)
+      assert_match "docker container start kamal-proxy || echo", output
+      # Loadbalancer boots on 1.1.1.1 with kamal-proxy name and proxy volume mounts
+      assert_match "Starting loadbalancer on 1.1.1.1", output
+      assert_match "docker container start kamal-proxy || echo basecamp/kamal-proxy", output
+      # Check that loadbalancer uses proxy-compatible config
+      assert_match "kamal-proxy-config:/home/kamal-proxy/.config/kamal-proxy", output
+      assert_match ".kamal/proxy/apps-config:/home/kamal-proxy/.apps-config", output
+    end
+  end
+
+  test "reboot with loadbalancer on proxy host" do
+    Kamal::Configuration::Proxy.any_instance.unstub(:load_balancing?)
+
+    run_command("reboot", "-y", fixture: :with_loadbalancer_on_proxy_host).tap do |output|
+      # Proxy reboots only on 1.1.1.2
+      assert_match "docker container stop kamal-proxy on 1.1.1.2", output
+      # Loadbalancer reboots on 1.1.1.1 using kamal-proxy container name
+      assert_match "Stopping and removing kamal-proxy on 1.1.1.1", output
+    end
+  end
+
+  test "loadbalancer on proxy host uses proxy container name" do
+    Kamal::Configuration::Proxy.any_instance.unstub(:load_balancing?)
+
+    run_command("loadbalancer", "info", fixture: :with_loadbalancer_on_proxy_host).tap do |output|
+      # When on proxy host, loadbalancer uses kamal-proxy container name
+      assert_match "docker ps --filter name=^kamal-proxy$", output
+    end
+  end
+
   private
     def run_command(*command, fixture: :with_proxy)
       stdouted { Kamal::Cli::Proxy.start([ *command, "-c", "test/fixtures/deploy_#{fixture}.yml" ]) }

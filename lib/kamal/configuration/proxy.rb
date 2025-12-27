@@ -46,6 +46,10 @@ class Kamal::Configuration::Proxy
     nil
   end
 
+  def loadbalancer_on_proxy_host?
+    load_balancing? && config.proxy_hosts.include?(effective_loadbalancer)
+  end
+
   def custom_ssl_certificate?
     ssl = proxy_config["ssl"]
     return false unless ssl.is_a?(Hash)

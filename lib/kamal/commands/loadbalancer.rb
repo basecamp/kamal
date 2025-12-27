@@ -18,8 +18,8 @@ class Kamal::Commands::Loadbalancer < Kamal::Commands::Base
         "--restart", "unless-stopped",
         "--publish", "80:80",
         "--publish", "443:443",
-        "--label", "org.opencontainers.image.title=kamal-loadbalancer",
-        "--volume", "kamal-loadbalancer-config:/home/kamal-loadbalancer/.config/kamal-loadbalancer"))
+        "--label", label,
+        *volume_mounts))
   end
 
   def start
@@ -82,8 +82,16 @@ class Kamal::Commands::Loadbalancer < Kamal::Commands::Base
     make_directory loadbalancer_config.directory
   end
 
+  def ensure_apps_config_directory
+    make_directory config.proxy_boot.apps_directory
+  end
+
   def remove_directory
     super(loadbalancer_config.directory)
+  end
+
+  def container_name
+    loadbalancer_config.container_name
   end
 
   private
@@ -94,7 +102,29 @@ class Kamal::Commands::Loadbalancer < Kamal::Commands::Base
       ].join(":")
     end
 
-    def container_name
-      loadbalancer_config.container_name
+    def on_proxy_host?
+      loadbalancer_config.on_proxy_host?
+    end
+
+    def label
+      if on_proxy_host?
+        "org.opencontainers.image.title=kamal-proxy"
+      else
+        "org.opencontainers.image.title=kamal-loadbalancer"
+      end
+    end
+
+    def volume_mounts
+      if on_proxy_host?
+        # When on a proxy host, use same volume mounts as proxy for app deployments
+        [
+          "--volume", "kamal-proxy-config:/home/kamal-proxy/.config/kamal-proxy",
+          "--volume", "$PWD/#{config.proxy_boot.apps_directory}:/home/kamal-proxy/.apps-config"
+        ]
+      else
+        [
+          "--volume", "kamal-loadbalancer-config:/home/kamal-loadbalancer/.config/kamal-loadbalancer"
+        ]
+      end
     end
 end
