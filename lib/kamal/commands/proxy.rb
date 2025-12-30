@@ -37,7 +37,7 @@ class Kamal::Commands::Proxy < Kamal::Commands::Base
   end
 
   def info
-    docker :ps, "--filter", "name=^#{container_name}$"
+    docker :ps, "--filter", "'name=^#{container_name}$'"
   end
 
   def version
