@@ -93,6 +93,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
   option :reuse, type: :boolean, default: false, desc: "Reuse currently running container instead of starting a new one"
   option :env, aliases: "-e", type: :hash, desc: "Set environment variables for the command"
   option :detach, type: :boolean, default: false, desc: "Execute command in a detached container"
+  option :push_secrets, type: :boolean, default: false, desc: "Push env files to servers before executing command"
   def exec(*cmd)
     pre_connect_if_required
 
@@ -142,6 +143,15 @@ class Kamal::Cli::App < Kamal::Cli::Base
       using_version(version_or_latest) do |version|
         say "Launching command with version #{version} from new container...", :magenta
         on(KAMAL.app_hosts) { execute *KAMAL.registry.login }
+
+        if options[:push_secrets]
+          say "Pushing env files to servers...", :magenta
+          on_roles(KAMAL.roles, hosts: KAMAL.app_hosts) do |host, role|
+            app = KAMAL.app(role: role, host: host)
+            execute *app.ensure_env_directory
+            upload! role.secrets_io(host), role.secrets_path, mode: "0600"
+          end
+        end
 
         on_roles(KAMAL.roles, hosts: KAMAL.app_hosts) do |host, role|
           execute *KAMAL.auditor.record("Executed cmd '#{cmd}' on app version #{version}"), verbosity: :debug
