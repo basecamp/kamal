@@ -454,6 +454,34 @@ class CliAppTest < CliTestCase
     end
   end
 
+  test "exec with push-secrets" do
+    run_command("exec", "--push-secrets", "ruby -v").tap do |output|
+      assert_match "Pushing env files to servers...", output
+      assert_match "mkdir -p .kamal/apps/app/env/roles", output
+      assert_match "Uploading", output
+      assert_match ".kamal/apps/app/env/roles/web.env", output
+      assert_match "docker login -u [REDACTED] -p [REDACTED]", output
+      assert_match %r{docker run --rm --name app-web-exec-latest-[0-9a-f]{6} --network kamal --env-file .kamal/apps/app/env/roles/web.env --log-opt max-size="10m" dhh/app:latest ruby -v}, output
+    end
+  end
+
+  test "exec without push-secrets does not push env files" do
+    run_command("exec", "ruby -v").tap do |output|
+      assert_no_match "Pushing env files to servers...", output
+      assert_no_match "Uploading", output
+      assert_match "docker login -u [REDACTED] -p [REDACTED]", output
+      assert_match %r{docker run --rm --name app-web-exec-latest-[0-9a-f]{6} --network kamal --env-file .kamal/apps/app/env/roles/web.env --log-opt max-size="10m" dhh/app:latest ruby -v}, output
+    end
+  end
+
+  test "exec with push-secrets and primary" do
+    run_command("exec", "--push-secrets", "--primary", "ruby -v").tap do |output|
+      assert_match "Pushing env files to servers...", output
+      assert_match "mkdir -p .kamal/apps/app/env/roles", output
+      assert_match "Uploading", output
+    end
+  end
+
   test "containers" do
     run_command("containers").tap do |output|
       assert_match "docker container ls --all --filter label=service=app", output
