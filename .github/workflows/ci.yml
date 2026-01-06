@@ -36,6 +36,9 @@ jobs:
         gemfile:
           - Gemfile
           - gemfiles/rails_edge.gemfile
+        exclude:
+          - ruby-version: "3.2"
+            gemfile: gemfiles/rails_edge.gemfile
     name: ${{ format('Tests (Ruby {0})', matrix.ruby-version) }}
     runs-on: ubuntu-latest
     env:
