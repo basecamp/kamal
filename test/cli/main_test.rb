@@ -451,6 +451,78 @@ class CliMainTest < CliTestCase
     end
   end
 
+  test "config with blank line trimming" do
+    template = <<~YAML
+      service: app
+      image: dhh/app
+      servers:
+        - "1.1.1.1"
+      <% if true -%>
+        - "1.1.1.2"
+      <% end -%>
+      registry:
+        username: user
+        password: pw
+      builder:
+        arch: amd64
+    YAML
+
+    expected_rendered = ERB.new(template, trim_mode: "-").result
+
+    Dir.mktmpdir do |dir|
+      config_path = File.join(dir, "deploy.yml")
+      File.write(config_path, template)
+
+      load_method = YAML.respond_to?(:unsafe_load) ? :unsafe_load : :load
+      original_load = YAML.method(load_method)
+
+      YAML.expects(load_method).with(expected_rendered).returns(original_load.call(expected_rendered))
+
+      run_command_with_config_path("config", config_path: config_path)
+    end
+  end
+
+  test "config with destination blank line trimming" do
+    base_template = <<~YAML
+      service: app
+      image: dhh/app
+      servers:
+        - "1.1.1.1"
+      registry:
+        username: user
+        password: pw
+      builder:
+        arch: amd64
+    YAML
+
+    destination_template = <<~YAML
+      servers:
+        - "2.2.2.2"
+      <% if true -%>
+        - "2.2.2.3"
+      <% end -%>
+    YAML
+
+    expected_destination = ERB.new(destination_template, trim_mode: "-").result
+
+    Dir.mktmpdir do |dir|
+      base_path = File.join(dir, "deploy.yml")
+      File.write(base_path, base_template)
+
+      destination_path = File.join(dir, "deploy.world.yml")
+      File.write(destination_path, destination_template)
+
+      load_method = YAML.respond_to?(:unsafe_load) ? :unsafe_load : :load
+      original_load = YAML.method(load_method)
+      load_sequence = sequence("config_files")
+
+      YAML.expects(load_method).with(base_template).in_sequence(load_sequence).returns(original_load.call(base_template))
+      YAML.expects(load_method).with(expected_destination).in_sequence(load_sequence).returns(original_load.call(expected_destination))
+
+      run_command_with_config_path("config", config_path: base_path, destination: "world")
+    end
+  end
+
   test "init" do
     in_dummy_git_repo do
       run_command("init").tap do |output|
@@ -643,6 +715,16 @@ class CliMainTest < CliTestCase
   private
     def run_command(*command, config_file: "deploy_simple")
       with_argv([ *command, "-c", "test/fixtures/#{config_file}.yml" ]) do
+        stdouted { Kamal::Cli::Main.start }
+      end
+    end
+
+    def run_command_with_config_path(*command, config_path:, destination: nil)
+      argv = [ *command ]
+      argv += [ "-d", destination ] if destination
+      argv += [ "-c", config_path ]
+
+      with_argv([ *argv ]) do
         stdouted { Kamal::Cli::Main.start }
       end
     end
