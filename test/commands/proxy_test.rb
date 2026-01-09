@@ -41,7 +41,7 @@ class CommandsProxyTest < ActiveSupport::TestCase
 
   test "proxy info" do
     assert_equal \
-      "docker ps --filter name=^kamal-proxy$",
+      "docker ps --filter 'name=^kamal-proxy$'",
       new_command.info.join(" ")
   end
 
