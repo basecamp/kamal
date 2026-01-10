@@ -105,6 +105,32 @@ class ConfigurationProxyTest < ActiveSupport::TestCase
     end
   end
 
+  test "healthcheck port not set by default" do
+    @deploy[:proxy] = { "app_port" => 3000, "healthcheck" => { "path" => "/health" } }
+    proxy = config.proxy
+    assert_nil proxy.healthcheck_port
+    options = proxy.deploy_options
+    assert_nil options[:"health-check-port"]
+  end
+
+  test "healthcheck port can be customized" do
+    @deploy[:proxy] = { "app_port" => 3000, "healthcheck" => { "path" => "/health", "port" => 3001 } }
+    proxy = config.proxy
+    assert_equal 3001, proxy.healthcheck_port
+    options = proxy.deploy_options
+    assert_equal 3001, options[:"health-check-port"]
+  end
+
+  test "invalid healthcheck port" do
+    @deploy[:proxy] = { "healthcheck" => { "port" => "not a number" } }
+    assert_raises(Kamal::ConfigurationError) { config.proxy }
+  end
+
+  test "healthcheck port out of range" do
+    @deploy[:proxy] = { "healthcheck" => { "port" => 70000 } }
+    assert_raises(Kamal::ConfigurationError) { config.proxy }
+  end
+
   private
     def config
       Kamal::Configuration.new(@deploy)
