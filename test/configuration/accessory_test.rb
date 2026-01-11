@@ -168,6 +168,24 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
     assert_equal [ "--volume", "redis_data:/data" ], config.accessory(:redis).volume_args
   end
 
+  test "volume_names returns named volumes only" do
+    @deploy[:accessories]["redis"]["volumes"] = [
+      "redis_data:/data",
+      "/host/path:/container/path",
+      "another_volume:/mnt/vol:ro"
+    ]
+    config = Kamal::Configuration.new(@deploy)
+    assert_equal [ "redis_data", "another_volume" ], config.accessory(:redis).volume_names
+  end
+
+  test "volume_names returns empty array when no volumes" do
+    assert_equal [], @config.accessory(:mysql).volume_names
+  end
+
+  test "volume_names excludes bind mounts with absolute paths" do
+    assert_equal [], @config.accessory(:redis).volume_names
+  end
+
   test "dynamic file expansion" do
     @deploy[:accessories]["mysql"]["env"]["secret"] << "ENV_VAR:SECRET_VAR"
     @deploy[:accessories]["mysql"]["files"] << "test/fixtures/files/structure.sql.erb:/docker-entrypoint-initdb.d/structure.sql"

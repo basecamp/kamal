@@ -223,10 +223,10 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
     end
   end
 
-  desc "remove [NAME]", "Remove accessory container, image and data directory from host (use NAME=all to remove all accessories)"
+  desc "remove [NAME]", "Remove accessory container, image, data directory and volumes from host (use NAME=all to remove all accessories)"
   option :confirmed, aliases: "-y", type: :boolean, default: false, desc: "Proceed without confirmation question"
   def remove(name)
-    confirming "This will remove all containers, images and data directories for #{name}. Are you sure?" do
+    confirming "This will remove all containers, images, data directories and volumes for #{name}. Are you sure?" do
       with_lock do
         if name == "all"
           KAMAL.accessory_names.each { |accessory_name| remove_accessory(accessory_name) }
@@ -267,6 +267,20 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
       with_accessory(name) do |accessory, hosts|
         on(hosts) do
           execute *accessory.remove_service_directory
+        end
+      end
+    end
+  end
+
+  desc "remove_volumes [NAME]", "Remove accessory Docker volumes from host", hide: true
+  def remove_volumes(name)
+    with_lock do
+      with_accessory(name) do |accessory, hosts|
+        if accessory.volume_names.any?
+          on(hosts) do
+            execute *KAMAL.auditor.record("Removed #{name} accessory volumes"), verbosity: :debug
+            execute *accessory.remove_volumes
+          end
         end
       end
     end
@@ -318,6 +332,7 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
       remove_container(name)
       remove_image(name)
       remove_service_directory(name)
+      remove_volumes(name)
     end
 
     def prepare(name)
