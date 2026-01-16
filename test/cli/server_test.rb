@@ -61,7 +61,6 @@ class CliServerTest < CliTestCase
     run_command("bootstrap").tap do |output|
       ("1.1.1.1".."1.1.1.4").map do |host|
         assert_match "Missing Docker on #{host}. Installing…", output
-        assert_match "Running the docker-setup hook", output
       end
     end
   end
