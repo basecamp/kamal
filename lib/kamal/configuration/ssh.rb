@@ -20,9 +20,9 @@ class Kamal::Configuration::Ssh
   end
 
   def proxy
-    if (proxy = ssh_config["proxy"])
-      Net::SSH::Proxy::Jump.new(proxy.include?("@") ? proxy : "root@#{proxy}")
-    elsif (proxy_command = ssh_config["proxy_command"])
+    if proxy = ssh_config["proxy"]
+      Net::SSH::Proxy::Jump.new(proxy)
+    elsif proxy_command = ssh_config["proxy_command"]
       Net::SSH::Proxy::Command.new(proxy_command)
     end
   end
