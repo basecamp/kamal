@@ -289,7 +289,7 @@ class CliMainTest < CliTestCase
       assert_hook_ran "pre-connect", output
       assert_match /Build and push app image/, output
       assert_hook_ran "pre-deploy", output
-      assert_match /Running the pre-deploy hook.../, output
+      assert_match /Running \/usr\/bin\/env .kamal\/hooks\/pre-deploy /, output
       assert_hook_ran "post-deploy", output
     end
   end

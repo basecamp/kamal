@@ -85,6 +85,26 @@ asset_path: /path/to/assets
 # See https://kamal-deploy.org/docs/hooks for more information:
 hooks_path: /user_home/kamal/hooks
 
+# Hook output
+#
+# Hook output visibility. Can be set globally or per-hook.
+# CLI flags (`-v`, `-q`) override these settings.
+#
+# - `:quiet` - hook output is hidden
+# - `:verbose` - hook output is shown
+#
+# With no setting, hook output follows CLI verbosity flags.
+#
+# Note: Failed hooks always show output in the error message regardless of setting.
+#
+# Global setting for all hooks:
+hooks_output: :verbose
+
+# Or per-hook settings:
+hooks_output:
+  pre-deploy: :verbose
+  pre-build: :quiet
+
 # Secrets path
 #
 # Path to secrets, defaults to `.kamal/secrets`.

@@ -29,6 +29,8 @@ class Kamal::Configuration::Validator
               end
             elsif key.to_s == "ssl"
                 validate_type! value, TrueClass, FalseClass, Hash
+            elsif key.to_s == "hooks_output"
+                validate_hooks_output!(value)
             elsif key == "hosts"
               validate_servers! value
             elsif example_value.is_a?(Array)
@@ -158,6 +160,19 @@ class Kamal::Configuration::Validator
             end
           end
         end
+      end
+    end
+
+    def validate_hooks_output!(value)
+      # hooks_output can be either a symbol/string (global) or a hash (per-hook)
+      if value.is_a?(Hash)
+        value.each do |hook, level|
+          with_context(hook) do
+            validate_type! level, String, Symbol
+          end
+        end
+      else
+        validate_type! value, String, Symbol
       end
     end
 
