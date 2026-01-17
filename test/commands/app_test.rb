@@ -236,6 +236,26 @@ class CommandsAppTest < ActiveSupport::TestCase
       new_command.follow_logs(host: "app-1", timestamps: false, lines: 123, grep: "Completed")
   end
 
+  test "follow logs with ssh keys" do
+    @config[:ssh] = { "keys" => [ "path_to_key.pem" ] }
+    assert_equal \
+      "ssh -i path_to_key.pem -t root@app-1 -p 22 'sh -c '\\''docker ps --latest --quiet --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''\\'\\'''\\''{{.ID}}'\\''\\'\\'''\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting'\\'' | head -1 | xargs docker logs --timestamps --follow 2>&1'",
+      new_command.follow_logs(host: "app-1")
+  end
+
+  test "follow logs with ssh proxy_command" do
+    @config[:ssh] = { "proxy_command" => "ssh -W %h:%p user@proxy-server" }
+    assert_equal \
+      "ssh -o ProxyCommand='ssh -W %h:%p user@proxy-server' -t root@app-1 -p 22 'sh -c '\\''docker ps --latest --quiet --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''\\'\\'''\\''{{.ID}}'\\''\\'\\'''\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting'\\'' | head -1 | xargs docker logs --timestamps --follow 2>&1'",
+      new_command.follow_logs(host: "app-1")
+  end
+
+  test "follow logs with ssh config file" do
+    @config[:ssh] = { "config" => "~/.ssh/custom_config" }
+    assert_equal \
+      "ssh -F ~/.ssh/custom_config -t root@app-1 -p 22 'sh -c '\\''docker ps --latest --quiet --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''\\'\\'''\\''{{.ID}}'\\''\\'\\'''\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting'\\'' | head -1 | xargs docker logs --timestamps --follow 2>&1'",
+      new_command.follow_logs(host: "app-1")
+  end
 
   test "execute in new container" do
     assert_match \
@@ -362,6 +382,26 @@ class CommandsAppTest < ActiveSupport::TestCase
   test "run over ssh with proxy_command" do
     @config[:ssh] = { "proxy_command" => "ssh -W %h:%p user@proxy-server" }
     assert_equal "ssh -o ProxyCommand='ssh -W %h:%p user@proxy-server' -t root@1.1.1.1 -p 22 'ls'", new_command.run_over_ssh("ls", host: "1.1.1.1")
+  end
+
+  test "run over ssh with config file" do
+    @config[:ssh] = { "config" => "~/.ssh/custom_config" }
+    assert_equal "ssh -F ~/.ssh/custom_config -t root@1.1.1.1 -p 22 'ls'", new_command.run_over_ssh("ls", host: "1.1.1.1")
+  end
+
+  test "run over ssh with multiple config files" do
+    @config[:ssh] = { "config" => [ "~/.ssh/config1", "~/.ssh/config2" ] }
+    assert_equal "ssh -F ~/.ssh/config1 -F ~/.ssh/config2 -t root@1.1.1.1 -p 22 'ls'", new_command.run_over_ssh("ls", host: "1.1.1.1")
+  end
+
+  test "run over ssh with config false" do
+    @config[:ssh] = { "config" => false }
+    assert_equal "ssh -F /dev/null -t root@1.1.1.1 -p 22 'ls'", new_command.run_over_ssh("ls", host: "1.1.1.1")
+  end
+
+  test "run over ssh with config true" do
+    @config[:ssh] = { "config" => true }
+    assert_equal "ssh -t root@1.1.1.1 -p 22 'ls'", new_command.run_over_ssh("ls", host: "1.1.1.1")
   end
 
   test "current_running_container_id" do
