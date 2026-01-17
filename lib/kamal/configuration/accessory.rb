@@ -113,6 +113,13 @@ class Kamal::Configuration::Accessory
     accessory_config["cmd"]
   end
 
+  def volume_names
+    specific_volumes.filter_map do |volume|
+      name = volume.split(":").first
+      name unless Pathname.new(name).absolute?  # Skip bind mounts (absolute paths)
+    end
+  end
+
   def running_proxy?
     accessory_config["proxy"].present?
   end
