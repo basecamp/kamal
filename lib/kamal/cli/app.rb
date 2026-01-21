@@ -181,6 +181,33 @@ class Kamal::Cli::App < Kamal::Cli::Base
     end
   end
 
+  desc "deleted_roles", "Detect app deleted roles"
+  option :stop, aliases: "-s", type: :boolean, default: false, desc: "Stop the deleted roles containers"
+  def deleted_roles
+    stop = options[:stop]
+    role_regex = /#{Regexp.escape(KAMAL.config.service)}-(.+)-#{Regexp.escape(KAMAL.config.destination.to_s)}/
+
+    with_lock_if_stopping do
+      on(KAMAL.app_hosts) do |host|
+        valid_roles = KAMAL.roles_on(host).map(&:name)
+
+        app = KAMAL.app(host: host)
+        all_containers = capture_with_info(*app.all_containers, raise_on_non_zero_exit: false).split("\n")
+        all_containers.each do |container|
+          role = container.match(role_regex)[1]
+          next if valid_roles.include?(role)
+
+          if stop
+            puts_by_host host, "Stopping stale container for deleted role #{role}"
+            execute :docker, :stop, container
+          else
+            puts_by_host host,  "Detected container for deleted role #{role} (use `kamal app deleted_roles --stop` to stop)"
+          end
+        end
+      end
+    end
+  end
+
   desc "images", "Show app images on servers"
   def images
     quiet = options[:quiet]
