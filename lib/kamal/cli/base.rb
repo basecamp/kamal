@@ -5,6 +5,8 @@ module Kamal::Cli
   class Base < Thor
     include SSHKit::DSL
 
+    VERBOSITY = { verbose: :debug, quiet: :error }.freeze
+
     def self.exit_on_failure?() true end
     def self.dynamic_command_class() Kamal::Cli::Alias::Command end
 
@@ -43,11 +45,11 @@ module Kamal::Cli
         KAMAL.tap do |commander|
           if options[:verbose]
             ENV["VERBOSE"] = "1" # For backtraces via cli/start
-            commander.verbosity = :debug
+            commander.verbosity = VERBOSITY[:verbose]
           end
 
           if options[:quiet]
-            commander.verbosity = :error
+            commander.verbosity = VERBOSITY[:quiet]
           end
 
           commander.configure \
@@ -141,10 +143,21 @@ module Kamal::Cli
             subcommand: subcommand
           }.compact
 
-          say "Running the #{hook} hook...", :magenta
+          hooks_output = KAMAL.config.hooks_output_for(hook)
+
+          # CLI flags override config: -q hides all, -v shows all
+          # Config setting :verbose forces output, :quiet forces silence
+          hook_verbosity = if KAMAL.verbosity == :info && hooks_output
+            VERBOSITY.fetch(hooks_output)
+          else
+            KAMAL.verbosity
+          end
+
           with_env KAMAL.hook.env(**details, **extra_details) do
-            run_locally do
-              execute *KAMAL.hook.run(hook)
+            KAMAL.with_verbosity(hook_verbosity) do
+              run_locally do
+                execute *KAMAL.hook.run(hook)
+              end
             end
           rescue SSHKit::Command::Failed => e
             raise HookError.new("Hook `#{hook}` failed:\n#{e.message}")

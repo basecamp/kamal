@@ -6,6 +6,8 @@ require "erb"
 require "net/ssh/proxy/jump"
 
 class Kamal::Configuration
+  HOOKS_OUTPUT_LEVELS = [ :quiet, :verbose ].freeze
+
   delegate :service, :labels, :hooks_path, to: :raw_config, allow_nil: true
   delegate :argumentize, :optionize, to: Kamal::Utils
 
@@ -78,6 +80,7 @@ class Kamal::Configuration
     ensure_unique_hosts_for_ssl_roles
     ensure_local_registry_remote_builder_has_ssh_url
     ensure_no_conflicting_proxy_runs
+    ensure_valid_hooks_output!
   end
 
   def version=(version)
@@ -283,6 +286,15 @@ class Kamal::Configuration
     env_tags.detect { |t| t.name == name.to_s }
   end
 
+  def hooks_output_for(hook)
+    case raw_config.hooks_output
+    when Symbol, String
+      raw_config.hooks_output.to_sym
+    when Hash
+      raw_config.hooks_output[hook]&.to_sym
+    end
+  end
+
   def to_h
     {
       roles: role_names,
@@ -411,6 +423,21 @@ class Kamal::Configuration
 
     def role_names
       raw_config.servers.is_a?(Array) ? [ "web" ] : raw_config.servers.keys.sort
+    end
+
+    def ensure_valid_hooks_output!
+      case raw_config.hooks_output
+      when Symbol, String
+        validate_hooks_output_level!(raw_config.hooks_output.to_sym)
+      when Hash
+        raw_config.hooks_output.each { |hook, level| validate_hooks_output_level!(level.to_sym, hook) }
+      end
+    end
+
+    def validate_hooks_output_level!(level, hook = nil)
+      return if HOOKS_OUTPUT_LEVELS.include?(level)
+      context = hook ? " for hook '#{hook}'" : ""
+      raise Kamal::ConfigurationError, "Invalid hooks_output '#{level}'#{context}, must be one of: #{HOOKS_OUTPUT_LEVELS.join(', ')}"
     end
 
     def git_version

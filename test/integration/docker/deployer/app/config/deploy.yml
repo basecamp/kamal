@@ -21,6 +21,9 @@ env:
       secret:
         - SECRET_TAG
 asset_path: /usr/share/nginx/html/versions:ro
+hooks_output:
+  pre-deploy: :verbose
+  pre-build: :quiet
 deploy_timeout: 2
 drain_timeout: 2
 readiness_delay: 0
