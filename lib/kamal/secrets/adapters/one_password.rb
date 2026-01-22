@@ -25,14 +25,50 @@ class Kamal::Secrets::Adapters::OnePassword < Kamal::Secrets::Adapters::Base
 
     def fetch_specified_secrets(secrets, from:, account:, session:)
       {}.tap do |results|
-        vaults_items_fields(prefixed_secrets(secrets, from: from)).map do |vault, items|
+        vaults_items_fields(prefixed_secrets(secrets, from: from)).each do |vault, items|
           items.each do |item, fields|
-            fields_json = JSON.parse(op_item_get(vault, item, fields: fields, account: account, session: session))
-            fields_json = [ fields_json ] if fields.one?
+            item_json = JSON.parse(op_item_get(vault, item, account: account, session: session))
+            fields_json = item_json.fetch("fields", [])
+            files_json = item_json.fetch("files", [])
 
-            results.merge!(fields_map(fields_json))
+            fields.each do |field|
+              secret_key = [ vault, item, field.tr(".", "/") ].join("/").delete_suffix("/password")
+
+              if field_json = find_field(fields_json, field)
+                results[secret_key] = field_json["value"]
+              elsif find_file(files_json, field)
+                results[secret_key] = op_read(vault, item, field, account: account, session: session)
+              else
+                raise RuntimeError, "Could not find #{field} in #{item} in the #{vault} 1Password vault"
+              end
+            end
           end
         end
+      end
+    end
+
+    def find_field(fields_json, field)
+      field_parts = field.delete_suffix("/password").split(".")
+      field_label = field_parts.last
+      section_label = field_parts.size > 1 ? field_parts.first : nil
+
+      fields_json.find do |field_json|
+        field_json["label"] == field_label &&
+          (section_label.nil? || field_json.dig("section", "label") == section_label)
+      end
+    end
+
+    def find_file(files_json, field)
+      file_name = field.delete_suffix("/password").split(".").last
+      files_json.find { |file_json| file_json["name"] == file_name }
+    end
+
+    def op_read(vault, item, field, account:, session:)
+      reference = "op://#{vault}/#{item}/#{field}"
+      options = to_options(account: account, session: session.presence)
+
+      `op read #{reference.shellescape} #{options}`.chomp.tap do
+        raise RuntimeError, "Could not read #{field} from #{item} in the #{vault} 1Password vault" unless $?.success?
       end
     end
 
@@ -80,16 +116,11 @@ class Kamal::Secrets::Adapters::OnePassword < Kamal::Secrets::Adapters::Base
       end
     end
 
-    def op_item_get(vault, item, fields: nil, account:, session:)
+    def op_item_get(vault, item, account:, session:)
       options = { vault: vault, format: "json", account: account, session: session.presence }
 
-      if fields.present?
-        labels = fields.map { |field| "label=#{field}" }.join(",")
-        options.merge!(fields: labels)
-      end
-
       `op item get #{item.shellescape} #{to_options(**options)}`.tap do
-        raise RuntimeError, "Could not read #{"#{fields.join(", ")} " if fields.present?}from #{item} in the #{vault} 1Password vault" unless $?.success?
+        raise RuntimeError, "Could not read from #{item} in the #{vault} 1Password vault" unless $?.success?
       end
     end
 
