@@ -101,6 +101,10 @@ class Kamal::Cli::App < Kamal::Cli::Base
       raise ArgumentError, "Detach is not compatible with #{incompatible_options.join(" or ")}"
     end
 
+    if options[:push_secrets] && options[:reuse]
+      raise ArgumentError, "Push secrets is not compatible with reuse"
+    end
+
     if cmd.empty?
       raise ArgumentError, "No command provided. You must specify a command to execute."
     end
@@ -122,6 +126,16 @@ class Kamal::Cli::App < Kamal::Cli::Base
       using_version(version_or_latest) do |version|
         say "Launching interactive command with version #{version} via SSH from new container on #{KAMAL.primary_host}...", :magenta
         on(KAMAL.primary_host) { execute *KAMAL.registry.login }
+
+        if options[:push_secrets]
+          say "Pushing env files to servers...", :magenta
+          on(KAMAL.primary_host) do
+            app = KAMAL.app(role: KAMAL.primary_role, host: KAMAL.primary_host)
+            execute *app.ensure_env_directory
+            upload! KAMAL.primary_role.secrets_io(KAMAL.primary_host), KAMAL.primary_role.secrets_path, mode: "0600"
+          end
+        end
+
         run_locally do
           exec KAMAL.app(role: KAMAL.primary_role, host: KAMAL.primary_host).execute_in_new_container_over_ssh(cmd, env: env)
         end
