@@ -1,5 +1,5 @@
 class Kamal::Configuration::Proxy::Run
-  MINIMUM_VERSION = "v0.9.0"
+  MINIMUM_VERSION = "v0.9.2"
   DEFAULT_HTTP_PORT = 80
   DEFAULT_HTTPS_PORT = 443
   DEFAULT_LOG_MAX_SIZE = "10m"
