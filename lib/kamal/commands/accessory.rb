@@ -5,6 +5,7 @@ class Kamal::Commands::Accessory < Kamal::Commands::Base
   delegate :service_name, :image, :hosts, :port, :files, :directories, :cmd,
            :network_args, :publish_args, :env_args, :volume_args, :label_args, :option_args,
            :secrets_io, :secrets_path, :env_directory, :proxy, :running_proxy?, :registry,
+           :volume_names,
            to: :accessory_config
 
   def initialize(config, name:)
@@ -105,6 +106,10 @@ class Kamal::Commands::Accessory < Kamal::Commands::Base
 
   def remove_image
     docker :image, :rm, "--force", image
+  end
+
+  def remove_volumes
+    docker :volume, :rm, *volume_names
   end
 
   def ensure_env_directory
