@@ -46,27 +46,19 @@ class Kamal::Commander
 
   def specific_roles=(role_names)
     @specifics = nil
-    if role_names.present?
-      @specific_roles = Kamal::Utils.filter_specific_items(role_names, config.roles)
-
-      if @specific_roles.empty?
-        raise ArgumentError, "No --roles match for #{role_names.join(',')}"
-      end
-
-      @specific_roles
+    @specific_roles = if role_names.present?
+      filtered = Kamal::Utils.filter_specific_items(role_names, config.roles)
+      raise ArgumentError, "No --roles match for #{role_names.join(',')}" if filtered.empty?
+      filtered
     end
   end
 
   def specific_hosts=(hosts)
     @specifics = nil
-    if hosts.present?
-      @specific_hosts = Kamal::Utils.filter_specific_items(hosts, config.all_hosts)
-
-      if @specific_hosts.empty?
-        raise ArgumentError, "No --hosts match for #{hosts.join(',')}"
-      end
-
-      @specific_hosts
+    @specific_hosts = if hosts.present?
+      filtered = Kamal::Utils.filter_specific_items(hosts, config.all_hosts)
+      raise ArgumentError, "No --hosts match for #{hosts.join(',')}" if filtered.empty?
+      filtered
     end
   end
 
