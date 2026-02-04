@@ -13,7 +13,7 @@ class Kamal::Cli::Build < Kamal::Cli::Base
   def push
     cli = self
 
-    # Ensure pre-connect hooks run before the build, they may needed for a remote builder
+    # Ensure pre-connect hooks run before the build, they may be needed for a remote builder
     # or the pre-build hooks.
     pre_connect_if_required
 
