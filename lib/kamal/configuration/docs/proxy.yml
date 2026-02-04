@@ -153,9 +153,13 @@ proxy:
   # These options are used when booting the proxy container.
   #
   run:
-    http_port: 8080                # HTTP port to use (default 80)
-    https_port: 8443               # HTTPS port to use (default 443)
-    metrics_port: 9090             # Port for Prometheus metrics
+    http_port: 8080                # HTTP port to use (default: 80)
+    https_port: 8443               # HTTPS port to use (default: 443)
+    metrics_port: 9090             # Where to find prometheus metrics in your application
+                                   #
+                                   # The proxy will make available on 127.0.0.1:(port)/metrics
+                                   # any metrics you are serving on application:(port)/metrics.
+                                   # (default: nil)
     debug: true                    # Debug logging (default: false)
     log_max_size: "30m"            # Maximum log file size (default: "10m")
     publish: false                 # Publish ports to the host (default: true)
