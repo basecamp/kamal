@@ -155,6 +155,43 @@ class CommanderTest < ActiveSupport::TestCase
     assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3", "1.1.1.4" ], @kamal.app_hosts
   end
 
+  test "with_specific_hosts restores primary_host after block" do
+    original_primary = @kamal.primary_host
+    assert_equal "1.1.1.1", original_primary
+
+    @kamal.with_specific_hosts("1.1.1.3") do
+      assert_equal "1.1.1.3", @kamal.primary_host
+    end
+
+    assert_equal original_primary, @kamal.primary_host
+  end
+
+  test "with_specific_hosts restores primary_host after iterating multiple hosts" do
+    original_primary = @kamal.primary_host
+    hosts_visited = []
+
+    @kamal.hosts.each do |host|
+      @kamal.with_specific_hosts(host) do
+        hosts_visited << @kamal.primary_host
+      end
+    end
+
+    assert_equal [ "1.1.1.1", "1.1.1.2", "1.1.1.3", "1.1.1.4" ], hosts_visited
+    assert_equal original_primary, @kamal.primary_host
+  end
+
+  test "with_specific_hosts restores primary_host even after exception" do
+    original_primary = @kamal.primary_host
+
+    assert_raises(RuntimeError) do
+      @kamal.with_specific_hosts("1.1.1.3") do
+        raise "test error"
+      end
+    end
+
+    assert_equal original_primary, @kamal.primary_host
+  end
+
   private
     def configure_with(variant)
       @kamal = Kamal::Commander.new.tap do |kamal|
