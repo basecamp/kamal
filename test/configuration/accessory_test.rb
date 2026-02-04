@@ -321,6 +321,22 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
     assert_equal [ "monitoring.example.com" ], @config.accessory(:monitoring).proxy.hosts
   end
 
+  test "proxy with custom healthcheck port" do
+    @deploy[:accessories]["monitoring"]["proxy"]["healthcheck"] = { "port" => 8080 }
+    config = Kamal::Configuration.new(@deploy)
+
+    assert_equal 8080, config.accessory(:monitoring).proxy.healthcheck_port
+    options = config.accessory(:monitoring).proxy.deploy_options
+    assert_equal 8080, options[:"health-check-port"]
+  end
+
+  test "proxy healthcheck port not set by default" do
+    @deploy[:accessories]["monitoring"]["proxy"]["app_port"] = 4321
+    config = Kamal::Configuration.new(@deploy)
+
+    assert_nil config.accessory(:monitoring).proxy.healthcheck_port
+  end
+
   test "can't set restart in options" do
     @deploy[:accessories]["mysql"]["options"] = { "restart" => "always" }
 
