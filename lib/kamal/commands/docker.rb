@@ -16,7 +16,13 @@ class Kamal::Commands::Docker < Kamal::Commands::Base
 
   # Do we have superuser access to install Docker and start system services?
   def superuser?
-    [ '[ "${EUID:-$(id -u)}" -eq 0 ] || command -v sudo >/dev/null || command -v su >/dev/null' ]
+    [ '[ "${EUID:-$(id -u)}" -eq 0 ] || sudo -nl usermod >/dev/null' ]
+  end
+
+  # If we're not root and not already in the docker group
+  # add us to the docker group and terminate all our current sessions
+  def add_group
+    [ '[ "${EUID:-$(id -u)}" -eq 0 ] || id -nG "${USER:-$(id -un)}" | grep -qw docker || { sudo -n usermod -aG docker "${USER:-$(id -un)}" && kill -HUP ${PPID:-ps -o ppid= -p $$}; }' ]
   end
 
   def create_network

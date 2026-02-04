@@ -23,4 +23,8 @@ class CommandsDockerTest < ActiveSupport::TestCase
   test "superuser?" do
     assert_equal '[ "${EUID:-$(id -u)}" -eq 0 ] || command -v sudo >/dev/null || command -v su >/dev/null', @docker.superuser?.join(" ")
   end
+
+  test "add_group" do
+    assert_equal '[ "${EUID:-$(id -u)}" -eq 0 ] || id -nG "${USER:-$(id -un)}" | grep -qw docker || { sudo usermod -aG docker "${USER:-$(id -un)}" && kill -HUP ${PPID:-ps -o ppid= -p $$}; }', @docker.add_group.join(" ")
+  end
 end
