@@ -173,7 +173,7 @@ module Kamal::Cli
 
       def pre_connect_if_required
         if !KAMAL.connected?
-          run_hook "pre-connect" unless options[:skip_hooks]
+          run_hook "pre-connect", secrets: true unless options[:skip_hooks]
           KAMAL.connected = true
         end
       end
