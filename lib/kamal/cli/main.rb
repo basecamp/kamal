@@ -1,3 +1,6 @@
+require "time"
+require "active_support/duration"
+
 class Kamal::Cli::Main < Kamal::Cli::Base
   desc "setup", "Setup all accessories, push the env, and deploy app to servers"
   option :skip_push, aliases: "-P", type: :boolean, default: false, desc: "Skip image build and push"
@@ -80,7 +83,10 @@ class Kamal::Cli::Main < Kamal::Cli::Base
   end
 
   desc "rollback [VERSION]", "Rollback app to VERSION"
-  def rollback(version)
+  def rollback(version = nil)
+    version ||= options[:version] || rollback_version_prompt
+    return unless version
+
     rolled_back = false
     runtime = print_runtime do
       with_lock do
@@ -255,6 +261,63 @@ class Kamal::Cli::Main < Kamal::Cli::Base
   subcommand "server", Kamal::Cli::Server
 
   private
+    def rollback_version_prompt
+      say "Fetching available versions...", :magenta
+
+      versions_with_ages = fetch_rollback_versions
+
+      if versions_with_ages.empty?
+        say "No previous versions available for rollback", :red
+        return
+      end
+
+      say ""
+      say "Rollback to deployment from:", :magenta
+      say ""
+      versions_with_ages.each_with_index do |(version, age), i|
+        say "  #{i + 1}) #{time_ago_in_words(age)} (#{version})"
+      end
+      say ""
+
+      choice = ask("Pick:", default: "1")
+      index = choice.to_i - 1
+
+      if index >= 0 && index < versions_with_ages.length
+        versions_with_ages[index].first
+      else
+        say "Invalid selection", :red
+        nil
+      end
+    end
+
+    def fetch_rollback_versions
+      versions_with_ages = {}
+      current_version = nil
+
+      on(KAMAL.primary_host) do
+        role = KAMAL.roles_on(host).first
+        app = KAMAL.app(role: role, host: host)
+
+        current_version = capture_with_info(*app.current_running_version, raise_on_non_zero_exit: false).strip
+
+        output = capture_with_info(*app.list_versions_with_ages, raise_on_non_zero_exit: false)
+        output.split("\n").each do |line|
+          name, created_at = line.split("\t")
+          next if name.blank? || created_at.blank?
+          version = name.delete_prefix("#{role.container_prefix}-")
+          versions_with_ages[version] ||= Time.parse(created_at)
+        end
+      end
+
+      versions_with_ages.delete(current_version)
+      versions_with_ages.sort_by { |_, age| age }.reverse
+    end
+
+    def time_ago_in_words(time)
+      seconds = (Time.now - time).to_i
+      "#{ActiveSupport::Duration.build(seconds).inspect} ago"
+    end
+
     def container_available?(version)
       begin
         on(KAMAL.app_hosts) do

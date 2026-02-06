@@ -439,6 +439,19 @@ class CommandsAppTest < ActiveSupport::TestCase
       new_command.list_versions("--latest", statuses: [ :running, :restarting ]).join(" ")
   end
 
+  test "list_versions_with_ages" do
+    assert_equal \
+      "docker ps --all --filter label=service=app --filter label=destination= --filter label=role=web --format \"{{.Names}}\\t{{.CreatedAt}}\"",
+      new_command.list_versions_with_ages.join(" ")
+  end
+
+  test "list_versions_with_ages with destination" do
+    @destination = "staging"
+    assert_equal \
+      "docker ps --all --filter label=service=app --filter label=destination=staging --filter label=role=web --format \"{{.Names}}\\t{{.CreatedAt}}\"",
+      new_command.list_versions_with_ages.join(" ")
+  end
+
   test "list_containers" do
     assert_equal \
       "docker container ls --all --filter label=service=app --filter label=destination= --filter label=role=web",
