@@ -125,6 +125,17 @@ class Kamal::Cli::Main < Kamal::Cli::Base
     end
   end
 
+  desc "alias", "Show available aliases"
+  def alias
+    if KAMAL.config.aliases.any?
+      KAMAL.config.aliases.each do |name, alias_config|
+        puts "#{name.ljust(30)} #{alias_config.command}"
+      end
+    else
+      say "No aliases configured"
+    end
+  end
+
   desc "docs [SECTION]", "Show Kamal configuration documentation"
   def docs(section = nil)
     case section
