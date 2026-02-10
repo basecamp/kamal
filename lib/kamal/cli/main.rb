@@ -40,6 +40,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
 
         say "Detect stale containers...", :magenta
         invoke "kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true)
+        invoke "kamal:cli:app:deleted_roles", [], invoke_options.merge(stop: true)
 
         invoke "kamal:cli:app:boot", [], invoke_options
 
