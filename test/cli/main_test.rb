@@ -451,24 +451,63 @@ class CliMainTest < CliTestCase
     end
   end
 
+  test "config and alias commands with defaults from .kamal/options.yml" do
+    Dir.mktmpdir do |tmpdir|
+      relative_deploy_file_path = ".kamal/deploy.yml"
+
+      Dir.chdir(tmpdir) do
+        run_init("-c", relative_deploy_file_path)
+      end
+
+      config_file = File.join(tmpdir, relative_deploy_file_path)
+      FileUtils.cp "test/fixtures/deploy_with_aliases.yml", config_file
+
+      Dir.chdir(tmpdir) do
+        run_main_command("config").tap do |output|
+          config = YAML.load(output)
+          assert_equal [ "console", "web", "workers" ], config[:roles]
+        end
+
+        run_main_command("console", "-r", "workers").tap do |output|
+          assert_match "docker exec app-workers-999 bin/console on 1.1.1.3", output
+          assert_match "App Host: 1.1.1.3", output
+        end
+      end
+    end
+  end
+
   test "init" do
     in_dummy_git_repo do
-      run_command("init").tap do |output|
-        assert_match "Created configuration file in config/deploy.yml", output
+      run_init.tap do |output|
+        assert_match "Created config file config/deploy.yml", output
+        assert_match "Created .kamal/options.yml file", output
         assert_match "Created .kamal/secrets file", output
       end
 
       assert_file "config/deploy.yml", "service: my-app"
+      assert_file ".kamal/options.yml", "config_file: \"config/deploy.yml\""
       assert_file ".kamal/secrets", "KAMAL_REGISTRY_PASSWORD=$KAMAL_REGISTRY_PASSWORD"
+    end
+  end
+
+  test "init with config file option" do
+    in_dummy_git_repo do
+      run_init("-c", ".kamal/deploy.yml").tap do |output|
+        assert_match "Created config file .kamal/deploy.yml", output
+        assert_match "Created .kamal/options.yml file", output
+      end
+
+      assert_file ".kamal/deploy.yml", "service: my-app"
+      assert_file ".kamal/options.yml", "config_file: \".kamal/deploy.yml\""
     end
   end
 
   test "init with existing config" do
     in_dummy_git_repo do
-      run_command("init")
+      run_init
 
-      run_command("init").tap do |output|
-        assert_match /Config file already exists in config\/deploy.yml \(remove first to create a new one\)/, output
+      run_init.tap do |output|
+        assert_match /Config file config\/deploy.yml already exists \(remove first to create a new one\)/, output
         assert_no_match /Added .kamal\/secrets/, output
       end
     end
@@ -476,8 +515,8 @@ class CliMainTest < CliTestCase
 
   test "init with bundle option" do
     in_dummy_git_repo do
-      run_command("init", "--bundle").tap do |output|
-        assert_match "Created configuration file in config/deploy.yml", output
+      run_init("--bundle").tap do |output|
+        assert_match "Created config file config/deploy.yml", output
         assert_match "Created .kamal/secrets file", output
         assert_match /Adding Kamal to Gemfile and bundle/, output
         assert_match /bundle add kamal/, output
@@ -488,15 +527,14 @@ class CliMainTest < CliTestCase
   end
 
   test "init with bundle option and existing binstub" do
-    Pathname.any_instance.expects(:exist?).returns(true).times(4)
-    Pathname.any_instance.stubs(:mkpath)
-    FileUtils.stubs(:mkdir_p)
-    FileUtils.stubs(:cp_r)
-    FileUtils.stubs(:cp)
+    in_dummy_git_repo do
+      binstub = Pathname.new(File.expand_path("bin/kamal"))
+      FileUtils.mkdir_p binstub.dirname
+      FileUtils.touch binstub
 
-    run_command("init", "--bundle").tap do |output|
-      assert_match /Config file already exists in config\/deploy.yml \(remove first to create a new one\)/, output
-      assert_match /Binstub already exists in bin\/kamal \(remove first to create a new one\)/, output
+      run_init("--bundle").tap do |output|
+        assert_match /Binstub already exists in bin\/kamal \(remove first to create a new one\)/, output
+      end
     end
   end
 
@@ -587,20 +625,16 @@ class CliMainTest < CliTestCase
 
   test "switch config file with an alias" do
     with_config_files do
-      with_argv([ "other_config" ]) do
-        stdouted { Kamal::Cli::Main.start }.tap do |output|
-          assert_match ":service_with_version: app2-999", output
-        end
+      run_main_command("other_config").tap do |output|
+        assert_match ":service_with_version: app2-999", output
       end
     end
   end
 
   test "switch destination with an alias" do
     with_config_files do
-      with_argv([ "other_destination_config" ]) do
-        stdouted { Kamal::Cli::Main.start }.tap do |output|
-          assert_match ":service_with_version: app3-999", output
-        end
+      run_main_command("other_destination_config").tap do |output|
+        assert_match ":service_with_version: app3-999", output
       end
     end
   end
@@ -642,7 +676,15 @@ class CliMainTest < CliTestCase
 
   private
     def run_command(*command, config_file: "deploy_simple")
-      with_argv([ *command, "-c", "test/fixtures/#{config_file}.yml" ]) do
+      run_main_command(*command, "-c", "test/fixtures/#{config_file}.yml")
+    end
+
+    def run_init(*options)
+      run_main_command("init", *options)
+    end
+
+    def run_main_command(*command)
+      with_argv([ *command ]) do
         stdouted { Kamal::Cli::Main.start }
       end
     end
