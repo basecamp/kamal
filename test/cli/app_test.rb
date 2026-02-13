@@ -454,6 +454,59 @@ class CliAppTest < CliTestCase
     end
   end
 
+  test "exec with push-secrets" do
+    run_command("exec", "--push-secrets", "ruby -v").tap do |output|
+      assert_match "Pushing env files to servers...", output
+      assert_match "mkdir -p .kamal/apps/app/env/roles", output
+      assert_match "Uploading", output
+      assert_match ".kamal/apps/app/env/roles/web.env", output
+      assert_match "docker login -u [REDACTED] -p [REDACTED]", output
+      assert_match %r{docker run --rm --name app-web-exec-latest-[0-9a-f]{6} --network kamal --env-file .kamal/apps/app/env/roles/web.env --log-opt max-size="10m" dhh/app:latest ruby -v}, output
+    end
+  end
+
+  test "exec without push-secrets does not push env files" do
+    run_command("exec", "ruby -v").tap do |output|
+      assert_no_match "Pushing env files to servers...", output
+      assert_no_match "Uploading", output
+      assert_match "docker login -u [REDACTED] -p [REDACTED]", output
+      assert_match %r{docker run --rm --name app-web-exec-latest-[0-9a-f]{6} --network kamal --env-file .kamal/apps/app/env/roles/web.env --log-opt max-size="10m" dhh/app:latest ruby -v}, output
+    end
+  end
+
+  test "exec with push-secrets and primary" do
+    run_command("exec", "--push-secrets", "--primary", "ruby -v").tap do |output|
+      assert_match "Pushing env files to servers...", output
+      assert_match "mkdir -p .kamal/apps/app/env/roles", output
+      assert_match "Uploading", output
+    end
+  end
+
+  test "exec with push-secrets and reuse" do
+    assert_raises(ArgumentError, "Push secrets is not compatible with reuse") do
+      run_command("exec", "--push-secrets", "--reuse", "ruby -v")
+    end
+  end
+
+  test "exec interactive with push-secrets" do
+    Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
+    SSHKit::Backend::Abstract.any_instance.expects(:exec)
+      .with(regexp_matches(%r{ssh -t root@1\.1\.1\.1 -p 22 'docker run -it --rm --name app-web-exec-latest-[0-9a-f]{6} --network kamal --env-file .kamal/apps/app/env/roles/web.env --log-opt max-size="10m" dhh/app:latest ruby -v'}))
+
+    stub_stdin_tty do
+      run_command("exec", "-i", "--push-secrets", "ruby -v").tap do |output|
+        assert_hook_ran "pre-connect", output
+        assert_match "docker login -u [REDACTED] -p [REDACTED]", output
+        assert_match "Pushing env files to servers...", output
+        assert_match "mkdir -p .kamal/apps/app/env/roles", output
+        assert_match "Uploading", output
+        assert_match ".kamal/apps/app/env/roles/web.env", output
+        assert_match "Get most recent version available as an image...", output
+        assert_match "Launching interactive command with version latest via SSH from new container on 1.1.1.1...", output
+      end
+    end
+  end
+
   test "containers" do
     run_command("containers").tap do |output|
       assert_match "docker container ls --all --filter label=service=app", output
