@@ -89,6 +89,10 @@ class Kamal::Configuration::Builder
     builder_config.fetch("driver", "docker-container")
   end
 
+  def namespace
+    builder_config["namespace"]
+  end
+
   def pack_builder
     builder_config["pack"]["builder"] if pack?
   end

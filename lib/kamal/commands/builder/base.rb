@@ -7,7 +7,7 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
   delegate \
     :args, :secrets, :dockerfile, :target, :arches, :local_arches, :remote_arches, :remote,
     :pack?, :pack_builder, :pack_buildpacks,
-    :cache_from, :cache_to, :ssh, :provenance, :sbom, :driver, :docker_driver?,
+    :cache_from, :cache_to, :ssh, :provenance, :sbom, :driver, :docker_driver?, :namespace,
     to: :builder_config
 
   def clean
@@ -139,5 +139,9 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
 
     def platform_options(arches)
       argumentize "--platform", arches.map { |arch| "linux/#{arch}" }.join(",") if arches.any?
+    end
+
+    def namespaced_builder_name(base_name)
+      [ namespace, base_name ].compact.join("-")
     end
 end

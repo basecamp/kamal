@@ -103,6 +103,38 @@ class CommandsBuilderTest < ActiveSupport::TestCase
       builder.push.join(" ")
   end
 
+  test "cloud builder with namespace" do
+    builder = new_builder_command(builder: { "arch" => [ "#{local_arch}" ], "driver" => "cloud docker-org-name/builder-name", "namespace" => "my-project" })
+    assert_equal "cloud", builder.name
+    assert_equal \
+      "docker buildx build --output=type=registry --platform linux/#{local_arch} --builder my-project-cloud-docker-org-name-builder-name -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile . 2>&1",
+      builder.push.join(" ")
+  end
+
+  test "local builder with namespace" do
+    builder = new_builder_command(builder: { "arch" => [ "amd64" ], "namespace" => "my-project" })
+    assert_equal "local", builder.name
+    assert_equal \
+      "docker buildx build --output=type=registry --platform linux/amd64 --builder my-project-kamal-local-docker-container -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile . 2>&1",
+      builder.push.join(" ")
+  end
+
+  test "remote builder with namespace" do
+    builder = new_builder_command(builder: { "arch" => [ "#{remote_arch}" ], "remote" => "ssh://app@host", "namespace" => "my-project" })
+    assert_equal "remote", builder.name
+    assert_equal \
+      "docker buildx build --output=type=registry --platform linux/#{remote_arch} --builder my-project-kamal-remote-ssh---app-host -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile . 2>&1",
+      builder.push.join(" ")
+  end
+
+  test "hybrid builder with namespace" do
+    builder = new_builder_command(builder: { "arch" => [ "amd64", "arm64" ], "remote" => "ssh://app@127.0.0.1", "namespace" => "my-project" })
+    assert_equal "hybrid", builder.name
+    assert_equal \
+      "docker buildx build --output=type=registry --platform linux/amd64,linux/arm64 --builder my-project-kamal-hybrid-docker-container-ssh---app-127-0-0-1 -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile . 2>&1",
+      builder.push.join(" ")
+  end
+
   test "build args" do
     builder = new_builder_command(builder: { "args" => { "a" => 1, "b" => 2 } })
     assert_equal \
