@@ -15,7 +15,7 @@ module Kamal::Commands
     end
 
     def container_id_for(container_name:, only_running: false)
-      docker :container, :ls, *("--all" unless only_running), "--filter", "name=^#{container_name}$", "--quiet"
+      docker :container, :ls, *("--all" unless only_running), "--filter", "'name=^#{container_name}$'", "--quiet"
     end
 
     def make_directory_for(remote_file)

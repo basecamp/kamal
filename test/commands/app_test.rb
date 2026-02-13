@@ -103,7 +103,7 @@ class CommandsAppTest < ActiveSupport::TestCase
 
   test "stop with version" do
     assert_equal \
-      "docker container ls --all --filter name=^app-web-123$ --quiet | xargs docker stop",
+      "docker container ls --all --filter 'name=^app-web-123$' --quiet | xargs docker stop",
       new_command.stop(version: "123").join(" ")
   end
 
@@ -419,7 +419,7 @@ class CommandsAppTest < ActiveSupport::TestCase
 
   test "container_id_for" do
     assert_equal \
-      "docker container ls --all --filter name=^app-999$ --quiet",
+      "docker container ls --all --filter 'name=^app-999$' --quiet",
       new_command.container_id_for(container_name: "app-999").join(" ")
   end
 
@@ -460,14 +460,14 @@ class CommandsAppTest < ActiveSupport::TestCase
 
   test "remove_container" do
     assert_equal \
-      "docker container ls --all --filter name=^app-web-999$ --quiet | xargs docker container rm",
+      "docker container ls --all --filter 'name=^app-web-999$' --quiet | xargs docker container rm",
       new_command.remove_container(version: "999").join(" ")
   end
 
   test "remove_container with destination" do
     @destination = "staging"
     assert_equal \
-      "docker container ls --all --filter name=^app-web-staging-999$ --quiet | xargs docker container rm",
+      "docker container ls --all --filter 'name=^app-web-staging-999$' --quiet | xargs docker container rm",
       new_command.remove_container(version: "999").join(" ")
   end
 

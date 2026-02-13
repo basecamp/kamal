@@ -99,7 +99,7 @@ class CliProxyTest < CliTestCase
 
   test "details" do
     run_command("details").tap do |output|
-      assert_match "docker ps --filter name=^kamal-proxy$", output
+      assert_match "docker ps --filter 'name=^kamal-proxy$'", output
     end
   end
 
@@ -179,7 +179,7 @@ class CliProxyTest < CliTestCase
       .returns(Kamal::Configuration::Proxy::Run::MINIMUM_VERSION)
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-workers-latest$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
+      .with(:docker, :container, :ls, "--all", "--filter", "'name=^app-workers-latest$'", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
       .returns("running").at_least_once # workers health check
 
     run_command("upgrade", "-y").tap do |output|
@@ -199,7 +199,7 @@ class CliProxyTest < CliTestCase
       assert_match "Uploading \"\\n\" to .kamal/apps/app/env/roles/web.env", output
       assert_match %r{docker run --detach --restart unless-stopped --name app-web-latest --network kamal --hostname 1.1.1.1-.* --env KAMAL_CONTAINER_NAME="app-web-latest" --env KAMAL_VERSION="latest" --env KAMAL_HOST="1.1.1.1" --env-file .kamal/apps/app/env/roles/web.env --log-opt max-size="10m" --label service="app" --label role="web" --label destination dhh/app:latest}, output
       assert_match "docker exec kamal-proxy kamal-proxy deploy app-web --target=\"12345678:80\" --deploy-timeout=\"6s\" --drain-timeout=\"30s\" --buffer-requests --buffer-responses --log-request-header=\"Cache-Control\" --log-request-header=\"Last-Modified\" --log-request-header=\"User-Agent\"", output
-      assert_match "docker container ls --all --filter name=^app-web-12345678$ --quiet | xargs docker stop", output
+      assert_match "docker container ls --all --filter 'name=^app-web-12345678$' --quiet | xargs docker stop", output
       assert_match "docker tag dhh/app:latest dhh/app:latest", output
       assert_match "/usr/bin/env mkdir -p .kamal", output
       assert_match "docker ps -q -a --filter label=service=app --filter status=created --filter status=exited --filter status=dead | tail -n +6 | while read container_id; do docker rm $container_id; done", output
@@ -218,7 +218,7 @@ class CliProxyTest < CliTestCase
       .returns(Kamal::Configuration::Proxy::Run::MINIMUM_VERSION)
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-workers-latest$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
+      .with(:docker, :container, :ls, "--all", "--filter", "'name=^app-workers-latest$'", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
       .returns("running").at_least_once # workers health check
 
     run_command("upgrade", "--rolling", "-y",).tap do |output|
