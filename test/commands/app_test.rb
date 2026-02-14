@@ -356,7 +356,7 @@ class CommandsAppTest < ActiveSupport::TestCase
 
   test "run over ssh with proxy" do
     @config[:ssh] = { "proxy" => "2.2.2.2" }
-    assert_equal "ssh -J root@2.2.2.2 -t root@1.1.1.1 -p 22 'ls'", new_command.run_over_ssh("ls", host: "1.1.1.1")
+    assert_equal "ssh -J 2.2.2.2 -t root@1.1.1.1 -p 22 'ls'", new_command.run_over_ssh("ls", host: "1.1.1.1")
   end
 
   test "run over ssh with proxy user" do
@@ -366,7 +366,7 @@ class CommandsAppTest < ActiveSupport::TestCase
 
   test "run over ssh with custom user with proxy" do
     @config[:ssh] = { "user" => "app", "proxy" => "2.2.2.2" }
-    assert_equal "ssh -J root@2.2.2.2 -t app@1.1.1.1 -p 22 'ls'", new_command.run_over_ssh("ls", host: "1.1.1.1")
+    assert_equal "ssh -J 2.2.2.2 -t app@1.1.1.1 -p 22 'ls'", new_command.run_over_ssh("ls", host: "1.1.1.1")
   end
 
   test "run over ssh with keys config" do
