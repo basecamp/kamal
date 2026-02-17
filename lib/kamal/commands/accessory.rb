@@ -2,7 +2,7 @@ class Kamal::Commands::Accessory < Kamal::Commands::Base
   include Proxy
 
   attr_reader :accessory_config
-  delegate :service_name, :image, :hosts, :port, :files, :directories, :cmd,
+  delegate :service_name, :image, :hosts, :port, :files, :directories, :cmd, :network,
            :network_args, :publish_args, :env_args, :volume_args, :label_args, :option_args,
            :secrets_io, :secrets_path, :env_directory, :proxy, :running_proxy?, :registry,
            to: :accessory_config
@@ -39,6 +39,31 @@ class Kamal::Commands::Accessory < Kamal::Commands::Base
 
   def info(all: false, quiet: false)
     docker :ps, *("-a" if all), *("-q" if quiet), *service_filter
+  end
+
+  def internal_host
+    docker :inspect, service_name, "--format", "'{{.NetworkSettings.Networks.#{network}.IPAddress}}'"
+  end
+
+  def internal_ports
+    pipe(
+      docker(:inspect, service_name, "--format", "'{{range $k, $v := .NetworkSettings.Ports}}{{$k}} {{end}}'"),
+      grep("'/tcp'"),
+      sed("'s#/tcp##g'")
+    )
+  end
+
+  def forward_ports(internal_host, internal_ports, available_ports: [])
+    local_ports = available_ports.dup
+
+    forward_args = internal_ports.map do |internal_port|
+      local_port = local_ports.shift
+      local_port ||= internal_port
+
+      "-L #{local_port}:#{internal_host}:#{internal_port}"
+    end
+
+    run_over_ssh("", extra_ssh_args: " -o ExitOnForwardFailure=yes -N #{forward_args.join(" ")}")
   end
 
   def logs(timestamps: true, since: nil, lines: nil, grep: nil, grep_options: nil)
@@ -81,8 +106,8 @@ class Kamal::Commands::Accessory < Kamal::Commands::Base
     run_over_ssh execute_in_new_container(*command, interactive: true)
   end
 
-  def run_over_ssh(command)
-    super command, host: hosts.first
+  def run_over_ssh(command, extra_ssh_args: "")
+    super command, extra_ssh_args: extra_ssh_args, host: hosts.first
   end
 
   def ensure_local_file_present(local_file)
