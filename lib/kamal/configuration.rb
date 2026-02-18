@@ -235,7 +235,7 @@ class Kamal::Configuration
   end
 
   def run_directory
-    ".kamal"
+    raw_config.run_directory || ".kamal"
   end
 
   def apps_directory
