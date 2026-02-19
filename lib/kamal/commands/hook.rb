@@ -3,8 +3,8 @@ class Kamal::Commands::Hook < Kamal::Commands::Base
     [ hook_file(hook) ]
   end
 
-  def env(secrets: false, **details)
-    tags(**details).env.tap do |env|
+  def env(secrets: false, hook_outputs: {}, **details)
+    hook_outputs.merge(tags(**details).env).tap do |env|
       env.merge!(config.secrets.to_h) if secrets
     end
   end
