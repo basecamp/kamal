@@ -153,14 +153,29 @@ module Kamal::Cli
             KAMAL.verbosity
           end
 
-          with_env KAMAL.hook.env(**details, **extra_details) do
-            KAMAL.with_verbosity(hook_verbosity) do
-              run_locally do
-                execute *KAMAL.hook.run(hook)
+          hook_output = Kamal::HookOutput.new
+
+          begin
+            with_env KAMAL.hook.env(**details, **extra_details, hook_outputs: KAMAL.hook_outputs).merge("KAMAL_OUTPUT" => hook_output.path) do
+              KAMAL.with_verbosity(hook_verbosity) do
+                run_locally do
+                  execute *KAMAL.hook.run(hook)
+                end
               end
+            rescue SSHKit::Command::Failed => e
+              raise HookError.new("Hook `#{hook}` failed:\n#{e.message}")
             end
-          rescue SSHKit::Command::Failed => e
-            raise HookError.new("Hook `#{hook}` failed:\n#{e.message}")
+
+            output = hook_output.parse
+            KAMAL.merge_hook_output(output)
+
+            if (message = output["KAMAL_MESSAGE"])
+              say message
+            end
+
+            output
+          ensure
+            hook_output.cleanup
           end
         end
       end

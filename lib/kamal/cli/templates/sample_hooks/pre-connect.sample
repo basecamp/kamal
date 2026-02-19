@@ -12,6 +12,7 @@
 # KAMAL_ROLES (if set)
 # KAMAL_DESTINATION (if set)
 # KAMAL_RUNTIME
+# KAMAL_OUTPUT
 
 hosts = ENV["KAMAL_HOSTS"].split(",")
 results = nil

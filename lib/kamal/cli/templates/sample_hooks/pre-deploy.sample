@@ -15,6 +15,7 @@
 # KAMAL_SUBCOMMAND
 # KAMAL_ROLES (if set)
 # KAMAL_DESTINATION (if set)
+# KAMAL_OUTPUT
 
 # Only check the build status for production deployments
 if ENV["KAMAL_COMMAND"] == "rollback" || ENV["KAMAL_DESTINATION"] != "production"

@@ -15,6 +15,7 @@
 # KAMAL_HOSTS
 # KAMAL_ROLES (if set)
 # KAMAL_DESTINATION (if set)
+# KAMAL_OUTPUT
 
 if [ -n "$(git status --porcelain)" ]; then
   echo "Git checkout is not clean, aborting..." >&2

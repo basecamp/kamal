@@ -192,6 +192,22 @@ class CommanderTest < ActiveSupport::TestCase
     assert_equal original_primary, @kamal.primary_host
   end
 
+  test "hook_outputs starts empty" do
+    assert_equal({}, @kamal.hook_outputs)
+  end
+
+  test "merge_hook_output accumulates across calls" do
+    @kamal.merge_hook_output("FOO" => "bar")
+    @kamal.merge_hook_output("BAZ" => "qux")
+    assert_equal({ "FOO" => "bar", "BAZ" => "qux" }, @kamal.hook_outputs)
+  end
+
+  test "merge_hook_output overwrites existing keys" do
+    @kamal.merge_hook_output("FOO" => "bar")
+    @kamal.merge_hook_output("FOO" => "baz")
+    assert_equal({ "FOO" => "baz" }, @kamal.hook_outputs)
+  end
+
   private
     def configure_with(variant)
       @kamal = Kamal::Commander.new.tap do |kamal|
