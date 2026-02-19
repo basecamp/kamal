@@ -17,19 +17,32 @@ class Kamal::Commander
     self.connected = false
     @specifics = @specific_roles = @specific_hosts = nil
     @config = @config_kwargs = nil
+    @before_config = nil
     @hook_outputs = {}
     @commands = {}
   end
 
   def config
-    @config ||= Kamal::Configuration.create_from(**@config_kwargs.to_h).tap do |config|
-      @config_kwargs = nil
-      configure_sshkit_with(config)
+    @config ||= begin
+      if @before_config
+        hook = @before_config
+        @before_config = nil
+        hook.call
+      end
+
+      Kamal::Configuration.create_from(**@config_kwargs.to_h).tap do |config|
+        @config_kwargs = nil
+        configure_sshkit_with(config)
+      end
     end
   end
 
   def configure(**kwargs)
     @config, @config_kwargs = nil, kwargs
+  end
+
+  def before_config(&block)
+    @before_config = block
   end
 
   def merge_hook_output(output)
