@@ -1,0 +1,22 @@
+#!/bin/sh
+
+# A sample pre-configure hook
+#
+# Runs before configuration is created. Can inject or rewrite the deployment
+# destination by writing KAMAL_DESTINATION to $KAMAL_OUTPUT. Useful for
+# dynamic destination assignment (e.g., claiming an available beta slot).
+#
+# Because config has not been created yet, only these environment variables
+# are available:
+# KAMAL_DESTINATION (if set via -d flag)
+# KAMAL_OUTPUT
+#
+# Write KEY=VALUE lines to $KAMAL_OUTPUT to pass data back to Kamal:
+#   echo "KAMAL_DESTINATION=beta2" >> "$KAMAL_OUTPUT"
+#   echo "KAMAL_MESSAGE=Deploying to beta2" >> "$KAMAL_OUTPUT"
+#
+# KAMAL_DESTINATION — sets or overwrites the destination for this deploy
+# KAMAL_MESSAGE — printed to the user after the hook runs
+# Any other keys are accumulated and available to subsequent hooks
+
+echo "pre-configure hook called for destination: ${KAMAL_DESTINATION:-<none>}"
