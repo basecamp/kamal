@@ -785,7 +785,7 @@ class CliMainTest < CliTestCase
     end
   end
 
-  test ".kamal/bin is prepended to PATH during hook execution" do
+  test ".kamal/bin is prepended to PATH by prepend_kamal_bin_to_path" do
     Dir.mktmpdir do |tmpdir|
       Dir.chdir(tmpdir) do
         FileUtils.mkdir_p(".kamal/bin")
@@ -794,12 +794,11 @@ class CliMainTest < CliTestCase
         original_path = ENV["PATH"]
         kamal_bin = File.expand_path(".kamal/bin")
 
-        cli.send(:with_env, { "FOO" => "bar" }) do
-          assert ENV["PATH"].start_with?("#{kamal_bin}#{File::PATH_SEPARATOR}"),
-            "Expected PATH to start with #{kamal_bin}, got: #{ENV["PATH"]}"
-        end
+        cli.send(:prepend_kamal_bin_to_path)
+        assert ENV["PATH"].start_with?("#{kamal_bin}#{File::PATH_SEPARATOR}"),
+          "Expected PATH to start with #{kamal_bin}, got: #{ENV["PATH"]}"
 
-        assert_equal original_path, ENV["PATH"], "PATH should be restored after with_env"
+        ENV["PATH"] = original_path
       end
     end
   end
@@ -810,9 +809,24 @@ class CliMainTest < CliTestCase
         cli = Kamal::Cli::Base.allocate
         original_path = ENV["PATH"]
 
+        cli.send(:prepend_kamal_bin_to_path)
+        assert_equal original_path, ENV["PATH"],
+          "PATH should be unchanged when .kamal/bin does not exist"
+      end
+    end
+  end
+
+  test "with_env does not prepend .kamal/bin to PATH" do
+    Dir.mktmpdir do |tmpdir|
+      Dir.chdir(tmpdir) do
+        FileUtils.mkdir_p(".kamal/bin")
+
+        cli = Kamal::Cli::Base.allocate
+        original_path = ENV["PATH"]
+
         cli.send(:with_env, { "FOO" => "bar" }) do
           assert_equal original_path, ENV["PATH"],
-            "PATH should be unchanged when .kamal/bin does not exist"
+            "with_env should not modify PATH"
         end
       end
     end

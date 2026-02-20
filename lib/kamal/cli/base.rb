@@ -154,6 +154,7 @@ module Kamal::Cli
           end
 
           with_env KAMAL.hook.env(**details, **extra_details) do
+            prepend_kamal_bin_to_path
             KAMAL.with_verbosity(hook_verbosity) do
               run_locally do
                 execute *KAMAL.hook.run(hook)
@@ -213,7 +214,6 @@ module Kamal::Cli
       def with_env(env)
         current_env = ENV.to_h.dup
         ENV.update(env)
-        prepend_kamal_bin_to_path
         yield
       ensure
         ENV.clear
