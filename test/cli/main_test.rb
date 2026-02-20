@@ -488,7 +488,7 @@ class CliMainTest < CliTestCase
   end
 
   test "init with bundle option and existing binstub" do
-    Pathname.any_instance.expects(:exist?).returns(true).times(4)
+    Pathname.any_instance.stubs(:exist?).returns(true)
     Pathname.any_instance.stubs(:mkpath)
     FileUtils.stubs(:mkdir_p)
     FileUtils.stubs(:cp_r)

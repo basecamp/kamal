@@ -52,15 +52,69 @@ module Kamal::Cli
             commander.verbosity = VERBOSITY[:quiet]
           end
 
+          config_file = Pathname.new(File.expand_path(options[:config_file]))
+          destination = options[:destination]
+          version = options[:version]
+
           commander.configure \
-            config_file: Pathname.new(File.expand_path(options[:config_file])),
-            destination: options[:destination],
-            version: options[:version]
+            config_file: config_file,
+            destination: destination,
+            version: version
+
+          if config_file.exist? && !options[:skip_hooks]
+            cli = self
+            commander.before_config do
+              if (new_dest = cli.send(:run_pre_configure_hook, config_file, destination).presence)
+                commander.configure config_file: config_file, destination: new_dest, version: version
+              end
+            end
+          end
 
           commander.specific_hosts    = options[:hosts]&.split(",")
           commander.specific_roles    = options[:roles]&.split(",")
           commander.specific_primary! if options[:primary]
         end
+      end
+
+      # Fires before config is created — can inject or rewrite the destination.
+      # Runs as a lightweight hook (no config-derived env) because config
+      # may be invalid without a destination (require_destination: true).
+      def run_pre_configure_hook(config_file, destination)
+        env = { "KAMAL_DESTINATION" => destination }
+
+        hook_file = File.join(pre_configure_hooks_path(config_file, env), "pre-configure")
+        return unless File.exist?(hook_file)
+
+        hook_output = Kamal::HookOutput.new
+
+        begin
+          with_env(env.merge("KAMAL_OUTPUT" => hook_output.path)) do
+            run_locally { execute hook_file }
+          end
+
+          output = hook_output.parse
+          KAMAL.merge_hook_output(output)
+
+          if (message = output["KAMAL_MESSAGE"])
+            say message
+          end
+
+          output["KAMAL_DESTINATION"]
+        rescue SSHKit::Command::Failed => e
+          raise HookError.new("Hook `pre-configure` failed:\n#{e.message}")
+        ensure
+          hook_output.cleanup
+        end
+      end
+
+      def pre_configure_hooks_path(config_file, env)
+        with_env(env) do
+          load_method = YAML.respond_to?(:unsafe_load) ? :unsafe_load : :load
+          raw = YAML.send(load_method, ERB.new(File.read(config_file)).result)
+          raw&.dig("hooks_path") || ".kamal/hooks"
+        end
+      rescue Psych::SyntaxError, SyntaxError, KeyError
+        ".kamal/hooks"
       end
 
       def print_runtime
@@ -196,10 +250,12 @@ module Kamal::Cli
       def command
         @kamal_command ||= begin
           invocation_class, invocation_commands = *first_invocation
-          if invocation_class == Kamal::Cli::Main
+          if invocation_class.nil?
+            nil
+          elsif invocation_class == Kamal::Cli::Main
             invocation_commands[0]
           else
-            Kamal::Cli::Main.subcommand_classes.find { |command, clazz| clazz == invocation_class }[0]
+            Kamal::Cli::Main.subcommand_classes.find { |command, clazz| clazz == invocation_class }&.first
           end
         end
       end
@@ -207,7 +263,7 @@ module Kamal::Cli
       def subcommand
         @kamal_subcommand ||= begin
           invocation_class, invocation_commands = *first_invocation
-          invocation_commands[0] if invocation_class != Kamal::Cli::Main
+          invocation_commands&.at(0) if invocation_class && invocation_class != Kamal::Cli::Main
         end
       end
 
