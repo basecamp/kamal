@@ -1,4 +1,28 @@
 class Kamal::Cli::Main < Kamal::Cli::Base
+  def self.dispatch(command, given_args, given_opts, config)
+    if command.nil? && (ext = resolve_external_command(given_args.first))
+      exec ext, *given_args.drop(1)
+    else
+      super
+    end
+  end
+
+  def self.resolve_external_command(name)
+    return if name.nil? || name.start_with?("-") || \
+      name.include?("/") || find_command_possibilities(name).any?
+
+    local = File.join(".kamal", "bin", name)
+    return local if File.file?(local) && File.executable?(local)
+
+    ENV["PATH"]&.split(File::PATH_SEPARATOR)&.each do |dir|
+      candidate = File.join(dir, "kamal-#{name}")
+      return candidate if File.file?(candidate) && File.executable?(candidate)
+    end
+
+    nil
+  end
+  private_class_method :resolve_external_command
+
   desc "setup", "Setup all accessories, push the env, and deploy app to servers"
   option :skip_push, aliases: "-P", type: :boolean, default: false, desc: "Skip image build and push"
   option :no_cache, type: :boolean, default: false, desc: "Build without using Docker's build cache"
