@@ -284,10 +284,17 @@ module Kamal::Cli
       def with_env(env)
         current_env = ENV.to_h.dup
         ENV.update(env)
+        prepend_kamal_bin_to_path
         yield
       ensure
         ENV.clear
         ENV.update(current_env)
+      end
+
+      def prepend_kamal_bin_to_path
+        kamal_bin = File.expand_path(".kamal/bin")
+        ENV["PATH"] = "#{kamal_bin}#{File::PATH_SEPARATOR}#{ENV["PATH"]}" \
+          if Dir.exist?(kamal_bin)
       end
 
       def ensure_docker_installed

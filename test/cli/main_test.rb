@@ -785,6 +785,39 @@ class CliMainTest < CliTestCase
     end
   end
 
+  test ".kamal/bin is prepended to PATH during hook execution" do
+    Dir.mktmpdir do |tmpdir|
+      Dir.chdir(tmpdir) do
+        FileUtils.mkdir_p(".kamal/bin")
+
+        cli = Kamal::Cli::Base.allocate
+        original_path = ENV["PATH"]
+        kamal_bin = File.expand_path(".kamal/bin")
+
+        cli.send(:with_env, { "FOO" => "bar" }) do
+          assert ENV["PATH"].start_with?("#{kamal_bin}#{File::PATH_SEPARATOR}"),
+            "Expected PATH to start with #{kamal_bin}, got: #{ENV["PATH"]}"
+        end
+
+        assert_equal original_path, ENV["PATH"], "PATH should be restored after with_env"
+      end
+    end
+  end
+
+  test ".kamal/bin is not added to PATH when directory is absent" do
+    Dir.mktmpdir do |tmpdir|
+      Dir.chdir(tmpdir) do
+        cli = Kamal::Cli::Base.allocate
+        original_path = ENV["PATH"]
+
+        cli.send(:with_env, { "FOO" => "bar" }) do
+          assert_equal original_path, ENV["PATH"],
+            "PATH should be unchanged when .kamal/bin does not exist"
+        end
+      end
+    end
+  end
+
   test "upgrade rolling" do
     invoke_options = { "config_file" => "test/fixtures/deploy_with_accessories.yml", "skip_hooks" => false, "confirmed" => true, "rolling" => false }
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:proxy:upgrade", [], invoke_options).times(4)
