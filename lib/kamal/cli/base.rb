@@ -154,6 +154,7 @@ module Kamal::Cli
           end
 
           with_env KAMAL.hook.env(**details, **extra_details) do
+            prepend_kamal_bin_to_path
             KAMAL.with_verbosity(hook_verbosity) do
               run_locally do
                 execute *KAMAL.hook.run(hook)
@@ -217,6 +218,12 @@ module Kamal::Cli
       ensure
         ENV.clear
         ENV.update(current_env)
+      end
+
+      def prepend_kamal_bin_to_path
+        kamal_bin = File.expand_path(".kamal/bin")
+        ENV["PATH"] = "#{kamal_bin}#{File::PATH_SEPARATOR}#{ENV["PATH"]}" \
+          if Dir.exist?(kamal_bin)
       end
 
       def ensure_docker_installed
