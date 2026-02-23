@@ -186,6 +186,21 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
       new_command(:mysql).remove_image.join(" ")
   end
 
+  test "remove volumes" do
+    @config[:accessories]["mysql"]["volumes"] = [ "mysql_data:/var/lib/mysql", "mysql_logs:/var/log/mysql" ]
+
+    assert_equal \
+      "docker volume rm mysql_data mysql_logs",
+      new_command(:mysql).remove_volumes.join(" ")
+  end
+
+  test "remove volumes excludes bind mounts" do
+    # redis already has /var/lib/redis:/data which is a bind mount
+    assert_equal \
+      "docker volume rm",
+      new_command(:redis).remove_volumes.join(" ")
+  end
+
   test "deploy" do
     assert_equal \
       "docker exec kamal-proxy kamal-proxy deploy custom-busybox --target=\"172.1.0.2:80\" --host=\"busybox.example.com\" --deploy-timeout=\"30s\" --drain-timeout=\"30s\" --buffer-requests --buffer-responses --log-request-header=\"Cache-Control\" --log-request-header=\"Last-Modified\" --log-request-header=\"User-Agent\"",
