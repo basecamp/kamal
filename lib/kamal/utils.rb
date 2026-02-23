@@ -8,7 +8,7 @@ module Kamal::Utils
   # Return a list of escaped shell arguments using the same named argument against the passed attributes (hash or array).
   def argumentize(argument, attributes, sensitive: false)
     Array(attributes).flat_map do |key, value|
-      if value.present?
+      if value.present? || value == ""
         attr = "#{key}=#{escape_shell_value(value)}"
         attr = self.sensitive(attr, redaction: "#{key}=[REDACTED]") if sensitive
         [ argument, attr ]
@@ -58,7 +58,10 @@ module Kamal::Utils
 
   # Escape a value to make it safe for shell use.
   def escape_shell_value(value)
-    value.to_s.scan(/[\x00-\x7F]+|[^\x00-\x7F]+/) \
+    string_value = value.to_s
+    return '""' if string_value.empty?
+
+    string_value.scan(/[\x00-\x7F]+|[^\x00-\x7F]+/) \
       .map { |part| part.ascii_only? ? escape_ascii_shell_value(part) : part }
       .join
   end
