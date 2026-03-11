@@ -156,6 +156,26 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
     assert_raises(Kamal::ConfigurationError) { Kamal::Configuration.new(@deploy).accessory(:mysql).port }
   end
 
+  test "port with ip:port expands to ip:port:port" do
+    @deploy[:accessories]["mysql"]["port"] = "127.0.0.1:3306"
+    assert_equal "127.0.0.1:3306:3306", Kamal::Configuration.new(@deploy).accessory(:mysql).port
+  end
+
+  test "port with ip:port and protocol expands to ip:port:port/protocol" do
+    @deploy[:accessories]["mysql"]["port"] = "127.0.0.1:3306/tcp"
+    assert_equal "127.0.0.1:3306:3306/tcp", Kamal::Configuration.new(@deploy).accessory(:mysql).port
+  end
+
+  test "port with IPv6 any address is preserved" do
+    @deploy[:accessories]["mysql"]["port"] = "[::]::3306"
+    assert_equal "[::]::3306", Kamal::Configuration.new(@deploy).accessory(:mysql).port
+  end
+
+  test "port with malformed IPv6 bracket raises an error" do
+    @deploy[:accessories]["mysql"]["port"] = "[::1:3306:3306"
+    assert_raises(Kamal::ConfigurationError) { Kamal::Configuration.new(@deploy).accessory(:mysql).port }
+  end
+
   test "host" do
     assert_equal [ "1.1.1.5" ], @config.accessory(:mysql).hosts
     assert_equal [ "1.1.1.6", "1.1.1.7" ], @config.accessory(:redis).hosts
