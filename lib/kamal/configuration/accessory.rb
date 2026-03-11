@@ -139,8 +139,14 @@ class Kamal::Configuration::Accessory
           validate_port_ip!(ip, port_config)
           binding
         elsif binding.count(":") == 1
-          # host:container — no IP given, default to localhost
-          "#{LOCALHOST}:#{binding}"
+          host, container = binding.split(":", 2)
+          if valid_ip?(host)
+            # ip:port — expand to ip:port:port
+            "#{host}:#{container}:#{container}"
+          else
+            # host:container — no IP given, default to localhost
+            "#{LOCALHOST}:#{host}:#{container}"
+          end
         else
           # container port only — expand to host:container and default to localhost
           "#{LOCALHOST}:#{binding}:#{binding}"
@@ -149,9 +155,16 @@ class Kamal::Configuration::Accessory
       protocol ? "#{normalized_binding}/#{protocol}" : normalized_binding
     end
 
+    def valid_ip?(str)
+      IPAddr.new(str)
+      true
+    rescue IPAddr::InvalidAddressError, TypeError, ArgumentError
+      false
+    end
+
     def validate_port_ip!(ip, port_config)
       IPAddr.new(ip)
-    rescue IPAddr::InvalidAddressError
+    rescue IPAddr::InvalidAddressError, TypeError, ArgumentError
       raise Kamal::ConfigurationError, "accessories/#{name}: invalid port configuration \"#{port_config}\""
     end
 
