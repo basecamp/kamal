@@ -18,7 +18,7 @@ class ConfigurationEnvTest < ActiveSupport::TestCase
   test "clear with empty string" do
     assert_config \
       config: { "clear" => { "EMPTY" => "", "FILLED" => "value" } },
-    clear: { "EMPTY" => "", "FILLED" => "value" }
+      clear: { "EMPTY" => "", "FILLED" => "value" }
   end
 
   test "secret" do
