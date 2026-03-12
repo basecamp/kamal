@@ -120,6 +120,10 @@ class Kamal::Configuration
     servers.roles
   end
 
+  def any_role_use_proxy_idle?
+    roles.any? { |role| role.proxy&.idle? }
+  end
+
   def role(name)
     roles.detect { |r| r.name == name.to_s }
   end
