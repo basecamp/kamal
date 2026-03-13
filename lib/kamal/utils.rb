@@ -58,8 +58,9 @@ module Kamal::Utils
 
   # Escape a value to make it safe for shell use.
   def escape_shell_value(value)
+    return '""' if value == ""
+
     string_value = value.to_s
-    return '""' if string_value.empty?
 
     string_value.scan(/[\x00-\x7F]+|[^\x00-\x7F]+/) \
       .map { |part| part.ascii_only? ? escape_ascii_shell_value(part) : part }
