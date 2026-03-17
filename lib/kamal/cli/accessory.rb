@@ -105,6 +105,27 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
     end
   end
 
+  desc "create [NAME]", "Create accessory container on host without starting it (use NAME=all to create all accessories)"
+  def create(name)
+    with_lock do
+      if name == "all"
+        KAMAL.accessory_names.each { |accessory_name| create(accessory_name) }
+      else
+        directories(name)
+        upload(name)
+
+        with_accessory(name) do |accessory, hosts|
+          on(hosts) do |host|
+            execute *KAMAL.auditor.record("Created #{name} accessory"), verbosity: :debug
+            execute *accessory.ensure_env_directory
+            upload! accessory.secrets_io, accessory.secrets_path, mode: "0600"
+            execute *accessory.create(host: host)
+          end
+        end
+      end
+    end
+  end
+
   desc "stop [NAME]", "Stop existing accessory container on host"
   def stop(name)
     with_lock do
