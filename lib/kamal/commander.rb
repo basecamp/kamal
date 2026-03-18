@@ -4,7 +4,7 @@ require "active_support/core_ext/object/blank"
 
 class Kamal::Commander
   attr_accessor :verbosity, :holding_lock, :connected
-  attr_reader :specific_roles, :specific_hosts
+  attr_reader :specific_roles, :specific_hosts, :otel_shipper
   delegate :hosts, :roles, :primary_host, :primary_role, :roles_on, :app_hosts, :proxy_hosts, :accessory_hosts, to: :specifics
 
   def initialize
@@ -142,6 +142,19 @@ class Kamal::Commander
     SSHKit.config.output_verbosity = old_level
   end
 
+  def otel_enabled?
+    @otel_shipper.present?
+  end
+
+  def otel_event(name, **attrs)
+    @otel_shipper&.event(name, **attrs)
+  end
+
+  def otel_shutdown
+    @otel_shipper&.shutdown
+    @otel_shipper = nil
+  end
+
   def holding_lock?
     self.holding_lock
   end
@@ -161,6 +174,23 @@ class Kamal::Commander
       end
       SSHKit.config.command_map[:docker] = "docker" # No need to use /usr/bin/env, just clogs up the logs
       SSHKit.config.output_verbosity = verbosity
+
+      configure_otel_with(config)
+    end
+
+    def configure_otel_with(config)
+      return unless config.otel.enabled?
+
+      @otel_shipper = Kamal::OtelShipper.new(
+        endpoint: config.otel.endpoint,
+        service_namespace: config.otel.service_namespace,
+        environment: config.otel.environment,
+        version: config.version,
+        performer: `git config user.name`.chomp.presence || ENV["USER"]
+      )
+
+      $stdout = Kamal::TeeIo.new($stdout, @otel_shipper)
+      $stderr = Kamal::TeeIo.new($stderr, @otel_shipper)
     end
 
     def specifics

@@ -206,6 +206,12 @@ boot:
 logging:
   ...
 
+# OpenTelemetry
+#
+# Ship deploy logs to an OTel endpoint, see kamal docs otel:
+otel:
+  ...
+
 # Aliases
 #
 # Alias configuration, see kamal docs alias:
