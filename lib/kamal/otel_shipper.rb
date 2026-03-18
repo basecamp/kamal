@@ -8,10 +8,13 @@ class Kamal::OtelShipper
 
   def initialize(endpoint:, service_namespace:, environment:, version:, performer: nil)
     @endpoint = URI("#{endpoint}/v1/logs")
-    @service_namespace = service_namespace
-    @environment = environment || "unknown"
-    @version = version
-    @performer = performer || ENV["USER"] || "unknown"
+    @resource_attributes = [
+      { key: "service.name", value: { stringValue: "kamal" } },
+      { key: "service.namespace", value: { stringValue: service_namespace } },
+      { key: "service.version", value: { stringValue: version } },
+      { key: "deployment.environment.name", value: { stringValue: environment || "unknown" } },
+      { key: "deploy.performer", value: { stringValue: performer || ENV["USER"] || "unknown" } }
+    ]
     @buffer = Queue.new
     @flush_mutex = Mutex.new
     @running = true
@@ -24,34 +27,26 @@ class Kamal::OtelShipper
       stripped = line.chomp
       @buffer << stripped unless stripped.empty?
     end
-    flush if @buffer.size >= BATCH_SIZE
     self
   end
 
   def event(name, **attributes)
     attrs = attributes.map { |k, v| { key: k.to_s, value: { stringValue: v.to_s } } }
-    records = [ {
-      timeUnixNano: time_ns,
-      severityNumber: 9,
-      severityText: "INFO",
-      body: { stringValue: name },
-      attributes: attrs
-    } ]
-    ship_records(records)
+    @buffer << { event: name, attributes: attrs }
+    self
   end
 
   def flush
     @flush_mutex.synchronize do
-      lines = drain_buffer
-      return if lines.empty?
-
-      lines.each_slice(BATCH_SIZE) { |batch| ship_lines(batch) }
+      lines, events = drain_buffer
+      ship_lines(lines) if lines.any?
+      ship_events(events) if events.any?
     end
   end
 
   def shutdown
     @running = false
-    @thread&.kill
+    @thread&.join(FLUSH_INTERVAL + 1)
     flush
   end
 
@@ -67,19 +62,42 @@ class Kamal::OtelShipper
 
     def drain_buffer
       lines = []
-      lines << @buffer.pop(true) until @buffer.empty?
-      lines
+      events = []
+      until @buffer.empty?
+        item = @buffer.pop(true)
+        if item.is_a?(Hash)
+          events << item
+        else
+          lines << item
+        end
+      end
+      [ lines, events ]
     rescue ThreadError
-      lines
+      [ lines, events ]
     end
 
     def ship_lines(lines)
-      records = lines.map do |line|
+      lines.each_slice(BATCH_SIZE) do |batch|
+        records = batch.map do |line|
+          {
+            timeUnixNano: time_ns,
+            severityNumber: 9,
+            severityText: "INFO",
+            body: { stringValue: line }
+          }
+        end
+        ship_records(records)
+      end
+    end
+
+    def ship_events(events)
+      records = events.map do |event|
         {
           timeUnixNano: time_ns,
           severityNumber: 9,
           severityText: "INFO",
-          body: { stringValue: line }
+          body: { stringValue: event[:event] },
+          attributes: event[:attributes]
         }
       end
       ship_records(records)
@@ -88,7 +106,7 @@ class Kamal::OtelShipper
     def ship_records(records)
       payload = {
         resourceLogs: [ {
-          resource: { attributes: resource_attributes },
+          resource: { attributes: @resource_attributes },
           scopeLogs: [ { logRecords: records } ]
         } ]
       }
@@ -102,16 +120,6 @@ class Kamal::OtelShipper
       http.request(req)
     rescue
       # Best effort — never fail the deploy
-    end
-
-    def resource_attributes
-      [
-        { key: "service.name", value: { stringValue: "kamal" } },
-        { key: "service.namespace", value: { stringValue: @service_namespace } },
-        { key: "service.version", value: { stringValue: @version } },
-        { key: "deployment.environment.name", value: { stringValue: @environment } },
-        { key: "deploy.performer", value: { stringValue: @performer } }
-      ]
     end
 
     def time_ns

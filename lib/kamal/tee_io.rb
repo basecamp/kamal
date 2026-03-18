@@ -9,22 +9,17 @@ class Kamal::TeeIo
     @original.write(str)
   end
 
-  def <<(str)
-    @shipper << str
-    @original << str
-    self
-  end
-
   def puts(*args)
-    str = args.empty? ? "\n" : args.map(&:to_s).join("\n") + "\n"
-    @shipper << str
-    @original.puts(*args)
+    write(args.empty? ? "\n" : args.map(&:to_s).join("\n") + "\n")
   end
 
   def print(*args)
-    str = args.join
-    @shipper << str
-    @original.print(*args)
+    write(args.join)
+  end
+
+  def <<(str)
+    write(str.to_s)
+    self
   end
 
   def flush
