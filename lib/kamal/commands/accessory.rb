@@ -29,6 +29,22 @@ class Kamal::Commands::Accessory < Kamal::Commands::Base
       cmd
   end
 
+  def create(host: nil)
+    docker :create,
+      "--name", service_name,
+      "--restart", "unless-stopped",
+      *network_args,
+      *config.logging_args,
+      *publish_args,
+      *([ "--env", "KAMAL_HOST=\"#{host}\"" ] if host),
+      *env_args,
+      *volume_args,
+      *label_args,
+      *option_args,
+      image,
+      cmd
+  end
+
   def start
     docker :container, :start, service_name
   end

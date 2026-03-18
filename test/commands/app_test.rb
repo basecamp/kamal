@@ -30,6 +30,23 @@ class CommandsAppTest < ActiveSupport::TestCase
       new_command.run(hostname: "myhost").join(" ")
   end
 
+  test "create uses docker create instead of run and omits detach" do
+    run_cmd = new_command.run.join(" ")
+    create_cmd = new_command.create.join(" ")
+
+    assert_includes run_cmd, "docker run"
+    assert_includes run_cmd, "--detach"
+    assert_includes create_cmd, "docker create"
+    refute_includes create_cmd, "--detach"
+    assert_equal run_cmd.sub("docker run", "docker create").sub(" --detach", ""), create_cmd
+  end
+
+  test "create with hostname" do
+    assert_equal \
+      "docker create --restart unless-stopped --name app-web-999 --network kamal --hostname myhost --env KAMAL_CONTAINER_NAME=\"app-web-999\" --env KAMAL_VERSION=\"999\" --env KAMAL_HOST=\"1.1.1.1\" --env-file .kamal/apps/app/env/roles/web.env --log-opt max-size=\"10m\" --label service=\"app\" --label role=\"web\" --label destination dhh/app:999",
+      new_command.create(hostname: "myhost").join(" ")
+  end
+
   test "run with volumes" do
     @config[:volumes] = [ "/local/path:/container/path" ]
 

@@ -1,4 +1,28 @@
 class Kamal::Cli::App < Kamal::Cli::Base
+  desc "redeploy_standby", "Deploy app image and prepare servers without starting containers"
+  option :skip_push, aliases: "-P", type: :boolean, default: false, desc: "Skip image build and push"
+  def redeploy_standby
+    invoke_options = { "version" => KAMAL.config.version }.merge(options.without("skip_push"))
+
+    if options[:skip_push]
+      say "Pull app image...", :magenta
+      invoke "kamal:cli:build:pull", [], invoke_options
+    else
+      say "Build and push app image...", :magenta
+      invoke "kamal:cli:build:deliver", [], invoke_options
+    end
+
+    with_lock do
+      run_hook "pre-deploy", secrets: true
+
+      say "Detect stale containers...", :magenta
+      invoke "kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true)
+
+      say "Prepare app on servers (without starting containers)...", :magenta
+      boot_standby
+    end
+  end
+
   desc "boot", "Boot app on servers (or reboot app if already running)"
   def boot
     with_lock do
@@ -310,6 +334,37 @@ class Kamal::Cli::App < Kamal::Cli::Base
     on(KAMAL.app_hosts) do |host|
       role = KAMAL.roles_on(host).first
       puts_by_host host, capture_with_info(*KAMAL.app(role: role, host: host).current_running_version).strip, quiet: quiet
+    end
+  end
+
+  desc "boot_standby", "Prepare app on servers and create containers without starting them (docker create)", hide: true
+  def boot_standby
+    with_lock do
+      say "Get most recent version available as an image...", :magenta unless options[:version]
+      using_version(version_or_latest) do |version|
+        say "Preparing assets, SSL, and env for version #{version} (creating containers without starting)...", :magenta
+
+        on(KAMAL.app_hosts) do
+          Kamal::Cli::App::ErrorPages.new(host, self).run
+
+          KAMAL.roles_on(host).each do |role|
+            Kamal::Cli::App::Assets.new(host, role, self).run
+            Kamal::Cli::App::SslCertificates.new(host, role, self).run
+          end
+        end
+
+        on(KAMAL.app_hosts) do |host|
+          KAMAL.roles_on(host).each do |role|
+            app = KAMAL.app(role: role, host: host)
+            execute *app.ensure_env_directory
+            upload! role.secrets_io(host), role.secrets_path, mode: "0600"
+
+            execute *app.remove_container(version: version), raise_on_non_zero_exit: false
+            hostname = "#{host.to_s[0...51].chomp(".")}-#{SecureRandom.hex(6)}"
+            execute *app.create(hostname: hostname)
+          end
+        end
+      end
     end
   end
 

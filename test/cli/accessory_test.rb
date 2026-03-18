@@ -273,6 +273,33 @@ class CliAccessoryTest < CliTestCase
     end
   end
 
+  test "redeploy_standby creates containers without starting them" do
+    Kamal::Cli::Accessory.any_instance.expects(:directories).with("mysql")
+    Kamal::Cli::Accessory.any_instance.expects(:upload).with("mysql")
+
+    run_command("redeploy_standby", "mysql").tap do |output|
+      assert_match "docker login private.registry", output
+      assert_match "docker create --name app-mysql --restart unless-stopped", output
+      refute_match "docker run --name app-mysql --detach", output
+    end
+  end
+
+  test "redeploy_standby all" do
+    Kamal::Cli::Accessory.any_instance.expects(:directories).with("mysql")
+    Kamal::Cli::Accessory.any_instance.expects(:upload).with("mysql")
+    Kamal::Cli::Accessory.any_instance.expects(:directories).with("redis")
+    Kamal::Cli::Accessory.any_instance.expects(:upload).with("redis")
+    Kamal::Cli::Accessory.any_instance.expects(:directories).with("busybox")
+    Kamal::Cli::Accessory.any_instance.expects(:upload).with("busybox")
+
+    run_command("redeploy_standby", "all").tap do |output|
+      assert_match "docker create --name app-mysql --restart unless-stopped", output
+      assert_match "docker create --name app-redis --restart unless-stopped", output
+      assert_match "docker create --name custom-box --restart unless-stopped", output
+      refute_match "docker run --name app-mysql --detach", output
+    end
+  end
+
   private
     def run_command(*command)
       stdouted { Kamal::Cli::Accessory.start([ *command, "-c", "test/fixtures/deploy_with_accessories_with_different_registries.yml" ]) }

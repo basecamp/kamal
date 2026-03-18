@@ -2,6 +2,18 @@ require "active_support/core_ext/array/conversions"
 require "concurrent/array"
 
 class Kamal::Cli::Accessory < Kamal::Cli::Base
+  desc "redeploy_standby [NAME]", "Prepare accessory on host without starting container (use NAME=all for all accessories)"
+  def redeploy_standby(name)
+    with_lock do
+      if name == "all"
+        KAMAL.accessory_names.each { |accessory_name| redeploy_standby(accessory_name) }
+      else
+        prepare(name)
+        boot_standby(name)
+      end
+    end
+  end
+
   desc "boot [NAME]", "Boot new accessory service on host (use NAME=all to boot all accessories)"
   def boot(name, prepare: true)
     with_lock do
@@ -35,6 +47,24 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
               execute *accessory.deploy(target: target)
             end
           end
+        end
+      end
+    end
+  end
+
+  desc "boot_standby [NAME]", "Prepare accessory on host and create container without starting it (docker create)", hide: true
+  def boot_standby(name)
+    with_lock do
+      with_accessory(name) do |accessory, hosts|
+        directories(name)
+        upload(name)
+
+        on(hosts) do |host|
+          execute *KAMAL.auditor.record("Prepared #{name} accessory (standby)"), verbosity: :debug
+          execute *accessory.ensure_env_directory
+          upload! accessory.secrets_io, accessory.secrets_path, mode: "0600"
+          execute *accessory.remove_container, raise_on_non_zero_exit: false
+          execute *accessory.create(host: host)
         end
       end
     end

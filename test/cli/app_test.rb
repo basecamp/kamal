@@ -579,6 +579,33 @@ class CliAppTest < CliTestCase
     end
   end
 
+  test "redeploy_standby creates containers without starting them" do
+    Kamal::Cli::App.any_instance.stubs(:invoke).with("kamal:cli:build:deliver", [], anything)
+    Kamal::Cli::App.any_instance.stubs(:invoke).with("kamal:cli:app:stale_containers", [], anything)
+    stub_running
+
+    run_command("redeploy_standby").tap do |output|
+      assert_match "Build and push app image", output
+      assert_match "Detect stale containers", output
+      assert_match "Preparing assets, SSL, and env", output
+      assert_match "creating containers without starting", output
+      assert_match /docker create --restart unless-stopped --name app-web-latest --network kamal --hostname 1\.1\.1\.1-[0-9a-f]{12} /, output
+      refute_match /docker run --detach --restart unless-stopped --name app-web-latest/, output
+    end
+  end
+
+  test "redeploy_standby with skip_push pulls instead of building" do
+    Kamal::Cli::App.any_instance.stubs(:invoke).with("kamal:cli:build:pull", [], anything)
+    Kamal::Cli::App.any_instance.stubs(:invoke).with("kamal:cli:app:stale_containers", [], anything)
+    stub_running
+
+    run_command("redeploy_standby", "--skip-push").tap do |output|
+      assert_match "Pull app image", output
+      refute_match "Build and push app image", output
+      assert_match /docker create --restart unless-stopped --name app-web-latest/, output
+    end
+  end
+
   private
     def run_command(*command, config: :with_accessories, host: "1.1.1.1", allow_execute_error: false)
       stdouted do

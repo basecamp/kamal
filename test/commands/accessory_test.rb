@@ -73,6 +73,23 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
       new_command(:busybox).run.join(" ")
   end
 
+  test "create uses docker create instead of run and omits detach" do
+    run_cmd = new_command(:mysql).run.join(" ")
+    create_cmd = new_command(:mysql).create.join(" ")
+
+    assert_includes run_cmd, "docker run"
+    assert_includes run_cmd, "--detach"
+    assert_includes create_cmd, "docker create"
+    refute_includes create_cmd, "--detach"
+    assert_equal run_cmd.sub("docker run", "docker create").sub(" --detach", ""), create_cmd
+  end
+
+  test "create with host" do
+    assert_equal \
+      "docker create --name app-mysql --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 3306:3306 --env KAMAL_HOST=\"1.1.1.5\" --env MYSQL_ROOT_HOST=\"%\" --env-file .kamal/apps/app/env/accessories/mysql.env --label service=\"app-mysql\" private.registry/mysql:8.0",
+      new_command(:mysql).create(host: "1.1.1.5").join(" ")
+  end
+
   test "run with logging config" do
     @config[:logging] = { "driver" => "local", "options" => { "max-size" => "100m", "max-file" => "3" } }
 
