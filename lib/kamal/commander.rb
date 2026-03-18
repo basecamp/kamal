@@ -143,6 +143,7 @@ class Kamal::Commander
   end
 
   def otel_event(name, **attrs)
+    config if configured? && !@config # ensure shipper is initialized
     @otel_shipper&.event(name, **attrs)
   end
 
@@ -197,6 +198,9 @@ class Kamal::Commander
       @original_stderr = $stderr
       $stdout = Kamal::TeeIo.new(@original_stdout, @otel_shipper)
       $stderr = Kamal::TeeIo.new(@original_stderr, @otel_shipper)
+    rescue => e
+      @otel_shipper = nil
+      $stderr.puts "OTel setup failed (#{e.message}), continuing without deploy log shipping"
     end
 
     def specifics

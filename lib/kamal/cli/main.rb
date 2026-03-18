@@ -52,7 +52,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
 
     KAMAL.otel_event("deploy.complete", command: "deploy", runtime: runtime.round.to_s)
     run_hook "post-deploy", secrets: true, runtime: runtime.round.to_s
-  rescue Exception => e
+  rescue StandardError, Interrupt => e
     KAMAL.otel_event("deploy.failed", command: "deploy", error: e.message)
     raise
   ensure
@@ -88,7 +88,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
 
     KAMAL.otel_event("deploy.complete", command: "redeploy", runtime: runtime.round.to_s)
     run_hook "post-deploy", secrets: true, runtime: runtime.round.to_s
-  rescue Exception => e
+  rescue StandardError, Interrupt => e
     KAMAL.otel_event("deploy.failed", command: "redeploy", error: e.message)
     raise
   ensure
@@ -120,7 +120,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
 
     KAMAL.otel_event("deploy.complete", command: "rollback", runtime: runtime.round.to_s) if rolled_back
     run_hook "post-deploy", secrets: true, runtime: runtime.round.to_s if rolled_back
-  rescue Exception => e
+  rescue StandardError, Interrupt => e
     KAMAL.otel_event("deploy.failed", command: "rollback", error: e.message)
     raise
   ensure
