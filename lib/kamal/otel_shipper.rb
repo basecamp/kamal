@@ -123,6 +123,6 @@ class Kamal::OtelShipper
     end
 
     def time_ns
-      (Time.now.to_f * 1_000_000_000).to_i.to_s
+      Process.clock_gettime(Process::CLOCK_REALTIME, :nanosecond).to_s
     end
 end
