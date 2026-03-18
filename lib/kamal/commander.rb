@@ -4,7 +4,7 @@ require "active_support/core_ext/object/blank"
 
 class Kamal::Commander
   attr_accessor :verbosity, :holding_lock, :connected
-  attr_reader :specific_roles, :specific_hosts, :otel_shipper
+  attr_reader :specific_roles, :specific_hosts
   delegate :hosts, :roles, :primary_host, :primary_role, :roles_on, :app_hosts, :proxy_hosts, :accessory_hosts, to: :specifics
 
   def initialize
@@ -142,17 +142,21 @@ class Kamal::Commander
     SSHKit.config.output_verbosity = old_level
   end
 
-  def otel_enabled?
-    @otel_shipper.present?
-  end
-
   def otel_event(name, **attrs)
     @otel_shipper&.event(name, **attrs)
   end
 
   def otel_shutdown
-    @otel_shipper&.shutdown
-    @otel_shipper = nil
+    if @otel_shipper
+      @otel_shipper.shutdown
+      @otel_shipper = nil
+    end
+
+    if @original_stdout
+      $stdout = @original_stdout
+      $stderr = @original_stderr
+      @original_stdout = @original_stderr = nil
+    end
   end
 
   def holding_lock?
@@ -189,8 +193,10 @@ class Kamal::Commander
         performer: `git config user.name`.chomp.presence || ENV["USER"]
       )
 
-      $stdout = Kamal::TeeIo.new($stdout, @otel_shipper)
-      $stderr = Kamal::TeeIo.new($stderr, @otel_shipper)
+      @original_stdout = $stdout
+      @original_stderr = $stderr
+      $stdout = Kamal::TeeIo.new(@original_stdout, @otel_shipper)
+      $stderr = Kamal::TeeIo.new(@original_stderr, @otel_shipper)
     end
 
     def specifics
