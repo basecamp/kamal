@@ -19,7 +19,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
   option :skip_push, aliases: "-P", type: :boolean, default: false, desc: "Skip image build and push"
   option :no_cache, type: :boolean, default: false, desc: "Build without using Docker's build cache"
   def deploy(boot_accessories: false)
-    KAMAL.otel_event("deploy.start")
+    KAMAL.otel_event("deploy.start", command: "deploy", hosts: KAMAL.hosts.join(","))
 
     runtime = print_runtime do
       invoke_options = deploy_options
@@ -50,10 +50,10 @@ class Kamal::Cli::Main < Kamal::Cli::Base
       end
     end
 
-    KAMAL.otel_event("deploy.complete", runtime: runtime.round.to_s)
+    KAMAL.otel_event("deploy.complete", command: "deploy", runtime: runtime.round.to_s)
     run_hook "post-deploy", secrets: true, runtime: runtime.round.to_s
   rescue Exception => e
-    KAMAL.otel_event("deploy.failed", error: e.message)
+    KAMAL.otel_event("deploy.failed", command: "deploy", error: e.message)
     raise
   ensure
     KAMAL.otel_shutdown
@@ -63,7 +63,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
   option :skip_push, aliases: "-P", type: :boolean, default: false, desc: "Skip image build and push"
   option :no_cache, type: :boolean, default: false, desc: "Build without using Docker's build cache"
   def redeploy
-    KAMAL.otel_event("deploy.start", command: "redeploy")
+    KAMAL.otel_event("deploy.start", command: "redeploy", hosts: KAMAL.hosts.join(","))
 
     runtime = print_runtime do
       invoke_options = deploy_options
@@ -86,10 +86,10 @@ class Kamal::Cli::Main < Kamal::Cli::Base
       end
     end
 
-    KAMAL.otel_event("deploy.complete", runtime: runtime.round.to_s, command: "redeploy")
+    KAMAL.otel_event("deploy.complete", command: "redeploy", runtime: runtime.round.to_s)
     run_hook "post-deploy", secrets: true, runtime: runtime.round.to_s
-  rescue => e
-    KAMAL.otel_event("deploy.failed", error: e.message, command: "redeploy")
+  rescue Exception => e
+    KAMAL.otel_event("deploy.failed", command: "redeploy", error: e.message)
     raise
   ensure
     KAMAL.otel_shutdown
@@ -98,7 +98,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
   desc "rollback [VERSION]", "Rollback app to VERSION"
   def rollback(version)
     rolled_back = false
-    KAMAL.otel_event("deploy.start", command: "rollback", rollback_version: version)
+    KAMAL.otel_event("deploy.start", command: "rollback", rollback_version: version, hosts: KAMAL.hosts.join(","))
 
     runtime = print_runtime do
       with_lock do
@@ -118,10 +118,10 @@ class Kamal::Cli::Main < Kamal::Cli::Base
       end
     end
 
-    KAMAL.otel_event("deploy.complete", runtime: runtime.round.to_s, command: "rollback") if rolled_back
+    KAMAL.otel_event("deploy.complete", command: "rollback", runtime: runtime.round.to_s) if rolled_back
     run_hook "post-deploy", secrets: true, runtime: runtime.round.to_s if rolled_back
-  rescue => e
-    KAMAL.otel_event("deploy.failed", error: e.message, command: "rollback")
+  rescue Exception => e
+    KAMAL.otel_event("deploy.failed", command: "rollback", error: e.message)
     raise
   ensure
     KAMAL.otel_shutdown
