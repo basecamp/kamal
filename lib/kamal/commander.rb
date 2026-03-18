@@ -198,6 +198,8 @@ class Kamal::Commander
       @original_stderr = $stderr
       $stdout = Kamal::TeeIo.new(@original_stdout, @otel_shipper)
       $stderr = Kamal::TeeIo.new(@original_stderr, @otel_shipper)
+
+      at_exit { otel_shutdown }
     rescue => e
       @otel_shipper = nil
       $stderr.puts "OTel setup failed (#{e.message}), continuing without deploy log shipping"
