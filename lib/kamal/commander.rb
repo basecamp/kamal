@@ -4,7 +4,7 @@ require "active_support/core_ext/object/blank"
 
 class Kamal::Commander
   attr_accessor :verbosity, :holding_lock, :connected
-  attr_reader :specific_roles, :specific_hosts
+  attr_reader :specific_roles, :specific_hosts, :hook_outputs
   delegate :hosts, :roles, :primary_host, :primary_role, :roles_on, :app_hosts, :proxy_hosts, :accessory_hosts, to: :specifics
 
   def initialize
@@ -17,6 +17,7 @@ class Kamal::Commander
     self.connected = false
     @specifics = @specific_roles = @specific_hosts = nil
     @config = @config_kwargs = nil
+    @hook_outputs = {}
     @commands = {}
   end
 
@@ -29,6 +30,10 @@ class Kamal::Commander
 
   def configure(**kwargs)
     @config, @config_kwargs = nil, kwargs
+  end
+
+  def merge_hook_output(output)
+    @hook_outputs.merge!(output)
   end
 
   def configured?
