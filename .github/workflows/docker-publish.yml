@@ -38,11 +38,13 @@ jobs:
       - name: Determine version tag
         id: version-tag
         run: |
-          INPUT_VALUE="${{ github.event.inputs.tagInput }}"
+          INPUT_VALUE="${GITHUB_EVENT_INPUTS_TAGINPUT}"
           if [ -z "$INPUT_VALUE" ]; then
-            INPUT_VALUE="${{ github.ref_name }}"
+            INPUT_VALUE="${GITHUB_REF_NAME}"
           fi
           echo "::set-output name=value::$INPUT_VALUE"
+        env:
+          GITHUB_EVENT_INPUTS_TAGINPUT: ${{ github.event.inputs.tagInput }}
       -
         name: Build and push
         uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
