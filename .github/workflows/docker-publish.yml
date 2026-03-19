@@ -46,7 +46,7 @@ jobs:
           if [ -z "$INPUT_VALUE" ]; then
             INPUT_VALUE="${GITHUB_REF_NAME}"
           fi
-          echo "::set-output name=value::$INPUT_VALUE"
+          echo "value=$INPUT_VALUE" >> "$GITHUB_OUTPUT"
         env:
           GITHUB_EVENT_INPUTS_TAGINPUT: ${{ github.event.inputs.tagInput }}
       -
