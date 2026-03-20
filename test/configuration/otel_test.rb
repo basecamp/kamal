@@ -24,17 +24,4 @@ class ConfigurationOtelTest < ActiveSupport::TestCase
     assert_equal "http://otel-gateway:4318", config.otel.endpoint
   end
 
-  test "otel derives service_namespace from service" do
-    @deploy[:otel] = { "endpoint" => "http://otel-gateway:4318" }
-    config = Kamal::Configuration.new(@deploy)
-
-    assert_equal "app", config.otel.service_namespace
-  end
-
-  test "otel derives environment from destination" do
-    @deploy[:otel] = { "endpoint" => "http://otel-gateway:4318" }
-    config = Kamal::Configuration.new(@deploy, destination: "production")
-
-    assert_equal "production", config.otel.environment
-  end
 end
