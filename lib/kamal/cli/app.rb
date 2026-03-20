@@ -93,11 +93,16 @@ class Kamal::Cli::App < Kamal::Cli::Base
   option :reuse, type: :boolean, default: false, desc: "Reuse currently running container instead of starting a new one"
   option :env, aliases: "-e", type: :hash, desc: "Set environment variables for the command"
   option :detach, type: :boolean, default: false, desc: "Execute command in a detached container"
+  option :push_secrets, type: :boolean, default: false, desc: "Push env files to servers before executing command"
   def exec(*cmd)
     pre_connect_if_required
 
     if (incompatible_options = [ :interactive, :reuse ].select { |key| options[:detach] && options[key] }.presence)
       raise ArgumentError, "Detach is not compatible with #{incompatible_options.join(" or ")}"
+    end
+
+    if options[:push_secrets] && options[:reuse]
+      raise ArgumentError, "Push secrets is not compatible with reuse"
     end
 
     if cmd.empty?
@@ -121,6 +126,16 @@ class Kamal::Cli::App < Kamal::Cli::Base
       using_version(version_or_latest) do |version|
         say "Launching interactive command with version #{version} via SSH from new container on #{KAMAL.primary_host}...", :magenta
         on(KAMAL.primary_host) { execute *KAMAL.registry.login }
+
+        if options[:push_secrets]
+          say "Pushing env files to servers...", :magenta
+          on(KAMAL.primary_host) do
+            app = KAMAL.app(role: KAMAL.primary_role, host: KAMAL.primary_host)
+            execute *app.ensure_env_directory
+            upload! KAMAL.primary_role.secrets_io(KAMAL.primary_host), KAMAL.primary_role.secrets_path, mode: "0600"
+          end
+        end
+
         run_locally do
           exec KAMAL.app(role: KAMAL.primary_role, host: KAMAL.primary_host).execute_in_new_container_over_ssh(cmd, env: env)
         end
@@ -142,6 +157,15 @@ class Kamal::Cli::App < Kamal::Cli::Base
       using_version(version_or_latest) do |version|
         say "Launching command with version #{version} from new container...", :magenta
         on(KAMAL.app_hosts) { execute *KAMAL.registry.login }
+
+        if options[:push_secrets]
+          say "Pushing env files to servers...", :magenta
+          on_roles(KAMAL.roles, hosts: KAMAL.app_hosts) do |host, role|
+            app = KAMAL.app(role: role, host: host)
+            execute *app.ensure_env_directory
+            upload! role.secrets_io(host), role.secrets_path, mode: "0600"
+          end
+        end
 
         on_roles(KAMAL.roles, hosts: KAMAL.app_hosts) do |host, role|
           execute *KAMAL.auditor.record("Executed cmd '#{cmd}' on app version #{version}"), verbosity: :debug
