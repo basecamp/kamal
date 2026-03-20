@@ -10,8 +10,8 @@ module Kamal::Commands
       @config = config
     end
 
-    def run_over_ssh(*command, host:)
-      "ssh#{ssh_config_args}#{ssh_proxy_args}#{ssh_keys_args} -t #{config.ssh.user}@#{host} -p #{config.ssh.port} '#{command.join(" ").gsub("'", "'\\\\''")}'"
+    def run_over_ssh(*command, extra_ssh_args: "", host:)
+      "ssh#{ssh_config_args}#{ssh_proxy_args}#{ssh_keys_args}#{extra_ssh_args} -t #{config.ssh.user}@#{host} -p #{config.ssh.port} '#{command.join(" ").gsub("'", "'\\\\''")}'"
     end
 
     def container_id_for(container_name:, only_running: false)
@@ -94,6 +94,10 @@ module Kamal::Commands
 
       def grep(*args)
         args.compact.unshift :grep
+      end
+
+      def sed(*args)
+        args.compact.unshift :sed
       end
 
       def tags(**details)

@@ -143,6 +143,27 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
     end
   end
 
+  desc "tunnel [NAME]", "Creates a ssh port forwarding tunnel to the accessory"
+  option :ports, type: :array, desc: "List of available ports to bind"
+  def tunnel(name)
+    with_accessory(name) do |accessory, hosts|
+      internal_accessory_host = ""
+      internal_accessory_ports = ""
+      available_ports = options[:ports].to_a.map { |port| Integer(port, exception: false) }.compact
+
+      on(hosts) do
+        internal_accessory_ports = capture_with_info(*accessory.internal_ports).split(" ")
+        internal_accessory_host = capture_with_info(*accessory.internal_host)
+      end
+
+      say "Starting port forwarding tunnel for #{name} accessory...", :magenta
+      run_locally do
+        info accessory.forward_ports(internal_accessory_host, internal_accessory_ports, available_ports: available_ports)
+        exec accessory.forward_ports(internal_accessory_host, internal_accessory_ports, available_ports: available_ports)
+      end
+    end
+  end
+
   desc "exec [NAME] [CMD...]", "Execute a custom command on servers within the accessory container (use --help to show options)"
   option :interactive, aliases: "-i", type: :boolean, default: false, desc: "Execute command over ssh for an interactive shell (use for console/bash)"
   option :reuse, type: :boolean, default: false, desc: "Reuse currently running container instead of starting a new one"

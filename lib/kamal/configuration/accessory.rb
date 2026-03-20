@@ -41,6 +41,10 @@ class Kamal::Configuration::Accessory
     end
   end
 
+  def network
+    accessory_config["network"] || DEFAULT_NETWORK
+  end
+
   def network_args
     argumentize "--network", network
   end
@@ -256,10 +260,6 @@ class Kamal::Configuration::Accessory
           end
         end
       end
-    end
-
-    def network
-      accessory_config["network"] || DEFAULT_NETWORK
     end
 
     def ensure_valid_roles

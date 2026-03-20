@@ -107,6 +107,30 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
       new_command(:mysql).info.join(" ")
   end
 
+  test "internal host" do
+    assert_equal \
+      "docker inspect app-mysql --format '{{.NetworkSettings.Networks.kamal.IPAddress}}'",
+      new_command(:mysql).internal_host.join(" ")
+  end
+
+  test "internal ports" do
+    assert_equal \
+      "docker inspect app-mysql --format '{{range $k, $v := .NetworkSettings.Ports}}{{$k}} {{end}}' | grep '/tcp' | sed 's#/tcp##g'",
+      new_command(:mysql).internal_ports.join(" ")
+  end
+
+  test "forward ports" do
+    assert_equal \
+      "ssh -o ExitOnForwardFailure=yes -N -L 3001:1.1.2.1:3001 -t root@1.1.1.5 -p 22 ''",
+      new_command(:mysql).forward_ports("1.1.2.1", [ "3001" ])
+  end
+
+  test "forward ports with available ports specified" do
+    assert_equal \
+      "ssh -o ExitOnForwardFailure=yes -N -L 5001:1.1.2.1:3001 -L 3002:1.1.2.1:3002 -t root@1.1.1.5 -p 22 ''",
+      new_command(:mysql).forward_ports("1.1.2.1", [ "3001", "3002" ], available_ports: [ "5001" ])
+  end
+
   test "execute in new container" do
     assert_equal \
       "docker run --rm --network kamal --env MYSQL_ROOT_HOST=\"%\" --env-file .kamal/apps/app/env/accessories/mysql.env --cpus \"4\" --memory \"2GB\" private.registry/mysql:8.0 mysql -u root",
