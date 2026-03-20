@@ -191,7 +191,7 @@ class Kamal::Commander
         service_namespace: config.otel.service_namespace,
         environment: config.otel.environment,
         version: config.version,
-        performer: `git config user.name`.chomp.presence || ENV["USER"]
+        performer: Kamal::Git.user_name.presence || ENV["USER"]
       )
 
       @original_stdout = $stdout

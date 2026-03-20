@@ -25,7 +25,7 @@ class Kamal::OtelShipper
     return self unless @running
     str.to_s.each_line do |line|
       stripped = line.chomp
-      @buffer << stripped unless stripped.empty?
+      @buffer << stripped
     end
     self
   end
