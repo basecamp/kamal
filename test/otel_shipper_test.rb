@@ -2,12 +2,15 @@ require "test_helper"
 
 class OtelShipperTest < ActiveSupport::TestCase
   setup do
+    @tags = Kamal::Tags.new(
+      performer: "deployer",
+      service: "myapp",
+      version: "abc123",
+      destination: "production"
+    )
     @shipper = Kamal::OtelShipper.new(
       endpoint: "http://localhost:4318",
-      service_namespace: "myapp",
-      environment: "production",
-      version: "abc123",
-      performer: "deployer"
+      tags: @tags
     )
   end
 
@@ -87,7 +90,7 @@ class OtelShipperTest < ActiveSupport::TestCase
     assert_equal "success", attrs.first.dig("value", "stringValue")
   end
 
-  test "resource attributes include service metadata" do
+  test "resource attributes use OTel semantic convention keys" do
     @shipper << "line"
 
     request_body = nil
@@ -101,13 +104,12 @@ class OtelShipperTest < ActiveSupport::TestCase
     resource_attrs = request_body.dig("resourceLogs", 0, "resource", "attributes")
     keys = resource_attrs.map { |a| a["key"] }
     assert_includes keys, "service.name"
-    assert_includes keys, "service.namespace"
-    assert_includes keys, "service.version"
-    assert_includes keys, "deployment.environment.name"
     assert_includes keys, "deploy.performer"
+    assert_includes keys, "deploy.version"
+    assert_includes keys, "deployment.environment.name"
 
-    namespace = resource_attrs.find { |a| a["key"] == "service.namespace" }
-    assert_equal "myapp", namespace.dig("value", "stringValue")
+    service = resource_attrs.find { |a| a["key"] == "service.name" }
+    assert_equal "myapp", service.dig("value", "stringValue")
 
     performer = resource_attrs.find { |a| a["key"] == "deploy.performer" }
     assert_equal "deployer", performer.dig("value", "stringValue")

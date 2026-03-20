@@ -188,10 +188,7 @@ class Kamal::Commander
 
       @otel_shipper = Kamal::OtelShipper.new(
         endpoint: config.otel.endpoint,
-        service_namespace: config.otel.service_namespace,
-        environment: config.otel.environment,
-        version: config.version,
-        performer: Kamal::Git.user_name.presence || ENV["USER"]
+        tags: Kamal::Tags.from_config(config)
       )
 
       @original_stdout = $stdout

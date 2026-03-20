@@ -6,15 +6,21 @@ class Kamal::OtelShipper
   BATCH_SIZE = 100
   FLUSH_INTERVAL = 5 # seconds
 
-  def initialize(endpoint:, service_namespace:, environment:, version:, performer: nil)
+  OTEL_ATTRIBUTE_KEYS = {
+    service: "service.name",
+    service_version: "service.version",
+    performer: "deploy.performer",
+    destination: "deployment.environment.name",
+    recorded_at: "deploy.recorded_at",
+    version: "deploy.version"
+  }
+
+  def initialize(endpoint:, tags:)
     @endpoint = URI("#{endpoint}/v1/logs")
-    @resource_attributes = [
-      { key: "service.name", value: { stringValue: "kamal" } },
-      { key: "service.namespace", value: { stringValue: service_namespace } },
-      { key: "service.version", value: { stringValue: version } },
-      { key: "deployment.environment.name", value: { stringValue: environment || "unknown" } },
-      { key: "deploy.performer", value: { stringValue: performer || ENV["USER"] || "unknown" } }
-    ]
+    @resource_attributes = tags.tags.map do |key, value|
+      otel_key = OTEL_ATTRIBUTE_KEYS.fetch(key, "kamal.#{key}")
+      { key: otel_key, value: { stringValue: value.to_s } }
+    end
     @buffer = Queue.new
     @flush_mutex = Mutex.new
     @running = true
