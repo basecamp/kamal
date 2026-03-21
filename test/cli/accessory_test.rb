@@ -34,7 +34,8 @@ class CliAccessoryTest < CliTestCase
       run_command("boot", "mysql")
     end
 
-    assert_includes exception.message, "Accessory `mysql` image has changed (private.registry/mysql:5.6 → private.registry/mysql:5.7)"
+    assert_includes exception.message, "Accessory `mysql` image has changed on host"
+    assert_includes exception.message, "(private.registry/mysql:5.6 → private.registry/mysql:5.7)"
     assert_includes exception.message, "run `kamal accessory reboot mysql` to update"
   ensure
     Thread.report_on_exception = true
@@ -50,7 +51,7 @@ class CliAccessoryTest < CliTestCase
       .returns("private.registry/mysql:5.7")
 
     run_command("boot", "mysql").tap do |output|
-      assert_match "already running with the correct image", output
+      assert_match "container already exists with the correct image", output
       assert_no_match(/docker run/, output)
     end
   end
