@@ -19,6 +19,42 @@ class CliAccessoryTest < CliTestCase
     end
   end
 
+  test "boot with image changed" do
+    Thread.report_on_exception = false
+
+    SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info)
+      .with(:docker, :ps, "-a", "-q", "--filter", "label=service=app-mysql")
+      .returns("abc123")
+
+    SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info)
+      .with(:docker, :inspect, "app-mysql", "--format '{{.Config.Image}}'")
+      .returns("private.registry/mysql:5.6")
+
+    exception = assert_raises do
+      run_command("boot", "mysql")
+    end
+
+    assert_includes exception.message, "Accessory `mysql` image has changed (private.registry/mysql:5.6 → private.registry/mysql:5.7)"
+    assert_includes exception.message, "run `kamal accessory reboot mysql` to update"
+  ensure
+    Thread.report_on_exception = true
+  end
+
+  test "boot with same image" do
+    SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info)
+      .with(:docker, :ps, "-a", "-q", "--filter", "label=service=app-mysql")
+      .returns("abc123")
+
+    SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info)
+      .with(:docker, :inspect, "app-mysql", "--format '{{.Config.Image}}'")
+      .returns("private.registry/mysql:5.7")
+
+    run_command("boot", "mysql").tap do |output|
+      assert_match "already running with the correct image", output
+      assert_no_match(/docker run/, output)
+    end
+  end
+
   test "boot all" do
     Kamal::Cli::Accessory.any_instance.expects(:directories).with("mysql")
     Kamal::Cli::Accessory.any_instance.expects(:upload).with("mysql")
