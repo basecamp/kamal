@@ -45,6 +45,19 @@ class ConfigurationProxyTest < ActiveSupport::TestCase
     end
   end
 
+  test "ssl with custom certificate and no host does not raise" do
+    with_test_secrets("secrets" => "CERT_PEM=certificate\nKEY_PEM=private_key") do
+      @deploy[:proxy] = {
+        "ssl" => {
+          "certificate_pem" => "CERT_PEM",
+          "private_key_pem" => "KEY_PEM"
+        }
+      }
+
+      assert_nothing_raised { config.proxy.ssl? }
+    end
+  end
+
   test "ssl with certificate and private key from secrets" do
     with_test_secrets("secrets" => "CERT_PEM=certificate\nKEY_PEM=private_key") do
       @deploy[:proxy] = {
