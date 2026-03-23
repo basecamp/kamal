@@ -30,23 +30,20 @@ class Kamal::OtelShipper
   def <<(str)
     return self unless @running
     str.to_s.each_line do |line|
-      stripped = line.chomp
-      @buffer << stripped
+      @buffer << line.chomp
     end
     self
   end
 
   def event(name, **attributes)
-    attrs = attributes.map { |k, v| { key: k.to_s, value: { stringValue: v.to_s } } }
-    @buffer << { event: name, attributes: attrs }
-    self
+    formatted = attributes.any? ? "[#{name}] #{attributes.map { |k, v| "#{k}=#{v}" }.join(" ")}" : "[#{name}]"
+    self << formatted
   end
 
   def flush
     @flush_mutex.synchronize do
-      lines, events = drain_buffer
-      ship_lines(lines) if lines.any?
-      ship_events(events) if events.any?
+      lines = drain_buffer
+      ship(lines) if lines.any?
     end
   end
 
@@ -68,21 +65,15 @@ class Kamal::OtelShipper
 
     def drain_buffer
       lines = []
-      events = []
       until @buffer.empty?
-        item = @buffer.pop(true)
-        if item.is_a?(Hash)
-          events << item
-        else
-          lines << item
-        end
+        lines << @buffer.pop(true)
       end
-      [ lines, events ]
+      lines
     rescue ThreadError
-      [ lines, events ]
+      lines
     end
 
-    def ship_lines(lines)
+    def ship(lines)
       lines.each_slice(BATCH_SIZE) do |batch|
         records = batch.map do |line|
           {
@@ -94,19 +85,6 @@ class Kamal::OtelShipper
         end
         ship_records(records)
       end
-    end
-
-    def ship_events(events)
-      records = events.map do |event|
-        {
-          timeUnixNano: time_ns,
-          severityNumber: 9,
-          severityText: "INFO",
-          body: { stringValue: event[:event] },
-          attributes: event[:attributes]
-        }
-      end
-      ship_records(records)
     end
 
     def ship_records(records)

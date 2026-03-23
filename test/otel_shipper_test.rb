@@ -22,31 +22,37 @@ class OtelShipperTest < ActiveSupport::TestCase
     @shipper << "hello world"
     @shipper << "second line"
 
-    lines, _events = @shipper.send(:drain_buffer)
+    lines = @shipper.send(:drain_buffer)
     assert_equal [ "hello world", "second line" ], lines
   end
 
   test "splits multi-line strings into separate lines" do
     @shipper << "line one\nline two\nline three\n"
 
-    lines, _events = @shipper.send(:drain_buffer)
+    lines = @shipper.send(:drain_buffer)
     assert_equal [ "line one", "line two", "line three" ], lines
   end
 
   test "preserves empty lines" do
     @shipper << "before\n\nafter\n"
 
-    lines, _events = @shipper.send(:drain_buffer)
+    lines = @shipper.send(:drain_buffer)
     assert_equal [ "before", "", "after" ], lines
   end
 
-  test "buffers events with attributes" do
+  test "event formats as a log line" do
     @shipper.event("deploy.start", version: "abc123", hosts: "1.1.1.1")
 
-    _lines, events = @shipper.send(:drain_buffer)
-    assert_equal 1, events.length
-    assert_equal "deploy.start", events.first[:event]
-    assert_equal 2, events.first[:attributes].length
+    lines = @shipper.send(:drain_buffer)
+    assert_equal 1, lines.length
+    assert_equal "[deploy.start] version=abc123 hosts=1.1.1.1", lines.first
+  end
+
+  test "event without attributes" do
+    @shipper.event("deploy.start")
+
+    lines = @shipper.send(:drain_buffer)
+    assert_equal [ "[deploy.start]" ], lines
   end
 
   test "flush ships buffered lines via HTTP" do
@@ -68,7 +74,7 @@ class OtelShipperTest < ActiveSupport::TestCase
     assert_equal "test log line", log_records.first.dig("body", "stringValue")
   end
 
-  test "flush ships events via HTTP" do
+  test "flush ships events as log lines via HTTP" do
     @shipper.event("deploy.complete", status: "success")
 
     request_body = nil
@@ -84,10 +90,7 @@ class OtelShipperTest < ActiveSupport::TestCase
     assert_not_nil request_body
     log_records = request_body.dig("resourceLogs", 0, "scopeLogs", 0, "logRecords")
     assert_equal 1, log_records.length
-    assert_equal "deploy.complete", log_records.first.dig("body", "stringValue")
-    attrs = log_records.first["attributes"]
-    assert_equal "status", attrs.first["key"]
-    assert_equal "success", attrs.first.dig("value", "stringValue")
+    assert_equal "[deploy.complete] status=success", log_records.first.dig("body", "stringValue")
   end
 
   test "resource attributes use OTel semantic convention keys" do
@@ -119,7 +122,7 @@ class OtelShipperTest < ActiveSupport::TestCase
     @shipper.shutdown
     @shipper << "too late"
 
-    lines, _events = @shipper.send(:drain_buffer)
+    lines = @shipper.send(:drain_buffer)
     assert_empty lines
   end
 
