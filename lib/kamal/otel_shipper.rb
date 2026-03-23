@@ -52,7 +52,7 @@ class Kamal::OtelShipper
 
   def shutdown
     @running = false
-    @thread&.kill
+    @thread&.join(FLUSH_INTERVAL + 1.second)
     flush
   end
 
