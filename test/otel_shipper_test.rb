@@ -115,12 +115,12 @@ class OtelShipperTest < ActiveSupport::TestCase
     assert_equal "deployer", performer.dig("value", "stringValue")
   end
 
-  test "ignores lines after shutdown" do
+  test "accepts lines after shutdown" do
     @shipper.shutdown
-    @shipper << "too late"
+    @shipper << "still works"
 
-    lines = @shipper.send(:drain_buffer)
-    assert_empty lines
+    items = @shipper.send(:drain_buffer)
+    assert_equal [ "still works" ], items
   end
 
   test "HTTP errors are silently swallowed" do

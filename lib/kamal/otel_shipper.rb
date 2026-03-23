@@ -28,7 +28,6 @@ class Kamal::OtelShipper
   end
 
   def <<(str)
-    return self unless @running
     str.to_s.each_line do |line|
       @buffer << line.chomp
     end
@@ -36,7 +35,6 @@ class Kamal::OtelShipper
   end
 
   def event(name, **attributes)
-    return self unless @running
     attrs = attributes.map { |k, v| { key: k.to_s, value: { stringValue: v.to_s } } }
     @buffer << { body: name, attributes: attrs }
     self
