@@ -206,7 +206,13 @@ boot:
 logging:
   ...
 
-# OpenTelemetry
+# Output
+#
+# Configure output loggers (OTel, file), see kamal docs output:
+output:
+  ...
+
+# OpenTelemetry (deprecated, use output: otel: instead)
 #
 # Ship deploy logs to an OTel endpoint, see kamal docs otel:
 otel:

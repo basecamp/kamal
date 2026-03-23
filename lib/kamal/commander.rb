@@ -1,9 +1,11 @@
 require "active_support/core_ext/enumerable"
 require "active_support/core_ext/module/delegation"
 require "active_support/core_ext/object/blank"
+require "active_support/broadcast_logger"
+require "active_support/notifications"
 
 class Kamal::Commander
-  attr_accessor :verbosity, :holding_lock, :connected
+  attr_accessor :verbosity, :holding_lock, :connected, :logging
   attr_reader :specific_roles, :specific_hosts
   delegate :hosts, :roles, :primary_host, :primary_role, :roles_on, :app_hosts, :proxy_hosts, :accessory_hosts, to: :specifics
 
@@ -15,6 +17,7 @@ class Kamal::Commander
     self.verbosity = :info
     self.holding_lock = ENV["KAMAL_LOCK"] == "true"
     self.connected = false
+    self.logging = false
     @specifics = @specific_roles = @specific_hosts = nil
     @config = @config_kwargs = nil
     @commands = {}
@@ -142,21 +145,17 @@ class Kamal::Commander
     SSHKit.config.output_verbosity = old_level
   end
 
-  def otel_event(name, **attrs)
-    config if configured? && !@config # ensure shipper is initialized
-    @otel_shipper&.event(name, **attrs)
+  def output_logger
+    @output_logger ||= ActiveSupport::BroadcastLogger.new
   end
 
-  def otel_shutdown
-    if @otel_shipper
-      @otel_shipper.shutdown
-      @otel_shipper = nil
-    end
+  def log(line)
+    output_logger.info(line) if logging
+  end
 
-    if @original_stdout
-      $stdout = @original_stdout
-      $stderr = @original_stderr
-      @original_stdout = @original_stderr = nil
+  def output_shutdown
+    output_logger.broadcasts.each do |logger|
+      logger.close if logger.respond_to?(:close)
     end
   end
 
@@ -180,26 +179,29 @@ class Kamal::Commander
       SSHKit.config.command_map[:docker] = "docker" # No need to use /usr/bin/env, just clogs up the logs
       SSHKit.config.output_verbosity = verbosity
 
-      configure_otel_with(config)
+      configure_output_with(config)
     end
 
-    def configure_otel_with(config)
-      return unless config.otel.enabled?
+    def configure_output_with(config)
+      return unless config.output.enabled?
 
-      @otel_shipper = Kamal::OtelShipper.new(
-        endpoint: config.otel.endpoint,
-        tags: Kamal::Tags.from_config(config)
-      )
+      tags = Kamal::Tags.from_config(config)
 
-      @original_stdout = $stdout
-      @original_stderr = $stderr
-      $stdout = Kamal::TeeIo.new(@original_stdout, @otel_shipper)
-      $stderr = Kamal::TeeIo.new(@original_stderr, @otel_shipper)
+      if (otel_config = config.output.otel)
+        output_logger.broadcast_to(
+          Kamal::Output::OtelLogger.new(endpoint: otel_config["endpoint"], tags: tags)
+        )
+      end
 
-      at_exit { otel_shutdown }
+      if (file_config = config.output.file)
+        output_logger.broadcast_to(
+          Kamal::Output::FileLogger.new(path: file_config["path"])
+        )
+      end
+
+      at_exit { output_shutdown }
     rescue => e
-      @otel_shipper = nil
-      $stderr.puts "OTel setup failed (#{e.message}), continuing without deploy log shipping"
+      $stderr.puts "Output logger setup failed (#{e.message}), continuing without deploy log shipping"
     end
 
     def specifics

@@ -27,7 +27,7 @@ class Kamal::Cli::Server < Kamal::Cli::Base
 
   desc "bootstrap", "Set up Docker to run Kamal apps"
   def bootstrap
-    with_lock do
+    modify(lock: true) do
       missing = []
 
       on(KAMAL.hosts) do |host|

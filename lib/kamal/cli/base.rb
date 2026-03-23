@@ -1,4 +1,5 @@
 require "thor"
+require "active_support/notifications"
 require "kamal/sshkit_with_ext"
 
 module Kamal::Cli
@@ -70,6 +71,29 @@ module Kamal::Cli
       ensure
         runtime = Time.now - started_at
         puts "  Finished all in #{sprintf("%.1f seconds", runtime)}"
+      end
+
+      def modify(lock: false)
+        KAMAL.logging = true
+
+        ActiveSupport::Notifications.instrument("start_modify.kamal",
+          command: command, subcommand: subcommand, hosts: KAMAL.hosts.join(","))
+
+        ActiveSupport::Notifications.instrument("modify.kamal",
+          command: command, subcommand: subcommand) do
+          if lock
+            with_lock { yield }
+          else
+            yield
+          end
+        end
+      ensure
+        KAMAL.output_shutdown
+      end
+
+      def say(message = "", *)
+        super
+        KAMAL.log(message.to_s) if KAMAL.logging
       end
 
       def with_lock
