@@ -73,6 +73,9 @@ module Kamal::Cli
         puts "  Finished all in #{sprintf("%.1f seconds", runtime)}"
       end
 
+      # Wraps infrastructure-modifying operations. Enables output logging on first call,
+      # instruments AS::Notifications for deploy lifecycle events, and optionally acquires
+      # the deploy lock. Nests safely — only the outermost modify closes the output loggers.
       def modify(lock: false)
         KAMAL.logging = true
         KAMAL.modify_started

@@ -2,8 +2,9 @@
 #
 # Configure output loggers to capture deploy logs.
 #
-# When configured, Kamal streams all output from infrastructure-modifying
-# commands to the specified destinations.
+# When configured, Kamal captures CLI messages (via Thor's say) and
+# remote command output (via SSHKit) from infrastructure-modifying
+# commands and sends them to the specified destinations.
 
 # Output options
 #
