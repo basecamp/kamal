@@ -18,6 +18,7 @@ class Kamal::Commander
     self.holding_lock = ENV["KAMAL_LOCK"] == "true"
     self.connected = false
     self.logging = false
+    @modify_depth = 0
     @specifics = @specific_roles = @specific_hosts = nil
     @config = @config_kwargs = nil
     @commands = {}
@@ -151,6 +152,15 @@ class Kamal::Commander
 
   def log(line)
     output_logger.info(line) if logging
+  end
+
+  def modify_started
+    @modify_depth += 1
+  end
+
+  def modify_finished
+    @modify_depth -= 1
+    @modify_depth == 0
   end
 
 

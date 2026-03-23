@@ -75,6 +75,7 @@ module Kamal::Cli
 
       def modify(lock: false)
         KAMAL.logging = true
+        KAMAL.modify_started
 
         ActiveSupport::Notifications.instrument("modify.kamal",
           command: command, subcommand: subcommand, hosts: KAMAL.hosts.join(",")) do
@@ -85,7 +86,7 @@ module Kamal::Cli
           end
         end
       ensure
-        KAMAL.output_logger.close
+        KAMAL.output_logger.close if KAMAL.modify_finished
       end
 
       def say(message = "", *)
