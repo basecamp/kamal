@@ -113,7 +113,7 @@ class Kamal::OtelShipper
       req = Net::HTTP::Post.new(@endpoint.request_uri, "Content-Type" => "application/json")
       req.body = JSON.generate(payload)
       http.request(req)
-    rescue
+    rescue StandardError
       # Best effort — never fail the deploy
     end
 
