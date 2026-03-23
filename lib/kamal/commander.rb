@@ -194,6 +194,8 @@ class Kamal::Commander
         )
       end
 
+      SSHKit.config.output = SSHKit::Formatter::Pretty.new(Kamal::Output::TeeIO.new($stdout, output_logger))
+
       at_exit { output_logger.close }
     rescue => e
       $stderr.puts "Output logger setup failed (#{e.message}), continuing without deploy log shipping"
