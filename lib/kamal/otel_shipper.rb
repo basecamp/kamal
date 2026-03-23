@@ -31,12 +31,14 @@ class Kamal::OtelShipper
     str.to_s.each_line do |line|
       @buffer << line.chomp
     end
+
     self
   end
 
   def event(name, **attributes)
     attrs = attributes.map { |k, v| { key: k.to_s, value: { stringValue: v.to_s } } }
     @buffer << { body: name, attributes: attrs }
+
     self
   end
 
