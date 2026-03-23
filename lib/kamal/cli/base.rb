@@ -1,4 +1,5 @@
 require "thor"
+require "active_support/notifications"
 require "kamal/sshkit_with_ext"
 
 module Kamal::Cli
@@ -70,6 +71,30 @@ module Kamal::Cli
       ensure
         runtime = Time.now - started_at
         puts "  Finished all in #{sprintf("%.1f seconds", runtime)}"
+      end
+
+      # Wraps infrastructure-modifying operations. Enables output logging on first call,
+      # instruments AS::Notifications for deploy lifecycle events, and optionally acquires
+      # the deploy lock. Nests safely — only the outermost modify closes the output loggers.
+      def modify(lock: false)
+        KAMAL.logging = true
+        KAMAL.modify_started
+
+        ActiveSupport::Notifications.instrument("modify.kamal",
+          command: command, subcommand: subcommand, hosts: KAMAL.hosts.join(",")) do
+          if lock
+            with_lock { yield }
+          else
+            yield
+          end
+        end
+      ensure
+        KAMAL.output_logger.close if KAMAL.modify_finished
+      end
+
+      def say(message = "", *)
+        super
+        KAMAL.log(message.to_s) if KAMAL.logging
       end
 
       def with_lock

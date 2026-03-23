@@ -4,7 +4,7 @@ require "concurrent/array"
 class Kamal::Cli::Accessory < Kamal::Cli::Base
   desc "boot [NAME]", "Boot new accessory service on host (use NAME=all to boot all accessories)"
   def boot(name, prepare: true)
-    with_lock do
+    modify(lock: true) do
       if name == "all"
         KAMAL.accessory_names.each { |accessory_name| boot(accessory_name) }
       else
@@ -42,7 +42,7 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
 
   desc "upload [NAME]", "Upload accessory files to host", hide: true
   def upload(name)
-    with_lock do
+    modify(lock: true) do
       with_accessory(name) do |accessory, hosts|
         on(hosts) do
           accessory.files.each do |(local, config)|
@@ -61,7 +61,7 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
 
   desc "directories [NAME]", "Create accessory directories on host", hide: true
   def directories(name)
-    with_lock do
+    modify(lock: true) do
       with_accessory(name) do |accessory, hosts|
         on(hosts) do
           accessory.directories.each do |(local, config)|
@@ -76,7 +76,7 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
 
   desc "reboot [NAME]", "Reboot existing accessory on host (stop container, remove container, start new container; use NAME=all to boot all accessories)"
   def reboot(name)
-    with_lock do
+    modify(lock: true) do
       if name == "all"
         KAMAL.accessory_names.each { |accessory_name| reboot(accessory_name) }
       else
@@ -91,7 +91,7 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
 
   desc "start [NAME]", "Start existing accessory container on host"
   def start(name)
-    with_lock do
+    modify(lock: true) do
       with_accessory(name) do |accessory, hosts|
         on(hosts) do
           execute *KAMAL.auditor.record("Started #{name} accessory"), verbosity: :debug
@@ -107,7 +107,7 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
 
   desc "stop [NAME]", "Stop existing accessory container on host"
   def stop(name)
-    with_lock do
+    modify(lock: true) do
       with_accessory(name) do |accessory, hosts|
         on(hosts) do
           execute *KAMAL.auditor.record("Stopped #{name} accessory"), verbosity: :debug
@@ -124,7 +124,7 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
 
   desc "restart [NAME]", "Restart existing accessory container on host"
   def restart(name)
-    with_lock do
+    modify(lock: true) do
       stop(name)
       start(name)
     end
@@ -213,7 +213,7 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
 
   desc "pull_image [NAME]", "Pull accessory image on host", hide: true
   def pull_image(name)
-    with_lock do
+    modify(lock: true) do
       with_accessory(name) do |accessory, hosts|
         on(hosts) do
           execute *KAMAL.auditor.record("Pull #{name} accessory image"), verbosity: :debug
@@ -227,7 +227,7 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
   option :confirmed, aliases: "-y", type: :boolean, default: false, desc: "Proceed without confirmation question"
   def remove(name)
     confirming "This will remove all containers, images and data directories for #{name}. Are you sure?" do
-      with_lock do
+      modify(lock: true) do
         if name == "all"
           KAMAL.accessory_names.each { |accessory_name| remove_accessory(accessory_name) }
         else
@@ -239,7 +239,7 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
 
   desc "remove_container [NAME]", "Remove accessory container from host", hide: true
   def remove_container(name)
-    with_lock do
+    modify(lock: true) do
       with_accessory(name) do |accessory, hosts|
         on(hosts) do
           execute *KAMAL.auditor.record("Remove #{name} accessory container"), verbosity: :debug
@@ -251,7 +251,7 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
 
   desc "remove_image [NAME]", "Remove accessory image from host", hide: true
   def remove_image(name)
-    with_lock do
+    modify(lock: true) do
       with_accessory(name) do |accessory, hosts|
         on(hosts) do
           execute *KAMAL.auditor.record("Removed #{name} accessory image"), verbosity: :debug
@@ -263,7 +263,7 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
 
   desc "remove_service_directory [NAME]", "Remove accessory directory used for uploaded files and data directories from host", hide: true
   def remove_service_directory(name)
-    with_lock do
+    modify(lock: true) do
       with_accessory(name) do |accessory, hosts|
         on(hosts) do
           execute *accessory.remove_service_directory
@@ -277,7 +277,7 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
   option :confirmed, aliases: "-y", type: :boolean, default: false, desc: "Proceed without confirmation question"
   def upgrade(name)
     confirming "This will restart all accessories" do
-      with_lock do
+      modify(lock: true) do
         host_groups = options[:rolling] ? KAMAL.accessory_hosts : [ KAMAL.accessory_hosts ]
         host_groups.each do |hosts|
           host_list = Array(hosts).join(",")

@@ -1,9 +1,11 @@
 require "active_support/core_ext/enumerable"
 require "active_support/core_ext/module/delegation"
 require "active_support/core_ext/object/blank"
+require "active_support/broadcast_logger"
+require "active_support/notifications"
 
 class Kamal::Commander
-  attr_accessor :verbosity, :holding_lock, :connected
+  attr_accessor :verbosity, :holding_lock, :connected, :logging
   attr_reader :specific_roles, :specific_hosts
   delegate :hosts, :roles, :primary_host, :primary_role, :roles_on, :app_hosts, :proxy_hosts, :accessory_hosts, to: :specifics
 
@@ -15,6 +17,8 @@ class Kamal::Commander
     self.verbosity = :info
     self.holding_lock = ENV["KAMAL_LOCK"] == "true"
     self.connected = false
+    self.logging = false
+    @modify_depth = 0
     @specifics = @specific_roles = @specific_hosts = nil
     @config = @config_kwargs = nil
     @commands = {}
@@ -142,6 +146,24 @@ class Kamal::Commander
     SSHKit.config.output_verbosity = old_level
   end
 
+  def output_logger
+    @output_logger ||= ActiveSupport::BroadcastLogger.new
+  end
+
+  def log(line)
+    output_logger.info(line) if logging
+  end
+
+  def modify_started
+    @modify_depth += 1
+  end
+
+  def modify_finished
+    @modify_depth -= 1
+    @modify_depth == 0
+  end
+
+
   def holding_lock?
     self.holding_lock
   end
@@ -161,6 +183,32 @@ class Kamal::Commander
       end
       SSHKit.config.command_map[:docker] = "docker" # No need to use /usr/bin/env, just clogs up the logs
       SSHKit.config.output_verbosity = verbosity
+
+      configure_output_with(config)
+    end
+
+    def configure_output_with(config)
+      return unless config.output.enabled?
+
+      tags = Kamal::Tags.from_config(config)
+
+      if (endpoint = config.output.otel&.dig("endpoint"))
+        output_logger.broadcast_to(
+          Kamal::Output::OtelLogger.new(endpoint: endpoint, tags: tags)
+        )
+      end
+
+      if (path = config.output.file&.dig("path"))
+        output_logger.broadcast_to(
+          Kamal::Output::FileLogger.new(path: path)
+        )
+      end
+
+      SSHKit.config.output = SSHKit::Formatter::Pretty.new(Kamal::Output::TeeIO.new($stdout, output_logger))
+
+      at_exit { output_logger.close }
+    rescue => e
+      $stderr.puts "Output logger setup failed (#{e.message}), continuing without deploy log shipping"
     end
 
     def specifics
