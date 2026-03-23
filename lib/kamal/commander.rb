@@ -187,15 +187,15 @@ class Kamal::Commander
 
       tags = Kamal::Tags.from_config(config)
 
-      if (otel_config = config.output.otel)
+      if (endpoint = config.output.otel&.dig("endpoint"))
         output_logger.broadcast_to(
-          Kamal::Output::OtelLogger.new(endpoint: otel_config["endpoint"], tags: tags)
+          Kamal::Output::OtelLogger.new(endpoint: endpoint, tags: tags)
         )
       end
 
-      if (file_config = config.output.file)
+      if (path = config.output.file&.dig("path"))
         output_logger.broadcast_to(
-          Kamal::Output::FileLogger.new(path: file_config["path"])
+          Kamal::Output::FileLogger.new(path: path)
         )
       end
 
