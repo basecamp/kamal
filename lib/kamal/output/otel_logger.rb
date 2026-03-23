@@ -6,7 +6,25 @@ class Kamal::Output::OtelLogger < ::Logger
 
     super(nil)
 
-    subscribe
+    @subscription = ActiveSupport::Notifications.subscribe("modify.kamal", self)
+  end
+
+  def start(name, id, payload)
+    @shipper.event("deploy.start",
+      command: payload[:command].to_s,
+      hosts: payload[:hosts].to_s)
+  end
+
+  def finish(name, id, payload)
+    if payload[:exception]
+      error_class, error_message = payload[:exception]
+      @shipper.event("deploy.failed",
+        command: payload[:command].to_s,
+        error: "#{error_class}: #{error_message}")
+    else
+      @shipper.event("deploy.complete",
+        command: payload[:command].to_s)
+    end
   end
 
   def add(severity, message = nil, progname = nil, &block)
@@ -15,34 +33,7 @@ class Kamal::Output::OtelLogger < ::Logger
   end
 
   def close
-    unsubscribe
+    ActiveSupport::Notifications.unsubscribe(@subscription)
     @shipper.shutdown
   end
-
-  private
-    def subscribe
-      @subscription = ActiveSupport::Notifications.subscribe("modify.kamal") do |event|
-        if event.payload[:exception]
-          error_class, error_message = event.payload[:exception]
-          @shipper.event("deploy.failed",
-            command: event.payload[:command].to_s,
-            error: "#{error_class}: #{error_message}")
-        else
-          @shipper.event("deploy.complete",
-            command: event.payload[:command].to_s,
-            runtime: event.duration.round.to_s)
-        end
-      end
-
-      @start_subscription = ActiveSupport::Notifications.subscribe("start_modify.kamal") do |event|
-        @shipper.event("deploy.start",
-          command: event.payload[:command].to_s,
-          hosts: event.payload[:hosts].to_s)
-      end
-    end
-
-    def unsubscribe
-      ActiveSupport::Notifications.unsubscribe(@subscription) if @subscription
-      ActiveSupport::Notifications.unsubscribe(@start_subscription) if @start_subscription
-    end
 end

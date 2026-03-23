@@ -76,11 +76,8 @@ module Kamal::Cli
       def modify(lock: false)
         KAMAL.logging = true
 
-        ActiveSupport::Notifications.instrument("start_modify.kamal",
-          command: command, subcommand: subcommand, hosts: KAMAL.hosts.join(","))
-
         ActiveSupport::Notifications.instrument("modify.kamal",
-          command: command, subcommand: subcommand) do
+          command: command, subcommand: subcommand, hosts: KAMAL.hosts.join(",")) do
           if lock
             with_lock { yield }
           else
