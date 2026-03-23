@@ -5,12 +5,6 @@ class Kamal::Configuration::Output
 
   def initialize(config:)
     @output_config = config.raw_config.output || {}
-
-    # Backwards compat: top-level otel: treated as output: { otel: { ... } }
-    if @output_config.empty? && config.raw_config.otel.present?
-      @output_config = { "otel" => config.raw_config.otel }
-    end
-
     validate! @output_config unless @output_config.empty?
   end
 
