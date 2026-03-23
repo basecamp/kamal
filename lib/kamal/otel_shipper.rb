@@ -36,8 +36,10 @@ class Kamal::OtelShipper
   end
 
   def event(name, **attributes)
-    formatted = attributes.any? ? "[#{name}] #{attributes.map { |k, v| "#{k}=#{v}" }.join(" ")}" : "[#{name}]"
-    self << formatted
+    return self unless @running
+    attrs = attributes.map { |k, v| { key: k.to_s, value: { stringValue: v.to_s } } }
+    @buffer << { body: name, attributes: attrs }
+    self
   end
 
   def flush
@@ -73,15 +75,23 @@ class Kamal::OtelShipper
       lines
     end
 
-    def ship(lines)
-      lines.each_slice(BATCH_SIZE) do |batch|
-        records = batch.map do |line|
-          {
+    def ship(items)
+      items.each_slice(BATCH_SIZE) do |batch|
+        records = batch.map do |item|
+          record = {
             timeUnixNano: time_ns,
             severityNumber: 9,
-            severityText: "INFO",
-            body: { stringValue: line }
+            severityText: "INFO"
           }
+
+          if item.is_a?(Hash)
+            record[:body] = { stringValue: item[:body] }
+            record[:attributes] = item[:attributes]
+          else
+            record[:body] = { stringValue: item }
+          end
+
+          record
         end
         ship_records(records)
       end

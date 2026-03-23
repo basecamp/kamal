@@ -40,19 +40,13 @@ class OtelShipperTest < ActiveSupport::TestCase
     assert_equal [ "before", "", "after" ], lines
   end
 
-  test "event formats as a log line" do
+  test "event buffers structured data" do
     @shipper.event("deploy.start", version: "abc123", hosts: "1.1.1.1")
 
-    lines = @shipper.send(:drain_buffer)
-    assert_equal 1, lines.length
-    assert_equal "[deploy.start] version=abc123 hosts=1.1.1.1", lines.first
-  end
-
-  test "event without attributes" do
-    @shipper.event("deploy.start")
-
-    lines = @shipper.send(:drain_buffer)
-    assert_equal [ "[deploy.start]" ], lines
+    items = @shipper.send(:drain_buffer)
+    assert_equal 1, items.length
+    assert_equal "deploy.start", items.first[:body]
+    assert_equal 2, items.first[:attributes].length
   end
 
   test "flush ships buffered lines via HTTP" do
@@ -74,7 +68,7 @@ class OtelShipperTest < ActiveSupport::TestCase
     assert_equal "test log line", log_records.first.dig("body", "stringValue")
   end
 
-  test "flush ships events as log lines via HTTP" do
+  test "flush ships events with OTLP attributes" do
     @shipper.event("deploy.complete", status: "success")
 
     request_body = nil
@@ -90,7 +84,10 @@ class OtelShipperTest < ActiveSupport::TestCase
     assert_not_nil request_body
     log_records = request_body.dig("resourceLogs", 0, "scopeLogs", 0, "logRecords")
     assert_equal 1, log_records.length
-    assert_equal "[deploy.complete] status=success", log_records.first.dig("body", "stringValue")
+    assert_equal "deploy.complete", log_records.first.dig("body", "stringValue")
+    attrs = log_records.first["attributes"]
+    assert_equal "status", attrs.first["key"]
+    assert_equal "success", attrs.first.dig("value", "stringValue")
   end
 
   test "resource attributes use OTel semantic convention keys" do
