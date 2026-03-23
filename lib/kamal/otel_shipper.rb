@@ -17,7 +17,7 @@ class Kamal::OtelShipper
   }
 
   def initialize(endpoint:, tags:)
-    @endpoint = URI("#{endpoint}/v1/logs")
+    @endpoint = URI("#{endpoint.chomp('/')}/v1/logs")
     @resource_attributes = tags.tags.map do |key, value|
       otel_key = OTEL_ATTRIBUTE_KEYS.fetch(key, "kamal.#{key}")
       { key: otel_key, value: { stringValue: value.to_s } }
@@ -52,7 +52,7 @@ class Kamal::OtelShipper
 
   def shutdown
     @running = false
-    @thread&.join(FLUSH_INTERVAL + 1.second)
+    @thread&.kill
     flush
   end
 
@@ -110,7 +110,7 @@ class Kamal::OtelShipper
       http.use_ssl = @endpoint.scheme == "https"
       http.open_timeout = 2.seconds
       http.read_timeout = 5.seconds
-      req = Net::HTTP::Post.new(@endpoint.path, "Content-Type" => "application/json")
+      req = Net::HTTP::Post.new(@endpoint.request_uri, "Content-Type" => "application/json")
       req.body = JSON.generate(payload)
       http.request(req)
     rescue
