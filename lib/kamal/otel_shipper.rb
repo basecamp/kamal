@@ -1,10 +1,11 @@
+require "active_support/core_ext/numeric/time"
 require "net/http"
 require "json"
 require "uri"
 
 class Kamal::OtelShipper
   BATCH_SIZE = 100
-  FLUSH_INTERVAL = 5 # seconds
+  FLUSH_INTERVAL = 5.seconds
 
   OTEL_ATTRIBUTE_KEYS = {
     service: "service.name",
@@ -51,7 +52,7 @@ class Kamal::OtelShipper
 
   def shutdown
     @running = false
-    @thread&.join(FLUSH_INTERVAL + 1)
+    @thread&.join(FLUSH_INTERVAL + 1.second)
     flush
   end
 
@@ -107,8 +108,8 @@ class Kamal::OtelShipper
 
       http = Net::HTTP.new(@endpoint.host, @endpoint.port)
       http.use_ssl = @endpoint.scheme == "https"
-      http.open_timeout = 2
-      http.read_timeout = 5
+      http.open_timeout = 2.seconds
+      http.read_timeout = 5.seconds
       req = Net::HTTP::Post.new(@endpoint.path, "Content-Type" => "application/json")
       req.body = JSON.generate(payload)
       http.request(req)
