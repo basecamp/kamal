@@ -153,11 +153,6 @@ class Kamal::Commander
     output_logger.info(line) if logging
   end
 
-  def output_shutdown
-    output_logger.broadcasts.each do |logger|
-      logger.close if logger.respond_to?(:close)
-    end
-  end
 
   def holding_lock?
     self.holding_lock
@@ -199,7 +194,7 @@ class Kamal::Commander
         )
       end
 
-      at_exit { output_shutdown }
+      at_exit { output_logger.close }
     rescue => e
       $stderr.puts "Output logger setup failed (#{e.message}), continuing without deploy log shipping"
     end

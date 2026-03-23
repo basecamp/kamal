@@ -88,7 +88,7 @@ module Kamal::Cli
           end
         end
       ensure
-        KAMAL.output_shutdown
+        KAMAL.output_logger.close
       end
 
       def say(message = "", *)
