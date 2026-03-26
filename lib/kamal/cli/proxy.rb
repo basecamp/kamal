@@ -8,7 +8,13 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
         raise unless e.message.include?("already exists")
       end
 
-      on(KAMAL.proxy_hosts) do |host|
+      # Skip proxy on loadbalancer host - the loadbalancer will handle it
+      proxy_hosts = KAMAL.proxy_hosts
+      if KAMAL.config.proxy.loadbalancer_on_proxy_host?
+        proxy_hosts = proxy_hosts - [ KAMAL.config.proxy.effective_loadbalancer ]
+      end
+
+      on(proxy_hosts) do |host|
         execute *KAMAL.registry.login
 
         version = capture_with_info(*KAMAL.proxy(host).version).strip.presence
@@ -18,6 +24,15 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
         end
         execute *KAMAL.proxy(host).ensure_apps_config_directory
         execute *KAMAL.proxy(host).start_or_run
+      end
+
+      if KAMAL.config.proxy.load_balancing?
+        on(KAMAL.config.proxy.effective_loadbalancer) do |host|
+          info "Starting loadbalancer on #{host}..."
+          execute *KAMAL.registry.login
+          execute *KAMAL.loadbalancer.ensure_apps_config_directory
+          execute *KAMAL.loadbalancer.start_or_run
+        end
       end
     end
   end
@@ -109,8 +124,16 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
   def reboot
     confirming "This will cause a brief outage on each host. Are you sure?" do
       with_lock do
-        host_groups = options[:rolling] ? KAMAL.proxy_hosts : [ KAMAL.proxy_hosts ]
+        # Skip proxy on loadbalancer host - it will be handled by loadbalancer reboot
+        proxy_hosts = KAMAL.proxy_hosts
+        if KAMAL.config.proxy.loadbalancer_on_proxy_host?
+          proxy_hosts = proxy_hosts - [ KAMAL.config.proxy.effective_loadbalancer ]
+        end
+
+        host_groups = options[:rolling] ? proxy_hosts : [ proxy_hosts ]
         host_groups.each do |hosts|
+          next if Array(hosts).empty?
+
           host_list = Array(hosts).join(",")
           run_hook "pre-proxy-reboot", hosts: host_list
           on(hosts) do |host|
@@ -118,7 +141,7 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
             execute *KAMAL.auditor.record("Rebooted proxy"), verbosity: :debug
             execute *KAMAL.registry.login
 
-            "Stopping and removing kamal-proxy on #{host}, if running..."
+            info "Stopping and removing kamal-proxy on #{host}, if running..."
             execute *proxy.stop, raise_on_non_zero_exit: false
             execute *proxy.remove_container
             execute *proxy.ensure_apps_config_directory
@@ -126,6 +149,25 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
             execute *proxy.run
           end
           run_hook "post-proxy-reboot", hosts: host_list
+        end
+
+        if KAMAL.config.proxy.load_balancing?
+          lb_host = KAMAL.config.proxy.effective_loadbalancer
+          run_hook "pre-loadbalancer-reboot", hosts: lb_host
+
+          on(lb_host) do |host|
+            execute *KAMAL.auditor.record("Rebooted loadbalancer"), verbosity: :debug
+            execute *KAMAL.registry.login
+
+            info "Stopping and removing #{KAMAL.loadbalancer.container_name} on #{host}, if running..."
+            execute *KAMAL.loadbalancer.stop, raise_on_non_zero_exit: false
+            execute *KAMAL.loadbalancer.remove_container
+            execute *KAMAL.loadbalancer.ensure_apps_config_directory
+
+            execute *KAMAL.loadbalancer.run
+          end
+
+          run_hook "post-loadbalancer-reboot", hosts: lb_host
         end
       end
     end
@@ -148,10 +190,10 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
           execute *KAMAL.auditor.record("Rebooted proxy"), verbosity: :debug
           execute *KAMAL.registry.login
 
-          "Stopping and removing Traefik on #{host}, if running..."
+          info "Stopping and removing Traefik on #{host}, if running..."
           execute *proxy.cleanup_traefik
 
-          "Stopping and removing kamal-proxy on #{host}, if running..."
+          info "Stopping and removing kamal-proxy on #{host}, if running..."
           execute *proxy.stop, raise_on_non_zero_exit: false
           execute *proxy.remove_container
           execute *proxy.remove_image
@@ -204,6 +246,12 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
   def details
     quiet = options[:quiet]
     on(KAMAL.proxy_hosts) { |host| puts_by_host host, capture_with_info(*KAMAL.proxy(host).info), type: "Proxy", quiet: quiet }
+
+    if KAMAL.config.proxy.load_balancing?
+      on(KAMAL.config.proxy.effective_loadbalancer) do |host|
+        puts_by_host host, capture_with_info(*KAMAL.loadbalancer.info), type: "Loadbalancer"
+      end
+    end
   end
 
   desc "logs", "Show log lines from proxy on servers"
@@ -246,12 +294,79 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
     end
   end
 
+  desc "loadbalancer STATUS", "Manage the load balancer"
+  def loadbalancer(status)
+    case status
+    when "info"
+      if KAMAL.config.proxy.load_balancing?
+        on(KAMAL.config.proxy.effective_loadbalancer) do |host|
+          puts "Loadbalancer status on #{host}:"
+          puts capture_with_info(*KAMAL.loadbalancer.info)
+        end
+      else
+        puts "Load balancing is not configured"
+      end
+    when "start"
+      if KAMAL.config.proxy.load_balancing?
+        on(KAMAL.config.proxy.effective_loadbalancer) do |host|
+          execute *KAMAL.registry.login
+          execute *KAMAL.loadbalancer.start_or_run
+        end
+      else
+        puts "Load balancing is not configured"
+      end
+    when "stop"
+      if KAMAL.config.proxy.load_balancing?
+        on(KAMAL.config.proxy.effective_loadbalancer) do |host|
+          execute *KAMAL.loadbalancer.stop, raise_on_non_zero_exit: false
+        end
+      else
+        puts "Load balancing is not configured"
+      end
+    when "logs"
+      if KAMAL.config.proxy.load_balancing?
+        on(KAMAL.config.proxy.effective_loadbalancer) do |host|
+          puts_by_host host, capture(*KAMAL.loadbalancer.logs(timestamps: true)), type: "Loadbalancer"
+        end
+      else
+        puts "Load balancing is not configured"
+      end
+    when "deploy"
+      if KAMAL.config.proxy.load_balancing?
+        targets = []
+        KAMAL.config.roles.each do |role|
+          next unless role.running_proxy?
+
+          role.hosts.each do |host|
+            targets << host
+          end
+        end
+
+        on(KAMAL.config.proxy.effective_loadbalancer) do |host|
+          info "Deploying to loadbalancer on #{host} with targets: #{targets.join(', ')}"
+          execute *KAMAL.loadbalancer.deploy(targets: targets)
+        end
+      else
+        puts "Load balancing is not configured"
+      end
+    else
+      puts "Unknown loadbalancer subcommand: #{status}. Available: info, start, stop, logs, deploy"
+    end
+  end
+
   desc "remove_container", "Remove proxy container from servers", hide: true
   def remove_container
     with_lock do
       on(KAMAL.proxy_hosts) do
         execute *KAMAL.auditor.record("Removed proxy container"), verbosity: :debug
         execute *KAMAL.proxy(host).remove_container
+      end
+
+      if KAMAL.config.proxy.load_balancing?
+        on(KAMAL.config.proxy.effective_loadbalancer) do
+          execute *KAMAL.auditor.record("Removed loadbalancer container"), verbosity: :debug
+          execute *KAMAL.loadbalancer.remove_container
+        end
       end
     end
   end
@@ -262,6 +377,13 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
       on(KAMAL.proxy_hosts) do
         execute *KAMAL.auditor.record("Removed proxy image"), verbosity: :debug
         execute *KAMAL.proxy(host).remove_image
+      end
+
+      if KAMAL.config.proxy.load_balancing?
+        on(KAMAL.config.proxy.effective_loadbalancer) do
+          execute *KAMAL.auditor.record("Removed loadbalancer image"), verbosity: :debug
+          execute *KAMAL.loadbalancer.remove_image
+        end
       end
     end
   end

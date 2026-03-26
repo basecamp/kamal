@@ -25,6 +25,13 @@ proxy:
   hosts:
     - foo.example.com
     - bar.example.com
+    
+  # Loadbalancer
+  #
+  # Specify a host to run the loadbalancer on. The loadbalancer will distribute requests
+  # to all web hosts. If not specified but multiple web hosts are configured, the first
+  # web host will be used as the loadbalancer host.
+  loadbalancer: lb.example.com
 
   # App port
   #
