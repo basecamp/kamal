@@ -6,7 +6,7 @@ From bare metal to cloud VMs, deploy web apps anywhere with zero downtime. Kamal
 
 ## Contributing to the documentation
 
-Please help us improve Kamal's documentation on the [the basecamp/kamal-site repository](https://github.com/basecamp/kamal-site).
+Please help us improve Kamal's documentation on [the basecamp/kamal-site repository](https://github.com/basecamp/kamal-site).
 
 ## License
 

@@ -99,6 +99,19 @@ class MainTest < IntegrationTest
     assert_match "GNU/Linux", output
   end
 
+  test "deploy with destinations" do
+    @app = "app_with_destinations"
+
+    kamal :staging_deploy
+    assert_app_is_up
+
+    config = YAML.load(kamal(:staging_config, capture: true))
+    assert_equal [ "vm1" ], config[:hosts]
+
+    config = YAML.load(kamal(:production_config, capture: true))
+    assert_equal [ "vm2", "vm3" ], config[:hosts]
+  end
+
   test "setup and remove" do
     kamal :proxy, :boot_config, "set",
       "--publish=false",

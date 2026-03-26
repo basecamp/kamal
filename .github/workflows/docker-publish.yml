@@ -9,8 +9,8 @@ on:
     
   release:
     types: [created]
-    tags:
-      - 'v*'
+
+permissions: {}
 
 jobs:
   build-and-push-image:
@@ -22,6 +22,8 @@ jobs:
       -
         name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          persist-credentials: false
       -
         name: Set up QEMU
         uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
@@ -38,11 +40,13 @@ jobs:
       - name: Determine version tag
         id: version-tag
         run: |
-          INPUT_VALUE="${{ github.event.inputs.tagInput }}"
+          INPUT_VALUE="${GITHUB_EVENT_INPUTS_TAGINPUT}"
           if [ -z "$INPUT_VALUE" ]; then
-            INPUT_VALUE="${{ github.ref_name }}"
+            INPUT_VALUE="${GITHUB_REF_NAME}"
           fi
-          echo "::set-output name=value::$INPUT_VALUE"
+          echo "value=$INPUT_VALUE" >> "$GITHUB_OUTPUT"
+        env:
+          GITHUB_EVENT_INPUTS_TAGINPUT: ${{ github.event.inputs.tagInput }}
       -
         name: Build and push
         uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
