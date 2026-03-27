@@ -12,7 +12,7 @@ class Kamal::Configuration
   delegate :argumentize, :optionize, to: Kamal::Utils
 
   attr_reader :destination, :raw_config, :secrets
-  attr_reader :accessories, :aliases, :boot, :builder, :env, :logging, :proxy, :proxy_boot, :servers, :ssh, :sshkit, :registry
+  attr_reader :accessories, :aliases, :boot, :builder, :env, :logging, :output, :proxy, :proxy_boot, :servers, :ssh, :sshkit, :registry
 
   include Validation
 
@@ -71,6 +71,7 @@ class Kamal::Configuration
     @env = Env.new(config: @raw_config.env || {}, secrets: secrets)
 
     @logging = Logging.new(logging_config: @raw_config.logging)
+    @output = Output.new(config: self)
     @proxy = Proxy.new(config: self, proxy_config: @raw_config.proxy, secrets: secrets)
     @proxy_boot = Proxy::Boot.new(config: self)
     @ssh = Ssh.new(config: self)

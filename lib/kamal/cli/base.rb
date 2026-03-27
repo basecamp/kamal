@@ -72,6 +72,17 @@ module Kamal::Cli
         puts "  Finished all in #{sprintf("%.1f seconds", runtime)}"
       end
 
+      def modify(lock: false)
+        KAMAL.modify(command: command, subcommand: subcommand) do
+          lock ? with_lock { yield } : yield
+        end
+      end
+
+      def say(message = "", *)
+        super
+        KAMAL.log(message.to_s)
+      end
+
       def with_lock
         if KAMAL.holding_lock?
           yield
