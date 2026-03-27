@@ -707,6 +707,168 @@ class CliMainTest < CliTestCase
     end
   end
 
+  test "external command from local .kamal/bin" do
+    Dir.mktmpdir do |tmpdir|
+      Dir.chdir(tmpdir) do
+        FileUtils.mkdir_p(".kamal/bin")
+        File.write(".kamal/bin/foo", "#!/bin/sh\n")
+        File.chmod(0755, ".kamal/bin/foo")
+
+        Kamal::Cli::Main.expects(:exec).with(".kamal/bin/foo")
+        with_argv([ "foo" ]) { Kamal::Cli::Main.start }
+      end
+    end
+  end
+
+  test "external command from PATH" do
+    Dir.mktmpdir do |tmpdir|
+      Dir.chdir(tmpdir) do
+        bin_dir = File.join(tmpdir, "bin")
+        FileUtils.mkdir_p(bin_dir)
+        File.write(File.join(bin_dir, "kamal-bar"), "#!/bin/sh\n")
+        File.chmod(0755, File.join(bin_dir, "kamal-bar"))
+
+        original_path = ENV["PATH"]
+        ENV["PATH"] = "#{bin_dir}#{File::PATH_SEPARATOR}#{original_path}"
+
+        Kamal::Cli::Main.expects(:exec).with(File.join(bin_dir, "kamal-bar"))
+        with_argv([ "bar" ]) { Kamal::Cli::Main.start }
+      ensure
+        ENV["PATH"] = original_path
+      end
+    end
+  end
+
+  test "local external command takes priority over PATH" do
+    Dir.mktmpdir do |tmpdir|
+      Dir.chdir(tmpdir) do
+        FileUtils.mkdir_p(".kamal/bin")
+        File.write(".kamal/bin/baz", "#!/bin/sh\n")
+        File.chmod(0755, ".kamal/bin/baz")
+
+        bin_dir = File.join(tmpdir, "path_bin")
+        FileUtils.mkdir_p(bin_dir)
+        File.write(File.join(bin_dir, "kamal-baz"), "#!/bin/sh\n")
+        File.chmod(0755, File.join(bin_dir, "kamal-baz"))
+
+        original_path = ENV["PATH"]
+        ENV["PATH"] = "#{bin_dir}#{File::PATH_SEPARATOR}#{original_path}"
+
+        Kamal::Cli::Main.expects(:exec).with(".kamal/bin/baz")
+        with_argv([ "baz" ]) { Kamal::Cli::Main.start }
+      ensure
+        ENV["PATH"] = original_path
+      end
+    end
+  end
+
+  test "builtin commands are not shadowed by external commands" do
+    Dir.mktmpdir do |tmpdir|
+      Dir.chdir(tmpdir) do
+        FileUtils.mkdir_p(".kamal/bin")
+        File.write(".kamal/bin/version", "#!/bin/sh\n")
+        File.chmod(0755, ".kamal/bin/version")
+
+        Kamal::Cli::Main.expects(:exec).never
+        with_argv([ "version" ]) { Kamal::Cli::Main.start }
+      end
+    end
+  end
+
+  test "builtin prefix matches are not shadowed by external commands" do
+    Dir.mktmpdir do |tmpdir|
+      Dir.chdir(tmpdir) do
+        FileUtils.mkdir_p(".kamal/bin")
+        File.write(".kamal/bin/ver", "#!/bin/sh\n")
+        File.chmod(0755, ".kamal/bin/ver")
+
+        Kamal::Cli::Main.expects(:exec).never
+        with_argv([ "ver" ]) { Kamal::Cli::Main.start }
+      end
+    end
+  end
+
+  test "external command passes arguments through" do
+    Dir.mktmpdir do |tmpdir|
+      Dir.chdir(tmpdir) do
+        FileUtils.mkdir_p(".kamal/bin")
+        File.write(".kamal/bin/foo", "#!/bin/sh\n")
+        File.chmod(0755, ".kamal/bin/foo")
+
+        Kamal::Cli::Main.expects(:exec).with(".kamal/bin/foo", "--bar", "baz")
+        with_argv([ "foo", "--bar", "baz" ]) { Kamal::Cli::Main.start }
+      end
+    end
+  end
+
+  test "non-executable file in .kamal/bin is skipped" do
+    Dir.mktmpdir do |tmpdir|
+      Dir.chdir(tmpdir) do
+        FileUtils.mkdir_p(".kamal/bin")
+        File.write(".kamal/bin/foo", "#!/bin/sh\n")
+        File.chmod(0644, ".kamal/bin/foo")
+
+        Kamal::Cli::Main.expects(:exec).never
+        with_argv([ "foo" ]) do
+          error = assert_raises(RuntimeError) { Kamal::Cli::Main.start }
+          assert_match /Configuration file not found/, error.message
+        end
+      end
+    end
+  end
+
+  test "directory in .kamal/bin is skipped" do
+    Dir.mktmpdir do |tmpdir|
+      Dir.chdir(tmpdir) do
+        FileUtils.mkdir_p(".kamal/bin/foo")
+
+        Kamal::Cli::Main.expects(:exec).never
+        with_argv([ "foo" ]) do
+          error = assert_raises(RuntimeError) { Kamal::Cli::Main.start }
+          assert_match /Configuration file not found/, error.message
+        end
+      end
+    end
+  end
+
+  test "directory on PATH is skipped" do
+    Dir.mktmpdir do |tmpdir|
+      Dir.chdir(tmpdir) do
+        bin_dir = File.join(tmpdir, "bin")
+        FileUtils.mkdir_p(File.join(bin_dir, "kamal-foo"))
+
+        original_path = ENV["PATH"]
+        ENV["PATH"] = "#{bin_dir}#{File::PATH_SEPARATOR}#{original_path}"
+
+        Kamal::Cli::Main.expects(:exec).never
+        with_argv([ "foo" ]) do
+          error = assert_raises(RuntimeError) { Kamal::Cli::Main.start }
+          assert_match /Configuration file not found/, error.message
+        end
+      ensure
+        ENV["PATH"] = original_path
+      end
+    end
+  end
+
+  test "path traversal in command name is rejected" do
+    Dir.mktmpdir do |tmpdir|
+      Dir.chdir(tmpdir) do
+        FileUtils.mkdir_p(".kamal/bin")
+        target = File.join(tmpdir, "evil")
+        File.write(target, "#!/bin/sh\n")
+        File.chmod(0755, target)
+        File.symlink(target, ".kamal/bin/../foo")
+
+        Kamal::Cli::Main.expects(:exec).never
+        with_argv([ "../foo" ]) do
+          error = assert_raises(RuntimeError) { Kamal::Cli::Main.start }
+          assert_match /Configuration file not found/, error.message
+        end
+      end
+    end
+  end
+
   test "upgrade rolling" do
     invoke_options = { "config_file" => "test/fixtures/deploy_with_accessories.yml", "skip_hooks" => false, "confirmed" => true, "rolling" => false }
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:proxy:upgrade", [], invoke_options).times(4)
