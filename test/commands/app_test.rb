@@ -150,6 +150,14 @@ class CommandsAppTest < ActiveSupport::TestCase
       new_command.deploy(target: "172.1.0.2").join(" ")
   end
 
+  test "deploy with idle" do
+    @config[:proxy] = { "idle" => { "timeout" => 300, "wake_timeout" => 30 } }
+
+    assert_equal \
+      "docker exec kamal-proxy kamal-proxy deploy app-web --target=\"172.1.0.2:80\" --deploy-timeout=\"30s\" --drain-timeout=\"30s\" --buffer-requests --buffer-responses --log-request-header=\"Cache-Control\" --log-request-header=\"Last-Modified\" --log-request-header=\"User-Agent\" --idle-timeout=\"300s\" --idle-wake-timeout=\"30s\"",
+      new_command.deploy(target: "172.1.0.2").join(" ")
+  end
+
   test "remove" do
     assert_equal \
       "docker exec kamal-proxy kamal-proxy remove app-web",

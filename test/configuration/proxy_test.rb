@@ -105,6 +105,32 @@ class ConfigurationProxyTest < ActiveSupport::TestCase
     end
   end
 
+  test "idle configuration" do
+    @deploy[:proxy] = {
+      "host" => "example.com",
+      "idle" => {
+        "timeout" => 300,
+        "wake_timeout" => 30
+      }
+    }
+
+    proxy = config.proxy
+    assert_equal true, proxy.idle?
+    assert_equal "300s", proxy.deploy_options[:"idle-timeout"]
+    assert_equal "30s", proxy.deploy_options[:"idle-wake-timeout"]
+  end
+
+  test "idle validation" do
+    @deploy[:proxy] = {
+      "host" => "example.com",
+      "idle" => {
+        "timeout" => "300"
+      }
+    }
+
+    assert_raises(Kamal::ConfigurationError) { config.proxy }
+  end
+
   private
     def config
       Kamal::Configuration.new(@deploy)

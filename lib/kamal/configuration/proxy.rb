@@ -21,6 +21,10 @@ class Kamal::Configuration::Proxy
     proxy_config.fetch("app_port", 80)
   end
 
+  def idle?
+    proxy_config.dig("idle", "timeout").present?
+  end
+
   def ssl?
     proxy_config.fetch("ssl", false)
   end
@@ -90,6 +94,8 @@ class Kamal::Configuration::Proxy
       "tls-redirect": proxy_config.dig("ssl_redirect"),
       "log-request-header": proxy_config.dig("logging", "request_headers") || DEFAULT_LOG_REQUEST_HEADERS,
       "log-response-header": proxy_config.dig("logging", "response_headers"),
+      "idle-timeout": seconds_duration(proxy_config.dig("idle", "timeout")),
+      "idle-wake-timeout": seconds_duration(proxy_config.dig("idle", "wake_timeout")),
       "error-pages": error_pages
     }.compact
   end
