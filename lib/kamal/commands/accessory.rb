@@ -68,6 +68,7 @@ class Kamal::Commands::Accessory < Kamal::Commands::Base
       *network_args,
       *env_args,
       *volume_args,
+      *option_args,
       image,
       *command
   end

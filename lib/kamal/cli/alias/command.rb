@@ -1,8 +1,8 @@
 class Kamal::Cli::Alias::Command < Thor::DynamicCommand
   def run(instance, args = [])
-    if (_alias = KAMAL.config.aliases[name])
+    if (command = KAMAL.resolve_alias(name))
       KAMAL.reset
-      Kamal::Cli::Main.start(Shellwords.split(_alias.command) + ARGV[1..-1])
+      Kamal::Cli::Main.start(Shellwords.split(command) + ARGV[1..-1])
     else
       super
     end

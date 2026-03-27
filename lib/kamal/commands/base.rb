@@ -11,11 +11,11 @@ module Kamal::Commands
     end
 
     def run_over_ssh(*command, host:)
-      "ssh#{ssh_proxy_args}#{ssh_keys_args} -t #{config.ssh.user}@#{host} -p #{config.ssh.port} '#{command.join(" ").gsub("'", "'\\\\''")}'"
+      "ssh#{ssh_config_args}#{ssh_proxy_args}#{ssh_keys_args} -t #{config.ssh.user}@#{host} -p #{config.ssh.port} '#{command.join(" ").gsub("'", "'\\\\''")}'"
     end
 
     def container_id_for(container_name:, only_running: false)
-      docker :container, :ls, *("--all" unless only_running), "--filter", "name=^#{container_name}$", "--quiet"
+      docker :container, :ls, *("--all" unless only_running), "--filter", "'name=^#{container_name}$'", "--quiet"
     end
 
     def make_directory_for(remote_file)
@@ -98,6 +98,19 @@ module Kamal::Commands
 
       def tags(**details)
         Kamal::Tags.from_config(config, **details)
+      end
+
+      def ssh_config_args
+        case config.ssh.config
+        when Array
+          config.ssh.config.map { |file| " -F #{file}" }.join
+        when String
+          " -F #{config.ssh.config}"
+        when true
+          "" # Use default SSH config
+        when false
+          " -F /dev/null" # Ignore SSH config
+        end
       end
 
       def ssh_proxy_args

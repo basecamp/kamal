@@ -35,6 +35,16 @@ class Kamal::Cli::Server < Kamal::Cli::Base
           if execute(*KAMAL.docker.superuser?, raise_on_non_zero_exit: false)
             info "Missing Docker on #{host}. Installing…"
             execute *KAMAL.docker.install
+
+            unless execute(*KAMAL.docker.root?, raise_on_non_zero_exit: false) ||
+                   execute(*KAMAL.docker.in_docker_group?, raise_on_non_zero_exit: false)
+              execute *KAMAL.docker.add_to_docker_group
+              begin
+                execute *KAMAL.docker.refresh_session
+              rescue IOError
+                info "Session refreshed due to group change."
+              end
+            end
           else
             missing << host
           end

@@ -7,3 +7,5 @@ registry:
 builder:
   arch: amd64
 require_destination: true
+aliases:
+  world_deploy: deploy -d world

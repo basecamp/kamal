@@ -20,7 +20,7 @@ push_image_to_registry_4443() {
 install_kamal
 push_image_to_registry_4443 nginx 1-alpine-slim
 push_image_to_registry_4443 busybox 1.36.0
-push_image_to_registry_4443 basecamp/kamal-proxy v0.9.0
+push_image_to_registry_4443 basecamp/kamal-proxy v0.9.2
 
 # .ssh is on a shared volume that persists between runs. Clean it up as the
 # churn of temporary vm IPs can eventually create conflicts.

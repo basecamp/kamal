@@ -1,0 +1,31 @@
+service: app_with_destinations
+image: app_with_destinations
+require_destination: true
+deploy_timeout: 2
+drain_timeout: 2
+readiness_delay: 0
+proxy:
+  run:
+    registry: registry:4443
+  host: localhost
+  ssl: false
+  healthcheck:
+    interval: 1
+    timeout: 1
+    path: "/up"
+  response_timeout: 2
+  forward_headers: true
+registry:
+  server: registry:4443
+  username: root
+  password: root
+builder:
+  driver: docker
+  arch: <%= Kamal::Utils.docker_arch %>
+  args:
+    COMMIT_SHA: <%= `git rev-parse HEAD` %>
+aliases:
+  staging_deploy: deploy -d staging
+  production_deploy: deploy -d production
+  staging_config: config -d staging
+  production_config: config -d production

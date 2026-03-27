@@ -324,7 +324,7 @@ class CliMainTest < CliTestCase
     run_command("details") # Preheat Kamal const
 
     run_command("rollback", "nonsense").tap do |output|
-      assert_match /docker container ls --all --filter name=\^app-web-nonsense\$ --quiet/, output
+      assert_match /docker container ls --all --filter 'name=\^app-web-nonsense\$' --quiet/, output
       assert_match /The app version 'nonsense' is not available as a container/, output
     end
   end
@@ -333,10 +333,10 @@ class CliMainTest < CliTestCase
     Object.any_instance.stubs(:sleep)
     [ "web", "workers" ].each do |role|
       SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-        .with(:docker, :container, :ls, "--all", "--filter", "name=^app-#{role}-123$", "--quiet", raise_on_non_zero_exit: false)
+        .with(:docker, :container, :ls, "--all", "--filter", "'name=^app-#{role}-123$'", "--quiet", raise_on_non_zero_exit: false)
         .returns("").at_least_once
       SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-        .with(:docker, :container, :ls, "--all", "--filter", "name=^app-#{role}-123$", "--quiet")
+        .with(:docker, :container, :ls, "--all", "--filter", "'name=^app-#{role}-123$'", "--quiet")
         .returns("version-to-rollback\n").at_least_once
       SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
         .with(:sh, "-c", "'docker ps --latest --format '\\''{{.Names}}'\\'' --filter label=service=app --filter label=destination= --filter label=role=#{role} --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --format '\\''{{.Names}}'\\'' --filter label=service=app --filter label=destination= --filter label=role=#{role} --filter status=running --filter status=restarting'", "|", :head, "-1", "|", "while read line; do echo ${line#app-#{role}-}; done", raise_on_non_zero_exit: false)
@@ -344,7 +344,7 @@ class CliMainTest < CliTestCase
     end
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-workers-123$", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
+      .with(:docker, :container, :ls, "--all", "--filter", "'name=^app-workers-123$'", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
       .returns("running").at_least_once # health check
 
     Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
@@ -353,7 +353,7 @@ class CliMainTest < CliTestCase
       assert_hook_ran "pre-deploy", output
       assert_match "docker tag dhh/app:123 dhh/app:latest", output
       assert_match "docker run --detach --restart unless-stopped --name app-web-123", output
-      assert_match "docker container ls --all --filter name=^app-web-version-to-rollback$ --quiet | xargs docker stop", output, "Should stop the container that was previously running"
+      assert_match "docker container ls --all --filter 'name=^app-web-version-to-rollback$' --quiet | xargs docker stop", output, "Should stop the container that was previously running"
       assert_hook_ran "post-deploy", output
     end
   end
@@ -362,10 +362,10 @@ class CliMainTest < CliTestCase
     Kamal::Cli::Main.any_instance.stubs(:container_available?).returns(true)
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-123$", "--quiet", raise_on_non_zero_exit: false)
+      .with(:docker, :container, :ls, "--all", "--filter", "'name=^app-web-123$'", "--quiet", raise_on_non_zero_exit: false)
       .returns("").at_least_once
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-123$", "--quiet")
+      .with(:docker, :container, :ls, "--all", "--filter", "'name=^app-web-123$'", "--quiet")
       .returns("123").at_least_once
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
       .with(:sh, "-c", "'docker ps --latest --format '\\''{{.Names}}'\\'' --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --format '\\''{{.Names}}'\\'' --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting'", "|", :head, "-1", "|", "while read line; do echo ${line#app-web-}; done", raise_on_non_zero_exit: false)
@@ -448,6 +448,78 @@ class CliMainTest < CliTestCase
       assert_equal "registry.digitalocean.com/dhh/app", config[:repository]
       assert_equal "registry.digitalocean.com/dhh/app:999", config[:absolute_image]
       assert_equal "app-999", config[:service_with_version]
+    end
+  end
+
+  test "config with blank line trimming" do
+    template = <<~YAML
+      service: app
+      image: dhh/app
+      servers:
+        - "1.1.1.1"
+      <% if true -%>
+        - "1.1.1.2"
+      <% end -%>
+      registry:
+        username: user
+        password: pw
+      builder:
+        arch: amd64
+    YAML
+
+    expected_rendered = ERB.new(template, trim_mode: "-").result
+
+    Dir.mktmpdir do |dir|
+      config_path = File.join(dir, "deploy.yml")
+      File.write(config_path, template)
+
+      load_method = YAML.respond_to?(:unsafe_load) ? :unsafe_load : :load
+      original_load = YAML.method(load_method)
+
+      YAML.expects(load_method).with(expected_rendered).returns(original_load.call(expected_rendered))
+
+      run_command_with_config_path("config", config_path: config_path)
+    end
+  end
+
+  test "config with destination blank line trimming" do
+    base_template = <<~YAML
+      service: app
+      image: dhh/app
+      servers:
+        - "1.1.1.1"
+      registry:
+        username: user
+        password: pw
+      builder:
+        arch: amd64
+    YAML
+
+    destination_template = <<~YAML
+      servers:
+        - "2.2.2.2"
+      <% if true -%>
+        - "2.2.2.3"
+      <% end -%>
+    YAML
+
+    expected_destination = ERB.new(destination_template, trim_mode: "-").result
+
+    Dir.mktmpdir do |dir|
+      base_path = File.join(dir, "deploy.yml")
+      File.write(base_path, base_template)
+
+      destination_path = File.join(dir, "deploy.world.yml")
+      File.write(destination_path, destination_template)
+
+      load_method = YAML.respond_to?(:unsafe_load) ? :unsafe_load : :load
+      original_load = YAML.method(load_method)
+      load_sequence = sequence("config_files")
+
+      YAML.expects(load_method).with(base_template).in_sequence(load_sequence).returns(original_load.call(base_template))
+      YAML.expects(load_method).with(expected_destination).in_sequence(load_sequence).returns(original_load.call(expected_destination))
+
+      run_command_with_config_path("config", config_path: base_path, destination: "world")
     end
   end
 
@@ -605,6 +677,18 @@ class CliMainTest < CliTestCase
     end
   end
 
+  test "run an alias with require_destination" do
+    invoke_options = { "config_file" => "test/fixtures/deploy_for_required_dest.yml", "version" => "999", "skip_hooks" => false, "destination" => "world" }
+
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:deliver", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:proxy:boot", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true))
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:boot", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:prune:all", [], invoke_options)
+
+    run_command("world_deploy", config_file: "deploy_for_required_dest")
+  end
+
   test "run on primary via alias" do
     run_command("primary_details", config_file: "deploy_with_aliases").tap do |output|
       assert_match "App Host: 1.1.1.1", output
@@ -643,6 +727,16 @@ class CliMainTest < CliTestCase
   private
     def run_command(*command, config_file: "deploy_simple")
       with_argv([ *command, "-c", "test/fixtures/#{config_file}.yml" ]) do
+        stdouted { Kamal::Cli::Main.start }
+      end
+    end
+
+    def run_command_with_config_path(*command, config_path:, destination: nil)
+      argv = [ *command ]
+      argv += [ "-d", destination ] if destination
+      argv += [ "-c", config_path ]
+
+      with_argv([ *argv ]) do
         stdouted { Kamal::Cli::Main.start }
       end
     end
