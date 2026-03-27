@@ -47,6 +47,29 @@ class CommandsHookTest < ActiveSupport::TestCase
     end
   end
 
+  test "env with hook_outputs" do
+    assert_equal ({
+      "KAMAL_RECORDED_AT" => @recorded_at,
+      "KAMAL_PERFORMER" => @performer,
+      "KAMAL_VERSION" => "123",
+      "KAMAL_SERVICE_VERSION" => "app@123",
+      "KAMAL_SERVICE" => "app",
+      "DEPLOY_ID" => "abc123"
+    }), new_command.env(hook_outputs: { "DEPLOY_ID" => "abc123" })
+  end
+
+  test "hook_outputs cannot override tags" do
+    env = new_command.env(hook_outputs: { "KAMAL_VERSION" => "overridden" })
+    assert_equal "123", env["KAMAL_VERSION"]
+  end
+
+  test "hook_outputs cannot override secrets" do
+    with_test_secrets("secrets" => "DB_PASSWORD=secret") do
+      env = new_command.env(secrets: true, hook_outputs: { "DB_PASSWORD" => "overridden" })
+      assert_equal "secret", env["DB_PASSWORD"]
+    end
+  end
+
   private
     def new_command(**extra_config)
       Kamal::Commands::Hook.new(Kamal::Configuration.new(@config.merge(**extra_config), version: "123"))
