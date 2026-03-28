@@ -1,7 +1,10 @@
+require "ipaddr"
+
 class Kamal::Configuration::Accessory
   include Kamal::Configuration::Validation
 
   DEFAULT_NETWORK = "kamal"
+  LOCALHOST = "127.0.0.1"
 
   delegate :argumentize, :optionize, to: Kamal::Utils
 
@@ -17,6 +20,7 @@ class Kamal::Configuration::Accessory
       with: Kamal::Configuration::Validator::Accessory
 
     ensure_valid_roles
+    ensure_valid_port
 
     @env = initialize_env
     @proxy = initialize_proxy if running_proxy?
@@ -36,9 +40,7 @@ class Kamal::Configuration::Accessory
   end
 
   def port
-    if port = accessory_config["port"]&.to_s
-      port.include?(":") ? port : "#{port}:#{port}"
-    end
+    normalize_port(accessory_config["port"]&.to_s)
   end
 
   def network_args
@@ -119,6 +121,52 @@ class Kamal::Configuration::Accessory
 
   private
     attr_reader :config, :accessory_config
+
+    def normalize_port(port_config)
+      return unless port_config
+
+      binding, protocol = port_config.split("/", 2)
+
+      normalized_binding =
+        if binding.start_with?("[")
+          # IPv6: [::1]:host:container
+          ip = binding[/\A\[([^\]]+)\]/, 1]
+          validate_port_ip!(ip, port_config)
+          binding
+        elsif binding.count(":") >= 2
+          # IPv4: ip:host:container
+          ip = binding.split(":").first
+          validate_port_ip!(ip, port_config)
+          binding
+        elsif binding.count(":") == 1
+          host, container = binding.split(":", 2)
+          if valid_ip?(host)
+            # ip:port — expand to ip:port:port
+            "#{host}:#{container}:#{container}"
+          else
+            # host:container — no IP given, default to localhost
+            "#{LOCALHOST}:#{host}:#{container}"
+          end
+        else
+          # container port only — expand to host:container and default to localhost
+          "#{LOCALHOST}:#{binding}:#{binding}"
+        end
+
+      protocol ? "#{normalized_binding}/#{protocol}" : normalized_binding
+    end
+
+    def valid_ip?(str)
+      IPAddr.new(str)
+      true
+    rescue IPAddr::InvalidAddressError, TypeError, ArgumentError
+      false
+    end
+
+    def validate_port_ip!(ip, port_config)
+      IPAddr.new(ip)
+    rescue IPAddr::InvalidAddressError, TypeError, ArgumentError
+      raise Kamal::ConfigurationError, "accessories/#{name}: invalid port configuration \"#{port_config}\""
+    end
 
     def initialize_env
       Kamal::Configuration::Env.new \
@@ -260,6 +308,10 @@ class Kamal::Configuration::Accessory
 
     def network
       accessory_config["network"] || DEFAULT_NETWORK
+    end
+
+    def ensure_valid_port
+      port
     end
 
     def ensure_valid_roles
