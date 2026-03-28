@@ -358,6 +358,75 @@ class CliMainTest < CliTestCase
     end
   end
 
+  test "rollback with interactive prompt" do
+    Kamal::Cli::Main.any_instance.stubs(:container_available?).returns(true)
+
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-abc123$", "--quiet", raise_on_non_zero_exit: false)
+      .returns("").at_least_once
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-abc123$", "--quiet")
+      .returns("abc123").at_least_once
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:sh, "-c", "'docker ps --latest --format '\\''{{.Names}}'\\'' --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --format '\\''{{.Names}}'\\'' --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting'", "|", :head, "-1", "|", "while read line; do echo ${line#app-web-}; done", raise_on_non_zero_exit: false)
+      .returns("current-version\n").at_least_once
+
+    now = Time.now
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :ps, "--all", "--filter", "label=service=app", "--filter", "label=destination=", "--filter", "label=role=web", "--format", "\"{{.Names}}\\t{{.CreatedAt}}\"", raise_on_non_zero_exit: false)
+      .returns("app-web-current-version\t#{(now - 60).strftime('%Y-%m-%d %H:%M:%S %z UTC')}\napp-web-abc123\t#{(now - 900).strftime('%Y-%m-%d %H:%M:%S %z UTC')}\napp-web-def456\t#{(now - 3600).strftime('%Y-%m-%d %H:%M:%S %z UTC')}\n")
+
+    Kamal::Cli::Main.any_instance.expects(:ask).with("Pick:", default: "1").returns("1")
+
+    run_command("rollback").tap do |output|
+      assert_match /Fetching available versions/, output
+      assert_match /Rollback to deployment from/, output
+      assert_match /15 minutes ago \(abc123\)/, output
+      assert_match /1 hour ago \(def456\)/, output
+      assert_match "docker run --detach --restart unless-stopped --name app-web-abc123", output
+    end
+  end
+
+  test "rollback with interactive prompt picking second option" do
+    Kamal::Cli::Main.any_instance.stubs(:container_available?).returns(true)
+
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-def456$", "--quiet", raise_on_non_zero_exit: false)
+      .returns("").at_least_once
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :container, :ls, "--all", "--filter", "name=^app-web-def456$", "--quiet")
+      .returns("def456").at_least_once
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:sh, "-c", "'docker ps --latest --format '\\''{{.Names}}'\\'' --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --format '\\''{{.Names}}'\\'' --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting'", "|", :head, "-1", "|", "while read line; do echo ${line#app-web-}; done", raise_on_non_zero_exit: false)
+      .returns("current-version\n").at_least_once
+
+    now = Time.now
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :ps, "--all", "--filter", "label=service=app", "--filter", "label=destination=", "--filter", "label=role=web", "--format", "\"{{.Names}}\\t{{.CreatedAt}}\"", raise_on_non_zero_exit: false)
+      .returns("app-web-current-version\t#{(now - 60).strftime('%Y-%m-%d %H:%M:%S %z UTC')}\napp-web-abc123\t#{(now - 900).strftime('%Y-%m-%d %H:%M:%S %z UTC')}\napp-web-def456\t#{(now - 3600).strftime('%Y-%m-%d %H:%M:%S %z UTC')}\n")
+
+    Kamal::Cli::Main.any_instance.expects(:ask).with("Pick:", default: "1").returns("2")
+
+    run_command("rollback").tap do |output|
+      assert_match "docker run --detach --restart unless-stopped --name app-web-def456", output
+    end
+  end
+
+  test "rollback with interactive prompt and no available versions" do
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:sh, "-c", "'docker ps --latest --format '\\''{{.Names}}'\\'' --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --format '\\''{{.Names}}'\\'' --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting'", "|", :head, "-1", "|", "while read line; do echo ${line#app-web-}; done", raise_on_non_zero_exit: false)
+      .returns("current-version\n").at_least_once
+
+    now = Time.now
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :ps, "--all", "--filter", "label=service=app", "--filter", "label=destination=", "--filter", "label=role=web", "--format", "\"{{.Names}}\\t{{.CreatedAt}}\"", raise_on_non_zero_exit: false)
+      .returns("app-web-current-version\t#{now.strftime('%Y-%m-%d %H:%M:%S %z UTC')}\n")
+
+    run_command("rollback").tap do |output|
+      assert_match /No previous versions available for rollback/, output
+    end
+  end
+
   test "rollback without old version" do
     Kamal::Cli::Main.any_instance.stubs(:container_available?).returns(true)
 
