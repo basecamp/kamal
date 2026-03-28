@@ -15,6 +15,12 @@ class ConfigurationEnvTest < ActiveSupport::TestCase
       clear: { "foo" => "bar", "baz" => "haz" }
   end
 
+  test "clear with empty string" do
+    assert_config \
+      config: { "clear" => { "EMPTY" => "", "FILLED" => "value" } },
+      clear: { "EMPTY" => "", "FILLED" => "value" }
+  end
+
   test "secret" do
     with_test_secrets("secrets" => "PASSWORD=hello") do
       assert_config \
