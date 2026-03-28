@@ -19,7 +19,7 @@ class PassboltAdapterTest < SecretAdapterTestCase
             "name": "FSECRET1",
             "username": "",
             "uri": "",
-            "password": "fsecret1",
+            "password": "",
             "description": "",
             "created_timestamp": "2025-02-21T06:04:29Z",
             "modified_timestamp": "2025-02-21T06:04:29Z"
@@ -30,7 +30,7 @@ class PassboltAdapterTest < SecretAdapterTestCase
             "name": "FSECRET2",
             "username": "",
             "uri": "",
-            "password": "fsecret2",
+            "password": "",
             "description": "",
             "created_timestamp": "2025-02-21T06:04:34Z",
             "modified_timestamp": "2025-02-21T06:04:34Z"
@@ -41,10 +41,64 @@ class PassboltAdapterTest < SecretAdapterTestCase
             "name": "SECRET1",
             "username": "",
             "uri": "",
-            "password": "secret1",
+            "password": "",
             "description": "",
             "created_timestamp": "2025-02-21T06:04:23Z",
             "modified_timestamp": "2025-02-21T06:04:23Z"
+          }
+        ]
+      JSON
+
+    stub_ticks
+      .with("passbolt get resource --id 4c116996-f6d0-4342-9572-0d676f75b3ac --json")
+      .returns(<<~JSON)
+        [
+          {
+            "id": "4c116996-f6d0-4342-9572-0d676f75b3ac",
+            "folder_parent_id": "6a3f21fc-aa40-4ba9-852c-7477fdd0310d",
+            "name": "FSECRET1",
+            "username": "",
+            "uri": "",
+            "password": "fsecret1",
+            "description": "",
+            "created_timestamp": "2025-02-21T06:04:29Z",
+            "modified_timestamp": "2025-02-21T06:04:29Z"
+          }
+        ]
+      JSON
+
+    stub_ticks
+      .with("passbolt get resource --id 62949b26-4957-43fe-9523-294d66861499 --json")
+      .returns(<<~JSON)
+        [
+          {
+            "id": "62949b26-4957-43fe-9523-294d66861499",
+            "folder_parent_id": "6a3f21fc-aa40-4ba9-852c-7477fdd0310d",
+            "name": "FSECRET2",
+            "username": "",
+            "uri": "",
+            "password": "fsecret2",
+            "description": "",
+            "created_timestamp": "2025-02-21T06:04:29Z",
+            "modified_timestamp": "2025-02-21T06:04:29Z"
+          }
+        ]
+      JSON
+
+    stub_ticks
+      .with("passbolt get resource --id dd32963c-0db5-4303-a6fc-22c5229dabef --json")
+      .returns(<<~JSON)
+        [
+          {
+            "id": "dd32963c-0db5-4303-a6fc-22c5229dabef",
+            "folder_parent_id": "6a3f21fc-aa40-4ba9-852c-7477fdd0310d",
+            "name": "SECRET1",
+            "username": "",
+            "uri": "",
+            "password": "secret1",
+            "description": "",
+            "created_timestamp": "2025-02-21T06:04:29Z",
+            "modified_timestamp": "2025-02-21T06:04:29Z"
           }
         ]
       JSON
@@ -90,7 +144,7 @@ class PassboltAdapterTest < SecretAdapterTestCase
             "name": "FSECRET1",
             "username": "",
             "uri": "",
-            "password": "fsecret1",
+            "password": "",
             "description": "",
             "created_timestamp": "2025-02-21T06:04:29Z",
             "modified_timestamp": "2025-02-21T06:04:29Z"
@@ -101,7 +155,7 @@ class PassboltAdapterTest < SecretAdapterTestCase
             "name": "FSECRET2",
             "username": "",
             "uri": "",
-            "password": "fsecret2",
+            "password": "",
             "description": "",
             "created_timestamp": "2025-02-21T06:04:34Z",
             "modified_timestamp": "2025-02-21T06:04:34Z"
@@ -112,10 +166,64 @@ class PassboltAdapterTest < SecretAdapterTestCase
             "name": "SECRET1",
             "username": "",
             "uri": "",
-            "password": "secret1",
+            "password": "",
             "description": "",
             "created_timestamp": "2025-02-21T06:04:23Z",
             "modified_timestamp": "2025-02-21T06:04:23Z"
+          }
+        ]
+      JSON
+
+    stub_ticks
+      .with("passbolt get resource --id 4c116996-f6d0-4342-9572-0d676f75b3ac --json")
+      .returns(<<~JSON)
+        [
+          {
+            "id": "4c116996-f6d0-4342-9572-0d676f75b3ac",
+            "folder_parent_id": "6a3f21fc-aa40-4ba9-852c-7477fdd0310d",
+            "name": "FSECRET1",
+            "username": "",
+            "uri": "",
+            "password": "fsecret1",
+            "description": "",
+            "created_timestamp": "2025-02-21T06:04:29Z",
+            "modified_timestamp": "2025-02-21T06:04:29Z"
+          }
+        ]
+      JSON
+
+    stub_ticks
+      .with("passbolt get resource --id 62949b26-4957-43fe-9523-294d66861499 --json")
+      .returns(<<~JSON)
+        [
+          {
+            "id": "62949b26-4957-43fe-9523-294d66861499",
+            "folder_parent_id": "6a3f21fc-aa40-4ba9-852c-7477fdd0310d",
+            "name": "FSECRET2",
+            "username": "",
+            "uri": "",
+            "password": "fsecret2",
+            "description": "",
+            "created_timestamp": "2025-02-21T06:04:29Z",
+            "modified_timestamp": "2025-02-21T06:04:29Z"
+          }
+        ]
+      JSON
+
+    stub_ticks
+      .with("passbolt get resource --id dd32963c-0db5-4303-a6fc-22c5229dabef --json")
+      .returns(<<~JSON)
+        [
+          {
+            "id": "dd32963c-0db5-4303-a6fc-22c5229dabef",
+            "folder_parent_id": "6a3f21fc-aa40-4ba9-852c-7477fdd0310d",
+            "name": "SECRET1",
+            "username": "",
+            "uri": "",
+            "password": "secret1",
+            "description": "",
+            "created_timestamp": "2025-02-21T06:04:29Z",
+            "modified_timestamp": "2025-02-21T06:04:29Z"
           }
         ]
       JSON
@@ -161,7 +269,7 @@ class PassboltAdapterTest < SecretAdapterTestCase
             "name": "FSECRET1",
             "username": "",
             "uri": "",
-            "password": "fsecret1",
+            "password": "",
             "description": "",
             "created_timestamp": "2025-02-21T06:04:29Z",
             "modified_timestamp": "2025-02-21T06:04:29Z"
@@ -172,7 +280,7 @@ class PassboltAdapterTest < SecretAdapterTestCase
             "name": "FSECRET2",
             "username": "",
             "uri": "",
-            "password": "fsecret2",
+            "password": "",
             "description": "",
             "created_timestamp": "2025-02-21T06:04:34Z",
             "modified_timestamp": "2025-02-21T06:04:34Z"
@@ -183,10 +291,64 @@ class PassboltAdapterTest < SecretAdapterTestCase
             "name": "SECRET1",
             "username": "",
             "uri": "",
-            "password": "secret1",
+            "password": "",
             "description": "",
             "created_timestamp": "2025-02-21T06:04:23Z",
             "modified_timestamp": "2025-02-21T06:04:23Z"
+          }
+        ]
+      JSON
+
+    stub_ticks
+      .with("passbolt get resource --id 4c116996-f6d0-4342-9572-0d676f75b3ac --json")
+      .returns(<<~JSON)
+        [
+          {
+            "id": "4c116996-f6d0-4342-9572-0d676f75b3ac",
+            "folder_parent_id": "6a3f21fc-aa40-4ba9-852c-7477fdd0310d",
+            "name": "FSECRET1",
+            "username": "",
+            "uri": "",
+            "password": "fsecret1",
+            "description": "",
+            "created_timestamp": "2025-02-21T06:04:29Z",
+            "modified_timestamp": "2025-02-21T06:04:29Z"
+          }
+        ]
+      JSON
+
+    stub_ticks
+      .with("passbolt get resource --id 62949b26-4957-43fe-9523-294d66861499 --json")
+      .returns(<<~JSON)
+        [
+          {
+            "id": "62949b26-4957-43fe-9523-294d66861499",
+            "folder_parent_id": "6a3f21fc-aa40-4ba9-852c-7477fdd0310d",
+            "name": "FSECRET2",
+            "username": "",
+            "uri": "",
+            "password": "fsecret2",
+            "description": "",
+            "created_timestamp": "2025-02-21T06:04:29Z",
+            "modified_timestamp": "2025-02-21T06:04:29Z"
+          }
+        ]
+      JSON
+
+    stub_ticks
+      .with("passbolt get resource --id dd32963c-0db5-4303-a6fc-22c5229dabef --json")
+      .returns(<<~JSON)
+        [
+          {
+            "id": "dd32963c-0db5-4303-a6fc-22c5229dabef",
+            "folder_parent_id": "6a3f21fc-aa40-4ba9-852c-7477fdd0310d",
+            "name": "SECRET1",
+            "username": "",
+            "uri": "",
+            "password": "secret1",
+            "description": "",
+            "created_timestamp": "2025-02-21T06:04:29Z",
+            "modified_timestamp": "2025-02-21T06:04:29Z"
           }
         ]
       JSON
@@ -239,7 +401,7 @@ class PassboltAdapterTest < SecretAdapterTestCase
             "name": "FSECRET1",
             "username": "",
             "uri": "",
-            "password": "fsecret1",
+            "password": "",
             "description": "",
             "created_timestamp": "2025-02-21T06:04:29Z",
             "modified_timestamp": "2025-02-21T06:04:29Z"
@@ -250,7 +412,7 @@ class PassboltAdapterTest < SecretAdapterTestCase
             "name": "FSECRET2",
             "username": "",
             "uri": "",
-            "password": "fsecret2",
+            "password": "",
             "description": "",
             "created_timestamp": "2025-02-21T06:04:34Z",
             "modified_timestamp": "2025-02-21T06:04:34Z"
@@ -261,10 +423,64 @@ class PassboltAdapterTest < SecretAdapterTestCase
             "name": "SECRET1",
             "username": "",
             "uri": "",
-            "password": "secret1",
+            "password": "",
             "description": "",
             "created_timestamp": "2025-02-21T06:04:23Z",
             "modified_timestamp": "2025-02-21T06:04:23Z"
+          }
+        ]
+      JSON
+
+    stub_ticks
+      .with("passbolt get resource --id 4c116996-f6d0-4342-9572-0d676f75b3ac --json")
+      .returns(<<~JSON)
+        [
+          {
+            "id": "4c116996-f6d0-4342-9572-0d676f75b3ac",
+            "folder_parent_id": "6a3f21fc-aa40-4ba9-852c-7477fdd0310d",
+            "name": "FSECRET1",
+            "username": "",
+            "uri": "",
+            "password": "fsecret1",
+            "description": "",
+            "created_timestamp": "2025-02-21T06:04:29Z",
+            "modified_timestamp": "2025-02-21T06:04:29Z"
+          }
+        ]
+      JSON
+
+    stub_ticks
+      .with("passbolt get resource --id 62949b26-4957-43fe-9523-294d66861499 --json")
+      .returns(<<~JSON)
+        [
+          {
+            "id": "62949b26-4957-43fe-9523-294d66861499",
+            "folder_parent_id": "6a3f21fc-aa40-4ba9-852c-7477fdd0310d",
+            "name": "FSECRET2",
+            "username": "",
+            "uri": "",
+            "password": "fsecret2",
+            "description": "",
+            "created_timestamp": "2025-02-21T06:04:29Z",
+            "modified_timestamp": "2025-02-21T06:04:29Z"
+          }
+        ]
+      JSON
+
+    stub_ticks
+      .with("passbolt get resource --id dd32963c-0db5-4303-a6fc-22c5229dabef --json")
+      .returns(<<~JSON)
+        [
+          {
+            "id": "dd32963c-0db5-4303-a6fc-22c5229dabef",
+            "folder_parent_id": "6a3f21fc-aa40-4ba9-852c-7477fdd0310d",
+            "name": "SECRET1",
+            "username": "",
+            "uri": "",
+            "password": "secret1",
+            "description": "",
+            "created_timestamp": "2025-02-21T06:04:29Z",
+            "modified_timestamp": "2025-02-21T06:04:29Z"
           }
         ]
       JSON
@@ -324,7 +540,7 @@ class PassboltAdapterTest < SecretAdapterTestCase
             "name": "FSECRET1",
             "username": "",
             "uri": "",
-            "password": "fsecret1",
+            "password": "",
             "description": "",
             "created_timestamp": "2025-02-21T06:04:29Z",
             "modified_timestamp": "2025-02-21T06:04:29Z"
@@ -335,7 +551,7 @@ class PassboltAdapterTest < SecretAdapterTestCase
             "name": "FSECRET2",
             "username": "",
             "uri": "",
-            "password": "fsecret2",
+            "password": "",
             "description": "",
             "created_timestamp": "2025-02-21T06:04:34Z",
             "modified_timestamp": "2025-02-21T06:04:34Z"
@@ -346,10 +562,64 @@ class PassboltAdapterTest < SecretAdapterTestCase
             "name": "SECRET1",
             "username": "",
             "uri": "",
-            "password": "secret1",
+            "password": "",
             "description": "",
             "created_timestamp": "2025-02-21T06:04:23Z",
             "modified_timestamp": "2025-02-21T06:04:23Z"
+          }
+        ]
+      JSON
+
+    stub_ticks
+      .with("passbolt get resource --id 4c116996-f6d0-4342-9572-0d676f75b3ac --json")
+      .returns(<<~JSON)
+        [
+          {
+            "id": "4c116996-f6d0-4342-9572-0d676f75b3ac",
+            "folder_parent_id": "6a3f21fc-aa40-4ba9-852c-7477fdd0310d",
+            "name": "FSECRET1",
+            "username": "",
+            "uri": "",
+            "password": "fsecret1",
+            "description": "",
+            "created_timestamp": "2025-02-21T06:04:29Z",
+            "modified_timestamp": "2025-02-21T06:04:29Z"
+          }
+        ]
+      JSON
+
+    stub_ticks
+      .with("passbolt get resource --id 62949b26-4957-43fe-9523-294d66861499 --json")
+      .returns(<<~JSON)
+        [
+          {
+            "id": "62949b26-4957-43fe-9523-294d66861499",
+            "folder_parent_id": "6a3f21fc-aa40-4ba9-852c-7477fdd0310d",
+            "name": "FSECRET2",
+            "username": "",
+            "uri": "",
+            "password": "fsecret2",
+            "description": "",
+            "created_timestamp": "2025-02-21T06:04:29Z",
+            "modified_timestamp": "2025-02-21T06:04:29Z"
+          }
+        ]
+      JSON
+
+    stub_ticks
+      .with("passbolt get resource --id dd32963c-0db5-4303-a6fc-22c5229dabef --json")
+      .returns(<<~JSON)
+        [
+          {
+            "id": "dd32963c-0db5-4303-a6fc-22c5229dabef",
+            "folder_parent_id": "6a3f21fc-aa40-4ba9-852c-7477fdd0310d",
+            "name": "SECRET1",
+            "username": "",
+            "uri": "",
+            "password": "secret1",
+            "description": "",
+            "created_timestamp": "2025-02-21T06:04:29Z",
+            "modified_timestamp": "2025-02-21T06:04:29Z"
           }
         ]
       JSON
@@ -409,7 +679,7 @@ class PassboltAdapterTest < SecretAdapterTestCase
             "name": "FSECRET1",
             "username": "",
             "uri": "",
-            "password": "fsecret1",
+            "password": "",
             "description": "",
             "created_timestamp": "2025-02-21T06:04:29Z",
             "modified_timestamp": "2025-02-21T06:04:29Z"
@@ -420,7 +690,7 @@ class PassboltAdapterTest < SecretAdapterTestCase
             "name": "FSECRET2",
             "username": "",
             "uri": "",
-            "password": "fsecret2",
+            "password": "",
             "description": "",
             "created_timestamp": "2025-02-21T06:04:34Z",
             "modified_timestamp": "2025-02-21T06:04:34Z"
@@ -431,10 +701,64 @@ class PassboltAdapterTest < SecretAdapterTestCase
             "name": "SECRET1",
             "username": "",
             "uri": "",
-            "password": "secret1",
+            "password": "",
             "description": "",
             "created_timestamp": "2025-02-21T06:04:23Z",
             "modified_timestamp": "2025-02-21T06:04:23Z"
+          }
+        ]
+      JSON
+
+    stub_ticks
+      .with("passbolt get resource --id 4c116996-f6d0-4342-9572-0d676f75b3ac --json")
+      .returns(<<~JSON)
+        [
+          {
+            "id": "4c116996-f6d0-4342-9572-0d676f75b3ac",
+            "folder_parent_id": "6a3f21fc-aa40-4ba9-852c-7477fdd0310d",
+            "name": "FSECRET1",
+            "username": "",
+            "uri": "",
+            "password": "fsecret1",
+            "description": "",
+            "created_timestamp": "2025-02-21T06:04:29Z",
+            "modified_timestamp": "2025-02-21T06:04:29Z"
+          }
+        ]
+      JSON
+
+    stub_ticks
+      .with("passbolt get resource --id 62949b26-4957-43fe-9523-294d66861499 --json")
+      .returns(<<~JSON)
+        [
+          {
+            "id": "62949b26-4957-43fe-9523-294d66861499",
+            "folder_parent_id": "6a3f21fc-aa40-4ba9-852c-7477fdd0310d",
+            "name": "FSECRET2",
+            "username": "",
+            "uri": "",
+            "password": "fsecret2",
+            "description": "",
+            "created_timestamp": "2025-02-21T06:04:29Z",
+            "modified_timestamp": "2025-02-21T06:04:29Z"
+          }
+        ]
+      JSON
+
+    stub_ticks
+      .with("passbolt get resource --id dd32963c-0db5-4303-a6fc-22c5229dabef --json")
+      .returns(<<~JSON)
+        [
+          {
+            "id": "dd32963c-0db5-4303-a6fc-22c5229dabef",
+            "folder_parent_id": "6a3f21fc-aa40-4ba9-852c-7477fdd0310d",
+            "name": "SECRET1",
+            "username": "",
+            "uri": "",
+            "password": "secret1",
+            "description": "",
+            "created_timestamp": "2025-02-21T06:04:29Z",
+            "modified_timestamp": "2025-02-21T06:04:29Z"
           }
         ]
       JSON
@@ -471,6 +795,24 @@ class PassboltAdapterTest < SecretAdapterTestCase
 
     stub_ticks.with("passbolt list resources --filter '(Name == \"SECRET1\" && FolderParentID == \"abc\\\\ def-123\")' --folder abc\\ def-123 --json")
       .returns('[{"id":"dd32963c","folder_parent_id":"abc def-123","name":"SECRET1","username":"","uri":"","password":"secret1","description":"","created_timestamp":"2025-02-21T06:04:23Z","modified_timestamp":"2025-02-21T06:04:23Z"}]')
+
+    stub_ticks
+      .with("passbolt get resource --id dd32963c --json")
+      .returns(<<~JSON)
+        [
+          {
+            "id": "dd32963c",
+            "folder_parent_id": "abc def-123",
+            "name": "SECRET1",
+            "username": "",
+            "uri": "",
+            "password": "secret1",
+            "description": "",
+            "created_timestamp": "2025-02-21T06:04:29Z",
+            "modified_timestamp": "2025-02-21T06:04:29Z"
+          }
+        ]
+      JSON
 
     json = JSON.parse(run_command("fetch", "my-project/SECRET1"))
 
