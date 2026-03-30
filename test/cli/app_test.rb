@@ -266,9 +266,9 @@ class CliAppTest < CliTestCase
     stub_running
 
     run_command("create").tap do |output|
-      assert_match /docker create --detach --restart unless-stopped --name app-web-latest --network kamal --hostname 1.1.1.1-[0-9a-f]{12}/, output
-      # Should NOT contain start command
-      assert_no_match /docker start/, output
+      assert_match /docker create --restart unless-stopped --name app-web-latest --network kamal --hostname 1.1.1.1-[0-9a-f]{12}/, output
+      # Should NOT contain run command
+      assert_no_match /docker run/, output
       # Should NOT try to deploy to proxy (container not running)
       assert_no_match /kamal-proxy deploy/, output
     end
@@ -284,9 +284,9 @@ class CliAppTest < CliTestCase
     run_command("create").tap do |output|
       assert_match /Renaming container .* to .* as already exists on 1.1.1.1/, output
       assert_match /docker rename app-web-latest app-web-latest_replaced_[0-9a-f]{16}/, output
-      assert_match /docker create --detach --restart unless-stopped --name app-web-latest --network kamal --hostname 1.1.1.1-[0-9a-f]{12}/, output
-      # Should NOT contain start command or proxy deployment
-      assert_no_match /docker start/, output
+      assert_match /docker create --restart unless-stopped --name app-web-latest --network kamal --hostname 1.1.1.1-[0-9a-f]{12}/, output
+      # Should NOT contain run command or proxy deployment
+      assert_no_match /docker run/, output
       assert_no_match /kamal-proxy deploy/, output
     end
   end

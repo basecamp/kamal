@@ -47,9 +47,9 @@ class CliAccessoryTest < CliTestCase
     Kamal::Cli::Accessory.any_instance.expects(:upload).with("mysql")
 
     run_command("create", "mysql").tap do |output|
-      assert_match "docker create --name app-mysql --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 3306:3306 --env KAMAL_HOST=\"1.1.1.3\" --env MYSQL_ROOT_HOST=\"%\" --env-file .kamal/apps/app/env/accessories/mysql.env --volume $PWD/app-mysql/etc/mysql/my.cnf:/etc/mysql/my.cnf --volume $PWD/app-mysql/data:/var/lib/mysql --label service=\"app-mysql\" private.registry/mysql:5.7 on 1.1.1.3", output
-      # Should NOT contain start command
-      assert_no_match /docker container start/, output
+      assert_match "docker create --name app-mysql --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 3306:3306 --env KAMAL_HOST=\"1.1.1.3\" --env MYSQL_ROOT_HOST=\"%\" --env-file .kamal/apps/app/env/accessories/mysql.env --volume $PWD/app-mysql/etc/mysql/my.cnf:/etc/mysql/my.cnf --volume $PWD/app-mysql/data:/var/lib/mysql --label service=\"app-mysql\" private.registry/mysql:5.7 on 1.1.1.3", output
+      # Should NOT contain run command
+      assert_no_match /docker run/, output
     end
   end
 
@@ -62,12 +62,12 @@ class CliAccessoryTest < CliTestCase
     Kamal::Cli::Accessory.any_instance.expects(:upload).with("busybox")
 
     run_command("create", "all").tap do |output|
-      assert_match "docker create --name app-mysql --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 3306:3306 --env KAMAL_HOST=\"1.1.1.3\" --env MYSQL_ROOT_HOST=\"%\" --env-file .kamal/apps/app/env/accessories/mysql.env --volume $PWD/app-mysql/etc/mysql/my.cnf:/etc/mysql/my.cnf --volume $PWD/app-mysql/data:/var/lib/mysql --label service=\"app-mysql\" private.registry/mysql:5.7 on 1.1.1.3", output
-      assert_match "docker create --name app-redis --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 6379:6379 --env KAMAL_HOST=\"1.1.1.1\" --env-file .kamal/apps/app/env/accessories/redis.env --volume $PWD/app-redis/data:/data --label service=\"app-redis\" redis:latest on 1.1.1.1", output
-      assert_match "docker create --name app-redis --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 6379:6379 --env KAMAL_HOST=\"1.1.1.2\" --env-file .kamal/apps/app/env/accessories/redis.env --volume $PWD/app-redis/data:/data --label service=\"app-redis\" redis:latest on 1.1.1.2", output
-      assert_match "docker create --name custom-box --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --env KAMAL_HOST=\"1.1.1.3\" --env-file .kamal/apps/app/env/accessories/busybox.env --label service=\"custom-box\" other.registry/busybox:latest on 1.1.1.3", output
-      # Should NOT contain start commands
-      assert_no_match /docker container start/, output
+      assert_match "docker create --name app-mysql --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 3306:3306 --env KAMAL_HOST=\"1.1.1.3\" --env MYSQL_ROOT_HOST=\"%\" --env-file .kamal/apps/app/env/accessories/mysql.env --volume $PWD/app-mysql/etc/mysql/my.cnf:/etc/mysql/my.cnf --volume $PWD/app-mysql/data:/var/lib/mysql --label service=\"app-mysql\" private.registry/mysql:5.7 on 1.1.1.3", output
+      assert_match "docker create --name app-redis --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 6379:6379 --env KAMAL_HOST=\"1.1.1.1\" --env-file .kamal/apps/app/env/accessories/redis.env --volume $PWD/app-redis/data:/data --label service=\"app-redis\" redis:latest on 1.1.1.1", output
+      assert_match "docker create --name app-redis --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 6379:6379 --env KAMAL_HOST=\"1.1.1.2\" --env-file .kamal/apps/app/env/accessories/redis.env --volume $PWD/app-redis/data:/data --label service=\"app-redis\" redis:latest on 1.1.1.2", output
+      assert_match "docker create --name custom-box --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --env KAMAL_HOST=\"1.1.1.3\" --env-file .kamal/apps/app/env/accessories/busybox.env --label service=\"custom-box\" other.registry/busybox:latest on 1.1.1.3", output
+      # Should NOT contain run commands
+      assert_no_match /docker run/, output
     end
   end
 
