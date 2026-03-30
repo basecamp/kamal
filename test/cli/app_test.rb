@@ -262,6 +262,35 @@ class CliAppTest < CliTestCase
     end
   end
 
+  test "create" do
+    stub_running
+
+    run_command("create").tap do |output|
+      assert_match /docker create --restart unless-stopped --name app-web-latest --network kamal --hostname 1.1.1.1-[0-9a-f]{12}/, output
+      # Should NOT contain run command
+      assert_no_match /docker run/, output
+      # Should NOT try to deploy to proxy (container not running)
+      assert_no_match /kamal-proxy deploy/, output
+    end
+  end
+
+  test "create will rename if same version already exists" do
+    stub_running
+
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :container, :ls, "--all", "--filter", "'name=^app-web-latest$'", "--quiet", raise_on_non_zero_exit: false)
+      .returns("12345678") # existing container
+
+    run_command("create").tap do |output|
+      assert_match /Renaming container .* to .* as already exists on 1.1.1.1/, output
+      assert_match /docker rename app-web-latest app-web-latest_replaced_[0-9a-f]{16}/, output
+      assert_match /docker create --restart unless-stopped --name app-web-latest --network kamal --hostname 1.1.1.1-[0-9a-f]{12}/, output
+      # Should NOT contain run command or proxy deployment
+      assert_no_match /docker run/, output
+      assert_no_match /kamal-proxy deploy/, output
+    end
+  end
+
   test "stop" do
     run_command("stop").tap do |output|
       assert_match "sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting' | head -1 | xargs docker stop", output

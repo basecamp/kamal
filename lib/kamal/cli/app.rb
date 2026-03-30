@@ -59,6 +59,48 @@ class Kamal::Cli::App < Kamal::Cli::Base
     end
   end
 
+  desc "create", "Create app container on servers without starting it"
+  def create
+    with_lock do
+      using_version(version_or_latest) do |version|
+        # Assets are prepared in a separate step to ensure they are on all hosts before creating
+        on(KAMAL.app_hosts) do
+          Kamal::Cli::App::ErrorPages.new(host, self).run
+
+          KAMAL.roles_on(host).each do |role|
+            Kamal::Cli::App::Assets.new(host, role, self).run
+            Kamal::Cli::App::SslCertificates.new(host, role, self).run
+          end
+        end
+
+        on_roles(KAMAL.roles, hosts: KAMAL.app_hosts, parallel: KAMAL.config.boot.parallel_roles) do |host, role|
+          app = KAMAL.app(role: role, host: host)
+
+          # Rename any existing container with the same version to avoid conflicts
+          if capture_with_info(*app.container_id_for_version(version), raise_on_non_zero_exit: false).present?
+            renamed_version = "#{version}_replaced_#{SecureRandom.hex(8)}"
+            info "Renaming container #{version} to #{renamed_version} as already exists on #{host}"
+            execute *KAMAL.auditor.record("Renaming container #{version} to #{renamed_version}", role: role), verbosity: :debug
+            execute *app.rename_container(version: version, new_version: renamed_version)
+          end
+
+          hostname = "#{host.to_s[0...51].chomp(".")}-#{SecureRandom.hex(6)}"
+
+          execute *KAMAL.auditor.record("Created app version #{version}", role: role), verbosity: :debug
+          execute *app.ensure_env_directory
+          upload! role.secrets_io(host), role.secrets_path, mode: "0600"
+          execute *app.create(hostname: hostname)
+        end
+
+        # Tag once the app booted on all hosts
+        on(KAMAL.app_hosts) do |host|
+          execute *KAMAL.auditor.record("Tagging #{KAMAL.config.absolute_image} as the latest image"), verbosity: :debug
+          execute *KAMAL.app.tag_latest_image
+        end
+      end
+    end
+  end
+
   desc "stop", "Stop app container on servers"
   def stop
     modify(lock: true) do

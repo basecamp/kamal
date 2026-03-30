@@ -34,6 +34,26 @@ class Kamal::Commands::App < Kamal::Commands::Base
       role.cmd
   end
 
+  def create(hostname: nil)
+    docker :create,
+      "--restart unless-stopped",
+      "--name", container_name,
+      "--network", "kamal",
+      *([ "--hostname", hostname ] if hostname),
+      "--env", "KAMAL_CONTAINER_NAME=\"#{container_name}\"",
+      "--env", "KAMAL_VERSION=\"#{config.version}\"",
+      "--env", "KAMAL_HOST=\"#{host}\"",
+      *([ "--env", "KAMAL_DESTINATION=\"#{config.destination}\"" ] if config.destination),
+      *role.env_args(host),
+      *role.logging_args,
+      *config.volume_args,
+      *role.asset_volume_args,
+      *role.label_args,
+      *role.option_args,
+      config.absolute_image,
+      role.cmd
+  end
+
   def start
     docker :start, container_name
   end

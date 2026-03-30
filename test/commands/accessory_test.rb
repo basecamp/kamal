@@ -89,6 +89,26 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
       new_command(:mysql).run.join(" ")
   end
 
+  test "create" do
+    assert_equal \
+      "docker create --name app-mysql --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 3306:3306 --env MYSQL_ROOT_HOST=\"%\" --env-file .kamal/apps/app/env/accessories/mysql.env --label service=\"app-mysql\" --cpus \"4\" --memory \"2GB\" private.registry/mysql:8.0",
+      new_command(:mysql).create.join(" ")
+
+    assert_equal \
+      "docker create --name app-redis --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 6379:6379 --env SOMETHING=\"else\" --env-file .kamal/apps/app/env/accessories/redis.env --volume /var/lib/redis:/data --label service=\"app-redis\" --label cache=\"true\" redis:latest",
+      new_command(:redis).create.join(" ")
+
+    assert_equal \
+      "docker create --name custom-busybox --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --env-file .kamal/apps/app/env/accessories/busybox.env --label service=\"custom-busybox\" other.registry/busybox:latest",
+      new_command(:busybox).create.join(" ")
+  end
+
+  test "create with host" do
+    assert_equal \
+      "docker create --name app-mysql --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 3306:3306 --env KAMAL_HOST=\"1.1.1.5\" --env MYSQL_ROOT_HOST=\"%\" --env-file .kamal/apps/app/env/accessories/mysql.env --label service=\"app-mysql\" --cpus \"4\" --memory \"2GB\" private.registry/mysql:8.0",
+      new_command(:mysql).create(host: "1.1.1.5").join(" ")
+  end
+
   test "start" do
     assert_equal \
       "docker container start app-mysql",
