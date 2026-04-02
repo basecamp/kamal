@@ -278,6 +278,29 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
     assert_equal [ "-t", 30 ], config_with_roles.role(:workers).stop_args
   end
 
+  test "stop args with proxy and stop_timeout" do
+    @deploy_with_roles[:servers]["web"] = { "hosts" => [ "1.1.1.1", "1.1.1.2" ], "stop_timeout" => 60 }
+    assert_equal [ "-t", 60 ], config_with_roles.role(:web).stop_args
+  end
+
+  test "stop args with no proxy and stop_timeout" do
+    @deploy_with_roles[:servers]["workers"] = { "hosts" => [ "1.1.1.3", "1.1.1.4" ], "cmd" => "bin/jobs", "stop_timeout" => 60 }
+    assert_equal [ "-t", 60 ], config_with_roles.role(:workers).stop_args
+  end
+
+  test "stop args with root stop_timeout" do
+    @deploy_with_roles[:stop_timeout] = 45
+    assert_equal [ "-t", 45 ], config_with_roles.role(:web).stop_args
+    assert_equal [ "-t", 45 ], config_with_roles.role(:workers).stop_args
+  end
+
+  test "stop args with role stop_timeout overriding root" do
+    @deploy_with_roles[:stop_timeout] = 45
+    @deploy_with_roles[:servers]["web"] = { "hosts" => [ "1.1.1.1", "1.1.1.2" ], "stop_timeout" => 60 }
+    assert_equal [ "-t", 60 ], config_with_roles.role(:web).stop_args
+    assert_equal [ "-t", 45 ], config_with_roles.role(:workers).stop_args
+  end
+
   test "role specific proxy config" do
     @deploy_with_roles[:proxy] = { "response_timeout" => 15 }
     @deploy_with_roles[:servers]["workers"]["proxy"] = { "response_timeout" => 18 }
