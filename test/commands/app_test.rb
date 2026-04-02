@@ -101,6 +101,17 @@ class CommandsAppTest < ActiveSupport::TestCase
       new_command(role: "workers").stop.join(" ")
   end
 
+  test "stop with stop_timeout" do
+    @config[:servers] = { "web" => { "hosts" => [ "1.1.1.1" ], "stop_timeout" => 30 }, "workers" => { "hosts" => [ "1.1.1.2" ], "cmd" => "bin/jobs", "stop_timeout" => 60 } }
+    assert_equal \
+      "sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting' | head -1 | xargs docker stop -t 30",
+      new_command.stop.join(" ")
+
+    assert_equal \
+      "sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=destination= --filter label=role=workers --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=destination= --filter label=role=workers --filter status=running --filter status=restarting' | head -1 | xargs docker stop -t 60",
+      new_command(role: "workers").stop.join(" ")
+  end
+
   test "stop with version" do
     assert_equal \
       "docker container ls --all --filter 'name=^app-web-123$' --quiet | xargs docker stop",
