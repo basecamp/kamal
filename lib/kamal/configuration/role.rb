@@ -81,9 +81,13 @@ class Kamal::Configuration::Role
 
   def stop_args
     # When deploying with the proxy, kamal-proxy will drain request before returning so we don't need to wait.
-    timeout = running_proxy? ? nil : config.drain_timeout
+    timeout = stop_timeout || (running_proxy? ? nil : config.drain_timeout)
 
     [ *argumentize("-t", timeout) ]
+  end
+
+  def stop_timeout
+    specializations["stop_timeout"] || config.stop_timeout
   end
 
   def env(host)
