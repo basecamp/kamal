@@ -131,6 +131,15 @@ class Kamal::Configuration::Proxy::Run
     File.join apps_container_directory, config.service_and_destination
   end
 
+  def ==(other)
+    other.is_a?(self.class) && run_config == other.run_config
+  end
+  alias_method :eql?, :==
+
+  def hash
+    run_config.hash
+  end
+
   private
     def format_bind_ip(ip)
       # Ensure IPv6 address inside square brackets - e.g. [::1]
