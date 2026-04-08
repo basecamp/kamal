@@ -273,8 +273,29 @@ class CliAccessoryTest < CliTestCase
     end
   end
 
+  test "boot with custom ssl certificate" do
+    Kamal::Cli::Accessory.any_instance.expects(:directories).with("monitoring")
+    Kamal::Cli::Accessory.any_instance.expects(:upload).with("monitoring")
+    Kamal::Configuration::Proxy.any_instance.stubs(:custom_ssl_certificate?).returns(true)
+    Kamal::Configuration::Proxy.any_instance.stubs(:certificate_pem_content).returns("CERTIFICATE CONTENT")
+    Kamal::Configuration::Proxy.any_instance.stubs(:private_key_pem_content).returns("PRIVATE KEY CONTENT")
+
+    run_command_with_custom_ssl("boot", "monitoring").tap do |output|
+      assert_match "Writing SSL certificates for accessory monitoring", output
+      assert_match "mkdir -p .kamal/proxy/apps-config/app/tls/accessories/monitoring", output
+      assert_match %r{Uploading .* to .kamal/proxy/apps-config/app/tls/accessories/monitoring/cert\.pem}, output
+      assert_match %r{Uploading .* to .kamal/proxy/apps-config/app/tls/accessories/monitoring/key\.pem}, output
+      assert_match "--tls-certificate-path=\"/home/kamal-proxy/.apps-config/app/tls/accessories/monitoring/cert.pem\"", output
+      assert_match "--tls-private-key-path=\"/home/kamal-proxy/.apps-config/app/tls/accessories/monitoring/key.pem\"", output
+    end
+  end
+
   private
     def run_command(*command)
       stdouted { Kamal::Cli::Accessory.start([ *command, "-c", "test/fixtures/deploy_with_accessories_with_different_registries.yml" ]) }
+    end
+
+    def run_command_with_custom_ssl(*command)
+      stdouted { Kamal::Cli::Accessory.start([ *command, "-c", "test/fixtures/deploy_with_accessory_custom_ssl.yml" ]) }
     end
 end

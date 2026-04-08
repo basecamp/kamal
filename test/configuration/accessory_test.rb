@@ -321,6 +321,22 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
     assert_equal [ "monitoring.example.com" ], @config.accessory(:monitoring).proxy.hosts
   end
 
+  test "proxy ssl certificate paths are scoped by accessory name" do
+    with_test_secrets("secrets" => "CERT_PEM=cert\nKEY_PEM=key") do
+      @deploy[:accessories]["monitoring"]["proxy"]["ssl"] = {
+        "certificate_pem" => "CERT_PEM",
+        "private_key_pem" => "KEY_PEM"
+      }
+
+      config = Kamal::Configuration.new(@deploy)
+      proxy = config.accessory(:monitoring).proxy
+
+      assert proxy.custom_ssl_certificate?
+      assert_match %r{accessories/monitoring/cert\.pem$}, proxy.host_tls_cert
+      assert_match %r{accessories/monitoring/key\.pem$}, proxy.host_tls_key
+    end
+  end
+
   test "can't set restart in options" do
     @deploy[:accessories]["mysql"]["options"] = { "restart" => "always" }
 
