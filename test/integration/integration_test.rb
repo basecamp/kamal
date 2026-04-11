@@ -7,6 +7,7 @@ class IntegrationTest < ActiveSupport::TestCase
     docker_compose "up --build -d"
     wait_for_healthy
     setup_deployer
+    deployer_exec("sh -c 'rm -f /tmp/otel/*.json /tmp/kamal-deploy-logs/*'", workdir: "/")
     @app = "app"
   end
 
@@ -195,6 +196,39 @@ class IntegrationTest < ActiveSupport::TestCase
       else
         "localhost"
       end
+    end
+
+    def deploy_log_content(pattern)
+      deployer_exec("sh -c 'cat /tmp/kamal-deploy-logs/#{pattern}'", capture: true)
+        .gsub(/\e\[[0-9;]*m/, "")
+    end
+
+    def otel_payloads
+      files = deployer_exec("sh -c 'ls /tmp/otel/*.json'", capture: true).strip.split("\n")
+      files.map { |f| JSON.parse(deployer_exec("cat #{f}", capture: true)) }
+    end
+
+    def otel_log_records
+      otel_payloads.flat_map { |p| p.dig("resourceLogs", 0, "scopeLogs", 0, "logRecords") || [] }
+    end
+
+    def otel_events
+      otel_log_records.select { |r| r["eventName"].present? }
+    end
+
+    def wait_for_otel_events(expected:, timeout: 3)
+      deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + timeout
+      loop do
+        events = otel_events
+        return events if events.length >= expected
+        return events if Process.clock_gettime(Process::CLOCK_MONOTONIC) > deadline
+        sleep 0.1
+      end
+    end
+
+    def otel_resource_attributes
+      attrs = otel_payloads.first&.dig("resourceLogs", 0, "resource", "attributes") || []
+      attrs.to_h { |a| [ a["key"], a.dig("value", "stringValue") ] }
     end
 
     def https_response_with_cert(uri, cert)

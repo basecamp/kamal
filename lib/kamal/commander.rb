@@ -1,9 +1,11 @@
 require "active_support/core_ext/enumerable"
 require "active_support/core_ext/module/delegation"
 require "active_support/core_ext/object/blank"
+require "active_support/broadcast_logger"
+require "active_support/notifications"
 
 class Kamal::Commander
-  attr_accessor :verbosity, :holding_lock, :connected
+  attr_accessor :verbosity, :holding_lock, :connected, :logging
   attr_reader :specific_roles, :specific_hosts
   delegate :hosts, :roles, :primary_host, :primary_role, :roles_on, :app_hosts, :proxy_hosts, :accessory_hosts, to: :specifics
 
@@ -15,8 +17,11 @@ class Kamal::Commander
     self.verbosity = :info
     self.holding_lock = ENV["KAMAL_LOCK"] == "true"
     self.connected = false
+    self.logging = false
+    @modify_depth = 0
     @specifics = @specific_roles = @specific_hosts = nil
     @config = @config_kwargs = nil
+    @output_logger = nil
     @commands = {}
   end
 
@@ -121,6 +126,15 @@ class Kamal::Commander
     config.aliases[name]
   end
 
+  def resolve_alias(name)
+    if @config
+      @config.aliases[name]&.command
+    else
+      raw_config = Kamal::Configuration.load_raw_config(**@config_kwargs.to_h.slice(:config_file, :destination))
+      raw_config[:aliases]&.dig(name)
+    end
+  end
+
   def with_verbosity(level)
     old_level = self.verbosity
 
@@ -133,6 +147,22 @@ class Kamal::Commander
     SSHKit.config.output_verbosity = old_level
   end
 
+  def modify(command:, subcommand:)
+    @logging = true
+    if modify_started
+      ActiveSupport::Notifications.instrument("modify.kamal",
+        command: command, subcommand: subcommand, destination: config.destination, hosts: hosts) { yield }
+    else
+      yield
+    end
+  ensure
+    output_logger.close if modify_finished
+  end
+
+  def log(line)
+    output_logger << "#{line}\n" if logging
+  end
+
   def holding_lock?
     self.holding_lock
   end
@@ -142,6 +172,20 @@ class Kamal::Commander
   end
 
   private
+    def output_logger
+      @output_logger ||= ActiveSupport::BroadcastLogger.new
+    end
+
+    def modify_started
+      @modify_depth += 1
+      @modify_depth == 1
+    end
+
+    def modify_finished
+      @modify_depth -= 1
+      @modify_depth == 0
+    end
+
     # Lazy setup of SSHKit
     def configure_sshkit_with(config)
       SSHKit::Backend::Netssh.pool.idle_timeout = config.sshkit.pool_idle_timeout
@@ -152,6 +196,21 @@ class Kamal::Commander
       end
       SSHKit.config.command_map[:docker] = "docker" # No need to use /usr/bin/env, just clogs up the logs
       SSHKit.config.output_verbosity = verbosity
+
+      configure_output_with(config)
+    end
+
+    def configure_output_with(config)
+      return unless config.output.enabled?
+
+      config.output.loggers.each { |logger| output_logger.broadcast_to(logger) }
+
+      SSHKit.config.output = Kamal::Output::Formatter.new($stdout, output_logger)
+
+      at_exit { @output_logger&.close }
+    rescue => e
+      $stderr.puts "Output logger setup failed: #{e.class}: #{e.message}"
+      $stderr.puts e.backtrace.join("\n") if ENV["VERBOSE"]
     end
 
     def specifics

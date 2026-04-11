@@ -27,6 +27,11 @@ hooks_output:
 deploy_timeout: 2
 drain_timeout: 2
 readiness_delay: 0
+output:
+  file:
+    path: /tmp/kamal-deploy-logs
+  otel:
+    endpoint: http://otel_collector:4318
 proxy:
   host: 127.0.0.1
   run:
