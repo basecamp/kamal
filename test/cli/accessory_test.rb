@@ -290,6 +290,17 @@ class CliAccessoryTest < CliTestCase
     end
   end
 
+  test "boot with custom ssl certificate raises when secret is missing" do
+    Kamal::Configuration::Proxy.any_instance.stubs(:custom_ssl_certificate?).returns(true)
+    Kamal::Configuration::Proxy.any_instance.stubs(:certificate_pem_content).returns(nil)
+    Kamal::Configuration::Proxy.any_instance.stubs(:private_key_pem_content).returns("PRIVATE KEY CONTENT")
+
+    error = assert_raises(SSHKit::Runner::ExecuteError) do
+      run_command_with_custom_ssl("boot", "monitoring")
+    end
+    assert_match %r{Missing SSL secret "CERT_PEM" for accessory "monitoring" \(certificate_pem\)}, error.message
+  end
+
   private
     def run_command(*command)
       stdouted { Kamal::Cli::Accessory.start([ *command, "-c", "test/fixtures/deploy_with_accessories_with_different_registries.yml" ]) }
