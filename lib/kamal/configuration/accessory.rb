@@ -131,6 +131,7 @@ class Kamal::Configuration::Accessory
       Kamal::Configuration::Proxy.new \
         config: config,
         proxy_config: accessory_config["proxy"],
+        role_name: "accessories/#{name}",
         context: "accessories/#{name}/proxy",
         secrets: config.secrets
     end
