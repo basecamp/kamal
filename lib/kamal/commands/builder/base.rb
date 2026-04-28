@@ -16,7 +16,7 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
 
   def push(export_action = "registry", tag_as_dirty: false, no_cache: false)
     docker :buildx, :build,
-      "--output=#{[ "type=#{export_action}", output ].compact.join(",")}",
+      "--output=#{[ "type=#{export_action}", output.presence ].compact.join(",")}",
       *platform_options(arches),
       *([ "--builder", builder_name ] unless docker_driver?),
       *build_tag_options(tag_as_dirty: tag_as_dirty),
