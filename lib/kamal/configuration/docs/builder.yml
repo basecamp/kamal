@@ -130,3 +130,9 @@ builder:
   # It is used to configure SBOM generation for the build result.
   # The value can also be a boolean to enable or disable SBOM generation.
   sbom: true
+
+  # Output
+  #
+  # Docker output type parameters appended to the buildx `--output=type=...` flag.
+  # Useful for configuring the compression type:
+  output: compression=zstd,compression-level=3,force-compression=true
