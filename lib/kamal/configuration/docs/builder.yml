@@ -135,4 +135,4 @@ builder:
   #
   # Docker output type parameters appended to the buildx `--output=type=...` flag.
   # Useful for configuring the compression type:
-  output: compression=zstd,compression-level=9,force-compression=true
+  output: compression=zstd,compression-level=3,force-compression=true

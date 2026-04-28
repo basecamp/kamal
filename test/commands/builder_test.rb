@@ -22,9 +22,9 @@ class CommandsBuilderTest < ActiveSupport::TestCase
   end
 
   test "push with builder output type parameters" do
-    builder = new_builder_command(builder: { "output" => "compression=zstd,compression-level=12,force-compression=true" })
+    builder = new_builder_command(builder: { "output" => "compression=zstd,compression-level=3,force-compression=true" })
     assert_equal \
-      "docker buildx build --output=type=registry,compression=zstd,compression-level=12,force-compression=true --platform linux/amd64 --builder kamal-local-docker-container -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile . 2>&1",
+      "docker buildx build --output=type=registry,compression=zstd,compression-level=3,force-compression=true --platform linux/amd64 --builder kamal-local-docker-container -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile . 2>&1",
       builder.push.join(" ")
   end
 
