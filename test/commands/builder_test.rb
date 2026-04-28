@@ -28,6 +28,13 @@ class CommandsBuilderTest < ActiveSupport::TestCase
       builder.push.join(" ")
   end
 
+  test "push with blank builder output is omitted" do
+    builder = new_builder_command(builder: { "output" => "" })
+    assert_equal \
+      "docker buildx build --output=type=registry --platform linux/amd64 --builder kamal-local-docker-container -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile . 2>&1",
+      builder.push.join(" ")
+  end
+
   test "build with caching" do
     builder = new_builder_command(builder: { "cache" => { "type" => "gha" } })
     assert_equal "local", builder.name
