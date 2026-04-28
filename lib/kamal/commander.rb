@@ -5,7 +5,7 @@ require "active_support/broadcast_logger"
 require "active_support/notifications"
 
 class Kamal::Commander
-  attr_accessor :verbosity, :holding_lock, :connected, :logging
+  attr_accessor :verbosity, :holding_lock, :connected, :logging, :lock_wait, :lock_wait_timeout, :lock_wait_interval
   attr_reader :specific_roles, :specific_hosts
   delegate :hosts, :roles, :primary_host, :primary_role, :roles_on, :app_hosts, :proxy_hosts, :accessory_hosts, to: :specifics
 
@@ -18,6 +18,9 @@ class Kamal::Commander
     self.holding_lock = ENV["KAMAL_LOCK"] == "true"
     self.connected = false
     self.logging = false
+    self.lock_wait = false
+    self.lock_wait_timeout = 900
+    self.lock_wait_interval = 15
     @modify_depth = 0
     @specifics = @specific_roles = @specific_hosts = nil
     @config = @config_kwargs = nil

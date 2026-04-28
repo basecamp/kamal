@@ -24,6 +24,10 @@ module Kamal::Cli
 
     class_option :skip_hooks, aliases: "-H", type: :boolean, default: false, desc: "Don't run hooks"
 
+    class_option :lock_wait, type: :boolean, default: false, desc: "Wait for the deploy lock if it's already held instead of failing immediately"
+    class_option :lock_wait_timeout, type: :numeric, default: 900, desc: "Maximum seconds to wait for the deploy lock when --lock-wait is set"
+    class_option :lock_wait_interval, type: :numeric, default: 15, desc: "Seconds between deploy lock polls when --lock-wait is set"
+
     def initialize(args = [], local_options = {}, config = {})
       if config[:current_command].is_a?(Kamal::Cli::Alias::Command)
         # When Thor generates a dynamic command, it doesn't attempt to parse the arguments.
@@ -60,6 +64,10 @@ module Kamal::Cli
           commander.specific_hosts    = options[:hosts]&.split(",")
           commander.specific_roles    = options[:roles]&.split(",")
           commander.specific_primary! if options[:primary]
+
+          commander.lock_wait          = options[:lock_wait]
+          commander.lock_wait_timeout  = options[:lock_wait_timeout]
+          commander.lock_wait_interval = options[:lock_wait_interval]
         end
       end
 
@@ -117,12 +125,49 @@ module Kamal::Cli
       def acquire_lock
         ensure_run_directory
 
-        raise_if_locked do
-          say "Acquiring the deploy lock...", :magenta
-          on(KAMAL.primary_host) { execute *KAMAL.lock.acquire("Automatic deploy lock", KAMAL.config.version), verbosity: :debug }
+        if KAMAL.lock_wait
+          acquire_lock_with_wait
+        else
+          raise_if_locked do
+            say "Acquiring the deploy lock...", :magenta
+            on(KAMAL.primary_host) { execute *KAMAL.lock.acquire("Automatic deploy lock", KAMAL.config.version), verbosity: :debug }
+          end
         end
 
         KAMAL.holding_lock = true
+      end
+
+      def acquire_lock_with_wait
+        timeout = KAMAL.lock_wait_timeout
+        interval = KAMAL.lock_wait_interval
+        deadline = Time.now + timeout
+        details_shown = false
+
+        say "Acquiring the deploy lock (waiting up to #{timeout}s)...", :magenta
+
+        loop do
+          begin
+            on(KAMAL.primary_host) { execute *KAMAL.lock.acquire("Automatic deploy lock", KAMAL.config.version), verbosity: :debug }
+            return
+          rescue SSHKit::Runner::ExecuteError => e
+            raise unless e.message =~ /cannot create directory/
+
+            unless details_shown
+              say "Deploy lock is held by:", :magenta
+              on(KAMAL.primary_host) { puts capture_with_debug(*KAMAL.lock.status) }
+              details_shown = true
+            end
+
+            remaining = (deadline - Time.now).to_i
+            if remaining <= 0
+              say "Timed out after #{timeout}s waiting for the deploy lock", :red
+              raise LockError, "Timed out waiting for deploy lock"
+            end
+
+            say "Retrying in #{interval}s (#{remaining}s remaining)...", :magenta
+            sleep [ interval, remaining ].min
+          end
+        end
       end
 
       def release_lock
