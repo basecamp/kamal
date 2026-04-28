@@ -5,7 +5,7 @@ class CliMainTest < CliTestCase
   teardown { ENV.clear; ENV.update @original_env }
 
   test "setup" do
-    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false }
+    invoke_options = base_invoke_options
 
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:server:bootstrap", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:deploy).with(boot_accessories: true)
@@ -16,7 +16,7 @@ class CliMainTest < CliTestCase
   end
 
   test "setup with skip_push" do
-    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false }
+    invoke_options = base_invoke_options
 
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:server:bootstrap", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:accessory:boot", [ "all" ], invoke_options)
@@ -41,7 +41,7 @@ class CliMainTest < CliTestCase
 
   test "deploy with local registry" do
     with_test_secrets("secrets" => "DB_PASSWORD=secret") do
-      invoke_options = { "config_file" => "test/fixtures/deploy_with_local_registry.yml", "version" => "999", "skip_hooks" => false, "verbose" => true }
+      invoke_options = base_invoke_options(config_file: "deploy_with_local_registry.yml", verbose: true)
 
       Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:deliver", [], invoke_options)
       Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:proxy:boot", [], invoke_options)
@@ -64,7 +64,7 @@ class CliMainTest < CliTestCase
   end
 
   test "setup with no_cache" do
-    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false, "no_cache" => true }
+    invoke_options = base_invoke_options(no_cache: true)
 
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:server:bootstrap", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:accessory:boot", [ "all" ], invoke_options)
@@ -87,7 +87,7 @@ class CliMainTest < CliTestCase
 
   test "deploy" do
     with_test_secrets("secrets" => "DB_PASSWORD=secret") do
-      invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false, "verbose" => true }
+      invoke_options = base_invoke_options(verbose: true)
 
       Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:deliver", [], invoke_options)
       Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:proxy:boot", [], invoke_options)
@@ -110,7 +110,7 @@ class CliMainTest < CliTestCase
   end
 
   test "deploy with skip_push" do
-    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false }
+    invoke_options = base_invoke_options
 
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:pull", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:proxy:boot", [], invoke_options)
@@ -129,7 +129,7 @@ class CliMainTest < CliTestCase
   end
 
   test "deploy with no_cache" do
-    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false, "no_cache" => true }
+    invoke_options = base_invoke_options(no_cache: true)
 
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:deliver", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:proxy:boot", [], invoke_options)
@@ -179,10 +179,83 @@ class CliMainTest < CliTestCase
     end
   end
 
+  test "deploy with --lock-wait retries and acquires lock when freed" do
+    Thread.report_on_exception = false
+
+    SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+    Dir.stubs(:chdir)
+
+    SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+      .with { |*args| args == [ :mkdir, "-p", ".kamal/apps/app" ] }
+
+    SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+      .with { |*arg| arg[0..1] == [ :mkdir, ".kamal/lock-app" ] }
+      .raises(RuntimeError, "mkdir: cannot create directory ‘kamal/lock-app’: File exists").then
+      .raises(RuntimeError, "mkdir: cannot create directory ‘kamal/lock-app’: File exists").then
+      .returns(nil)
+
+    SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_debug)
+      .with(:stat, ".kamal/lock-app", ">", "/dev/null", "&&", :cat, ".kamal/lock-app/details", "|", :base64, "-d")
+      .returns("Locked by: alice\nVersion: 999\nMessage: deploying")
+
+    Kamal::Cli::Base.any_instance.stubs(:sleep)
+
+    Kamal::Cli::Main.any_instance.stubs(:invoke)
+
+    SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info)
+      .with(:git, "-C", anything, :"rev-parse", :HEAD)
+      .returns(Kamal::Git.revision)
+
+    SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info)
+      .with(:git, "-C", anything, :status, "--porcelain")
+      .returns("")
+
+    output = run_command("deploy", "--lock-wait", "--lock-wait-interval", "0", "--lock-wait-timeout", "60")
+    assert_match /Acquiring the deploy lock \(waiting up to 60s\)/, output
+    assert_match /Deploy lock is held by:/, output
+    assert_match /Retrying in 0s/, output
+    assert_match /Releasing the deploy lock/, output
+  end
+
+  test "deploy with --lock-wait times out" do
+    Thread.report_on_exception = false
+
+    SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+    Dir.stubs(:chdir)
+
+    SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+      .with { |*args| args == [ :mkdir, "-p", ".kamal/apps/app" ] }
+
+    SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+      .with { |*arg| arg[0..1] == [ :mkdir, ".kamal/lock-app" ] }
+      .raises(RuntimeError, "mkdir: cannot create directory ‘kamal/lock-app’: File exists")
+
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_debug)
+      .with(:stat, ".kamal/lock-app", ">", "/dev/null", "&&", :cat, ".kamal/lock-app/details", "|", :base64, "-d")
+
+    Kamal::Cli::Base.any_instance.stubs(:sleep)
+
+    SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info)
+      .with(:git, "-C", anything, :"rev-parse", :HEAD)
+      .returns(Kamal::Git.revision)
+
+    SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info)
+      .with(:git, "-C", anything, :status, "--porcelain")
+      .returns("")
+
+    SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info)
+      .with(:docker, :info, "--format '{{index .RegistryConfig.Mirrors 0}}'")
+      .returns("")
+
+    assert_raises(Kamal::Cli::LockError) do
+      run_command("deploy", "--lock-wait", "--lock-wait-timeout", "0", "--lock-wait-interval", "0")
+    end
+  end
+
   test "deploy when inheriting lock" do
     Thread.report_on_exception = false
 
-    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false }
+    invoke_options = base_invoke_options
 
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:deliver", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:proxy:boot", [], invoke_options)
@@ -237,7 +310,7 @@ class CliMainTest < CliTestCase
   end
 
   test "deploy errors during outside section leave remote lock" do
-    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false }
+    invoke_options = base_invoke_options
 
     Kamal::Cli::Main.any_instance.expects(:invoke)
       .with("kamal:cli:build:deliver", [], invoke_options)
@@ -251,7 +324,7 @@ class CliMainTest < CliTestCase
   end
 
   test "deploy with skipped hooks" do
-    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => true }
+    invoke_options = base_invoke_options(skip_hooks: true)
 
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:deliver", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:proxy:boot", [], invoke_options)
@@ -265,7 +338,7 @@ class CliMainTest < CliTestCase
   end
 
   test "deploy with missing secrets" do
-    invoke_options = { "config_file" => "test/fixtures/deploy_with_secrets.yml", "version" => "999", "skip_hooks" => false }
+    invoke_options = base_invoke_options(config_file: "deploy_with_secrets.yml")
 
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:deliver", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:proxy:boot", [], invoke_options)
@@ -277,7 +350,7 @@ class CliMainTest < CliTestCase
   end
 
   test "redeploy" do
-    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false, "verbose" => true }
+    invoke_options = base_invoke_options(verbose: true)
 
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:deliver", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true))
@@ -295,7 +368,7 @@ class CliMainTest < CliTestCase
   end
 
   test "redeploy with skip_push" do
-    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false }
+    invoke_options = base_invoke_options
 
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:pull", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true))
@@ -307,7 +380,7 @@ class CliMainTest < CliTestCase
   end
 
   test "redeploy with no_cache" do
-    invoke_options = { "config_file" => "test/fixtures/deploy_simple.yml", "version" => "999", "skip_hooks" => false, "no_cache" => true }
+    invoke_options = base_invoke_options(no_cache: true)
 
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:deliver", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true))
@@ -378,7 +451,7 @@ class CliMainTest < CliTestCase
   end
 
   test "remove" do
-    options = { "config_file" => "test/fixtures/deploy_simple.yml", "skip_hooks" => false, "confirmed" => true }
+    options = base_invoke_options(version: nil, confirmed: true)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:proxy:remove", [], options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:remove", [], options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:accessory:remove", [ "all" ], options)
@@ -678,7 +751,7 @@ class CliMainTest < CliTestCase
   end
 
   test "run an alias with require_destination" do
-    invoke_options = { "config_file" => "test/fixtures/deploy_for_required_dest.yml", "version" => "999", "skip_hooks" => false, "destination" => "world" }
+    invoke_options = base_invoke_options(config_file: "deploy_for_required_dest.yml", destination: "world")
 
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:deliver", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:proxy:boot", [], invoke_options)
@@ -697,7 +770,7 @@ class CliMainTest < CliTestCase
   end
 
   test "upgrade" do
-    invoke_options = { "config_file" => "test/fixtures/deploy_with_accessories.yml", "skip_hooks" => false, "confirmed" => true, "rolling" => false }
+    invoke_options = base_invoke_options(config_file: "deploy_with_accessories.yml", version: nil, confirmed: true, rolling: false)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:proxy:upgrade", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:accessory:upgrade", [ "all" ], invoke_options)
 
@@ -708,7 +781,7 @@ class CliMainTest < CliTestCase
   end
 
   test "upgrade rolling" do
-    invoke_options = { "config_file" => "test/fixtures/deploy_with_accessories.yml", "skip_hooks" => false, "confirmed" => true, "rolling" => false }
+    invoke_options = base_invoke_options(config_file: "deploy_with_accessories.yml", version: nil, confirmed: true, rolling: false)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:proxy:upgrade", [], invoke_options).times(4)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:accessory:upgrade", [ "all" ], invoke_options).times(3)
 
@@ -773,5 +846,17 @@ class CliMainTest < CliTestCase
       yield
     ensure
       ENV.delete("KAMAL_LOCK")
+    end
+
+    def base_invoke_options(config_file: "deploy_simple.yml", version: "999", **extras)
+      base = {
+        "config_file" => "test/fixtures/#{config_file}",
+        "skip_hooks" => false,
+        "lock_wait" => false,
+        "lock_wait_timeout" => 900,
+        "lock_wait_interval" => 15
+      }
+      base["version"] = version unless version.nil?
+      base.merge(extras.transform_keys(&:to_s))
     end
 end
