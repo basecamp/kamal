@@ -18,7 +18,8 @@ class Kamal::Cli::Build < Kamal::Cli::Base
     pre_connect_if_required
 
     ensure_docker_installed
-    login_to_registry_locally if KAMAL.builder.login_to_registry_locally?
+    setup_local_registry      if KAMAL.registry.local?
+    login_to_registry_locally if !KAMAL.registry.local? && KAMAL.builder.login_to_registry_locally?
 
     run_hook "pre-build"
 
@@ -194,13 +195,15 @@ class Kamal::Cli::Build < Kamal::Cli::Base
       end
     end
 
+    def setup_local_registry
+      run_locally do
+        execute *KAMAL.registry.setup
+      end
+    end
+
     def login_to_registry_locally
       run_locally do
-        if KAMAL.registry.local?
-          execute *KAMAL.registry.setup
-        else
-          execute *KAMAL.registry.login
-        end
+        execute *KAMAL.registry.login
       end
     end
 
