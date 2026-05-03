@@ -56,34 +56,21 @@ class CliBuildTest < CliTestCase
     # Even though we skip `docker login` locally for remote builders (#1664),
     # we must still ensure the local registry container is running on the dev
     # machine, since the remote builder pushes to it through an SSH tunnel.
-    with_build_directory do |build_directory|
-      Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
+    assert_local_registry_started_before_push(
+      fixture: :with_local_registry_and_remote_builder,
+      remote_host: "1.1.1.5"
+    )
+  end
 
-      # Stub the SSH reverse tunnel set up for the remote builder so the test
-      # doesn't try to actually connect to 1.1.1.5.
-      port_forwarding_mock = mock("port_forwarding")
-      port_forwarding_mock.expects(:forward).yields
-      Kamal::Cli::Build::PortForwarding.expects(:new)
-        .with([ "1.1.1.5" ], 5000, has_entries(keepalive: true, keepalive_interval: 30))
-        .returns(port_forwarding_mock)
-
-      SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-        .with(:git, "-C", anything, :"rev-parse", :HEAD)
-        .returns(Kamal::Git.revision)
-
-      SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-        .with(:git, "-C", anything, :status, "--porcelain")
-        .returns("")
-
-      run_command("push", "--verbose", fixture: :with_local_registry_and_remote_builder).tap do |output|
-        # The local registry container is started (or restarted) on the dev machine
-        assert_match "docker start kamal-docker-registry || docker run --detach -p 127.0.0.1:5000:5000 --name kamal-docker-registry registry:3", output
-        # `docker login` is NOT run locally for a local registry (#1664 behavior preserved)
-        assert_no_match "Running docker login -u [REDACTED] -p [REDACTED] as ", output
-        # And the remote builder push still happens with BUILDKIT_NO_CLIENT_TOKEN
-        assert_match "BUILDKIT_NO_CLIENT_TOKEN=\"1\"", output
-      end
-    end
+  test "push with hybrid builder and local registry starts the local registry container" do
+    # `Kamal::Commands::Builder::Hybrid` inherits from `Remote`, so it has the
+    # same `login_to_registry_locally? => false` and would suffer from the
+    # same regression as the pure-remote builder when combined with a local
+    # registry.
+    assert_local_registry_started_before_push(
+      fixture: :with_local_registry_and_hybrid_builder,
+      remote_host: "1.1.1.5"
+    )
   end
 
   test "push --output=docker" do
@@ -486,6 +473,47 @@ class CliBuildTest < CliTestCase
   end
 
   private
+    def assert_local_registry_started_before_push(fixture:, remote_host:)
+      with_build_directory do |build_directory|
+        Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
+
+        # Stub the SSH reverse tunnel set up for the remote builder so the
+        # test doesn't try to actually connect to the remote host.
+        port_forwarding_mock = mock("port_forwarding")
+        port_forwarding_mock.expects(:forward).yields
+        Kamal::Cli::Build::PortForwarding.expects(:new)
+          .with([ remote_host ], 5000, has_entries(keepalive: true, keepalive_interval: 30))
+          .returns(port_forwarding_mock)
+
+        SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+          .with(:git, "-C", anything, :"rev-parse", :HEAD)
+          .returns(Kamal::Git.revision)
+
+        SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+          .with(:git, "-C", anything, :status, "--porcelain")
+          .returns("")
+
+        output = run_command("push", "--verbose", fixture: fixture)
+
+        registry_setup = "docker start kamal-docker-registry || docker run --detach -p 127.0.0.1:5000:5000 --name kamal-docker-registry registry:3"
+        buildx_build   = "docker buildx build"
+
+        # The local registry container is started (or restarted) on the dev machine.
+        assert_match registry_setup, output
+
+        # And it must happen *before* the build/push, otherwise the remote
+        # builder will try to push to a registry that isn't up yet.
+        assert_operator output.index(registry_setup), :<, output.index(buildx_build),
+          "Expected `#{registry_setup}` to run before `#{buildx_build}`"
+
+        # `docker login` is NOT run locally for a local registry (#1664 behavior preserved).
+        assert_no_match "Running docker login -u [REDACTED] -p [REDACTED] as ", output
+
+        # And the remote builder push still happens with BUILDKIT_NO_CLIENT_TOKEN.
+        assert_match "BUILDKIT_NO_CLIENT_TOKEN=\"1\"", output
+      end
+    end
+
     def run_command(*command, fixture: :with_accessories)
       stdouted { stderred { Kamal::Cli::Build.start([ *command, "-c", "test/fixtures/deploy_#{fixture}.yml" ]) } }
     end
