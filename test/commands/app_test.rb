@@ -164,7 +164,7 @@ class CommandsAppTest < ActiveSupport::TestCase
 
   test "logs with container_id" do
     assert_equal \
-      "echo C137 | xargs docker logs --timestamps 2>&1",
+      "sh -c 'echo C137' | xargs docker logs --timestamps 2>&1",
       new_command.logs(container_id: "C137").join(" ")
   end
 
@@ -220,7 +220,7 @@ class CommandsAppTest < ActiveSupport::TestCase
       new_command.follow_logs(host: "app-1", grep: "Completed")
 
     assert_equal \
-      "ssh -t root@app-1 -p 22 'echo ID321 | xargs docker logs --timestamps --follow 2>&1'",
+      "ssh -t root@app-1 -p 22 'sh -c '\\''echo ID321'\\'' | xargs docker logs --timestamps --follow 2>&1'",
       new_command.follow_logs(host: "app-1", container_id: "ID321")
 
     assert_equal \
