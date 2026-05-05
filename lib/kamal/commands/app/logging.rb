@@ -21,7 +21,7 @@ module Kamal::Commands::App::Logging
   def container_id_command(container_id)
     case container_id
     when Array then container_id
-    when String, Symbol then "echo #{container_id}"
+    when String, Symbol then shell(["echo #{container_id}"])
     else current_running_container_id
     end
   end
