@@ -17,20 +17,29 @@ class Kamal::Secrets::Adapters::Dashlane < Kamal::Secrets::Adapters::Base
     end
 
     def fetch_secrets(secrets, from:, account:, session:)
-      shell_secrets_string = secrets.map(&:shellescape).join(" ")
-      dashlane_passwords = JSON.parse(`dcli password #{shell_secrets_string} -o json`)
-      dashlane_secrets = JSON.parse(`dcli secret #{shell_secrets_string} -o json`)
+      raise RuntimeError, "Unsupported 'from' argument for Dashlane" if from
 
+      shell_secrets_string = secrets.map(&:shellescape).join(" ")
+      dashlane_passwords = `dcli password #{shell_secrets_string} -o json`
+      raise RuntimeError, "Could not read #{secrets} from Dashlane passwords" unless $?.success?
+      dashlane_secrets = `dcli secret #{shell_secrets_string} -o json`
+      raise RuntimeError, "Could not read #{secrets} from Dashlane secrets" unless $?.success?
+
+      dashlane_passwords = JSON.parse(dashlane_passwords)
+      dashlane_secrets = JSON.parse(dashlane_secrets)
       results = {}
+
       dashlane_passwords.each do |password|
         results[password["title"]] = password["password"]
       end
       dashlane_secrets.each do |secret|
         results[secret["title"]] = secret["content"]
       end
+
       if (missing_items = secrets - results.keys).any?
         raise RuntimeError, "Could not find #{missing_items.join(", ")} in Dashlane passwords or secrets"
       end
+
       results
     end
 
