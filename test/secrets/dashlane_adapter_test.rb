@@ -9,7 +9,7 @@ class DashlaneAdapterTest < SecretAdapterTestCase
     stub_cli_installed(false)
 
     assert_raises(RuntimeError, "Dashlane CLI is not installed") do
-      run_command("fetch", "SECRET1")
+      run_command("fetch", *secrets.keys)
     end
   end
 
@@ -82,6 +82,21 @@ class DashlaneAdapterTest < SecretAdapterTestCase
       stub_ticks_with("dcli --version 2> /dev/null", succeed: installed)
     end
 
+    def run_command(*command)
+      stdouted do
+        Kamal::Cli::Secrets.start \
+          [ *command,
+            "-c", "test/fixtures/deploy_with_accessories.yml",
+            "--adapter", "dashlane",
+            "--account", "email@example.com" ]
+      end
+      Kamal::Secrets::Adapters::Dashlane.new
+    end
+
+    def secrets
+      { "SECRET1" => "secret_password", "PASSWORD1" => "password_password" }
+    end
+
     def stub_status(logged_in)
       if logged_in
         stub_ticks_with("dcli status 2> /dev/null", succeed: true).returns(<<~STATUS)
@@ -98,18 +113,8 @@ class DashlaneAdapterTest < SecretAdapterTestCase
       @adapter.stubs(:system).with { "dcli sync 2> /dev/null" && (success ? `true` : `false`) }
     end
 
-    def setup_logged_in
-      stub_cli_installed(true)
-      stub_status(true)
-    end
-
-    def stub_dashlane_secret(found:, secrets:)
-      output = if found
-        "[{\"id\":\"{ZD26708D-5KJ4-12KI-5K0G-4J34FFF67JT2}\",\"creationDatetime\":\"1777896821\",\"lastBackupTime\":\"0\",\"lastUse\":\"1777896821\",\"localeFormat\":\"UNIVERSAL\",\"attachments\":\"[]\",\"userModificationDatetime\":\"1777896821\",\"title\":\"SECRET1\",\"content\":\"secret_password\",\"category\":\"noCategory\",\"secured\":\"false\",\"type\":\"GRAY\",\"creationDate\":\"1777896821\",\"updateDate\":\"1777896821\"}]"
-      else
-        "[]"
-      end
-      stub_ticks.with("dcli secret #{secrets.keys.join(" ")} -o json").returns(output)
+    def account
+      "email@example.com"
     end
 
     def stub_dashlane_password(found:, secrets:)
@@ -121,22 +126,17 @@ class DashlaneAdapterTest < SecretAdapterTestCase
       stub_ticks.with("dcli password #{secrets.keys.join(" ")} -o json").returns(output)
     end
 
-    def account
-      "email@example.com"
-    end
-
-    def secrets
-      { "SECRET1" => "secret_password", "PASSWORD1" => "password_password" }
-    end
-
-    def run_command(*command)
-      stdouted do
-        Kamal::Cli::Secrets.start \
-          [ *command,
-            "-c", "test/fixtures/deploy_with_accessories.yml",
-            "--adapter", "dashlane",
-            "--account", "email@example.com" ]
+    def stub_dashlane_secret(found:, secrets:)
+      output = if found
+        "[{\"id\":\"{ZD26708D-5KJ4-12KI-5K0G-4J34FFF67JT2}\",\"creationDatetime\":\"1777896821\",\"lastBackupTime\":\"0\",\"lastUse\":\"1777896821\",\"localeFormat\":\"UNIVERSAL\",\"attachments\":\"[]\",\"userModificationDatetime\":\"1777896821\",\"title\":\"SECRET1\",\"content\":\"secret_password\",\"category\":\"noCategory\",\"secured\":\"false\",\"type\":\"GRAY\",\"creationDate\":\"1777896821\",\"updateDate\":\"1777896821\"}]"
+      else
+        "[]"
       end
-      Kamal::Secrets::Adapters::Dashlane.new
+      stub_ticks.with("dcli secret #{secrets.keys.join(" ")} -o json").returns(output)
+    end
+
+    def setup_logged_in
+      stub_cli_installed(true)
+      stub_status(true)
     end
 end
