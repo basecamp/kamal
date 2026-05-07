@@ -8,9 +8,10 @@ class DashlaneAdapterTest < SecretAdapterTestCase
   test "fetch without CLI installed" do
     stub_cli_installed(false)
 
-    assert_raises(RuntimeError, "Dashlane CLI is not installed") do
+    error = assert_raises RuntimeError do
       run_command("fetch", *secrets.keys)
     end
+    assert_equal "Dashlane CLI is not installed", error.message
   end
 
   test "fetch with failed login" do
@@ -18,9 +19,10 @@ class DashlaneAdapterTest < SecretAdapterTestCase
     stub_status(false)
     stub_login(false)
 
-    assert_raises(RuntimeError, "Failed to login to or unlock Dashlane") do
+    error = assert_raises RuntimeError do
       @adapter.fetch(secrets.keys, account: account)
     end
+    assert_equal "Failed to login to or unlock Dashlane", error.message
   end
 
   test "fetch with successful login" do
@@ -50,9 +52,10 @@ class DashlaneAdapterTest < SecretAdapterTestCase
     stub_dashlane_password(found: false, secrets: secrets)
     stub_dashlane_secret(found: false, secrets: secrets)
 
-    assert_raises RuntimeError, "Could not find #{secrets.keys.join(", ")} in Dashlane passwords or secrets" do
+    error = assert_raises RuntimeError do
       @adapter.fetch(secrets.keys, account: account)
     end
+    assert_equal "Could not find #{secrets.keys.join(", ")} in Dashlane passwords or secrets", error.message
   end
 
   test "fetch dashlane passwords and no secrets" do
