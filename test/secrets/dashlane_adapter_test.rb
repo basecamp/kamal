@@ -19,7 +19,7 @@ class DashlaneAdapterTest < SecretAdapterTestCase
     stub_login(false)
 
     assert_raises(RuntimeError, "Failed to login to or unlock Dashlane") do
-      @adapter.fetch([ "SECRET1, PASSWORD1" ], account: account)
+      @adapter.fetch(secrets.keys, account: account)
     end
   end
 
