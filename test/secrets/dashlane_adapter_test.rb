@@ -93,7 +93,6 @@ class DashlaneAdapterTest < SecretAdapterTestCase
             "--adapter", "dashlane",
             "--account", "email@example.com" ]
       end
-      Kamal::Secrets::Adapters::Dashlane.new
     end
 
     def secrets
@@ -113,7 +112,7 @@ class DashlaneAdapterTest < SecretAdapterTestCase
     end
 
     def stub_login(success)
-      @adapter.stubs(:system).with { "dcli sync 2> /dev/null" && (success ? `true` : `false`) }
+      @adapter.stubs(:system).with { |c| c == "dcli sync 2> /dev/null" && (success ? `true` : `false`) }
     end
 
     def account
