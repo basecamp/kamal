@@ -34,7 +34,7 @@ class DashlaneAdapterTest < SecretAdapterTestCase
 
     result = @adapter.fetch(secrets.keys, account: account)
 
-    assert_equal(result.sort, secrets.sort)
+    assert_equal secrets.sort, result.sort
   end
 
   test "fetch when already logged in" do
@@ -44,7 +44,7 @@ class DashlaneAdapterTest < SecretAdapterTestCase
 
     result = @adapter.fetch(secrets.keys, account: account)
 
-    assert_equal(result.sort, secrets.sort)
+    assert_equal secrets.sort, result.sort
   end
 
   test "fetch with missing entries" do
@@ -66,7 +66,7 @@ class DashlaneAdapterTest < SecretAdapterTestCase
 
     result = @adapter.fetch(only_passwords.keys, account: account)
 
-    assert_equal(result.sort, only_passwords.sort)
+    assert_equal only_passwords.sort, result.sort
   end
 
   test "fetch dashlane secrets and no passwords" do
@@ -77,7 +77,7 @@ class DashlaneAdapterTest < SecretAdapterTestCase
 
     result = @adapter.fetch(only_secrets.keys, account: account)
 
-    assert_equal(result.sort, only_secrets.sort)
+    assert_equal only_secrets.sort, result.sort
   end
 
   private
