@@ -59,7 +59,7 @@ class DashlaneAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch dashlane passwords and no secrets" do
-    only_passwords = secrets.select { |k| k.match? "PASSWORD" }
+    only_passwords = secrets.select { |k| k.include? "PASSWORD" }
     setup_logged_in
     stub_dashlane_password(found: true, secrets: only_passwords)
     stub_dashlane_secret(found: false, secrets: only_passwords)
@@ -70,7 +70,7 @@ class DashlaneAdapterTest < SecretAdapterTestCase
   end
 
   test "fetch dashlane secrets and no passwords" do
-    only_secrets = secrets.select { |k| k.match? "SECRET" }
+    only_secrets = secrets.select { |k| k.include? "SECRET" }
     setup_logged_in
     stub_dashlane_password(found: false, secrets: only_secrets)
     stub_dashlane_secret(found: true, secrets: only_secrets)
