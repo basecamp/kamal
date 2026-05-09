@@ -38,6 +38,14 @@ class ConfigurationSshTest < ActiveSupport::TestCase
 
     config = Kamal::Configuration.new(@deploy.tap { |c| c.merge!(ssh: { "config" => [ "~/config.mine.1", "~/config.mine.2" ] }) })
     assert_equal [ "~/config.mine.1", "~/config.mine.2" ], config.ssh.options[:config]
+
+    assert_nil @config.ssh.options[:forward_agent]
+
+    config = Kamal::Configuration.new(@deploy.tap { |c| c.merge!(ssh: { "forward_agent" => false }) })
+    assert_equal false, config.ssh.options[:forward_agent]
+
+    config = Kamal::Configuration.new(@deploy.tap { |c| c.merge!(ssh: { "forward_agent" => true }) })
+    assert_equal true, config.ssh.options[:forward_agent]
   end
 
   test "ssh options with proxy host" do

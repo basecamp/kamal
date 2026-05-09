@@ -71,3 +71,11 @@ ssh:
   # /etc/ssh_config), to false ignore config files, or to a file path
   # (or array of paths) to load specific configuration. Defaults to true.
   config: [ "~/.ssh/myconfig" ]
+
+  # Forward agent
+  #
+  # Whether to forward the local SSH agent to the remote host. Defaults to
+  # true (sshkit's default). Set to false when connecting through a jump
+  # host or tunnel that does not support agent forwarding (for example,
+  # Cloudflare Access for Infrastructure with SSH).
+  forward_agent: false
