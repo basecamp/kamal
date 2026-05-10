@@ -20,7 +20,7 @@ class DashlaneAdapterTest < SecretAdapterTestCase
     stub_login(false)
 
     error = assert_raises RuntimeError do
-      @adapter.fetch(secrets.keys, account: account)
+      @adapter.fetch(secrets.keys)
     end
     assert_equal "Failed to login to or unlock Dashlane", error.message
   end
@@ -32,7 +32,7 @@ class DashlaneAdapterTest < SecretAdapterTestCase
     stub_dashlane_password(found: true, secrets: secrets)
     stub_dashlane_secret(found: true, secrets: secrets)
 
-    result = @adapter.fetch(secrets.keys, account: account)
+    result = @adapter.fetch(secrets.keys)
 
     assert_equal secrets.sort, result.sort
   end
@@ -42,7 +42,7 @@ class DashlaneAdapterTest < SecretAdapterTestCase
     stub_dashlane_password(found: true, secrets: secrets)
     stub_dashlane_secret(found: true, secrets: secrets)
 
-    result = @adapter.fetch(secrets.keys, account: account)
+    result = @adapter.fetch(secrets.keys)
 
     assert_equal secrets.sort, result.sort
   end
@@ -53,7 +53,7 @@ class DashlaneAdapterTest < SecretAdapterTestCase
     stub_dashlane_secret(found: false, secrets: secrets)
 
     error = assert_raises RuntimeError do
-      @adapter.fetch(secrets.keys, account: account)
+      @adapter.fetch(secrets.keys)
     end
     assert_equal "Could not find #{secrets.keys.join(", ")} in Dashlane passwords or secrets", error.message
   end
@@ -64,7 +64,7 @@ class DashlaneAdapterTest < SecretAdapterTestCase
     stub_dashlane_password(found: true, secrets: only_passwords)
     stub_dashlane_secret(found: false, secrets: only_passwords)
 
-    result = @adapter.fetch(only_passwords.keys, account: account)
+    result = @adapter.fetch(only_passwords.keys)
 
     assert_equal only_passwords.sort, result.sort
   end
@@ -75,9 +75,28 @@ class DashlaneAdapterTest < SecretAdapterTestCase
     stub_dashlane_password(found: false, secrets: only_secrets)
     stub_dashlane_secret(found: true, secrets: only_secrets)
 
-    result = @adapter.fetch(only_secrets.keys, account: account)
+    result = @adapter.fetch(only_secrets.keys)
 
     assert_equal only_secrets.sort, result.sort
+  end
+
+  test "fetch with --from option" do
+    setup_logged_in
+
+    error = assert_raises ArgumentError do
+      @adapter.fetch(secrets.keys, from: "test")
+    end
+    assert_equal "Dashlane adapter does not support the --from option", error.message
+  end
+
+  test "fetch with failed password command" do
+    stub_ticks_with("dcli password #{secrets.keys.join(" ")} -o json", succeed: false)
+    setup_logged_in
+
+    error = assert_raises RuntimeError do
+      @adapter.fetch(secrets.keys)
+    end
+    assert_equal "Could not read #{secrets.keys} from Dashlane passwords", error.message
   end
 
   private
@@ -90,8 +109,7 @@ class DashlaneAdapterTest < SecretAdapterTestCase
         Kamal::Cli::Secrets.start \
           [ *command,
             "-c", "test/fixtures/deploy_with_accessories.yml",
-            "--adapter", "dashlane",
-            "--account", "email@example.com" ]
+            "--adapter", "dashlane" ]
       end
     end
 
@@ -103,20 +121,16 @@ class DashlaneAdapterTest < SecretAdapterTestCase
       if logged_in
         stub_ticks_with("dcli status 2> /dev/null", succeed: true).returns(<<~STATUS)
         Logged in: yes
-        Login: #{account}
+        Login: example@email.com
         Locked: no
         STATUS
       else
-        stub_ticks_with("dcli status 2> /dev/null", succeed: false)
+        stub_ticks_with("dcli status 2> /dev/null", succeed: true).returns("Logged in: no\n")
       end
     end
 
     def stub_login(success)
       @adapter.stubs(:system).with { |c| c == "dcli sync 2> /dev/null" && (success ? `true` : `false`) }
-    end
-
-    def account
-      "email@example.com"
     end
 
     def stub_dashlane_password(found:, secrets:)
