@@ -1,23 +1,30 @@
 class Kamal::Secrets::Adapters::Dashlane < Kamal::Secrets::Adapters::Base
+  def requires_account?
+    false
+  end
+
   private
     def login(account)
-      unless logged_in?(account)
+      unless logged_in?
         system("dcli sync 2> /dev/null")
         raise RuntimeError, "Failed to login to or unlock Dashlane" unless $?.success?
       end
     end
 
-    def logged_in?(account)
-      status = <<~STATUS
-      Logged in: yes
-      Login: #{account}
-      Locked: no
-      STATUS
-      `dcli status 2> /dev/null` == status
+    def logged_in?
+      status = `dcli status 2> /dev/null`
+      return false unless $?.success?
+
+      status = status.each_line(chomp: true).with_object({}) do |line, hash|
+        key, value = line.split(":").map(&:strip)
+        hash[key] = value if key && value
+      end
+
+      status["Logged in"] == "yes" && status["Locked"] == "no"
     end
 
     def fetch_secrets(secrets, from:, account:, session:)
-      raise RuntimeError, "Unsupported 'from' argument for Dashlane" if from
+      raise ArgumentError, "Dashlane adapter does not support the --from option" if from.present?
 
       shell_secrets_string = secrets.map(&:shellescape).join(" ")
       dashlane_passwords = `dcli password #{shell_secrets_string} -o json`
