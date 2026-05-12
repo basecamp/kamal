@@ -192,6 +192,14 @@ class CommanderTest < ActiveSupport::TestCase
     assert_equal original_primary, @kamal.primary_host
   end
 
+  test "reset clears output logger" do
+    @kamal.send(:output_logger)
+    assert_not_nil @kamal.instance_variable_get(:@output_logger)
+
+    @kamal.reset
+    assert_nil @kamal.instance_variable_get(:@output_logger)
+  end
+
   private
     def configure_with(variant)
       @kamal = Kamal::Commander.new.tap do |kamal|

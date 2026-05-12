@@ -4,6 +4,7 @@ volumes:
   shared:
   registry:
   deployer_bundle:
+  otel:
 
 services:
   shared:
@@ -23,6 +24,7 @@ services:
       - shared:/shared
       - registry:/registry
       - deployer_bundle:/usr/local/bundle/
+      - otel:/tmp/otel
 
   registry:
     build:
@@ -57,6 +59,12 @@ services:
       context: docker/vm
     volumes:
       - shared:/shared
+
+  otel_collector:
+    build:
+      context: docker/otel_collector
+    volumes:
+      - otel:/tmp/otel
 
   load_balancer:
     build:

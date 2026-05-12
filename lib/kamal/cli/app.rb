@@ -1,7 +1,7 @@
 class Kamal::Cli::App < Kamal::Cli::Base
   desc "boot", "Boot app on servers (or reboot app if already running)"
   def boot
-    with_lock do
+    modify(lock: true) do
       say "Get most recent version available as an image...", :magenta unless options[:version]
       using_version(version_or_latest) do |version|
         say "Start container with version #{version} (or reboot if already running)...", :magenta
@@ -42,7 +42,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
 
   desc "start", "Start existing app container on servers"
   def start
-    with_lock do
+    modify(lock: true) do
       on_roles(KAMAL.roles, hosts: KAMAL.app_hosts, parallel: KAMAL.config.boot.parallel_roles) do |host, role|
         app = KAMAL.app(role: role, host: host)
         execute *KAMAL.auditor.record("Started app version #{KAMAL.config.version}"), verbosity: :debug
@@ -61,7 +61,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
 
   desc "stop", "Stop app container on servers"
   def stop
-    with_lock do
+    modify(lock: true) do
       on_roles(KAMAL.roles, hosts: KAMAL.app_hosts, parallel: KAMAL.config.boot.parallel_roles) do |host, role|
         app = KAMAL.app(role: role, host: host)
         execute *KAMAL.auditor.record("Stopped app", role: role), verbosity: :debug
@@ -233,7 +233,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
 
   desc "remove", "Remove app containers and images from servers"
   def remove
-    with_lock do
+    modify(lock: true) do
       stop
       remove_containers
       remove_images
@@ -243,7 +243,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
 
   desc "live", "Set the app to live mode"
   def live
-    with_lock do
+    modify(lock: true) do
       on_roles(KAMAL.roles, hosts: KAMAL.proxy_hosts) do |host, role|
         execute *KAMAL.app(role: role, host: host).live if role.running_proxy?
       end
@@ -256,7 +256,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
   def maintenance
     maintenance_options = { drain_timeout: options[:drain_timeout] || KAMAL.config.drain_timeout, message: options[:message] }
 
-    with_lock do
+    modify(lock: true) do
       on_roles(KAMAL.roles, hosts: KAMAL.proxy_hosts) do |host, role|
         execute *KAMAL.app(role: role, host: host).maintenance(**maintenance_options) if role.running_proxy?
       end
@@ -265,7 +265,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
 
   desc "remove_container [VERSION]", "Remove app container with given version from servers", hide: true
   def remove_container(version)
-    with_lock do
+    modify(lock: true) do
       on_roles(KAMAL.roles, hosts: KAMAL.app_hosts) do |host, role|
         execute *KAMAL.auditor.record("Removed app container with version #{version}", role: role), verbosity: :debug
         execute *KAMAL.app(role: role, host: host).remove_container(version: version)
@@ -275,7 +275,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
 
   desc "remove_containers", "Remove all app containers from servers", hide: true
   def remove_containers
-    with_lock do
+    modify(lock: true) do
       on_roles(KAMAL.roles, hosts: KAMAL.app_hosts) do |host, role|
         execute *KAMAL.auditor.record("Removed all app containers", role: role), verbosity: :debug
         execute *KAMAL.app(role: role, host: host).remove_containers
@@ -285,7 +285,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
 
   desc "remove_images", "Remove all app images from servers", hide: true
   def remove_images
-    with_lock do
+    modify(lock: true) do
       on(hosts_removing_all_roles) do
         execute *KAMAL.auditor.record("Removed all app images"), verbosity: :debug
         execute *KAMAL.app.remove_images
@@ -295,7 +295,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
 
   desc "remove_app_directories", "Remove the app directories from servers", hide: true
   def remove_app_directories
-    with_lock do
+    modify(lock: true) do
       on(hosts_removing_all_roles) do |host|
         execute *KAMAL.server.remove_app_directory, raise_on_non_zero_exit: false
         execute *KAMAL.auditor.record("Removed #{KAMAL.config.app_directory}"), verbosity: :debug
@@ -347,7 +347,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
 
     def with_lock_if_stopping
       if options[:stop]
-        with_lock { yield }
+        modify(lock: true) { yield }
       else
         yield
       end
