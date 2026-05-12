@@ -6,7 +6,7 @@ class Kamal::Secrets::Adapters::Dashlane < Kamal::Secrets::Adapters::Base
   private
     def login(_account)
       unless logged_in?
-        system("dcli sync 2> /dev/null")
+        `dcli sync > /dev/tty`
         raise RuntimeError, "Failed to login to or unlock Dashlane" unless $?.success?
       end
     end
