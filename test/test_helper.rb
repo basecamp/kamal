@@ -134,6 +134,5 @@ class SecretAdapterTestCase < ActiveSupport::TestCase
     def stub_ticks_with(command, succeed: true)
       # Sneakily run `false`/`true` after a match to set $? to 1/0
       stub_ticks.with { |c| c == command && (succeed ? `true` : `false`) }
-      Kamal::Secrets::Adapters::Base.any_instance.stubs(:`)
     end
 end
