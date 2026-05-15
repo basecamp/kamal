@@ -7,7 +7,7 @@ class PassboltAdapterTest < SecretAdapterTestCase
 
   test "fetch" do
     stub_ticks_with("passbolt --version 2> /dev/null", succeed: true)
-    stub_ticks.with("passbolt verify 2> /dev/null", succeed: true)
+    stub_ticks_with("passbolt verify", succeed: true)
 
     stub_ticks
       .with("passbolt list resources --filter 'Name == \"SECRET1\" || Name == \"FSECRET1\" || Name == \"FSECRET2\"'  --json")
@@ -64,7 +64,7 @@ class PassboltAdapterTest < SecretAdapterTestCase
 
   test "fetch with --from" do
     stub_ticks_with("passbolt --version 2> /dev/null", succeed: true)
-    stub_ticks.with("passbolt verify 2> /dev/null", succeed: true)
+    stub_ticks_with("passbolt verify", succeed: true)
 
     stub_ticks
       .with("passbolt list folders --filter 'Name == \"my-project\"' --json")
@@ -135,7 +135,7 @@ class PassboltAdapterTest < SecretAdapterTestCase
 
   test "fetch with folder in secret" do
     stub_ticks_with("passbolt --version 2> /dev/null", succeed: true)
-    stub_ticks.with("passbolt verify 2> /dev/null", succeed: true)
+    stub_ticks_with("passbolt verify", succeed: true)
 
     stub_ticks
       .with("passbolt list folders --filter 'Name == \"my-project\"' --json")
@@ -206,7 +206,7 @@ class PassboltAdapterTest < SecretAdapterTestCase
 
   test "fetch from multiple folders" do
     stub_ticks_with("passbolt --version 2> /dev/null", succeed: true)
-    stub_ticks.with("passbolt verify 2> /dev/null", succeed: true)
+    stub_ticks_with("passbolt verify", succeed: true)
 
     stub_ticks
       .with("passbolt list folders --filter 'Name == \"my-project\" || Name == \"other-project\"' --json")
@@ -284,7 +284,7 @@ class PassboltAdapterTest < SecretAdapterTestCase
 
   test "fetch from nested folder" do
     stub_ticks_with("passbolt --version 2> /dev/null", succeed: true)
-    stub_ticks.with("passbolt verify 2> /dev/null", succeed: true)
+    stub_ticks_with("passbolt verify", succeed: true)
 
     stub_ticks
       .with("passbolt list folders --filter 'Name == \"my-project\"' --json")
@@ -369,7 +369,7 @@ class PassboltAdapterTest < SecretAdapterTestCase
 
   test "fetch from nested folder in secret" do
     stub_ticks_with("passbolt --version 2> /dev/null", succeed: true)
-    stub_ticks.with("passbolt verify 2> /dev/null", succeed: true)
+    stub_ticks_with("passbolt verify", succeed: true)
 
     stub_ticks
       .with("passbolt list folders --filter 'Name == \"my-project\"' --json")
