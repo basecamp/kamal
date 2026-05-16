@@ -136,7 +136,7 @@ class Kamal::Configuration::Builder
   end
 
   def git_clone?
-    Kamal::Git.used? && builder_config["context"].nil?
+    Kamal::Git.git? && builder_config["context"].nil?
   end
 
   def clone_directory
