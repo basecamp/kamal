@@ -103,7 +103,7 @@ class CommandsProxyTest < ActiveSupport::TestCase
     assert_equal \
       "ssh -t root@1.1.1.1 -p 22 'docker logs kamal-proxy --tail 15 --timestamps --follow 2>&1'",
       new_command.follow_logs(host: @config[:servers].first, lines: 15)
-  end 
+  end
 
   test "proxy follow logs without timestamps" do
     assert_equal \
