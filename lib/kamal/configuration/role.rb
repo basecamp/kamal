@@ -44,11 +44,11 @@ class Kamal::Configuration::Role
   end
 
   def option_args
-    if args = specializations["options"]
-      optionize args
-    else
-      []
-    end
+    optionize docker_options.reject { |key, _| key.to_s == "restart" }
+  end
+
+  def restart_policy
+    restart_policy_option || "unless-stopped"
   end
 
   def labels
@@ -215,6 +215,14 @@ class Kamal::Configuration::Role
 
     def role_config
       @role_config ||= config.raw_config.servers.is_a?(Array) ? {} : config.raw_config.servers[name]
+    end
+
+    def docker_options
+      specializations["options"] || {}
+    end
+
+    def restart_policy_option
+      docker_options.find { |key, _| key.to_s == "restart" }&.last
     end
 
     def custom_labels

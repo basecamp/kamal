@@ -16,7 +16,7 @@ class Kamal::Commands::App < Kamal::Commands::Base
   def run(hostname: nil)
     docker :run,
       "--detach",
-      "--restart unless-stopped",
+      "--restart", role.restart_policy,
       "--name", container_name,
       "--network", "kamal",
       *([ "--hostname", hostname ] if hostname),

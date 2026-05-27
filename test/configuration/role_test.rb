@@ -278,6 +278,17 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
     assert_equal [ "-t", 30 ], config_with_roles.role(:workers).stop_args
   end
 
+  test "restart policy" do
+    @deploy_with_roles[:servers]["workers"]["options"] = { "restart" => "on-failure:3", "memory" => "2g" }
+
+    assert_equal "on-failure:3", config_with_roles.role(:workers).restart_policy
+    assert_equal [ "--memory", "\"2g\"" ], config_with_roles.role(:workers).option_args
+  end
+
+  test "default restart policy" do
+    assert_equal "unless-stopped", config_with_roles.role(:workers).restart_policy
+  end
+
   test "role specific proxy config" do
     @deploy_with_roles[:proxy] = { "response_timeout" => 15 }
     @deploy_with_roles[:servers]["workers"]["proxy"] = { "response_timeout" => 18 }
@@ -286,12 +297,14 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
     assert_equal "18s", config_with_roles.role(:workers).proxy.deploy_options[:"target-timeout"]
   end
 
-  test "can't set restart in options" do
-    @deploy_with_roles[:servers]["workers"]["options"] = { "restart" => "always" }
+  test "invalid boolean restart policy" do
+    @deploy_with_roles[:servers]["workers"]["options"] = { "restart" => false }
 
-    assert_raises Kamal::ConfigurationError, "servers/workers: Cannot set restart policy in docker options, unless-stopped is required" do
+    error = assert_raises Kamal::ConfigurationError do
       Kamal::Configuration.new(@deploy_with_roles)
     end
+
+    assert_equal %(servers/workers/options/restart: should be a string. Use "no" to disable restarts), error.message
   end
 
   private
