@@ -67,6 +67,16 @@ class Kamal::Configuration::Proxy
     proxy_config["path_prefixes"] || proxy_config["path_prefix"]&.split(",") || []
   end
 
+  def basic_auth?
+    proxy_config["basic_auth"].is_a?(Hash)
+  end
+
+  def basic_auth
+    return nil unless basic_auth?
+    auth = proxy_config["basic_auth"]
+    "#{auth["username"]}:#{auth["password"]}"
+  end
+
   def deploy_options
     {
       host: hosts,
@@ -90,7 +100,8 @@ class Kamal::Configuration::Proxy
       "tls-redirect": proxy_config.dig("ssl_redirect"),
       "log-request-header": proxy_config.dig("logging", "request_headers") || DEFAULT_LOG_REQUEST_HEADERS,
       "log-response-header": proxy_config.dig("logging", "response_headers"),
-      "error-pages": error_pages
+      "error-pages": error_pages,
+      "basic-auth": basic_auth
     }.compact
   end
 

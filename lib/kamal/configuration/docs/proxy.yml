@@ -148,6 +148,20 @@ proxy:
       - X-Request-ID
       - X-Request-Start
 
+  # Basic authentication
+  #
+  # Protect the app behind HTTP Basic Auth, enforced by kamal-proxy. Requests
+  # without valid credentials receive a 401 response.
+  #
+  # Both `username` and `password` are required. Because credentials are sent on
+  # every request, enable `ssl` when using basic auth.
+  #
+  # Avoid committing the password in plain text - inject it from a secret instead:
+  #   password: <%= ENV["WEB_PASSWORD"] %>
+  basic_auth:
+    username: "admin"
+    password: "secret"
+
   # Run configuration
   #
   # These options are used when booting the proxy container.

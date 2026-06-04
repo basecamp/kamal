@@ -105,6 +105,40 @@ class ConfigurationProxyTest < ActiveSupport::TestCase
     end
   end
 
+  test "basic auth in deploy options and command args" do
+    @deploy[:proxy] = { "basic_auth" => { "username" => "abc", "password" => "123456" } }
+
+    proxy = config.proxy
+    assert_equal "abc:123456", proxy.deploy_options[:"basic-auth"]
+    assert_includes proxy.deploy_command_args(target: "172.1.0.2"), "--basic-auth=\"abc:123456\""
+  end
+
+  test "no basic auth option when not configured" do
+    @deploy[:proxy] = { "host" => "example.com" }
+
+    proxy = config.proxy
+    assert_nil proxy.deploy_options[:"basic-auth"]
+    assert_not proxy.basic_auth?
+    assert_not_includes proxy.deploy_command_args(target: "172.1.0.2").join(" "), "--basic-auth"
+  end
+
+  test "basic auth with only username" do
+    @deploy[:proxy] = { "basic_auth" => { "username" => "abc" } }
+    assert_raises(Kamal::ConfigurationError) { config.proxy }
+  end
+
+  test "basic auth with only password" do
+    @deploy[:proxy] = { "basic_auth" => { "password" => "123456" } }
+    assert_raises(Kamal::ConfigurationError) { config.proxy }
+  end
+
+  test "basic auth specialized on a role overrides root proxy config" do
+    @deploy[:proxy] = { "basic_auth" => { "username" => "abc", "password" => "123456" } }
+    @deploy[:servers] = { "web" => { "hosts" => [ "1.1.1.1" ], "proxy" => { "basic_auth" => { "username" => "xyz", "password" => "secret" } } } }
+
+    assert_equal "xyz:secret", config.role(:web).proxy.deploy_options[:"basic-auth"]
+  end
+
   private
     def config
       Kamal::Configuration.new(@deploy)
