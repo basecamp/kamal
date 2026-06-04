@@ -110,7 +110,24 @@ class ConfigurationProxyTest < ActiveSupport::TestCase
 
     proxy = config.proxy
     assert_equal "abc:123456", proxy.deploy_options[:"basic-auth"]
-    assert_includes proxy.deploy_command_args(target: "172.1.0.2"), "--basic-auth=\"abc:123456\""
+
+    args = proxy.deploy_command_args(target: "172.1.0.2")
+    assert_match(/--basic-auth=\S*abc:123456/, args.map(&:to_s).join(" "))
+  end
+
+  test "basic auth credentials are redacted in command args" do
+    @deploy[:proxy] = { "basic_auth" => { "username" => "abc", "password" => "123456" } }
+
+    args = config.proxy.deploy_command_args(target: "172.1.0.2")
+    redacted = Kamal::Utils.redacted(args).join(" ")
+
+    assert_includes redacted, "--basic-auth=[REDACTED]"
+    assert_not_includes redacted, "123456"
+  end
+
+  test "basic auth must be a hash" do
+    @deploy[:proxy] = { "basic_auth" => "abc" }
+    assert_raises(Kamal::ConfigurationError) { config.proxy }
   end
 
   test "no basic auth option when not configured" do
