@@ -1,0 +1,22 @@
+service: app
+image: dhh/app
+servers:
+  web:
+    - "1.1.1.1"
+    - "1.1.1.2"
+registry:
+  username: user
+  password: pw
+builder:
+  arch: amd64
+
+accessories:
+  monitoring:
+    image: monitoring:latest
+    host: 1.1.1.1
+    proxy:
+      host: monitoring.example.com
+      ssl:
+        certificate_pem: CERT_PEM
+        private_key_pem: KEY_PEM
+      app_port: 9090

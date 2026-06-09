@@ -28,6 +28,9 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
             execute *KAMAL.auditor.record("Booted #{name} accessory"), verbosity: :debug
             execute *accessory.ensure_env_directory
             upload! accessory.secrets_io, accessory.secrets_path, mode: "0600"
+
+            Kamal::Cli::Accessory::SslCertificates.new(accessory, self).run
+
             execute *accessory.run(host: host)
 
             if accessory.running_proxy?
