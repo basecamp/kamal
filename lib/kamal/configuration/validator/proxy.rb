@@ -32,6 +32,12 @@ class Kamal::Configuration::Validator::Proxy < Kamal::Configuration::Validator
           end
         end
       end
+
+      if healthcheck_port = config.dig("healthcheck", "port")
+        unless healthcheck_port.is_a?(Integer) && healthcheck_port > 0 && healthcheck_port <= 65535
+          error "healthcheck/port must be a valid port number (1-65535)"
+        end
+      end
     end
   end
 

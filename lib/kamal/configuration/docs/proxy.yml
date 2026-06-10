@@ -114,10 +114,16 @@ proxy:
   # the deploy timeout, with a 5-second timeout for each request.
   #
   # Once the app is up, the proxy will stop hitting the healthcheck endpoint.
+  #
+  # By default, the healthcheck is performed on the same port as the target.
+  # If your healthcheck endpoint is exposed on a different port than your main
+  # application, you can specify it with the port option. This is useful when
+  # your app exposes health endpoints on a dedicated port.
   healthcheck:
     interval: 3
     path: /health
     timeout: 3
+    port: 3001  # Optional: use a different port for healthchecks
 
   # Buffering
   #
