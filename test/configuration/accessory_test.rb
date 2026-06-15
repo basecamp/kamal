@@ -107,8 +107,73 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
   end
 
   test "port" do
-    assert_equal "3306:3306", @config.accessory(:mysql).port
-    assert_equal "6379:6379", @config.accessory(:redis).port
+    assert_equal "127.0.0.1:3306:3306", @config.accessory(:mysql).port
+    assert_equal "127.0.0.1:6379:6379", @config.accessory(:redis).port
+  end
+
+  test "port with no port config" do
+    @deploy[:accessories]["mysql"].delete("port")
+    assert_nil Kamal::Configuration.new(@deploy).accessory(:mysql).port
+  end
+
+  test "port with container port only defaults to localhost" do
+    @deploy[:accessories]["mysql"]["port"] = "3306"
+    assert_equal "127.0.0.1:3306:3306", Kamal::Configuration.new(@deploy).accessory(:mysql).port
+  end
+
+  test "port with host:container defaults to localhost" do
+    @deploy[:accessories]["mysql"]["port"] = "13306:3306"
+    assert_equal "127.0.0.1:13306:3306", Kamal::Configuration.new(@deploy).accessory(:mysql).port
+  end
+
+  test "port with explicit IPv4 is preserved" do
+    @deploy[:accessories]["mysql"]["port"] = "0.0.0.0:3306:3306"
+    assert_equal "0.0.0.0:3306:3306", Kamal::Configuration.new(@deploy).accessory(:mysql).port
+  end
+
+  test "port with explicit IPv6 is preserved" do
+    @deploy[:accessories]["mysql"]["port"] = "[::1]:3306:3306"
+    assert_equal "[::1]:3306:3306", Kamal::Configuration.new(@deploy).accessory(:mysql).port
+  end
+
+  test "port with protocol suffix is preserved" do
+    @deploy[:accessories]["mysql"]["port"] = "3306:3306/udp"
+    assert_equal "127.0.0.1:3306:3306/udp", Kamal::Configuration.new(@deploy).accessory(:mysql).port
+  end
+
+  test "port with explicit IP and protocol suffix is preserved" do
+    @deploy[:accessories]["mysql"]["port"] = "192.168.1.1:3306:3306/tcp"
+    assert_equal "192.168.1.1:3306:3306/tcp", Kamal::Configuration.new(@deploy).accessory(:mysql).port
+  end
+
+  test "port with invalid IPv4 raises an error" do
+    @deploy[:accessories]["mysql"]["port"] = "999.999.999.999:3306:3306"
+    assert_raises(Kamal::ConfigurationError) { Kamal::Configuration.new(@deploy).accessory(:mysql).port }
+  end
+
+  test "port with invalid IPv6 raises an error" do
+    @deploy[:accessories]["mysql"]["port"] = "[not::valid::ip]:3306:3306"
+    assert_raises(Kamal::ConfigurationError) { Kamal::Configuration.new(@deploy).accessory(:mysql).port }
+  end
+
+  test "port with ip:port expands to ip:port:port" do
+    @deploy[:accessories]["mysql"]["port"] = "127.0.0.1:3306"
+    assert_equal "127.0.0.1:3306:3306", Kamal::Configuration.new(@deploy).accessory(:mysql).port
+  end
+
+  test "port with ip:port and protocol expands to ip:port:port/protocol" do
+    @deploy[:accessories]["mysql"]["port"] = "127.0.0.1:3306/tcp"
+    assert_equal "127.0.0.1:3306:3306/tcp", Kamal::Configuration.new(@deploy).accessory(:mysql).port
+  end
+
+  test "port with IPv6 any address is preserved" do
+    @deploy[:accessories]["mysql"]["port"] = "[::]::3306"
+    assert_equal "[::]::3306", Kamal::Configuration.new(@deploy).accessory(:mysql).port
+  end
+
+  test "port with malformed IPv6 bracket raises an error" do
+    @deploy[:accessories]["mysql"]["port"] = "[::1:3306:3306"
+    assert_raises(Kamal::ConfigurationError) { Kamal::Configuration.new(@deploy).accessory(:mysql).port }
   end
 
   test "host" do
