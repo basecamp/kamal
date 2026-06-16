@@ -8,7 +8,15 @@ service ssh restart
 # itself an overlay mount, and overlay-on-overlay fails on modern Docker/kernels.
 # VFS nests safely.
 mkdir -p /etc/docker
-echo '{"storage-driver": "vfs"}' > /etc/docker/daemon.json
+# Point this inner daemon at the hub-cache pull-through cache so Docker Hub base
+# images are fetched at most once per run instead of on every test.
+cat > /etc/docker/daemon.json <<'EOF'
+{
+  "storage-driver": "vfs",
+  "registry-mirrors": [ "http://hub-cache:5000" ],
+  "insecure-registries": [ "hub-cache:5000" ]
+}
+EOF
 
 # Docker needs an iptables backend that can initialize the nat table against the
 # host kernel. Legacy works on hosts with the legacy ip_tables modules loaded;

@@ -55,11 +55,11 @@ class AccessoryTest < IntegrationTest
 
   private
     def assert_accessory_running(name)
-      assert_match /registry:4443\/busybox:1.36.0   "sh -c 'echo \\"Start/, accessory_details(name)
+      assert_match /busybox:1.36.0   "sh -c 'echo \\"Start/, accessory_details(name)
     end
 
     def assert_accessory_not_running(name)
-      assert_no_match /registry:4443\/busybox:1.36.0   "sh -c 'echo \\"Start/, accessory_details(name)
+      assert_no_match /busybox:1.36.0   "sh -c 'echo \\"Start/, accessory_details(name)
     end
 
     def assert_accessory_volume_mount_options(name)

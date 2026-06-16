@@ -18,7 +18,6 @@ builder:
     COMMIT_SHA: <%= `git rev-parse HEAD` %>
 proxy:
   run:
-    registry: registry:4443
     publish: false
     options:
       label:

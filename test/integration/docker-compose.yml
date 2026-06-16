@@ -5,6 +5,7 @@ volumes:
   registry:
   deployer_bundle:
   otel:
+  hub-cache:
 
 services:
   shared:
@@ -22,7 +23,6 @@ services:
     volumes:
       - ../..:/kamal
       - shared:/shared
-      - registry:/registry
       - deployer_bundle:/usr/local/bundle/
       - otel:/tmp/otel
 
@@ -36,6 +36,27 @@ services:
     volumes:
       - shared:/shared
       - registry:/var/lib/registry/
+
+  # Docker Hub pull-through cache. The deployer and vm inner daemons point their
+  # registry-mirrors here (see their boot.sh), so base images (registry:3, nginx,
+  # busybox, traefik, basecamp/kamal-proxy) are fetched from Docker Hub at most
+  # once per run instead of on every test, dodging Hub rate limits.
+  #
+  # The cache fetches from Docker Hub on its own (anonymous by default — separate
+  # from any `docker login` on the host, since Hub's anonymous limit is per-IP).
+  # Export DOCKERHUB_USERNAME and DOCKERHUB_TOKEN (a Hub access token) to have the
+  # cache authenticate its upstream pulls against your account's higher quota.
+  hub-cache:
+    image: registry:3
+    environment:
+      - REGISTRY_PROXY_REMOTEURL=https://registry-1.docker.io
+      - REGISTRY_PROXY_USERNAME=${DOCKERHUB_USERNAME:-}
+      - REGISTRY_PROXY_PASSWORD=${DOCKERHUB_TOKEN:-}
+    volumes:
+      - hub-cache:/var/lib/registry
+    healthcheck:
+      test: [ "CMD", "pgrep", "registry" ]
+      interval: 1s
 
   vm1:
     privileged: true
