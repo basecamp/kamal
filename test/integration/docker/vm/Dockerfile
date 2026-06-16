@@ -12,6 +12,6 @@ RUN mkdir /root/.ssh && \
     ln -s /shared/certs/domain.crt /etc/docker/certs.d/registry:4443/ca.crt && \
     echo "HOST_TOKEN=abcd" >> /etc/environment
 
-HEALTHCHECK --interval=1s CMD pgrep dockerd
+HEALTHCHECK --interval=1s CMD docker info > /dev/null 2>&1
 
 CMD ["./boot.sh"]

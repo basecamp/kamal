@@ -28,7 +28,7 @@ proxy:
 accessories:
   traefik:
     service: traefik
-    image: traefik:v2.10
+    image: traefik:v3.6
     port: 80
     cmd: "--providers.docker"
     options:
