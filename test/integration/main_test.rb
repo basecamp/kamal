@@ -288,10 +288,10 @@ class MainTest < IntegrationTest
 
     def assert_accumulated_assets(*versions)
       versions.each do |version|
-        assert_equal "200", Net::HTTP.get_response(URI.parse("http://#{app_host}:12345/versions/#{version}")).code
+        assert_equal "200", Net::HTTP.get_response(URI.parse("http://#{app_host}:#{@http_port}/versions/#{version}")).code
       end
 
-      assert_equal "200", Net::HTTP.get_response(URI.parse("http://#{app_host}:12345/versions/.hidden")).code
+      assert_equal "200", Net::HTTP.get_response(URI.parse("http://#{app_host}:#{@http_port}/versions/.hidden")).code
     end
 
     def assert_asset_volume_read_only(version)

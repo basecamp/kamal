@@ -94,7 +94,7 @@ class AccessoryTest < IntegrationTest
     end
 
     def netcat_response
-      uri = URI.parse("http://127.0.0.1:12345/up")
+      uri = URI.parse("http://127.0.0.1:#{@http_port}/up")
       http = Net::HTTP.new(uri.host, uri.port)
       request = Net::HTTP::Get.new(uri)
       request["Host"] = "netcat"

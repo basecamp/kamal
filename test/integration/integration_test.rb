@@ -1,13 +1,23 @@
 require "net/http"
+require "digest"
 require "test_helper"
 
 class IntegrationTest < ActiveSupport::TestCase
+  # Stable per-worktree Compose project name: the same across repeated runs in a given
+  # worktree (so `down` still tears down the right stack), but unique across worktrees
+  # so two suites can run concurrently without clashing on container/network/volume names.
+  COMPOSE_PROJECT = "kamal-test-#{Digest::SHA256.hexdigest(File.expand_path("../..", __dir__))[0, 8]}"
+
   setup do
     ENV["TEST_ID"] = SecureRandom.hex
     docker_compose "up --build -d"
     wait_for_healthy
     setup_deployer
     deployer_exec("sh -c 'rm -f /tmp/otel/*.json /tmp/kamal-deploy-logs/*'", workdir: "/")
+    # Host ports are published on ephemeral ports (collision-free across worktrees);
+    # discover the ones Compose actually assigned.
+    @http_port = published_port("load_balancer", 80)
+    @https_port = published_port("vm1", 443)
     @app = "app"
   end
 
@@ -24,7 +34,7 @@ class IntegrationTest < ActiveSupport::TestCase
 
   private
     def docker_compose(*commands, capture: false, raise_on_error: true)
-      command = "TEST_ID=#{ENV["TEST_ID"]} docker compose #{commands.join(" ")}"
+      command = "TEST_ID=#{ENV["TEST_ID"]} COMPOSE_PROJECT_NAME=#{COMPOSE_PROJECT} docker compose #{commands.join(" ")}"
       succeeded = false
       if capture || !ENV["DEBUG"]
         result = stdouted { stderred { succeeded = system("cd test/integration && #{command}") } }
@@ -34,6 +44,13 @@ class IntegrationTest < ActiveSupport::TestCase
 
       raise "Command `#{command}` failed with error code `#{$?}`, and output:\n#{result}" if !succeeded && raise_on_error
       result
+    end
+
+    # Returns the ephemeral host port Compose assigned to a service's container port,
+    # e.g. published_port("load_balancer", 80) => 32768.
+    def published_port(service, container_port)
+      docker_compose("port #{service} #{container_port}", capture: true)
+        .lines.first.to_s.strip.split(":").last.to_i
     end
 
     def deployer_exec(*commands, workdir: nil, **options)
@@ -84,7 +101,7 @@ class IntegrationTest < ActiveSupport::TestCase
     end
 
     def app_response(app: @app, cert: nil)
-      uri = cert ? URI.parse("https://#{app_host(app)}:22443/version") : URI.parse("http://#{app_host(app)}:12345/version")
+      uri = cert ? URI.parse("https://#{app_host(app)}:#{@https_port}/version") : URI.parse("http://#{app_host(app)}:#{@http_port}/version")
 
       if cert
         https_response_with_cert(uri, cert)
