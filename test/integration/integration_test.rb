@@ -1,5 +1,7 @@
 require "net/http"
 require "digest"
+require "base64"
+require "json"
 require "test_helper"
 
 class IntegrationTest < ActiveSupport::TestCase
@@ -10,6 +12,7 @@ class IntegrationTest < ActiveSupport::TestCase
 
   setup do
     ENV["TEST_ID"] = SecureRandom.hex
+    authenticate_hub_cache
     docker_compose "up --build -d"
     wait_for_healthy
     setup_deployer
@@ -44,6 +47,38 @@ class IntegrationTest < ActiveSupport::TestCase
 
       raise "Command `#{command}` failed with error code `#{$?}`, and output:\n#{result}" if !succeeded && raise_on_error
       result
+    end
+
+    # The hub-cache pull-through cache fetches from Docker Hub on its own, and Hub's
+    # anonymous pull limit is per-IP — easily exhausted by the suite. Reuse the
+    # developer's existing `docker login` so the cache authenticates its upstream
+    # pulls against their account quota. Respects DOCKERHUB_USERNAME/DOCKERHUB_TOKEN
+    # if already set (e.g. in CI); a no-op if no login is found (stays anonymous).
+    def authenticate_hub_cache
+      return if ENV["DOCKERHUB_TOKEN"].to_s.present?
+      username, token = docker_hub_credentials
+      return unless token.present?
+      ENV["DOCKERHUB_USERNAME"] = username
+      ENV["DOCKERHUB_TOKEN"] = token
+    end
+
+    def docker_hub_credentials
+      config_path = File.expand_path("~/.docker/config.json")
+      return [ nil, nil ] unless File.exist?(config_path)
+
+      config = JSON.parse(File.read(config_path))
+      registry = "https://index.docker.io/v1/"
+
+      if (helper = config.dig("credHelpers", registry) || config["credsStore"]).present?
+        creds = JSON.parse(`echo #{registry} | docker-credential-#{helper} get 2>/dev/null`)
+        [ creds["Username"], creds["Secret"] ]
+      elsif (auth = config.dig("auths", registry, "auth")).present?
+        Base64.decode64(auth).split(":", 2)
+      else
+        [ nil, nil ]
+      end
+    rescue
+      [ nil, nil ]
     end
 
     # Returns the ephemeral host port Compose assigned to a service's container port,
