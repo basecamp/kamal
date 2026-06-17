@@ -114,7 +114,10 @@ secrets_path: /user_home/kamal/secrets
 # Error pages
 #
 # A directory relative to the app root to find error pages for the proxy to serve.
-# Any files in the format 4xx.html or 5xx.html will be copied to the hosts.
+# Kamal copies any files matching 4??.html or 5??.html from this directory to the hosts.
+# kamal-proxy looks up custom pages by exact status code, so include files like
+# 404.html, 500.html, 502.html, 503.html, and 504.html rather than only 4xx.html
+# or 5xx.html.
 error_pages_path: public
 
 # Require destinations
