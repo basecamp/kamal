@@ -10,7 +10,7 @@ class PassboltAdapterTest < SecretAdapterTestCase
     stub_ticks.with("passbolt verify 2> /dev/null", succeed: true)
 
     stub_ticks
-      .with("passbolt list resources --filter 'Name == \"SECRET1\" || Name == \"FSECRET1\" || Name == \"FSECRET2\"'  --json")
+      .with("passbolt list resources --filter 'Name == \"SECRET1\" || Name == \"FSECRET1\" || Name == \"FSECRET2\"'  --column name --column password --json")
       .returns(<<~JSON)
         [
           {
@@ -81,7 +81,7 @@ class PassboltAdapterTest < SecretAdapterTestCase
       JSON
 
     stub_ticks
-      .with("passbolt list resources --filter '(Name == \"SECRET1\" && FolderParentID == \"dcbe0e39-42d8-42db-9637-8256b9f2f8e3\") || (Name == \"FSECRET1\" && FolderParentID == \"dcbe0e39-42d8-42db-9637-8256b9f2f8e3\") || (Name == \"FSECRET2\" && FolderParentID == \"dcbe0e39-42d8-42db-9637-8256b9f2f8e3\")' --folder dcbe0e39-42d8-42db-9637-8256b9f2f8e3 --json")
+      .with("passbolt list resources --filter '(Name == \"SECRET1\" && FolderParentID == \"dcbe0e39-42d8-42db-9637-8256b9f2f8e3\") || (Name == \"FSECRET1\" && FolderParentID == \"dcbe0e39-42d8-42db-9637-8256b9f2f8e3\") || (Name == \"FSECRET2\" && FolderParentID == \"dcbe0e39-42d8-42db-9637-8256b9f2f8e3\")' --folder dcbe0e39-42d8-42db-9637-8256b9f2f8e3 --column name --column password --json")
       .returns(<<~JSON)
         [
           {
@@ -152,7 +152,7 @@ class PassboltAdapterTest < SecretAdapterTestCase
       JSON
 
     stub_ticks
-      .with("passbolt list resources --filter '(Name == \"SECRET1\" && FolderParentID == \"dcbe0e39-42d8-42db-9637-8256b9f2f8e3\") || (Name == \"FSECRET1\" && FolderParentID == \"dcbe0e39-42d8-42db-9637-8256b9f2f8e3\") || (Name == \"FSECRET2\" && FolderParentID == \"dcbe0e39-42d8-42db-9637-8256b9f2f8e3\")' --folder dcbe0e39-42d8-42db-9637-8256b9f2f8e3 --json")
+      .with("passbolt list resources --filter '(Name == \"SECRET1\" && FolderParentID == \"dcbe0e39-42d8-42db-9637-8256b9f2f8e3\") || (Name == \"FSECRET1\" && FolderParentID == \"dcbe0e39-42d8-42db-9637-8256b9f2f8e3\") || (Name == \"FSECRET2\" && FolderParentID == \"dcbe0e39-42d8-42db-9637-8256b9f2f8e3\")' --folder dcbe0e39-42d8-42db-9637-8256b9f2f8e3 --column name --column password --json")
       .returns(<<~JSON)
         [
           {
@@ -230,7 +230,7 @@ class PassboltAdapterTest < SecretAdapterTestCase
       JSON
 
     stub_ticks
-      .with("passbolt list resources --filter '(Name == \"SECRET1\" && FolderParentID == \"dcbe0e39-42d8-42db-9637-8256b9f2f8e3\") || (Name == \"FSECRET1\" && FolderParentID == \"dcbe0e39-42d8-42db-9637-8256b9f2f8e3\") || (Name == \"FSECRET2\" && FolderParentID == \"14e11dd8-b279-4689-8bd9-fa33ebb527da\")' --folder dcbe0e39-42d8-42db-9637-8256b9f2f8e3 --folder 14e11dd8-b279-4689-8bd9-fa33ebb527da --json")
+      .with("passbolt list resources --filter '(Name == \"SECRET1\" && FolderParentID == \"dcbe0e39-42d8-42db-9637-8256b9f2f8e3\") || (Name == \"FSECRET1\" && FolderParentID == \"dcbe0e39-42d8-42db-9637-8256b9f2f8e3\") || (Name == \"FSECRET2\" && FolderParentID == \"14e11dd8-b279-4689-8bd9-fa33ebb527da\")' --folder dcbe0e39-42d8-42db-9637-8256b9f2f8e3 --folder 14e11dd8-b279-4689-8bd9-fa33ebb527da --column name --column password --json")
       .returns(<<~JSON)
         [
           {
@@ -315,7 +315,7 @@ class PassboltAdapterTest < SecretAdapterTestCase
       JSON
 
     stub_ticks
-      .with("passbolt list resources --filter '(Name == \"SECRET1\" && FolderParentID == \"6a3f21fc-aa40-4ba9-852c-7477fdd0310d\") || (Name == \"FSECRET1\" && FolderParentID == \"6a3f21fc-aa40-4ba9-852c-7477fdd0310d\") || (Name == \"FSECRET2\" && FolderParentID == \"6a3f21fc-aa40-4ba9-852c-7477fdd0310d\")' --folder dcbe0e39-42d8-42db-9637-8256b9f2f8e3 --folder 6a3f21fc-aa40-4ba9-852c-7477fdd0310d --json")
+      .with("passbolt list resources --filter '(Name == \"SECRET1\" && FolderParentID == \"6a3f21fc-aa40-4ba9-852c-7477fdd0310d\") || (Name == \"FSECRET1\" && FolderParentID == \"6a3f21fc-aa40-4ba9-852c-7477fdd0310d\") || (Name == \"FSECRET2\" && FolderParentID == \"6a3f21fc-aa40-4ba9-852c-7477fdd0310d\")' --folder dcbe0e39-42d8-42db-9637-8256b9f2f8e3 --folder 6a3f21fc-aa40-4ba9-852c-7477fdd0310d --column name --column password --json")
       .returns(<<~JSON)
         [
           {
@@ -400,7 +400,7 @@ class PassboltAdapterTest < SecretAdapterTestCase
       JSON
 
     stub_ticks
-      .with("passbolt list resources --filter '(Name == \"SECRET1\" && FolderParentID == \"6a3f21fc-aa40-4ba9-852c-7477fdd0310d\") || (Name == \"FSECRET1\" && FolderParentID == \"6a3f21fc-aa40-4ba9-852c-7477fdd0310d\") || (Name == \"FSECRET2\" && FolderParentID == \"6a3f21fc-aa40-4ba9-852c-7477fdd0310d\")' --folder dcbe0e39-42d8-42db-9637-8256b9f2f8e3 --folder 6a3f21fc-aa40-4ba9-852c-7477fdd0310d --json")
+      .with("passbolt list resources --filter '(Name == \"SECRET1\" && FolderParentID == \"6a3f21fc-aa40-4ba9-852c-7477fdd0310d\") || (Name == \"FSECRET1\" && FolderParentID == \"6a3f21fc-aa40-4ba9-852c-7477fdd0310d\") || (Name == \"FSECRET2\" && FolderParentID == \"6a3f21fc-aa40-4ba9-852c-7477fdd0310d\")' --folder dcbe0e39-42d8-42db-9637-8256b9f2f8e3 --folder 6a3f21fc-aa40-4ba9-852c-7477fdd0310d --column name --column password --json")
       .returns(<<~JSON)
         [
           {
@@ -469,7 +469,7 @@ class PassboltAdapterTest < SecretAdapterTestCase
     stub_ticks.with("passbolt list folders --filter 'Name == \"my-project\"' --json")
       .returns('[{"id":"abc def-123","folder_parent_id":"","name":"my-project","created_timestamp":"2025-02-21T19:52:50Z","modified_timestamp":"2025-02-21T19:52:50Z"}]')
 
-    stub_ticks.with("passbolt list resources --filter '(Name == \"SECRET1\" && FolderParentID == \"abc\\\\ def-123\")' --folder abc\\ def-123 --json")
+    stub_ticks.with("passbolt list resources --filter '(Name == \"SECRET1\" && FolderParentID == \"abc\\\\ def-123\")' --folder abc\\ def-123 --column name --column password --json")
       .returns('[{"id":"dd32963c","folder_parent_id":"abc def-123","name":"SECRET1","username":"","uri":"","password":"secret1","description":"","created_timestamp":"2025-02-21T06:04:23Z","modified_timestamp":"2025-02-21T06:04:23Z"}]')
 
     json = JSON.parse(run_command("fetch", "my-project/SECRET1"))
