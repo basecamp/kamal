@@ -19,11 +19,16 @@ class SSHKit::Backend::Abstract
     JSON.pretty_generate(JSON.parse(capture(*args, **kwargs)))
   end
 
-  def puts_by_host(host, output, type: "App", quiet: false)
-    unless quiet
-      puts "#{type} Host: #{host}"
+  def puts_by_host(host, output, type: "App", quiet: false, raw: false)
+    if raw
+      $stdout.binmode
+      $stdout.write(output)
+    else
+      unless quiet
+        puts "#{type} Host: #{host}"
+      end
+      puts "#{output}\n\n"
     end
-    puts "#{output}\n\n"
   end
 
   # Our execution pattern is for the CLI execute args lists returned

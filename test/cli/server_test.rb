@@ -3,7 +3,7 @@ require_relative "cli_test_case"
 class CliServerTest < CliTestCase
   test "running a command with exec" do
     SSHKit::Backend::Abstract.any_instance.stubs(:capture)
-      .with("date", verbosity: 1)
+      .with("date", strip: true, verbosity: 1)
       .returns("Today")
 
     hosts = "1.1.1.1".."1.1.1.4"
@@ -17,7 +17,7 @@ class CliServerTest < CliTestCase
 
   test "running a command with exec multiple arguments" do
     SSHKit::Backend::Abstract.any_instance.stubs(:capture)
-      .with("date -j", verbosity: 1)
+      .with("date -j", strip: true, verbosity: 1)
       .returns("Today")
 
     hosts = "1.1.1.1".."1.1.1.4"
@@ -27,6 +27,22 @@ class CliServerTest < CliTestCase
         assert_match "App Host: #{host}\nToday", output
       end
     end
+  end
+
+  test "running a command with exec --raw writes stdout verbatim" do
+    SSHKit::Backend::Abstract.any_instance.stubs(:capture)
+      .with("date", strip: false, verbosity: 1)
+      .returns("Today")
+
+    run_command("exec", "date", "--raw").tap do |output|
+      assert_equal "Today" * 4, output
+      assert_no_match(/App Host:/, output)
+      assert_no_match(/Running 'date'/, output)
+    end
+  end
+
+  test "exec --raw is incompatible with --interactive" do
+    assert_raises(ArgumentError) { run_command("exec", "date", "--raw", "--interactive") }
   end
 
   test "bootstrap already installed" do
