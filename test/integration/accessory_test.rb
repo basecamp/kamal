@@ -55,11 +55,11 @@ class AccessoryTest < IntegrationTest
 
   private
     def assert_accessory_running(name)
-      assert_match /registry:4443\/busybox:1.36.0   "sh -c 'echo \\"Start/, accessory_details(name)
+      assert_match /busybox:1.36.0   "sh -c 'echo \\"Start/, accessory_details(name)
     end
 
     def assert_accessory_not_running(name)
-      assert_no_match /registry:4443\/busybox:1.36.0   "sh -c 'echo \\"Start/, accessory_details(name)
+      assert_no_match /busybox:1.36.0   "sh -c 'echo \\"Start/, accessory_details(name)
     end
 
     def assert_accessory_volume_mount_options(name)
@@ -94,7 +94,7 @@ class AccessoryTest < IntegrationTest
     end
 
     def netcat_response
-      uri = URI.parse("http://127.0.0.1:12345/up")
+      uri = URI.parse("http://127.0.0.1:#{@http_port}/up")
       http = Net::HTTP.new(uri.host, uri.port)
       request = Net::HTTP::Get.new(uri)
       request["Host"] = "netcat"

@@ -22,8 +22,6 @@ proxy:
     timeout: 1
     path: "/up"
   response_timeout: 2
-  run:
-    registry: registry:4443
 registry:
   server: registry:4443
   username: root

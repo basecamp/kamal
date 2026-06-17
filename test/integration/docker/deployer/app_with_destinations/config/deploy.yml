@@ -5,8 +5,6 @@ deploy_timeout: 2
 drain_timeout: 2
 readiness_delay: 0
 proxy:
-  run:
-    registry: registry:4443
   host: localhost
   ssl: false
   healthcheck:
