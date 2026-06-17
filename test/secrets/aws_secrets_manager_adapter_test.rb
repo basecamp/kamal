@@ -33,7 +33,7 @@ class AwsSecretsManagerAdapterTest < SecretAdapterTestCase
   test "fetch" do
     stub_ticks.with("aws --version 2> /dev/null")
     stub_ticks
-      .with("aws secretsmanager batch-get-secret-value --secret-id-list secret/KEY1 secret/KEY2 secret2/KEY3 --profile default --output json")
+      .with("aws secretsmanager batch-get-secret-value --secret-id-list secret secret2 --profile default --output json")
       .returns(<<~JSON)
         {
           "SecretValues": [
@@ -62,7 +62,7 @@ class AwsSecretsManagerAdapterTest < SecretAdapterTestCase
         }
       JSON
 
-    json = JSON.parse(run_command("fetch", "secret/KEY1", "secret/KEY2", "secret2/KEY3"))
+    json = JSON.parse(run_command("fetch", "secret", "secret2"))
 
     expected_json = {
       "secret/KEY1"=>"VALUE1",
@@ -76,7 +76,7 @@ class AwsSecretsManagerAdapterTest < SecretAdapterTestCase
   test "fetch with string value" do
     stub_ticks.with("aws --version 2> /dev/null")
     stub_ticks
-      .with("aws secretsmanager batch-get-secret-value --secret-id-list secret secret2/KEY1 --profile default --output json")
+      .with("aws secretsmanager batch-get-secret-value --secret-id-list secret secret2 --profile default --output json")
       .returns(<<~JSON)
         {
           "SecretValues": [
@@ -105,7 +105,7 @@ class AwsSecretsManagerAdapterTest < SecretAdapterTestCase
         }
       JSON
 
-    json = JSON.parse(run_command("fetch", "secret", "secret2/KEY1"))
+    json = JSON.parse(run_command("fetch", "secret", "secret2"))
 
     expected_json = {
       "secret"=>"a-string-secret",
@@ -115,7 +115,7 @@ class AwsSecretsManagerAdapterTest < SecretAdapterTestCase
     assert_equal expected_json, json
   end
 
-  test "fetch with secret names" do
+  test "fetch with --from prefix" do
     stub_ticks.with("aws --version 2> /dev/null")
     stub_ticks
       .with("aws secretsmanager batch-get-secret-value --secret-id-list secret/KEY1 secret/KEY2 --profile default --output json")
@@ -123,10 +123,20 @@ class AwsSecretsManagerAdapterTest < SecretAdapterTestCase
         {
           "SecretValues": [
             {
-              "ARN": "arn:aws:secretsmanager:us-east-1:aaaaaaaaaaaa:secret:secret",
-              "Name": "secret",
+              "ARN": "arn:aws:secretsmanager:us-east-1:aaaaaaaaaaaa:secret:secret/KEY1",
+              "Name": "secret/KEY1",
               "VersionId": "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv",
-              "SecretString": "{\\"KEY1\\":\\"VALUE1\\", \\"KEY2\\":\\"VALUE2\\"}",
+              "SecretString": "VALUE1",
+              "VersionStages": [
+                  "AWSCURRENT"
+              ],
+              "CreatedDate": "2024-01-01T00:00:00.000000"
+            },
+            {
+              "ARN": "arn:aws:secretsmanager:us-east-1:aaaaaaaaaaaa:secret:secret/KEY2",
+              "Name": "secret/KEY2",
+              "VersionId": "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv",
+              "SecretString": "VALUE2",
               "VersionStages": [
                   "AWSCURRENT"
               ],
@@ -159,7 +169,7 @@ class AwsSecretsManagerAdapterTest < SecretAdapterTestCase
   test "fetch without account option omits --profile" do
     stub_ticks.with("aws --version 2> /dev/null")
     stub_ticks
-      .with("aws secretsmanager batch-get-secret-value --secret-id-list secret/KEY1 secret/KEY2 --output json")
+      .with("aws secretsmanager batch-get-secret-value --secret-id-list secret --output json")
       .returns(<<~JSON)
         {
           "SecretValues": [
@@ -178,7 +188,7 @@ class AwsSecretsManagerAdapterTest < SecretAdapterTestCase
         }
       JSON
 
-    json = JSON.parse(run_command("fetch", "--from", "secret", "KEY1", "KEY2", account: nil))
+    json = JSON.parse(run_command("fetch", "secret", account: nil))
 
     expected_json = {
       "secret/KEY1"=>"VALUE1",
