@@ -1,0 +1,36 @@
+service: app
+image: dhh/app
+servers:
+  web:
+    - "1.1.1.1"
+registry:
+  username: user
+  password: pw
+builder:
+  arch: amd64
+
+accessories:
+  mysql:
+    image: mysql:5.7
+    host: 1.1.1.1
+    port: 3306
+    files:
+      - test/fixtures/files/my.cnf:/etc/mysql/my.cnf
+      - local: test/fixtures/files/mysql_conf.d
+        remote: /etc/mysql/conf.d
+        mode: "0750"
+        file_mode: "0640"
+  mysql_simple:
+    image: mysql:5.7
+    host: 1.1.1.1
+    files:
+      - test/fixtures/files/mysql_conf.d:/etc/mysql/conf.d
+  mysql_warn:
+    image: mysql:5.7
+    host: 1.1.1.1
+    files:
+      - local: test/fixtures/files/my.cnf
+        remote: /etc/mysql/my.cnf
+        file_mode: "0600"
+
+readiness_delay: 0

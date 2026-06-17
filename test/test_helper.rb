@@ -22,7 +22,7 @@ SSHKit::Backend::Netssh.pool = SSHKit::Backend::ConnectionPool.new(0)
 class SSHKit::Backend::Printer
   def upload!(local, location, **kwargs)
     local = local.string.inspect if local.respond_to?(:string)
-    puts "Uploading #{local} to #{location} on #{host}"
+    puts "Uploading #{local} to #{location} on #{host}#{" recursively" if kwargs[:recursive]}"
   end
 end
 

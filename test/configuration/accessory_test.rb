@@ -254,6 +254,24 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
     assert_equal [ "--volume", "$PWD/app-mysql/etc/mysql/my.cnf:/etc/mysql/my.cnf:Z" ], config.accessory(:mysql).volume_args
   end
 
+  test "file with hash format and file_mode for directory uploads" do
+    @deploy[:accessories]["mysql"]["files"] = [
+      { "local" => "config/mysql", "remote" => "/etc/mysql", "mode" => "0750", "file_mode" => "0640" }
+    ]
+    @deploy[:accessories]["mysql"]["directories"] = []
+    config = Kamal::Configuration.new(@deploy)
+    file_config = config.accessory(:mysql).files.values.first
+    assert_equal "0750", file_config[:mode]
+    assert_equal "0640", file_config[:file_mode]
+  end
+
+  test "file_mode defaults to nil when not set" do
+    @deploy[:accessories]["mysql"]["files"] = [ "config/mysql/my.cnf:/etc/mysql/my.cnf" ]
+    @deploy[:accessories]["mysql"]["directories"] = []
+    config = Kamal::Configuration.new(@deploy)
+    assert_nil config.accessory(:mysql).files.values.first[:file_mode]
+  end
+
   test "file with hash format erb expansion" do
     @deploy[:accessories]["mysql"]["files"] = [
       { "local" => "test/fixtures/files/structure.sql.erb", "remote" => "/docker-entrypoint-initdb.d/structure.sql" }

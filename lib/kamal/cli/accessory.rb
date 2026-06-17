@@ -44,15 +44,31 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
   def upload(name)
     modify(lock: true) do
       with_accessory(name) do |accessory, hosts|
+        accessory.files.each do |(local, config)|
+          recursive = !local.is_a?(StringIO) && File.directory?(local)
+          if config[:file_mode] && !recursive
+            say "Ignoring file_mode for #{config[:container_path]}: it only applies when the local path is a directory", :yellow
+          end
+        end
+
         on(hosts) do
           accessory.files.each do |(local, config)|
             remote = config[:host_path]
             accessory.ensure_local_file_present(local)
 
+            recursive = !local.is_a?(StringIO) && File.directory?(local)
+
             execute *accessory.make_directory_for(remote)
-            upload! local, remote
-            execute :chmod, config[:mode], remote
-            execute :chown, config[:owner], remote if config[:owner]
+            upload! local, remote, recursive: recursive
+
+            if recursive && config[:file_mode]
+              execute :find, remote, "-type", "d", "-exec", :chmod, config[:mode], "{}", "+"
+              execute :find, remote, "-type", "f", "-exec", :chmod, config[:file_mode], "{}", "+"
+            else
+              execute :chmod, *("-R" if recursive), config[:mode], remote
+            end
+
+            execute :chown, *("-R" if recursive), config[:owner], remote if config[:owner]
           end
         end
       end

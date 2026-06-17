@@ -53,6 +53,11 @@ accessories:
         remote: /etc/busybox.conf
         mode: "0640"
         owner: "1000:1000"
+      - local: config/busybox.d
+        remote: /etc/busybox.d
+        mode: "0750"
+        file_mode: "0640"
+        owner: "1000:1000"
     directories:
       - local: data
         remote: /data

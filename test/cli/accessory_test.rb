@@ -50,6 +50,45 @@ class CliAccessoryTest < CliTestCase
     end
   end
 
+  test "upload directory recursively with separate dir and file modes" do
+    output = stdouted do
+      Kamal::Cli::Accessory.start([ "upload", "mysql", "-c", "test/fixtures/deploy_with_accessory_directory.yml" ])
+    end
+
+    # Plain file is still uploaded non-recursively
+    assert_match "test/fixtures/files/my.cnf to app-mysql/etc/mysql/my.cnf on 1.1.1.1\n", output
+    assert_match "chmod 755 app-mysql/etc/mysql/my.cnf", output
+
+    # Directory is uploaded recursively
+    assert_match "mkdir -p app-mysql/etc/mysql", output
+    assert_match "test/fixtures/files/mysql_conf.d to app-mysql/etc/mysql/conf.d on 1.1.1.1 recursively", output
+
+    # mode applies to directories, file_mode to files within
+    assert_match "find app-mysql/etc/mysql/conf.d -type d -exec chmod 0750 {} +", output
+    assert_match "find app-mysql/etc/mysql/conf.d -type f -exec chmod 0640 {} +", output
+  end
+
+  test "upload directory recursively without file_mode falls back to recursive chmod" do
+    output = stdouted do
+      Kamal::Cli::Accessory.start([ "upload", "mysql_simple", "-c", "test/fixtures/deploy_with_accessory_directory.yml" ])
+    end
+
+    assert_match "to app-mysql_simple/etc/mysql/conf.d on 1.1.1.1 recursively", output
+    assert_match "chmod -R 755 app-mysql_simple/etc/mysql/conf.d", output
+    assert_no_match(/find .* -exec chmod/, output)
+  end
+
+  test "upload warns when file_mode is set on a non-directory" do
+    output = stdouted do
+      Kamal::Cli::Accessory.start([ "upload", "mysql_warn", "-c", "test/fixtures/deploy_with_accessory_directory.yml" ])
+    end
+
+    assert_match "Ignoring file_mode for /etc/mysql/my.cnf: it only applies when the local path is a directory", output
+    # Falls back to the regular single-file chmod (no -R, no file_mode)
+    assert_match "chmod 755 app-mysql_warn/etc/mysql/my.cnf", output
+    assert_no_match(/find .* -exec chmod/, output)
+  end
+
   test "directories" do
     assert_match "mkdir -p $PWD/app-mysql/data", run_command("directories", "mysql")
   end

@@ -75,7 +75,7 @@ class Kamal::Configuration::Accessory
 
   def files
     accessory_config["files"]&.to_h do |config|
-      parse_path_config(config, default_mode: "755") do |local, remote|
+      parse_path_config(config, default_mode: "755", with_file_mode: true) do |local, remote|
         {
           key: expand_local_file(local),
           host_path: expand_remote_file(remote),
@@ -190,29 +190,27 @@ class Kamal::Configuration::Accessory
       end
     end
 
-    def parse_path_config(config, default_mode:)
+    def parse_path_config(config, default_mode:, with_file_mode: false)
       if config.is_a?(Hash)
         local, remote = config["local"], config["remote"]
         expanded = yield(local, remote)
-        [
-          expanded[:key],
-          expanded.except(:key).merge(
-            options: config["options"],
-            mode: config["mode"] || default_mode,
-            owner: config["owner"]
-          )
-        ]
+        attrs = {
+          options: config["options"],
+          mode: config["mode"] || default_mode,
+          owner: config["owner"]
+        }
+        attrs[:file_mode] = config["file_mode"] if with_file_mode
+        [ expanded[:key], expanded.except(:key).merge(attrs) ]
       else
         local, remote, options = config.split(":", 3)
         expanded = yield(local, remote)
-        [
-          expanded[:key],
-          expanded.except(:key).merge(
-            options: options,
-            mode: default_mode,
-            owner: nil
-          )
-        ]
+        attrs = {
+          options: options,
+          mode: default_mode,
+          owner: nil
+        }
+        attrs[:file_mode] = nil if with_file_mode
+        [ expanded[:key], expanded.except(:key).merge(attrs) ]
       end
     end
 

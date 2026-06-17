@@ -6,6 +6,7 @@ class AccessoryTest < IntegrationTest
     assert_accessory_running :busybox
     assert_accessory_volume_mount_options :busybox
     assert_accessory_file_mode_and_owner :busybox
+    assert_accessory_uploaded_directory_mode_and_owner :busybox
     assert_accessory_directory_mode_and_owner :busybox
 
     kamal :accessory, :stop, :busybox
@@ -75,6 +76,21 @@ class AccessoryTest < IntegrationTest
     def assert_accessory_directory_mode_and_owner(name)
       dir_stat = docker_compose("exec vm1 stat -c '%a %u:%g' /root/custom-busybox/data", capture: true)
       assert_match /750 1000:1000/, dir_stat, "Expected directory to have 750 mode and 1000:1000 owner"
+    end
+
+    def assert_accessory_uploaded_directory_mode_and_owner(name)
+      dir_stat = docker_compose("exec vm1 stat -c '%a %u:%g' /root/custom-busybox/etc/busybox.d", capture: true)
+      assert_match /750 1000:1000/, dir_stat, "Expected uploaded directory to have 750 mode (mode) and 1000:1000 owner"
+
+      file_stat = docker_compose("exec vm1 stat -c '%a %u:%g' /root/custom-busybox/etc/busybox.d/extra.conf", capture: true)
+      assert_match /640 1000:1000/, file_stat, "Expected file inside uploaded directory to have 640 mode (file_mode) and 1000:1000 owner"
+
+      # Recurse into subdirectories: the subdirectory gets mode, its file gets file_mode
+      subdir_stat = docker_compose("exec vm1 stat -c '%a %u:%g' /root/custom-busybox/etc/busybox.d/sub", capture: true)
+      assert_match /750 1000:1000/, subdir_stat, "Expected nested subdirectory to have 750 mode (mode) and 1000:1000 owner"
+
+      nested_file_stat = docker_compose("exec vm1 stat -c '%a %u:%g' /root/custom-busybox/etc/busybox.d/sub/nested.conf", capture: true)
+      assert_match /640 1000:1000/, nested_file_stat, "Expected file in nested subdirectory to have 640 mode (file_mode) and 1000:1000 owner"
     end
 
     def accessory_details(name)
