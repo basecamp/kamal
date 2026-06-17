@@ -79,8 +79,14 @@ module Kamal::Cli
       end
 
       def say(message = "", *)
-        super
+        super unless options[:raw]
         KAMAL.log(message.to_s)
+      end
+
+      # Raw output is written straight to stdout for piping, so silence SSHKit's
+      # command echoing that would otherwise corrupt the byte stream.
+      def with_raw_output(raw, &block)
+        raw ? KAMAL.with_verbosity(:error, &block) : block.call
       end
 
       def with_lock
