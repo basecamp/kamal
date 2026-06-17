@@ -24,7 +24,7 @@ accessories:
   mysql:
     image: mysql:5.7
     host: 1.1.1.3
-    port: 3306
+    port: "127.0.0.1:3306:3306"
     env:
       clear:
         MYSQL_ROOT_HOST: '%'
@@ -38,7 +38,7 @@ accessories:
     image: redis:latest
     roles:
       - web
-    port: 6379
+    port: "127.0.0.1:6379:6379"
     directories:
       - data:/data
 

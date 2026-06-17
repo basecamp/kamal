@@ -16,7 +16,7 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
         "mysql" => {
           "image" => "public.registry/mysql:8.0",
           "host" => "1.1.1.5",
-          "port" => "3306",
+          "port" => "127.0.0.1:3306:3306",
           "env" => {
             "clear" => {
               "MYSQL_ROOT_HOST" => "%"
@@ -36,7 +36,7 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
         "redis" => {
           "image" => "redis:latest",
           "hosts" => [ "1.1.1.6", "1.1.1.7" ],
-          "port" => "6379:6379",
+          "port" => "127.0.0.1:6379:6379",
           "labels" => {
             "cache" => "true"
           },
@@ -56,7 +56,7 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
           "image" => "monitoring:latest",
           "registry" => { "server" => "other.registry", "username" => "user", "password" => "pw" },
           "role" => "web",
-          "port" => "4321:4321",
+          "port" => "127.0.0.1:4321:4321",
           "labels" => {
             "cache" => "true"
           },
@@ -107,8 +107,56 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
   end
 
   test "port" do
-    assert_equal "3306:3306", @config.accessory(:mysql).port
-    assert_equal "6379:6379", @config.accessory(:redis).port
+    assert_equal "127.0.0.1:3306:3306", @config.accessory(:mysql).port
+    assert_equal "127.0.0.1:6379:6379", @config.accessory(:redis).port
+  end
+
+  test "port with no port config" do
+    @deploy[:accessories]["mysql"].delete("port")
+    assert_nil Kamal::Configuration.new(@deploy).accessory(:mysql).port
+  end
+
+  test "explicit bind addresses are preserved verbatim" do
+    {
+      "127.0.0.1:3306:3306" => "127.0.0.1:3306:3306",
+      "0.0.0.0:3306:3306" => "0.0.0.0:3306:3306",
+      "192.168.1.1:3306:3306" => "192.168.1.1:3306:3306",
+      "[::1]:3306:3306" => "[::1]:3306:3306",
+      "[::]::3306" => "[::]::3306",
+      "192.168.1.1:3306:3306/tcp" => "192.168.1.1:3306:3306/tcp",
+      "127.0.0.1:3306:3306/udp" => "127.0.0.1:3306:3306/udp"
+    }.each do |port_config, expected|
+      @deploy[:accessories]["mysql"]["port"] = port_config
+      assert_equal expected, Kamal::Configuration.new(@deploy).accessory(:mysql).port, port_config
+    end
+  end
+
+  test "port without an explicit bind address raises an error" do
+    [
+      "3306",
+      "3306:3306",
+      "3306:3306/udp",
+      "127.0.0.1:3306"
+    ].each do |port_config|
+      @deploy[:accessories]["mysql"]["port"] = port_config
+      error = assert_raises(Kamal::ConfigurationError, port_config) do
+        Kamal::Configuration.new(@deploy).accessory(:mysql).port
+      end
+      assert_match "must specify a bind address", error.message
+    end
+  end
+
+  test "port with an invalid bind address raises an error" do
+    [
+      "999.999.999.999:3306:3306",
+      "[not::valid::ip]:3306:3306",
+      "[::1:3306:3306"
+    ].each do |port_config|
+      @deploy[:accessories]["mysql"]["port"] = port_config
+      assert_raises(Kamal::ConfigurationError, port_config) do
+        Kamal::Configuration.new(@deploy).accessory(:mysql).port
+      end
+    end
   end
 
   test "host" do

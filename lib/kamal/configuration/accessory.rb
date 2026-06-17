@@ -1,3 +1,5 @@
+require "ipaddr"
+
 class Kamal::Configuration::Accessory
   include Kamal::Configuration::Validation
 
@@ -17,6 +19,7 @@ class Kamal::Configuration::Accessory
       with: Kamal::Configuration::Validator::Accessory
 
     ensure_valid_roles
+    ensure_valid_port
 
     @env = initialize_env
     @proxy = initialize_proxy if running_proxy?
@@ -36,9 +39,7 @@ class Kamal::Configuration::Accessory
   end
 
   def port
-    if port = accessory_config["port"]&.to_s
-      port.include?(":") ? port : "#{port}:#{port}"
-    end
+    accessory_config["port"]&.to_s
   end
 
   def network_args
@@ -268,6 +269,38 @@ class Kamal::Configuration::Accessory
 
     def network
       accessory_config["network"] || DEFAULT_NETWORK
+    end
+
+    def ensure_valid_port
+      return unless (port_config = port)
+
+      binding, _protocol = port_config.split("/", 2)
+
+      if binding.start_with?("[")
+        # Bracketed IPv6 host, e.g. [::1]:host:container
+        ip = binding[/\A\[([^\]]+)\]/, 1]
+        require_bind_host! port_config unless ip && valid_ip?(ip)
+      elsif binding.count(":") >= 2
+        # ip:host:container — the leading segment is the bind host
+        require_bind_host! port_config unless valid_ip?(binding.split(":").first)
+      else
+        # No explicit host (port, host:container, or ambiguous ip:port)
+        require_bind_host! port_config
+      end
+    end
+
+    def valid_ip?(str)
+      IPAddr.new(str)
+      true
+    rescue IPAddr::InvalidAddressError, ArgumentError, TypeError
+      false
+    end
+
+    def require_bind_host!(port_config)
+      raise Kamal::ConfigurationError,
+        "accessories/#{name}: port \"#{port_config}\" must specify a bind address. " \
+        "Use \"127.0.0.1:PORT:PORT\" (private), \"0.0.0.0:PORT:PORT\" (public), or " \
+        "\"[::1]:PORT:PORT\" (IPv6)."
     end
 
     def ensure_valid_roles
