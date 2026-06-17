@@ -53,8 +53,12 @@ class Kamal::Configuration::Ssh
     ssh_config["config"]
   end
 
+  def forward_agent
+    ssh_config["forward_agent"]
+  end
+
   def options
-    { user: user, port: port, proxy: proxy, logger: logger, keepalive: true, keepalive_interval: 30, keys_only: keys_only, keys: keys, key_data: key_data, config: config  }.compact
+    { user: user, port: port, proxy: proxy, logger: logger, keepalive: true, keepalive_interval: 30, keys_only: keys_only, keys: keys, key_data: key_data, config: config, forward_agent: forward_agent }.compact
   end
 
   def to_h
