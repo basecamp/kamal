@@ -275,7 +275,7 @@ class CommandsBuilderTest < ActiveSupport::TestCase
     )
     assert_equal "hybrid", builder.name
     assert_equal \
-      "docker buildx create --platform linux/amd64 --name kamal-hybrid-docker-container-ssh---app-1-1-1-5-local-registry --driver=docker-container --driver-opt network=host && docker context create kamal-hybrid-docker-container-ssh---app-1-1-1-5-local-registry-context --description 'kamal-hybrid-docker-container-ssh---app-1-1-1-5-local-registry host' --docker 'host=ssh://app@1.1.1.5' && docker buildx create --platform linux/arm64 --append --name kamal-hybrid-docker-container-ssh---app-1-1-1-5-local-registry --driver-opt network=host kamal-hybrid-docker-container-ssh---app-1-1-1-5-local-registry-context",
+      "docker buildx create --platform linux/#{local_arch} --name kamal-hybrid-docker-container-ssh---app-1-1-1-5-local-registry --driver=docker-container --driver-opt network=host && docker context create kamal-hybrid-docker-container-ssh---app-1-1-1-5-local-registry-context --description 'kamal-hybrid-docker-container-ssh---app-1-1-1-5-local-registry host' --docker 'host=ssh://app@1.1.1.5' && docker buildx create --platform linux/#{remote_arch} --append --name kamal-hybrid-docker-container-ssh---app-1-1-1-5-local-registry --driver-opt network=host kamal-hybrid-docker-container-ssh---app-1-1-1-5-local-registry-context",
       builder.create.join(" ")
   end
 
@@ -286,13 +286,5 @@ class CommandsBuilderTest < ActiveSupport::TestCase
         KAMAL.stubs(:config).returns(config)
         Kamal::Commands::Builder.new(config)
       end
-    end
-
-    def local_arch
-      Kamal::Utils.docker_arch
-    end
-
-    def remote_arch
-      Kamal::Utils.docker_arch == "arm64" ? "amd64" : "arm64"
     end
 end

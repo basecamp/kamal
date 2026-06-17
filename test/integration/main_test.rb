@@ -88,7 +88,7 @@ class MainTest < IntegrationTest
     assert_equal "app-#{version}", config[:service_with_version]
     assert_equal [], config[:volume_args]
     assert_equal({ user: "root", port: 22, keepalive: true, keepalive_interval: 30, log_level: :fatal }, config[:ssh_options])
-    assert_equal({ "driver" => "docker", "arch" => "#{Kamal::Utils.docker_arch}", "args" => { "COMMIT_SHA" => version } }, config[:builder])
+    assert_equal({ "driver" => "docker", "arch" => local_arch, "args" => { "COMMIT_SHA" => version } }, config[:builder])
     assert_equal [ "--log-opt", "max-size=\"10m\"" ], config[:logging]
   end
 

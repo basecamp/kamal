@@ -36,8 +36,21 @@ module SSHKit
   end
 end
 
+module ArchHelper
+  module_function
+
+  def local_arch
+    Kamal::Utils.docker_arch
+  end
+
+  def remote_arch
+    local_arch == "arm64" ? "amd64" : "arm64"
+  end
+end
+
 class ActiveSupport::TestCase
   include ActiveSupport::Testing::Stream
+  include ArchHelper
   extend Rails::LineFiltering
 
   private
