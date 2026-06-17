@@ -3,7 +3,7 @@ require "dotenv"
 class Kamal::Secrets
   Kamal::Secrets::Dotenv::InlineCommandSubstitution.install!
 
-  def initialize(destination: nil, secrets_path:)
+  def initialize(destination: nil, secrets_path: ".kamal/secrets")
     @destination = destination
     @secrets_path = secrets_path
     @mutex = Mutex.new
