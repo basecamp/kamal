@@ -29,7 +29,7 @@ accessories:
     cmd: >
       sh -c 'echo "Starting netcat..."; while true; do echo -e "HTTP/1.1 200 OK\r\nContent-Length: 11\r\n\r\nHello Ruby" | nc -l -p 80; done'
     host: vm1
-    port: 12345:80
+    port: "127.0.0.1:12345:80"
     proxy:
       host: netcat
       ssl: false

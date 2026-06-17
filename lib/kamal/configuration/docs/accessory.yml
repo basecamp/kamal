@@ -66,8 +66,18 @@ accessories:
 
     # Port mappings
     #
-    # See [https://docs.docker.com/network/](https://docs.docker.com/network/), and
-    # especially note the warning about the security implications of exposing ports publicly.
+    # A bind address is required — Kamal will not guess on a security-relevant choice.
+    # Use the full `ip:host:container` form (or the bracketed `[ip]:host:container`
+    # form for IPv6) and choose the bind address explicitly:
+    #
+    #   "127.0.0.1:3306:3306"  binds localhost only (private — the usual choice for
+    #                          databases, caches, and other backing services)
+    #   "0.0.0.0:3306:3306"    binds all interfaces (public — reachable from the
+    #                          internet; only use this when you really mean it)
+    #   "[::1]:3306:3306"      IPv6 localhost
+    #
+    # See [https://docs.docker.com/engine/network/port-publishing/](https://docs.docker.com/engine/network/port-publishing/),
+    # and especially note the security implications of exposing ports publicly.
     port: "127.0.0.1:3306:3306"
 
     # Labels
