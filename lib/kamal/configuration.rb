@@ -241,6 +241,10 @@ class Kamal::Configuration
     raw_config.drain_timeout || 30
   end
 
+  def stop_timeout
+    raw_config.stop_timeout
+  end
+
   def run_directory
     ".kamal"
   end

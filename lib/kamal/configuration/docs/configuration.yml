@@ -159,6 +159,13 @@ deploy_timeout: 10
 # How long to wait for a container to drain, default 30:
 drain_timeout: 10
 
+# Stop timeout
+#
+# How long to wait for a container to stop after SIGTERM, default is
+# the drain_timeout for non-proxied roles and 10s (Docker default) for proxied roles.
+# Can be overridden per role:
+stop_timeout: 30
+
 # Run directory
 #
 # Directory to store kamal runtime files in on the host, default `.kamal`:
