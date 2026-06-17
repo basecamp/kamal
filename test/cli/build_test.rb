@@ -112,6 +112,7 @@ class CliBuildTest < CliTestCase
       SSHKit::Backend::Abstract.any_instance.expects(:execute).with(:git, "-C", build_directory, :reset, "--hard", Kamal::Git.revision)
       SSHKit::Backend::Abstract.any_instance.expects(:execute).with(:git, "-C", build_directory, :clean, "-fdx")
       SSHKit::Backend::Abstract.any_instance.expects(:execute).with(:git, "-C", build_directory, :submodule, :update, "--init")
+      SSHKit::Backend::Abstract.any_instance.expects(:execute).with(:git, "-C", build_directory, :gc, "--auto", "--quiet")
 
       SSHKit::Backend::Abstract.any_instance.expects(:execute)
         .with(:docker, :buildx, :build, "--output=type=registry", "--platform", "linux/amd64", "--builder", "kamal-local-docker-container", "-t", "dhh/app:999", "-t", "dhh/app:latest", "--label", "service=\"app\"", "--file", "Dockerfile", ".", "2>&1", env: {})
