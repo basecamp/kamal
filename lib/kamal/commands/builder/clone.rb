@@ -9,7 +9,8 @@ module Kamal::Commands::Builder::Clone
       git(:fetch, :origin, path: escaped_build_directory),
       git(:reset, "--hard", Kamal::Git.revision, path: escaped_build_directory),
       git(:clean, "-fdx", path: escaped_build_directory),
-      git(:submodule, :update, "--init", path: escaped_build_directory)
+      git(:submodule, :update, "--init", path: escaped_build_directory),
+      git(:gc, "--auto", "--quiet", path: escaped_build_directory)
     ]
   end
 
