@@ -108,7 +108,9 @@ hooks_output:
 # Secrets path
 #
 # Path to secrets, defaults to `.kamal/secrets`.
-# Kamal will look for `<secrets_path>-common` and `<secrets_path>` (or `<secrets_path>.<destination>` when using destinations):
+# Kamal looks for `<secrets_path>-common` first and then `<secrets_path>`.
+# When using destinations, it instead looks for `<secrets_path>-common` first and then
+# `<secrets_path>.<destination>`. Later files override earlier ones.
 secrets_path: /user_home/kamal/secrets
 
 # Error pages

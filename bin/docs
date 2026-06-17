@@ -23,6 +23,7 @@ DOCS = {
   "configuration" => "Configuration overview",
   "env" => "Environment variables",
   "logging" => "Logging",
+  "output" => "Output",
   "proxy" => "Proxy",
   "registry" => "Docker Registry",
   "role" => "Roles",
