@@ -5,10 +5,12 @@ class OutputFileLoggerTest < ActiveSupport::TestCase
   setup do
     @dir = Dir.mktmpdir
     @logger = Kamal::Output::FileLogger.new(path: @dir)
+    @original_stdout, $stdout = $stdout, StringIO.new
   end
 
   teardown do
     @logger.close
+    $stdout = @original_stdout
     FileUtils.rm_rf(@dir)
   end
 

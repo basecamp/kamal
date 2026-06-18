@@ -182,6 +182,7 @@ class SSHKit::Runner::Parallel
     def execute
       threads = hosts.map do |host|
         Thread.new(host) do |h|
+          Thread.current.report_on_exception = false
           backend(h, &block).run
         rescue ::StandardError => e
           e2 = SSHKit::Runner::ExecuteError.new e
