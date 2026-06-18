@@ -10,12 +10,29 @@ class IntegrationTest < ActiveSupport::TestCase
   # so two suites can run concurrently without clashing on container/network/volume names.
   COMPOSE_PROJECT = "kamal-test-#{Digest::SHA256.hexdigest(File.expand_path("../..", __dir__))[0, 8]}"
 
+  # Opt-in phase timing (`PROFILE=1` or `STACKPROF=1 bin/test test/integration`). Stackprof
+  # attributes blocked time to the Ruby frame but can't see inside the `docker`/`ssh`
+  # subprocess; these monotonic-clock buckets attribute wall time to the docker phases
+  # (compose up, health wait, each kamal command, teardown) and print a suite-wide summary.
+  PROFILE_PHASES = ENV["PROFILE"].present? || ENV["STACKPROF"].present?
+  @@phase_totals = Hash.new { |hash, key| hash[key] = { time: 0.0, count: 0 } }
+
+  if PROFILE_PHASES
+    Minitest.after_run do
+      puts "\n=== Integration phase wall-time totals ==="
+      @@phase_totals.sort_by { |_, stats| -stats[:time] }.each do |phase, stats|
+        puts format("  %-24s %8.2fs  (%3d calls, %6.2fs avg)", phase, stats[:time], stats[:count], stats[:time] / stats[:count])
+      end
+      puts format("  %-24s %8.2fs", "TOTAL", @@phase_totals.values.sum { |stats| stats[:time] })
+    end
+  end
+
   setup do
     ENV["TEST_ID"] = SecureRandom.hex
     authenticate_hub_cache
-    compose_up_with_retry
-    wait_for_healthy
-    setup_deployer
+    time_phase(:compose_up) { compose_up_with_retry }
+    time_phase(:wait_healthy) { wait_for_healthy }
+    time_phase(:deployer_setup) { setup_deployer }
     deployer_exec("sh -c 'rm -f /tmp/otel/*.json /tmp/kamal-deploy-logs/*'", workdir: "/")
     # Host ports are published on ephemeral ports (collision-free across worktrees);
     # discover the ones Compose actually assigned.
@@ -32,10 +49,22 @@ class IntegrationTest < ActiveSupport::TestCase
         docker_compose :logs, container
       end
     end
-    docker_compose "down -t 1"
+    time_phase(:teardown_down) { docker_compose "down -t 0" }
   end
 
   private
+    def time_phase(name)
+      return yield unless PROFILE_PHASES
+      start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      yield
+    ensure
+      if PROFILE_PHASES
+        stats = @@phase_totals[name.to_s]
+        stats[:time] += Process.clock_gettime(Process::CLOCK_MONOTONIC) - start
+        stats[:count] += 1
+      end
+    end
+
     def docker_compose(*commands, capture: false, raise_on_error: true)
       command = "TEST_ID=#{ENV["TEST_ID"]} COMPOSE_PROJECT_NAME=#{COMPOSE_PROJECT} docker compose #{commands.join(" ")}"
       succeeded = false
@@ -94,7 +123,7 @@ class IntegrationTest < ActiveSupport::TestCase
     end
 
     def kamal(*commands, **options)
-      deployer_exec(:kamal, *commands, **options)
+      time_phase("kamal:#{commands.first}") { deployer_exec(:kamal, *commands, **options) }
     end
 
     def assert_app_is_down
@@ -124,15 +153,17 @@ class IntegrationTest < ActiveSupport::TestCase
     end
 
     def wait_for_app_to_be_up(timeout: 20, up_count: 3)
-      timeout_at = Time.now + timeout
-      up_times = 0
-      response = app_response
-      while up_times < up_count && timeout_at > Time.now
-        sleep 0.1
-        up_times += 1 if response.code == "200"
+      time_phase(:app_wait) do
+        timeout_at = Time.now + timeout
+        up_times = 0
         response = app_response
+        while up_times < up_count && timeout_at > Time.now
+          sleep 0.1
+          up_times += 1 if response.code == "200"
+          response = app_response
+        end
+        assert_equal up_times, up_count
       end
-      assert_equal up_times, up_count
     end
 
     def app_response(app: @app, cert: nil)
@@ -183,13 +214,22 @@ class IntegrationTest < ActiveSupport::TestCase
     end
 
     def compose_up_with_retry
-      docker_compose "up --build -d"
+      build_images_once
+      docker_compose "up -d --no-build"
     rescue RuntimeError => e
       raise if @compose_up_retried
       @compose_up_retried = true
       puts "compose up failed, retrying once: #{e.message.lines.first&.strip}"
-      docker_compose "down -t 1", raise_on_error: false
+      docker_compose "down -t 0", raise_on_error: false
       retry
+    end
+
+    # The images don't change within a suite run, so build them once up front instead of
+    # re-resolving all of them on every test's `compose up`.
+    def build_images_once
+      return if $IMAGES_BUILT
+      docker_compose "build"
+      $IMAGES_BUILT = true
     end
 
     def wait_for_healthy(timeout: 30)

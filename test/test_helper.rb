@@ -10,6 +10,23 @@ require "minitest/autorun" # using #stub that take args
 require "sshkit"
 require "kamal"
 
+# Opt-in wall-clock profiling for the (mostly shell-out-bound) integration suite.
+# `STACKPROF=1 bin/test test/integration` then `stackprof tmp/stackprof-integration.dump --text`.
+# Wall mode samples on a wall-clock timer that fires during the blocking `docker`/`ssh`
+# system() calls, attributing them to the calling helper. Off by default — zero impact otherwise.
+if ENV["STACKPROF"]
+  require "stackprof"
+  require "fileutils"
+  StackProf.start(mode: :wall, raw: true, interval: 1000)
+  Minitest.after_run do
+    StackProf.stop
+    FileUtils.mkdir_p("tmp")
+    File.write("tmp/stackprof-integration.dump", Marshal.dump(StackProf.results))
+    puts "\nStackProf wall profile written to tmp/stackprof-integration.dump"
+    puts "Analyze with: stackprof tmp/stackprof-integration.dump --text"
+  end
+end
+
 ActiveSupport::LogSubscriber.logger = ActiveSupport::Logger.new(STDOUT) if ENV["VERBOSE"]
 
 # Applies to remote commands only.
