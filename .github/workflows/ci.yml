@@ -123,6 +123,23 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
 
+      - name: MEASURE cold build (no cache)
+        run: |
+          cd test/integration
+          time docker compose -f docker-compose.yml build --no-cache deployer vm1 vm2 vm3
+
+      - name: MEASURE prune local cache
+        run: |
+          docker buildx prune -af
+          docker system prune -af
+
+      - name: MEASURE warm build (from gha cache)
+        env:
+          BUILDKIT_PROGRESS: plain
+        run: |
+          cd test/integration
+          time docker compose -f docker-compose.yml -f docker-compose.ci.yml build deployer vm1 vm2 vm3
+
       - name: Run integration tests
         run: bin/test test/integration
         env:
