@@ -2,7 +2,7 @@ FROM ubuntu:22.04
 
 WORKDIR /work
 
-RUN apt-get update --fix-missing && apt-get -y install openssh-client openssh-server docker.io
+RUN apt-get update --fix-missing && apt-get -y install openssh-client openssh-server docker.io fuse-overlayfs
 
 COPY boot.sh .
 

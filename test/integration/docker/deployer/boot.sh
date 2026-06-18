@@ -1,14 +1,16 @@
 #!/bin/bash
 
-# Use the VFS storage driver: this dockerd runs inside a container whose root is
-# itself an overlay mount, and overlay-on-overlay fails on modern Docker/kernels.
-# VFS nests safely.
+# Use the fuse-overlayfs storage driver: this dockerd runs inside a container whose
+# root is itself an overlay mount, and native overlay2-on-overlay fails on modern
+# Docker/kernels. fuse-overlayfs gives copy-on-write layering over the overlay root
+# (unlike vfs, which deep-copies every layer), so builds/pulls/container-creates are
+# far cheaper. Needs /dev/fuse, available because the container is privileged.
 mkdir -p /etc/docker
 # Point this inner daemon at the hub-cache pull-through cache so Docker Hub base
 # images are fetched at most once per run instead of on every test.
 cat > /etc/docker/daemon.json <<'EOF'
 {
-  "storage-driver": "vfs",
+  "storage-driver": "fuse-overlayfs",
   "registry-mirrors": [ "http://hub-cache:5000" ],
   "insecure-registries": [ "hub-cache:5000" ]
 }
