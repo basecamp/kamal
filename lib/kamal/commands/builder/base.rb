@@ -7,7 +7,7 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
   delegate \
     :args, :secrets, :dockerfile, :target, :arches, :local_arches, :remote_arches, :remote,
     :pack?, :pack_builder, :pack_buildpacks,
-    :cache_from, :cache_to, :ssh, :provenance, :sbom, :driver, :docker_driver?,
+    :cache_from, :cache_to, :ssh, :provenance, :sbom, :output, :driver, :docker_driver?,
     to: :builder_config
 
   def clean
@@ -16,7 +16,7 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
 
   def push(export_action = "registry", tag_as_dirty: false, no_cache: false)
     docker :buildx, :build,
-      "--output=type=#{export_action}",
+      "--output=#{[ "type=#{export_action}", output.presence ].compact.join(",")}",
       *platform_options(arches),
       *([ "--builder", builder_name ] unless docker_driver?),
       *build_tag_options(tag_as_dirty: tag_as_dirty),

@@ -171,6 +171,16 @@ class ConfigurationBuilderTest < ActiveSupport::TestCase
     assert_equal true, config.builder.sbom
   end
 
+  test "output" do
+    assert_nil config.builder.output
+  end
+
+  test "setting output" do
+    @deploy[:builder]["output"] = "compression=zstd,compression-level=3,force-compression=true"
+
+    assert_equal "compression=zstd,compression-level=3,force-compression=true", config.builder.output
+  end
+
   test "local disabled but no remote set" do
     @deploy[:builder]["local"] = false
 
