@@ -304,12 +304,16 @@ class CliAppTest < CliTestCase
   end
 
   test "remove" do
+    Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
+
     run_command("remove").tap do |output|
+      assert_hook_ran "pre-app-remove", output
       assert_match "sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting' | head -1 | xargs docker stop", output
       assert_match "docker container prune --force --filter label=service=app", output
       assert_match "docker image prune --all --force --filter label=service=app", output
       assert_match "rm -r .kamal/apps/app on 1.1.1.1", output
       assert_match "rm -r .kamal/proxy/apps-config/app on 1.1.1.1", output
+      assert_hook_ran "post-app-remove", output
     end
   end
 
