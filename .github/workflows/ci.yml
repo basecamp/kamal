@@ -92,10 +92,17 @@ jobs:
           timeout 30 sh -c 'until docker info >/dev/null 2>&1; do sleep 1; done'
           df -h
 
+      - name: Expose GitHub Actions cache to buildx
+        uses: crazy-max/ghaction-github-runtime@04d248b84655b509d8c44dc1d6f990c879747487 # v4.0.0
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
+
       - name: Run tests
         run: bin/test
         env:
           RUBYOPT: ${{ startsWith(matrix.ruby-version, '3.4.') && '--enable=frozen-string-literal' || '' }}
+          COMPOSE_FILE: docker-compose.yml:docker-compose.ci.yml
 
       - name: Check disk usage
         if: always()

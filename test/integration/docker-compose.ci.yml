@@ -1,0 +1,28 @@
+# CI-only overlay, applied via COMPOSE_FILE in .github/workflows/ci.yml. Adds a
+# GitHub Actions build cache to the apt-heavy images so they aren't rebuilt cold
+# on every run. No effect locally.
+services:
+  deployer:
+    build:
+      cache_from:
+        - type=gha,scope=deployer
+      cache_to:
+        - type=gha,scope=deployer,mode=max
+  vm1:
+    build:
+      cache_from:
+        - type=gha,scope=vm
+      cache_to:
+        - type=gha,scope=vm,mode=max
+  vm2:
+    build:
+      cache_from:
+        - type=gha,scope=vm
+      cache_to:
+        - type=gha,scope=vm,mode=max
+  vm3:
+    build:
+      cache_from:
+        - type=gha,scope=vm
+      cache_to:
+        - type=gha,scope=vm,mode=max
