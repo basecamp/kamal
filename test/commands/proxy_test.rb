@@ -89,13 +89,31 @@ class CommandsProxyTest < ActiveSupport::TestCase
 
   test "proxy follow logs" do
     assert_equal \
-      "ssh -t root@1.1.1.1 -p 22 'docker logs kamal-proxy --timestamps --tail 10 --follow 2>&1'",
+      "ssh -t root@1.1.1.1 -p 22 'docker logs kamal-proxy --timestamps --follow 2>&1'",
       new_command.follow_logs(host: @config[:servers].first)
+  end
+
+  test "proxy follow logs since 2h" do
+    assert_equal \
+      "ssh -t root@1.1.1.1 -p 22 'docker logs kamal-proxy --since 2h --timestamps --follow 2>&1'",
+      new_command.follow_logs(host: @config[:servers].first, since: "2h")
+  end
+
+  test "proxy follow logs last n lines" do
+    assert_equal \
+      "ssh -t root@1.1.1.1 -p 22 'docker logs kamal-proxy --tail 15 --timestamps --follow 2>&1'",
+      new_command.follow_logs(host: @config[:servers].first, lines: 15)
+  end
+
+  test "proxy follow logs without timestamps" do
+    assert_equal \
+      "ssh -t root@1.1.1.1 -p 22 'docker logs kamal-proxy --follow 2>&1'",
+      new_command.follow_logs(host: @config[:servers].first, timestamps: false)
   end
 
   test "proxy follow logs with grep hello!" do
     assert_equal \
-      "ssh -t root@1.1.1.1 -p 22 'docker logs kamal-proxy --timestamps --tail 10 --follow 2>&1 | grep \"hello!\"'",
+      "ssh -t root@1.1.1.1 -p 22 'docker logs kamal-proxy --timestamps --follow 2>&1 | grep \"hello!\"'",
       new_command.follow_logs(host: @config[:servers].first, grep: "hello!")
   end
 
