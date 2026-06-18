@@ -7,6 +7,10 @@ require "pty"
 require "debug"
 require "mocha/minitest" # using #stubs that can alter returns
 require "minitest/autorun" # using #stub that take args
+
+# Loading SSHKit::Backend::Netssh creates a default ConnectionPool with a 30s
+# idle timeout, which spawns a background eviction thread at require time.
+threads_before_sshkit = Thread.list
 require "sshkit"
 require "kamal"
 
@@ -15,9 +19,13 @@ ActiveSupport::LogSubscriber.logger = ActiveSupport::Logger.new(STDOUT) if ENV["
 # Applies to remote commands only.
 SSHKit.config.backend = SSHKit::Backend::Printer
 
-# Disable connection pooling so we don't spawn the eviction thread as
-# there's no clean way to kill it after each test
+# Disable connection pooling by swapping in a non-caching pool, then kill the
+# eviction thread the default pool already spawned at require time. Otherwise it
+# loops forever and, if a test stubs a method it calls (e.g.
+# Object.any_instance.stubs(:sleep)), trips over Mocha after teardown
+# (Mocha::NotInitializedError).
 SSHKit::Backend::Netssh.pool = SSHKit::Backend::ConnectionPool.new(0)
+(Thread.list - threads_before_sshkit).each(&:kill)
 
 class SSHKit::Backend::Printer
   def upload!(local, location, **kwargs)
