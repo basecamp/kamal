@@ -99,7 +99,6 @@ hooks_path: /user_home/kamal/hooks
 #
 # Global setting for all hooks:
 hooks_output: :verbose
-
 # Or per-hook settings:
 hooks_output:
   pre-deploy: :verbose
