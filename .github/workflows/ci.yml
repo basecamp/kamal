@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - main
+      - ci-build-caching # TEMPORARY: exercise the build cache on push; revert before merge
   pull_request:
   workflow_dispatch:
 
