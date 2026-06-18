@@ -6,6 +6,10 @@ module Kamal::Cli
     include SSHKit::DSL
 
     VERBOSITY = { verbose: :debug, quiet: :error }.freeze
+    AUTOMATIC_DEPLOY_LOCK_MESSAGE = "Automatic deploy lock"
+
+    class LockHeldError < StandardError; end
+    class LockMissingError < StandardError; end
 
     def self.exit_on_failure?() true end
     def self.dynamic_command_class() Kamal::Cli::Alias::Command end
@@ -23,6 +27,10 @@ module Kamal::Cli
     class_option :destination, aliases: "-d", desc: "Specify destination to be used for config file (staging -> deploy.staging.yml)"
 
     class_option :skip_hooks, aliases: "-H", type: :boolean, default: false, desc: "Don't run hooks"
+
+    class_option :lock_wait, type: :boolean, default: false, desc: "Wait for the deploy lock if it's already held instead of failing immediately"
+    class_option :lock_wait_timeout, type: :numeric, default: 900, desc: "Maximum seconds to wait for the deploy lock when --lock-wait is set"
+    class_option :lock_wait_interval, type: :numeric, default: 15, desc: "Seconds between deploy lock polls when --lock-wait is set"
 
     def initialize(args = [], local_options = {}, config = {})
       if config[:current_command].is_a?(Kamal::Cli::Alias::Command)
@@ -60,6 +68,10 @@ module Kamal::Cli
           commander.specific_hosts    = options[:hosts]&.split(",")
           commander.specific_roles    = options[:roles]&.split(",")
           commander.specific_primary! if options[:primary]
+
+          commander.lock_wait          = options[:lock_wait]
+          commander.lock_wait_timeout  = options[:lock_wait_timeout]
+          commander.lock_wait_interval = options[:lock_wait_interval]
         end
       end
 
@@ -123,31 +135,90 @@ module Kamal::Cli
       def acquire_lock
         ensure_run_directory
 
-        raise_if_locked do
-          say "Acquiring the deploy lock...", :magenta
-          on(KAMAL.primary_host) { execute *KAMAL.lock.acquire("Automatic deploy lock", KAMAL.config.version), verbosity: :debug }
+        if KAMAL.lock_wait
+          acquire_lock_with_wait
+        else
+          raise_if_locked do
+            say "Acquiring the deploy lock...", :magenta
+            execute_lock_acquire(AUTOMATIC_DEPLOY_LOCK_MESSAGE)
+          end
         end
 
         KAMAL.holding_lock = true
       end
 
+      def acquire_lock_with_wait
+        timeout = KAMAL.lock_wait_timeout
+        interval = KAMAL.lock_wait_interval
+        deadline = Time.now + timeout
+        details_shown = false
+
+        say "Acquiring the deploy lock (waiting up to #{timeout}s)...", :magenta
+
+        loop do
+          execute_lock_acquire(AUTOMATIC_DEPLOY_LOCK_MESSAGE)
+          break
+        rescue LockHeldError
+          unless details_shown
+            status = capture_lock_status
+
+            say "Deploy lock is held by:", :magenta
+            puts status
+
+            unless status.include?(AUTOMATIC_DEPLOY_LOCK_MESSAGE)
+              raise LockError, "Deploy lock held manually, not waiting. Run 'kamal lock help' for more information"
+            end
+
+            details_shown = true
+          end
+
+          remaining = (deadline - Time.now).to_i
+          if remaining <= 0
+            say "Timed out after #{timeout}s waiting for the deploy lock", :red
+            raise LockError, "Timed out waiting for deploy lock"
+          end
+
+          say "Retrying in #{interval}s (#{remaining}s remaining)...", :magenta
+          sleep [ interval, remaining ].min
+        end
+      end
+
       def release_lock
         say "Releasing the deploy lock...", :magenta
-        on(KAMAL.primary_host) { execute *KAMAL.lock.release, verbosity: :debug }
+        execute_lock_release
 
         KAMAL.holding_lock = false
       end
 
       def raise_if_locked
         yield
+      rescue LockHeldError
+        say "Deploy lock already in place!", :red
+        puts capture_lock_status
+        raise LockError, "Deploy lock found. Run 'kamal lock help' for more information"
+      end
+
+      def execute_lock_acquire(message)
+        on(KAMAL.primary_host) { execute *KAMAL.lock.acquire(message, KAMAL.config.version), verbosity: :debug }
       rescue SSHKit::Runner::ExecuteError => e
-        if e.message =~ /cannot create directory/
-          say "Deploy lock already in place!", :red
-          on(KAMAL.primary_host) { puts capture_with_debug(*KAMAL.lock.status) }
-          raise LockError, "Deploy lock found. Run 'kamal lock help' for more information"
-        else
-          raise e
-        end
+        raise LockHeldError if e.message =~ /cannot create directory/
+        raise
+      end
+
+      def execute_lock_release
+        on(KAMAL.primary_host) { execute *KAMAL.lock.release, verbosity: :debug }
+      rescue SSHKit::Runner::ExecuteError => e
+        raise LockMissingError if e.message =~ /No such file or directory/
+        raise
+      end
+
+      def capture_lock_status
+        status = nil
+        on(KAMAL.primary_host) { status = capture_with_debug(*KAMAL.lock.status) }
+        status
+      rescue SSHKit::Runner::ExecuteError => e
+        raise LockMissingError if e.message =~ /No such file or directory/
+        raise
       end
 
       def run_hook(hook, **extra_details)

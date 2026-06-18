@@ -13,6 +13,24 @@ class CliLockTest < CliTestCase
     end
   end
 
+  test "status when there is no deploy lock" do
+    SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_debug)
+      .raises(RuntimeError, "cat: .kamal/lock-app/details: No such file or directory")
+
+    run_command("status").tap do |output|
+      assert_match "There is no deploy lock", output
+    end
+  end
+
+  test "release when there is no deploy lock" do
+    SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+      .raises(RuntimeError, "rm: cannot remove '.kamal/lock-app/details': No such file or directory")
+
+    run_command("release").tap do |output|
+      assert_match "There is no deploy lock", output
+    end
+  end
+
   private
     def run_command(*command)
       stdouted { Kamal::Cli::Lock.start([ *command, "-v", "-c", "test/fixtures/deploy_with_accessories.yml" ]) }
