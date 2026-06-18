@@ -148,6 +148,17 @@ proxy:
       - X-Request-ID
       - X-Request-Start
 
+  # Idle
+  #
+  # Stop containers after a period of inactivity and wake them up on the next request.
+  #
+  # This requires the proxy to have access to the Docker socket.
+  #
+  # Defaults to disabled:
+  idle:
+    timeout: 300        # Stop containers after 5 minutes of no requests
+    wake_timeout: 30    # Maximum time to wait for containers to wake up
+
   # Run configuration
   #
   # These options are used when booting the proxy container.
@@ -158,6 +169,7 @@ proxy:
     metrics_port: 9090             # Port for Prometheus metrics
     debug: true                    # Debug logging (default: false)
     log_max_size: "30m"            # Maximum log file size (default: "10m")
+    docker_socket: true            # Mount the Docker socket (default: false, or true if idle is used)
     publish: false                 # Publish ports to the host (default: true)
     bind_ips:                      # List of IPs to bind to when publishing ports
       - 0.0.0.0

@@ -21,6 +21,16 @@ class Kamal::Configuration::Validator::Proxy < Kamal::Configuration::Validator
         end
       end
 
+      if config["idle"].present?
+        if config["idle"]["timeout"].present? && !config["idle"]["timeout"].is_a?(Integer)
+          error "Idle timeout must be an integer (seconds)"
+        end
+
+        if config["idle"]["wake_timeout"].present? && !config["idle"]["wake_timeout"].is_a?(Integer)
+          error "Idle wake timeout must be an integer (seconds)"
+        end
+      end
+
       if run_config = config["run"]
         if run_config["bind_ips"].present?
           ensure_valid_bind_ips(config["bind_ips"])

@@ -17,6 +17,10 @@ class Kamal::Configuration::Proxy::Run
     run_config.fetch("debug", nil)
   end
 
+  def docker_socket?
+    run_config.fetch("docker_socket", config.any_role_use_proxy_idle?)
+  end
+
   def publish?
     run_config.fetch("publish", true)
   end
@@ -94,6 +98,7 @@ class Kamal::Configuration::Proxy::Run
   def docker_options_args
     [
       *apps_volume_args,
+      *("--volume=/var/run/docker.sock:/var/run/docker.sock" if docker_socket?),
       *publish_args,
       *logging_args,
       *("--expose=#{metrics_port}" if metrics_port.present?),
