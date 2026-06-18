@@ -76,14 +76,14 @@ jobs:
           ruby-version: ${{ matrix.ruby-version }}
           bundler-cache: true
 
-      - name: Configure Docker with VFS storage driver
+      - name: Configure Docker with overlay2 storage driver
         run: |
           sudo systemctl stop docker
           sudo systemctl stop docker.socket
           sudo mkdir -p /etc/docker /mnt/docker
           cat <<'EOF' | sudo tee /etc/docker/daemon.json
           {
-            "storage-driver": "vfs",
+            "storage-driver": "overlay2",
             "data-root": "/mnt/docker"
           }
           EOF
