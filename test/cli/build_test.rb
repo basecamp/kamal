@@ -46,7 +46,7 @@ class CliBuildTest < CliTestCase
       run_command("push", "--verbose", fixture: :with_remote_builder).tap do |output|
         assert_no_match "Running docker login -u [REDACTED] -p [REDACTED] as ", output
         assert_match "docker buildx inspect kamal-remote-ssh---app-1-1-1-5 | grep -q Endpoint:.*kamal-remote-ssh---app-1-1-1-5-context && docker context inspect kamal-remote-ssh---app-1-1-1-5-context --format '{{.Endpoints.docker.Host}}' | grep -xq ssh://app@1.1.1.5 || (echo no compatible builder && exit 1)", output
-        assert_match "Command: ( export BUILDKIT_NO_CLIENT_TOKEN=\"1\" ; docker buildx build --output=type=registry --platform linux/arm64 --builder kamal-remote-ssh---app-1-1-1-5 -t dhh/app:999 -t dhh/app:latest --label service=\"app\" --file Dockerfile . 2>&1 )", output
+        assert_match "Command: ( export BUILDKIT_NO_CLIENT_TOKEN=\"1\" ; docker buildx build --output=type=registry --platform linux/#{remote_arch} --builder kamal-remote-ssh---app-1-1-1-5 -t dhh/app:999 -t dhh/app:latest --label service=\"app\" --file Dockerfile . 2>&1 )", output
       end
     end
   end
@@ -350,9 +350,9 @@ class CliBuildTest < CliTestCase
   test "create hybrid" do
     run_command("create", fixture: :with_hybrid_builder).tap do |output|
       assert_match "Running /usr/bin/env true on 1.1.1.5", output
-      assert_match "docker buildx create --platform linux/#{Kamal::Utils.docker_arch} --name kamal-hybrid-docker-container-ssh---app-1-1-1-5 --driver=docker-container", output
+      assert_match "docker buildx create --platform linux/#{local_arch} --name kamal-hybrid-docker-container-ssh---app-1-1-1-5 --driver=docker-container", output
       assert_match "docker context create kamal-hybrid-docker-container-ssh---app-1-1-1-5-context --description 'kamal-hybrid-docker-container-ssh---app-1-1-1-5 host' --docker 'host=ssh://app@1.1.1.5'", output
-      assert_match "docker buildx create --platform linux/#{Kamal::Utils.docker_arch == "amd64" ? "arm64" : "amd64"} --append --name kamal-hybrid-docker-container-ssh---app-1-1-1-5 kamal-hybrid-docker-container-ssh---app-1-1-1-5-context", output
+      assert_match "docker buildx create --platform linux/#{remote_arch} --append --name kamal-hybrid-docker-container-ssh---app-1-1-1-5 kamal-hybrid-docker-container-ssh---app-1-1-1-5-context", output
     end
   end
 
