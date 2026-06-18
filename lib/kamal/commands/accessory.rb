@@ -91,6 +91,10 @@ class Kamal::Commands::Accessory < Kamal::Commands::Base
     end
   end
 
+  def running_image
+    docker :inspect, service_name, "--format '{{.Config.Image}}'"
+  end
+
   def pull_image
     docker :image, :pull, image
   end
