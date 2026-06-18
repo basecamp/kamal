@@ -44,7 +44,7 @@ jobs:
         uses: zizmorcore/zizmor-action@5f14fd08f7cf1cb1609c1e344975f152c7ee938d # v0.5.6
         with:
           advanced-security: false
-  tests:
+  units:
     strategy:
       fail-fast: false
       matrix:
@@ -59,7 +59,7 @@ jobs:
         exclude:
           - ruby-version: "3.2"
             gemfile: gemfiles/rails_edge.gemfile
-    name: ${{ format('Tests (Ruby {0})', matrix.ruby-version) }}
+    name: ${{ format('Unit tests (Ruby {0})', matrix.ruby-version) }}
     runs-on: ubuntu-latest
     env:
       BUNDLE_GEMFILE: ${{ github.workspace }}/${{ matrix.gemfile }}
@@ -75,6 +75,30 @@ jobs:
         uses: ruby/setup-ruby@afeafc3d1ab54a631816aba4c914a0081c12ff2f # v1.310.0
         with:
           ruby-version: ${{ matrix.ruby-version }}
+          bundler-cache: true
+
+      - name: Run unit tests
+        run: |
+          # shellcheck disable=SC2046  # word-splitting the file list is intentional
+          bin/test $(find test -name '*_test.rb' -not -path 'test/integration/*')
+        env:
+          RUBYOPT: ${{ startsWith(matrix.ruby-version, '3.4.') && '--enable=frozen-string-literal' || '' }}
+
+  integration:
+    name: Integration tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+
+      - name: Remove gemfile.lock
+        run: rm Gemfile.lock
+
+      - name: Install Ruby
+        uses: ruby/setup-ruby@afeafc3d1ab54a631816aba4c914a0081c12ff2f # v1.310.0
+        with:
+          ruby-version: "4.0"
           bundler-cache: true
 
       - name: Configure Docker with overlay2 storage driver
@@ -99,10 +123,9 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
 
-      - name: Run tests
-        run: bin/test
+      - name: Run integration tests
+        run: bin/test test/integration
         env:
-          RUBYOPT: ${{ startsWith(matrix.ruby-version, '3.4.') && '--enable=frozen-string-literal' || '' }}
           COMPOSE_FILE: docker-compose.yml:docker-compose.ci.yml
 
       - name: Check disk usage
