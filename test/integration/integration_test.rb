@@ -13,7 +13,7 @@ class IntegrationTest < ActiveSupport::TestCase
   setup do
     ENV["TEST_ID"] = SecureRandom.hex
     authenticate_hub_cache
-    docker_compose "up --build -d"
+    compose_up_with_retry
     wait_for_healthy
     setup_deployer
     deployer_exec("sh -c 'rm -f /tmp/otel/*.json /tmp/kamal-deploy-logs/*'", workdir: "/")
@@ -182,18 +182,60 @@ class IntegrationTest < ActiveSupport::TestCase
       assert_equal "200", code
     end
 
+    def compose_up_with_retry
+      docker_compose "up --build -d"
+    rescue RuntimeError => e
+      raise if @compose_up_retried
+      @compose_up_retried = true
+      puts "compose up failed, retrying once: #{e.message.lines.first&.strip}"
+      docker_compose "down -t 1", raise_on_error: false
+      retry
+    end
+
     def wait_for_healthy(timeout: 30)
       timeout_at = Time.now + timeout
       loop do
-        result = docker_compose("ps -a | tail -n +2 | grep -v '(healthy)' | wc -l", capture: true)
+        containers = container_statuses
 
-        break if result.split.last == "0" || result == "0"
+        break if containers.all? { |c| c["Health"] == "healthy" }
+
+        broken = containers.select do |c|
+          c["Health"] == "unhealthy" || %w[ exited dead restarting ].include?(c["State"])
+        end
+        if broken.any?
+          dump_container_logs(broken)
+          raise "Container hard error (retry will not help): #{describe_containers(broken)}"
+        end
 
         if timeout_at < Time.now
-          docker_compose("ps -a | tail -n +2 | grep -v '(healthy)'")
-          raise "Container not healthy after #{timeout} seconds" if timeout_at < Time.now
+          starting = containers.reject { |c| c["Health"] == "healthy" }
+          dump_container_logs(starting)
+          raise "Container not healthy after #{timeout} seconds (slow boot, retry may help): #{describe_containers(starting)}"
         end
         sleep 0.1
+      end
+    end
+
+    def container_statuses
+      output = docker_compose("ps -a --format json", capture: true).strip
+      return [] if output.empty?
+
+      if output.start_with?("[")
+        JSON.parse(output)
+      else
+        output.lines.map { |line| JSON.parse(line) }
+      end
+    end
+
+    def describe_containers(containers)
+      containers.map { |c| "#{c["Service"]} (state=#{c["State"]} health=#{c["Health"]} exit=#{c["ExitCode"]})" }.join(", ")
+    end
+
+    def dump_container_logs(containers)
+      containers.each do |c|
+        puts
+        puts "=== #{c["Service"]} (state=#{c["State"]} health=#{c["Health"]} exit=#{c["ExitCode"]}) ==="
+        puts docker_compose("logs --no-color --tail 50 #{c["Service"]}", capture: true, raise_on_error: false)
       end
     end
 

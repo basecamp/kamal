@@ -25,6 +25,9 @@ services:
       - shared:/shared
       - deployer_bundle:/usr/local/bundle/
       - otel:/tmp/otel
+    depends_on:
+      shared:
+        condition: service_healthy
 
   registry:
     build:
@@ -36,6 +39,9 @@ services:
     volumes:
       - shared:/shared
       - registry:/var/lib/registry/
+    depends_on:
+      shared:
+        condition: service_healthy
 
   # Docker Hub pull-through cache. The deployer and vm inner daemons point their
   # registry-mirrors here (see their boot.sh), so base images (registry:3, nginx,
@@ -66,6 +72,9 @@ services:
       - shared:/shared
     ports:
       - "443"
+    depends_on:
+      shared:
+        condition: service_healthy
 
   vm2:
     privileged: true
@@ -73,6 +82,9 @@ services:
       context: docker/vm
     volumes:
       - shared:/shared
+    depends_on:
+      shared:
+        condition: service_healthy
 
   vm3:
     privileged: true
@@ -80,6 +92,9 @@ services:
       context: docker/vm
     volumes:
       - shared:/shared
+    depends_on:
+      shared:
+        condition: service_healthy
 
   otel_collector:
     build:

@@ -856,7 +856,7 @@ class CliMainTest < CliTestCase
     def in_dummy_git_repo
       Dir.mktmpdir do |tmpdir|
         Dir.chdir(tmpdir) do
-          `git init`
+          `git init -q -b main`
           yield
         end
       end
