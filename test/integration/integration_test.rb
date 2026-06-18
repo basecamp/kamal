@@ -32,7 +32,7 @@ class IntegrationTest < ActiveSupport::TestCase
         docker_compose :logs, container
       end
     end
-    docker_compose "down -t 1"
+    docker_compose "down -t 0"
   end
 
   private
@@ -183,13 +183,20 @@ class IntegrationTest < ActiveSupport::TestCase
     end
 
     def compose_up_with_retry
-      docker_compose "up --build -d"
+      build_images_once
+      docker_compose "up -d --no-build"
     rescue RuntimeError => e
       raise if @compose_up_retried
       @compose_up_retried = true
       puts "compose up failed, retrying once: #{e.message.lines.first&.strip}"
-      docker_compose "down -t 1", raise_on_error: false
+      docker_compose "down -t 0", raise_on_error: false
       retry
+    end
+
+    def build_images_once
+      return if $IMAGES_BUILT
+      docker_compose "build"
+      $IMAGES_BUILT = true
     end
 
     def wait_for_healthy(timeout: 30)
