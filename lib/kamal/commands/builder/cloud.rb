@@ -11,7 +11,7 @@ class Kamal::Commands::Builder::Cloud < Kamal::Commands::Builder::Base
 
   private
     def builder_name
-      driver.gsub(/[ \/]/, "-")
+      namespaced_builder_name(driver.gsub(/[ \/]/, "-"))
     end
 
     def inspect_buildx

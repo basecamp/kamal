@@ -11,10 +11,11 @@ class Kamal::Commands::Builder::Local < Kamal::Commands::Builder::Base
 
   private
     def builder_name
-      if registry_config.local?
+      base_name = if registry_config.local?
         "kamal-local-registry-#{driver}"
       else
         "kamal-local-#{driver}"
       end
+      namespaced_builder_name(base_name)
     end
 end
