@@ -47,11 +47,13 @@ class Kamal::Commands::Accessory < Kamal::Commands::Base
       ("grep '#{grep}'#{" #{grep_options}" if grep_options}" if grep)
   end
 
-  def follow_logs(timestamps: true, grep: nil, grep_options: nil)
+  def follow_logs(host: hosts.first, timestamps: true, grep: nil, grep_options: nil)
     run_over_ssh \
-      pipe \
+      pipe(
         docker(:logs, service_name, ("--timestamps" if timestamps), "--tail", "10", "--follow", "2>&1"),
         (%(grep "#{grep}"#{" #{grep_options}" if grep_options}) if grep)
+      ),
+      host: host
   end
 
   def execute_in_existing_container(*command, interactive: false)
@@ -81,8 +83,8 @@ class Kamal::Commands::Accessory < Kamal::Commands::Base
     run_over_ssh execute_in_new_container(*command, interactive: true)
   end
 
-  def run_over_ssh(command)
-    super command, host: hosts.first
+  def run_over_ssh(command, host: hosts.first)
+    super command, host: host
   end
 
   def ensure_local_file_present(local_file)
