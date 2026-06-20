@@ -117,6 +117,36 @@ class CliAccessoryTest < CliTestCase
     end
   end
 
+  test "tunnel" do
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :inspect, "app-mysql", "--format", "'{{range $k, $v := .NetworkSettings.Ports}}{{$k}} {{end}}'", "|", :grep, "'/tcp'", "|", :sed, "'s#/tcp##g'")
+      .returns("3001")
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :inspect, "app-mysql", "--format",  "'{{.NetworkSettings.Networks.kamal.IPAddress}}'")
+      .returns("1.1.2.1")
+    SSHKit::Backend::Abstract.any_instance.expects(:exec)
+      .with("ssh -o ExitOnForwardFailure=yes -N -L 3001:1.1.2.1:3001 -t root@1.1.1.3 -p 22 ''")
+
+    run_command("tunnel", "mysql").tap do |output|
+      assert_match "Starting port forwarding tunnel for mysql accessory...", output
+    end
+  end
+
+  test "tunnel with available ports" do
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :inspect, "app-mysql", "--format", "'{{range $k, $v := .NetworkSettings.Ports}}{{$k}} {{end}}'", "|", :grep, "'/tcp'", "|", :sed, "'s#/tcp##g'")
+      .returns("3001 3002")
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :inspect, "app-mysql", "--format",  "'{{.NetworkSettings.Networks.kamal.IPAddress}}'")
+      .returns("1.1.2.1")
+    SSHKit::Backend::Abstract.any_instance.expects(:exec)
+      .with("ssh -o ExitOnForwardFailure=yes -N -L 5001:1.1.2.1:3001 -L 5002:1.1.2.1:3002 -t root@1.1.1.3 -p 22 ''")
+
+    run_command("tunnel", "mysql", "--ports", "5001", "5002").tap do |output|
+      assert_match "Starting port forwarding tunnel for mysql accessory...", output
+    end
+  end
+
   test "exec" do
     run_command("exec", "mysql", "mysql -v").tap do |output|
       assert_match "docker login private.registry -u [REDACTED] -p [REDACTED]", output
