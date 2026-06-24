@@ -29,9 +29,59 @@ class Kamal::Configuration
       load_config_files(config_file, *destination_config_file(config_file, destination))
     end
 
+    # Keys a config section may only set one of. The proxy uses host/hosts;
+    # accessories add role/roles/tag/tags (see Validator::Proxy and
+    # Validator::Accessory). When a later layer picks a different key from this
+    # set than the base did, deep_merge would leave both behind and trip the
+    # validator, so we drop the base's keys first.
+    MUTUALLY_EXCLUSIVE_KEYS = %w[ host hosts role roles tag tags ].freeze
+
     private
       def load_config_files(*files)
-        files.inject({}) { |config, file| config.deep_merge! load_config_file(file) }
+        files.inject({}) { |config, file| deep_merge_layer(config, load_config_file(file)) }
+      end
+
+      # Deep merges the next config layer on top of the accumulated config,
+      # reconciling any section that picks a different mutually-exclusive key
+      # than the base before merging.
+      def deep_merge_layer(config, overrides)
+        config = reconcile_mutually_exclusive_keys(config, overrides)
+        config.deep_merge(overrides)
+      end
+
+      # Reconciles the proxy and every accessory section so an override layer
+      # that switches mutually-exclusive keys (e.g. host -> hosts) wins cleanly.
+      # symbolize_keys is shallow, so only the top-level :proxy/:accessories
+      # keys are symbols; the nested host/hosts/... keys are string-keyed.
+      def reconcile_mutually_exclusive_keys(config, overrides)
+        if config[:proxy].is_a?(Hash) && overrides[:proxy].is_a?(Hash)
+          config = config.merge(proxy: reconcile_section(config[:proxy], overrides[:proxy]))
+        end
+
+        if config[:accessories].is_a?(Hash) && overrides[:accessories].is_a?(Hash)
+          accessories = config[:accessories].to_h do |name, accessory|
+            override = overrides[:accessories][name]
+            accessory = reconcile_section(accessory, override) if accessory.is_a?(Hash) && override.is_a?(Hash)
+            [ name, accessory ]
+          end
+          config = config.merge(accessories: accessories)
+        end
+
+        config
+      end
+
+      # Drops the base section's mutually-exclusive keys when the override sets
+      # a different one from the same set, so the merged section keeps only the
+      # override's choice.
+      def reconcile_section(base, override)
+        base_keys = base.keys & MUTUALLY_EXCLUSIVE_KEYS
+        override_keys = override.keys & MUTUALLY_EXCLUSIVE_KEYS
+
+        if override_keys.any? && (base_keys - override_keys).any?
+          base.except(*base_keys)
+        else
+          base
+        end
       end
 
       def load_config_file(file)
