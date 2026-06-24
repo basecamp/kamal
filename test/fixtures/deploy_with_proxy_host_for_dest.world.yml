@@ -1,0 +1,6 @@
+servers:
+  - 1.1.1.1
+proxy:
+  hosts:
+    - myapp.dev
+    - files.myapp.dev
