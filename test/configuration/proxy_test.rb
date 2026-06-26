@@ -105,6 +105,11 @@ class ConfigurationProxyTest < ActiveSupport::TestCase
     end
   end
 
+  test "http3 cannot be enabled when publish is false" do
+    @deploy[:proxy] = { "host" => "example.com", "run" => { "publish" => false, "http3" => true } }
+    assert_raises(Kamal::ConfigurationError) { config.proxy }
+  end
+
   private
     def config
       Kamal::Configuration.new(@deploy)

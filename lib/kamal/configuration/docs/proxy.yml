@@ -157,6 +157,7 @@ proxy:
     https_port: 8443               # HTTPS port to use (default 443)
     metrics_port: 9090             # Port for Prometheus metrics
     debug: true                    # Debug logging (default: false)
+    http3: true                    # Enable HTTP/3 (QUIC); also publishes the HTTPS port over UDP (default: false)
     log_max_size: "30m"            # Maximum log file size (default: "10m")
     publish: false                 # Publish ports to the host (default: true)
     bind_ips:                      # List of IPs to bind to when publishing ports
