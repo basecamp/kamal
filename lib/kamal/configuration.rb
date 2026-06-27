@@ -31,7 +31,11 @@ class Kamal::Configuration
 
     private
       def load_config_files(*files)
-        files.inject({}) { |config, file| config.deep_merge! load_config_file(file) }
+        files.inject({}) do |config, file|
+          file_config = load_config_file(file)
+          remove_replaced_proxy_host_keys(config, file_config)
+          config.deep_merge! file_config
+        end
       end
 
       def load_config_file(file)
@@ -48,6 +52,28 @@ class Kamal::Configuration
 
       def destination_config_file(base_config_file, destination)
         base_config_file.sub_ext(".#{destination}.yml") if destination
+      end
+
+      def remove_replaced_proxy_host_keys(config, override)
+        return unless config.is_a?(Hash) && override.is_a?(Hash)
+
+        override.each do |key, value|
+          existing = config[key]
+
+          if key.to_s == "proxy" && existing.is_a?(Hash) && value.is_a?(Hash)
+            remove_replaced_key(existing, value, "host", "hosts")
+          end
+
+          remove_replaced_proxy_host_keys(existing, value)
+        end
+      end
+
+      def remove_replaced_key(config, override, key, alternate_key)
+        if override.key?(key)
+          config.delete(alternate_key)
+        elsif override.key?(alternate_key)
+          config.delete(key)
+        end
       end
   end
 
