@@ -1,4 +1,5 @@
 require "test_helper"
+require "pathname"
 
 class ConfigurationProxyTest < ActiveSupport::TestCase
   setup do
@@ -31,6 +32,54 @@ class ConfigurationProxyTest < ActiveSupport::TestCase
   test "ssl with both host and hosts" do
     @deploy[:proxy] = { "ssl" => true, host: "example.com", hosts: [ "anotherexample.com" ] }
     assert_raises(Kamal::ConfigurationError) { config.proxy.ssl? }
+  end
+
+  test "destination hosts replace base host" do
+    configuration = config_from_files <<~YAML, <<~YAML
+      service: app
+      image: dhh/app
+      servers:
+        - 1.1.1.1
+      registry:
+        username: dhh
+        password: secret
+      builder:
+        arch: amd64
+      proxy:
+        ssl: false
+        host: myapp.dev
+    YAML
+      proxy:
+        hosts:
+          - myapp.dev
+          - files.myapp.dev
+    YAML
+
+    assert_equal [ "myapp.dev", "files.myapp.dev" ], configuration.proxy.hosts
+  end
+
+  test "destination host replaces base hosts" do
+    configuration = config_from_files <<~YAML, <<~YAML
+      service: app
+      image: dhh/app
+      servers:
+        - 1.1.1.1
+      registry:
+        username: dhh
+        password: secret
+      builder:
+        arch: amd64
+      proxy:
+        ssl: false
+        hosts:
+          - myapp.dev
+          - files.myapp.dev
+    YAML
+      proxy:
+        host: myapp.dev
+    YAML
+
+    assert_equal [ "myapp.dev" ], configuration.proxy.hosts
   end
 
   test "ssl false" do
@@ -108,5 +157,19 @@ class ConfigurationProxyTest < ActiveSupport::TestCase
   private
     def config
       Kamal::Configuration.new(@deploy)
+    end
+
+    def config_from_files(base_config, destination_config)
+      original_destination = ENV["KAMAL_DESTINATION"]
+
+      Dir.mktmpdir do |dir|
+        config_file = Pathname.new(File.join(dir, "deploy.yml"))
+        File.write(config_file, base_config)
+        File.write(config_file.sub_ext(".staging.yml"), destination_config)
+
+        Kamal::Configuration.create_from(config_file: config_file, destination: "staging")
+      end
+    ensure
+      ENV["KAMAL_DESTINATION"] = original_destination
     end
 end
