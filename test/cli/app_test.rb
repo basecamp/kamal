@@ -380,6 +380,12 @@ class CliAppTest < CliTestCase
     end
   end
 
+  test "exec keeps spaced arguments intact" do
+    run_command("exec", "/app/bin/appServer", "maintenance", "We are upgrading our infrastructure, we will be back soon.").tap do |output|
+      assert_match %r{/app/bin/appServer maintenance We\\ are\\ upgrading\\ our\\ infrastructure,\\ we\\ will\\ be\\ back\\ soon\.}, output
+    end
+  end
+
   test "exec detach" do
     run_command("exec", "--detach", "ruby -v").tap do |output|
       assert_match %r{docker run --detach --name app-web-exec-latest-[0-9a-f]{6} --network kamal --env-file .kamal/apps/app/env/roles/web.env --log-opt max-size="10m" dhh/app:latest ruby -v}, output
