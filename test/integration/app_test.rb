@@ -64,6 +64,7 @@ class AppTest < IntegrationTest
 
     kamal :app, :remove
 
+    assert_hooks_ran "pre-app-remove", "post-app-remove"
     assert_app_not_found
     assert_app_directory_removed
   end

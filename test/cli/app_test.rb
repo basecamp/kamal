@@ -313,6 +313,30 @@ class CliAppTest < CliTestCase
     end
   end
 
+  test "remove runs hooks" do
+    Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
+
+    run_command("remove").tap do |output|
+      assert_match %r{/usr/bin/env \.kamal/hooks/pre-app-remove.*docker container prune --force --filter label=service=app.*rm -r \.kamal/proxy/apps-config/app.*\/usr/bin/env \.kamal/hooks/post-app-remove}m, output
+    end
+  end
+
+  test "remove skips hooks" do
+    Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
+
+    run_command("remove", "--skip_hooks").tap do |output|
+      assert_no_match /\.kamal\/hooks\/pre-app-remove/, output
+      assert_no_match /\.kamal\/hooks\/post-app-remove/, output
+    end
+  end
+
+  test "remove raises when pre hook fails" do
+    fail_hook "pre-app-remove"
+
+    error = assert_raises(Kamal::Cli::HookError) { run_command("remove") }
+    assert_equal "Hook `pre-app-remove` failed:\nfailed", error.message
+  end
+
   test "remove with role filter does not remove images or app directories" do
     run_command("remove", "-r", "workers", config: :with_two_roles_one_host).tap do |output|
       assert_match "docker stop", output
