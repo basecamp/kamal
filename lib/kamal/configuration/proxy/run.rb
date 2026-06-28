@@ -2,7 +2,7 @@ class Kamal::Configuration::Proxy::Run
   MINIMUM_VERSION = "v0.9.2"
   DEFAULT_HTTP_PORT = 80
   DEFAULT_HTTPS_PORT = 443
-  DEFAULT_LOG_MAX_SIZE = "10m"
+  DEFAULT_LOG_MAX_SIZE = Kamal::Configuration::Logging::DEFAULT_LOG_MAX_SIZE
 
   attr_reader :config, :run_config
   delegate :argumentize, :optionize, to: Kamal::Utils
