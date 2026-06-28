@@ -50,7 +50,7 @@ class Kamal::Cli::App::Boot
       execute *app.ensure_env_directory
       upload! role.secrets_io(host), role.secrets_path, mode: "0600"
 
-      execute *app.run(hostname: hostname)
+      execute *app.run(hostname: hostname, default_logging_driver: capture_with_info(*KAMAL.docker.logging_driver).strip)
       if running_proxy?
         endpoint = capture_with_info(*app.container_id_for_version(version)).strip
         raise Kamal::Cli::BootError, "Failed to get endpoint for #{role} on #{host}, did the container boot?" if endpoint.empty?

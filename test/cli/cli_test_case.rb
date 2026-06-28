@@ -40,6 +40,12 @@ class CliTestCase < ActiveSupport::TestCase
         .with(:docker, :buildx, :inspect, "kamal-local-docker-container")
     end
 
+    def stub_docker_logging_driver(driver = "json-file")
+      SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info)
+        .with(:docker, :info, "--format", "'{{.LoggingDriver}}'")
+        .returns(driver)
+    end
+
     def assert_hook_ran(hook, output, count: 1)
       regexp = ([ "/usr/bin/env .kamal/hooks/#{hook}" ] * count).join(".*")
       assert_match /#{regexp}/m, output

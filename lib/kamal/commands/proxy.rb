@@ -7,7 +7,7 @@ class Kamal::Commands::Proxy < Kamal::Commands::Base
     @proxy_run_config = config.proxy_run(host)
   end
 
-  def run
+  def run(default_logging_driver: nil)
     if proxy_run_config
       docker \
         :run,
@@ -16,11 +16,11 @@ class Kamal::Commands::Proxy < Kamal::Commands::Base
         "--detach",
         "--restart", "unless-stopped",
         "--volume", "kamal-proxy-config:/home/kamal-proxy/.config/kamal-proxy",
-        *proxy_run_config.docker_options_args,
+        *proxy_run_config.docker_options_args(default_logging_driver: default_logging_driver),
         *proxy_run_config.image,
         *proxy_run_config.run_command
     else
-      pipe boot_config, xargs(docker_run)
+      pipe boot_config(default_logging_driver: default_logging_driver), xargs(docker_run)
     end
   end
 
@@ -32,8 +32,8 @@ class Kamal::Commands::Proxy < Kamal::Commands::Base
     docker :container, :stop, name
   end
 
-  def start_or_run
-    combine start, run, by: "||"
+  def start_or_run(default_logging_driver: nil)
+    combine start, run(default_logging_driver: default_logging_driver), by: "||"
   end
 
   def info
@@ -88,12 +88,12 @@ class Kamal::Commands::Proxy < Kamal::Commands::Base
     make_directory config.proxy_boot.apps_directory
   end
 
-  def boot_config
-    [ :echo, "#{substitute(read_boot_options)} #{substitute(read_image)}:#{substitute(read_image_version)} #{substitute(read_run_command)}" ]
+  def boot_config(default_logging_driver: nil)
+    [ :echo, "#{substitute(read_boot_options(default_logging_driver: default_logging_driver))} #{substitute(read_image)}:#{substitute(read_image_version)} #{substitute(read_run_command)}" ]
   end
 
-  def read_boot_options
-    read_file(config.proxy_boot.options_file, default: config.proxy_boot.default_boot_options.join(" "))
+  def read_boot_options(default_logging_driver: nil)
+    read_file(config.proxy_boot.options_file, default: config.proxy_boot.default_boot_options(default_logging_driver: default_logging_driver).join(" "))
   end
 
   def read_image

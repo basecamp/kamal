@@ -61,6 +61,12 @@ class CommandsAppTest < ActiveSupport::TestCase
       new_command.run.join(" ")
   end
 
+  test "run skips implicit log max size for unsupported default logging driver" do
+    assert_equal \
+      "docker run --detach --restart unless-stopped --name app-web-999 --network kamal --env KAMAL_CONTAINER_NAME=\"app-web-999\" --env KAMAL_VERSION=\"999\" --env KAMAL_HOST=\"1.1.1.1\" --env-file .kamal/apps/app/env/roles/web.env --label service=\"app\" --label role=\"web\" --label destination dhh/app:999",
+      new_command.run(default_logging_driver: "syslog").join(" ")
+  end
+
   test "run with role logging config" do
     @config[:logging] = { "driver" => "local", "options" => { "max-size" => "10m", "max-file" => "3" } }
     @config[:servers] = { "web" => { "hosts" => [ "1.1.1.1" ], "logging" => { "driver" => "local", "options" => { "max-size" => "100m" } } } }
@@ -288,6 +294,12 @@ class CommandsAppTest < ActiveSupport::TestCase
     assert_match \
       %r{docker run --rm --name app-web-exec-999-[0-9a-f]{6} --network kamal --env-file .kamal/apps/app/env/roles/web.env --log-driver "local" --log-opt max-size="100m" --log-opt max-file="3" dhh/app:999 bin/rails db:setup},
       new_command.execute_in_new_container("bin/rails", "db:setup", env: {}).join(" ")
+  end
+
+  test "execute in new container skips implicit log max size for unsupported default logging driver" do
+    assert_match \
+      %r{docker run --rm --name app-web-exec-999-[0-9a-f]{6} --network kamal --env-file .kamal/apps/app/env/roles/web.env dhh/app:999 bin/rails db:setup},
+      new_command.execute_in_new_container("bin/rails", "db:setup", env: {}, default_logging_driver: "fluentd").join(" ")
   end
 
   test "execute in new container with env" do

@@ -29,6 +29,29 @@ class ConfigurationProxyRunTest < ActiveSupport::TestCase
     assert_equal 2, [ run_a, run_b ].uniq.size
   end
 
+  test "implicit log max size is kept for supported docker logging driver" do
+    config = Kamal::Configuration.new(base_deploy)
+    run = Kamal::Configuration::Proxy::Run.new(config, run_config: {})
+
+    assert_equal [ "--log-opt", "max-size=10m" ], run.logging_args(default_logging_driver: "json-file")
+    assert_equal [ "--log-opt", "max-size=10m" ], run.logging_args(default_logging_driver: "local")
+  end
+
+  test "implicit log max size is skipped for unsupported docker logging driver" do
+    config = Kamal::Configuration.new(base_deploy)
+    run = Kamal::Configuration::Proxy::Run.new(config, run_config: {})
+
+    assert_nil run.logging_args(default_logging_driver: "syslog")
+    assert_nil run.logging_args(default_logging_driver: "fluentd")
+  end
+
+  test "configured log max size is kept for unsupported docker logging driver" do
+    config = Kamal::Configuration.new(base_deploy)
+    run = Kamal::Configuration::Proxy::Run.new(config, run_config: { "log_max_size" => "50m" })
+
+    assert_equal [ "--log-opt", "max-size=50m" ], run.logging_args(default_logging_driver: "syslog")
+  end
+
   test "no conflict when global proxy run config is inherited by role proxy" do
     deploy = base_deploy.deep_merge(
       servers: {

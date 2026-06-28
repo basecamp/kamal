@@ -10,6 +10,14 @@ class CliAppTest < CliTestCase
     end
   end
 
+  test "boot skips implicit log max size for unsupported default logging driver" do
+    stub_running("syslog")
+    run_command("boot").tap do |output|
+      assert_match /docker run --detach --restart unless-stopped --name app-web-latest --network kamal --hostname 1.1.1.1-[0-9a-f]{12} /, output
+      assert_no_match /--log-opt max-size/, output
+    end
+  end
+
   test "boot will rename if same version is already running" do
     Object.any_instance.stubs(:sleep)
     run_command("details") # Preheat Kamal const
@@ -25,6 +33,7 @@ class CliAppTest < CliTestCase
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
       .with(:docker, :container, :ls, "--all", "--filter", "'name=^app-web-latest$'", "--quiet")
       .returns("12345678") # running version
+    stub_docker_logging_driver
 
     run_command("boot").tap do |output|
       assert_match /Renaming container .* to .* as already deployed on 1.1.1.1/, output # Rename
@@ -94,6 +103,7 @@ class CliAppTest < CliTestCase
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
       .with(:docker, :container, :ls, "--all", "--filter", "'name=^app-web-latest$'", "--quiet")
       .returns("12345678") # running version
+    stub_docker_logging_driver
 
     run_command("boot", config: :with_assets).tap do |output|
       assert_match "docker tag dhh/app:latest dhh/app:latest", output
@@ -119,6 +129,7 @@ class CliAppTest < CliTestCase
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
       .with(:sh, "-c", "'docker ps --latest --format '\\''{{.Names}}'\\'' --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --format '\\''{{.Names}}'\\'' --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting'", "|", :head, "-1", "|", "while read line; do echo ${line#app-web-}; done", raise_on_non_zero_exit: false)
       .returns("123") # old version
+    stub_docker_logging_driver
 
     run_command("boot", config: :with_env_tags).tap do |output|
       assert_match "docker tag dhh/app:latest dhh/app:latest", output
@@ -131,6 +142,7 @@ class CliAppTest < CliTestCase
     Object.any_instance.stubs(:sleep)
 
     SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info).returns("123") # old version
+    stub_docker_logging_driver
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
       .with(:docker, :container, :ls, "--all", "--filter", "'name=^app-workers-latest$'", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
@@ -150,6 +162,7 @@ class CliAppTest < CliTestCase
     Object.any_instance.stubs(:sleep)
 
     SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info).returns("123") # old version
+    stub_docker_logging_driver
 
     SSHKit::Backend::Abstract.any_instance.stubs(:execute).returns("")
     SSHKit::Backend::Abstract.any_instance.stubs(:execute)
@@ -175,6 +188,7 @@ class CliAppTest < CliTestCase
     Object.any_instance.stubs(:sleep)
 
     SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info).returns("123") # old version
+    stub_docker_logging_driver
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
       .with(:docker, :container, :ls, "--all", "--filter", "'name=^app-workers-latest$'", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
@@ -198,6 +212,7 @@ class CliAppTest < CliTestCase
     Object.any_instance.stubs(:sleep)
 
     SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info).returns("123") # old version
+    stub_docker_logging_driver
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
       .with(:docker, :container, :ls, "--all", "--filter", "'name=^app-workers-latest$'", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
@@ -214,6 +229,7 @@ class CliAppTest < CliTestCase
     Object.any_instance.stubs(:sleep)
 
     SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info).returns("123") # old version
+    stub_docker_logging_driver
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
       .with(:docker, :container, :ls, "--all", "--filter", "'name=^app-workers-latest$'", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
@@ -255,6 +271,7 @@ class CliAppTest < CliTestCase
 
   test "start" do
     SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info).returns("999") # old version
+    stub_docker_logging_driver
 
     run_command("start").tap do |output|
       assert_match "docker start app-web-999", output
@@ -542,6 +559,7 @@ class CliAppTest < CliTestCase
 
   test "boot proxy" do
     SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info).returns("123") # old version
+    stub_docker_logging_driver
 
     run_command("boot", config: :with_proxy).tap do |output|
       assert_match /Renaming container .* to .* as already deployed on 1.1.1.1/, output # Rename
@@ -554,6 +572,7 @@ class CliAppTest < CliTestCase
 
   test "boot proxy with role specific config" do
     SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info).returns("123") # old version
+    stub_docker_logging_driver
 
     run_command("boot", config: :with_proxy_roles, host: nil).tap do |output|
       assert_match "docker exec kamal-proxy kamal-proxy deploy app-web --target=\"123:80\" --deploy-timeout=\"6s\" --drain-timeout=\"30s\" --target-timeout=\"10s\" --buffer-requests --buffer-responses --log-request-header=\"Cache-Control\" --log-request-header=\"Last-Modified\" --log-request-header=\"User-Agent\"", output
@@ -588,9 +607,10 @@ class CliAppTest < CliTestCase
       end
     end
 
-    def stub_running
+    def stub_running(default_logging_driver = "json-file")
       Object.any_instance.stubs(:sleep)
 
       SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info).returns("123") # old version
+      stub_docker_logging_driver(default_logging_driver)
     end
 end
