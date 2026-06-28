@@ -95,6 +95,10 @@ class Kamal::Commands::Accessory < Kamal::Commands::Base
     local_directory?(local_file) ? { recursive: true } : {}
   end
 
+  def make_directory_for_upload(local_file, remote_file)
+    local_directory?(local_file) ? make_directory(remote_file) : make_directory_for(remote_file)
+  end
+
   def pull_image
     docker :image, :pull, image
   end

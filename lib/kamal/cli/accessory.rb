@@ -49,7 +49,7 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
             remote = config[:host_path]
             accessory.ensure_local_file_present(local)
 
-            execute *accessory.make_directory_for(remote)
+            execute *accessory.make_directory_for_upload(local, remote)
             upload! local, remote, **accessory.upload_options(local)
             execute :chmod, config[:mode], remote
             execute :chown, config[:owner], remote if config[:owner]

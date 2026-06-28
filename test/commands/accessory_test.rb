@@ -171,6 +171,16 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
     assert_equal({}, new_command(:mysql).upload_options(StringIO.new("dynamic")))
   end
 
+  test "upload directory command creates full remote directory for local directories" do
+    assert_equal [ :mkdir, "-p", "app-mysql/etc/mysql/conf.d" ],
+      new_command(:mysql).make_directory_for_upload("test/fixtures/files/mysql/conf.d", "app-mysql/etc/mysql/conf.d")
+  end
+
+  test "upload directory command creates parent remote directory for local files" do
+    assert_equal [ :mkdir, "-p", "app-mysql/etc/mysql" ],
+      new_command(:mysql).make_directory_for_upload("test/fixtures/files/my.cnf", "app-mysql/etc/mysql/my.cnf")
+  end
+
   test "logs" do
     assert_equal \
       "docker logs app-mysql --timestamps 2>&1",
