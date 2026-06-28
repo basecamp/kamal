@@ -90,6 +90,28 @@ class CliAccessoryTest < CliTestCase
     assert_match "docker container stop app-mysql", run_command("stop", "mysql")
   end
 
+  test "stop proxied accessory without running container skips proxy remove" do
+    SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info)
+      .returns("\n")
+
+    run_command("stop", "mysql", fixture: :with_proxy_run_config).tap do |output|
+      assert_match "docker container stop app-mysql", output
+      assert_no_match "kamal-proxy remove app-mysql", output
+    end
+  end
+
+  test "stop running proxied accessory removes proxy best effort" do
+    executions = []
+    SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info)
+      .returns("abc123\n")
+    SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+      .with { |*args| executions << args; true }
+
+    run_command("stop", "mysql", fixture: :with_proxy_run_config)
+
+    assert_includes executions, [ :docker, :exec, "kamal-proxy", "kamal-proxy", :remove, "app-mysql", { raise_on_non_zero_exit: false } ]
+  end
+
   test "restart" do
     Kamal::Cli::Accessory.any_instance.expects(:stop).with("mysql")
     Kamal::Cli::Accessory.any_instance.expects(:start).with("mysql")
@@ -274,7 +296,7 @@ class CliAccessoryTest < CliTestCase
   end
 
   private
-    def run_command(*command)
-      stdouted { Kamal::Cli::Accessory.start([ *command, "-c", "test/fixtures/deploy_with_accessories_with_different_registries.yml" ]) }
+    def run_command(*command, fixture: :with_accessories_with_different_registries)
+      stdouted { Kamal::Cli::Accessory.start([ *command, "-c", "test/fixtures/deploy_#{fixture}.yml" ]) }
     end
 end
