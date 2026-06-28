@@ -267,6 +267,48 @@ class ConfigurationTest < ActiveSupport::TestCase
     assert_equal "1.1.1.3", config.all_hosts.first
   end
 
+  test "destination yml config merges env secrets" do
+    with_test_secrets("secrets-common" => "RAILS_MASTER_KEY=secret123", "secrets.staging" => "DATABASE_URL=postgres://example") do
+      File.write("deploy.yml", <<~YAML)
+        service: app
+        image: dhh/app
+        registry:
+          username: dhh
+          password: secret
+        builder:
+          arch: amd64
+        servers:
+          - 1.1.1.1
+          - 1.1.1.2
+        env:
+          secret:
+            - RAILS_MASTER_KEY
+          tags:
+            web:
+              secret:
+                - RAILS_MASTER_KEY
+      YAML
+
+      File.write("deploy.staging.yml", <<~YAML)
+        servers:
+          - 1.1.1.3
+        env:
+          secret:
+            - DATABASE_URL
+          tags:
+            web:
+              secret:
+                - DATABASE_URL
+      YAML
+
+      config = Kamal::Configuration.create_from config_file: Pathname.new("deploy.yml"), destination: "staging"
+
+      assert_equal [ "1.1.1.3" ], config.all_hosts
+      assert_equal "RAILS_MASTER_KEY=secret123\nDATABASE_URL=postgres://example\n", config.env.secrets_io.read
+      assert_equal "DATABASE_URL=postgres://example\n", config.env_tag("web").env.secrets_io.read
+    end
+  end
+
   test "destination yml config file missing" do
     dest_config_file = Pathname.new(File.expand_path("fixtures/deploy_for_dest.yml", __dir__))
 
