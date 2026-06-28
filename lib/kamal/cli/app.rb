@@ -128,9 +128,13 @@ class Kamal::Cli::App < Kamal::Cli::Base
         say "Get most recent version available as an image...", :magenta unless options[:version]
         using_version(version_or_latest) do |version|
           say "Launching interactive command with version #{version} via SSH from new container on #{KAMAL.primary_host}...", :magenta
-          on(KAMAL.primary_host) { execute *KAMAL.registry.login }
+          default_logging_driver = nil
+          on(KAMAL.primary_host) do
+            execute *KAMAL.registry.login
+            default_logging_driver = capture_with_info(*KAMAL.docker.logging_driver).strip
+          end
           run_locally do
-            exec KAMAL.app(role: KAMAL.primary_role, host: KAMAL.primary_host).execute_in_new_container_over_ssh(cmd, env: env)
+            exec KAMAL.app(role: KAMAL.primary_role, host: KAMAL.primary_host).execute_in_new_container_over_ssh(cmd, env: env, default_logging_driver: default_logging_driver)
           end
         end
 
@@ -153,7 +157,8 @@ class Kamal::Cli::App < Kamal::Cli::Base
 
           on_roles(KAMAL.roles, hosts: KAMAL.app_hosts) do |host, role|
             execute *KAMAL.auditor.record("Executed cmd '#{cmd}' on app version #{version}"), verbosity: :debug
-            puts_by_host host, capture_with_info(*KAMAL.app(role: role, host: host).execute_in_new_container(cmd, env: env, detach: detach), strip: !raw), quiet: quiet, raw: raw
+            default_logging_driver = capture_with_info(*KAMAL.docker.logging_driver).strip
+            puts_by_host host, capture_with_info(*KAMAL.app(role: role, host: host).execute_in_new_container(cmd, env: env, detach: detach, default_logging_driver: default_logging_driver), strip: !raw), quiet: quiet, raw: raw
           end
         end
       end

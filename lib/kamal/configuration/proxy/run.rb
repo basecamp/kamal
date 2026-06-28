@@ -49,8 +49,10 @@ class Kamal::Configuration::Proxy::Run
     run_config.fetch("log_max_size", DEFAULT_LOG_MAX_SIZE)
   end
 
-  def logging_args
-    argumentize "--log-opt", "max-size=#{log_max_size}" if log_max_size.present?
+  def logging_args(default_logging_driver: nil)
+    if log_max_size.present? && (log_max_size_configured? || Kamal::Configuration::Logging.default_log_max_size_driver?(default_logging_driver))
+      argumentize "--log-opt", "max-size=#{log_max_size}"
+    end
   end
 
   def version
@@ -91,11 +93,11 @@ class Kamal::Configuration::Proxy::Run
     { debug: debug? || nil, "metrics-port": metrics_port }.compact
   end
 
-  def docker_options_args
+  def docker_options_args(default_logging_driver: nil)
     [
       *apps_volume_args,
       *publish_args,
-      *logging_args,
+      *logging_args(default_logging_driver: default_logging_driver),
       *("--expose=#{metrics_port}" if metrics_port.present?),
       *options_args
     ].compact
@@ -141,6 +143,10 @@ class Kamal::Configuration::Proxy::Run
   end
 
   private
+    def log_max_size_configured?
+      run_config.key?("log_max_size")
+    end
+
     def format_bind_ip(ip)
       # Ensure IPv6 address inside square brackets - e.g. [::1]
       if ip =~ Resolv::IPv6::Regex && ip !~ /\A\[.*\]\z/

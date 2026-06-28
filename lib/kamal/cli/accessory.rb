@@ -28,7 +28,7 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
             execute *KAMAL.auditor.record("Booted #{name} accessory"), verbosity: :debug
             execute *accessory.ensure_env_directory
             upload! accessory.secrets_io, accessory.secrets_path, mode: "0600"
-            execute *accessory.run(host: host)
+            execute *accessory.run(host: host, default_logging_driver: capture_with_info(*KAMAL.docker.logging_driver).strip)
 
             if accessory.running_proxy?
               target = capture_with_info(*accessory.container_id_for(container_name: accessory.service_name, only_running: true)).strip

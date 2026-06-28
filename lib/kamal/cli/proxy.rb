@@ -17,7 +17,7 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
           raise "kamal-proxy version #{version} is too old, run `kamal proxy reboot` in order to update to at least #{Kamal::Configuration::Proxy::Run::MINIMUM_VERSION}"
         end
         execute *KAMAL.proxy(host).ensure_apps_config_directory
-        execute *KAMAL.proxy(host).start_or_run
+        execute *KAMAL.proxy(host).start_or_run(default_logging_driver: capture_with_info(*KAMAL.docker.logging_driver).strip)
       end
     end
   end
@@ -88,7 +88,7 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
     when "get"
 
       on(KAMAL.proxy_hosts) do |host|
-        puts "Host #{host}: #{capture_with_info(*KAMAL.proxy(host).boot_config)}"
+        puts "Host #{host}: #{capture_with_info(*KAMAL.proxy(host).boot_config(default_logging_driver: capture_with_info(*KAMAL.docker.logging_driver).strip))}"
       end
     when "reset"
       on(KAMAL.proxy_hosts) do |host|
@@ -123,7 +123,7 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
             execute *proxy.remove_container
             execute *proxy.ensure_apps_config_directory
 
-            execute *proxy.run
+            execute *proxy.run(default_logging_driver: capture_with_info(*KAMAL.docker.logging_driver).strip)
           end
           run_hook "post-proxy-reboot", hosts: host_list
         end

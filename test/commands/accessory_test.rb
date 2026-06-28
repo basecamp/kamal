@@ -81,6 +81,12 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
       new_command(:busybox).run.join(" ")
   end
 
+  test "run skips implicit log max size for unsupported default logging driver" do
+    assert_equal \
+      "docker run --name custom-busybox --detach --restart unless-stopped --network kamal --env-file .kamal/apps/app/env/accessories/busybox.env --label service=\"custom-busybox\" other.registry/busybox:latest",
+      new_command(:busybox).run(default_logging_driver: "fluentd").join(" ")
+  end
+
   test "run with custom restart policy" do
     @config[:accessories]["mysql"]["options"]["restart"] = "on-failure"
 

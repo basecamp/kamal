@@ -28,4 +28,16 @@ class ConfigurationProxyBootTest < ActiveSupport::TestCase
     assert_equal ".kamal/proxy/apps-config/app/tls", @proxy_boot_config.tls_directory
     assert_equal "/home/kamal-proxy/.apps-config/app/tls", @proxy_boot_config.tls_container_directory
   end
+
+  test "default boot options keep log max size for supported docker logging driver" do
+    assert_equal \
+      [ "--publish 80:80 --publish 443:443", "--log-opt", "max-size=10m" ],
+      @proxy_boot_config.default_boot_options(default_logging_driver: "json-file")
+  end
+
+  test "default boot options skip log max size for unsupported docker logging driver" do
+    assert_equal \
+      [ "--publish 80:80 --publish 443:443" ],
+      @proxy_boot_config.default_boot_options(default_logging_driver: "fluentd")
+  end
 end
