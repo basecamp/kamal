@@ -89,7 +89,7 @@ accessories:
 
     # Copying files
     #
-    # You can specify files to mount into the container.
+    # You can specify files or directories to mount into the container.
     #
     # They will be uploaded from the local repo to the host and then mounted.
     # ERB files will be evaluated before being copied.

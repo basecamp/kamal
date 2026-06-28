@@ -86,9 +86,17 @@ class Kamal::Commands::Accessory < Kamal::Commands::Base
   end
 
   def ensure_local_file_present(local_file)
-    if !local_file.is_a?(StringIO) && !Pathname.new(local_file).exist?
+    if !generated_file?(local_file) && !Pathname.new(local_file).exist?
       raise "Missing file: #{local_file}"
     end
+  end
+
+  def upload_options(local_file)
+    local_directory?(local_file) ? { recursive: true } : {}
+  end
+
+  def make_directory_for_upload(local_file, remote_file)
+    local_directory?(local_file) ? make_directory(remote_file) : make_directory_for(remote_file)
   end
 
   def pull_image
@@ -112,6 +120,14 @@ class Kamal::Commands::Accessory < Kamal::Commands::Base
   end
 
   private
+    def generated_file?(local_file)
+      local_file.is_a?(StringIO)
+    end
+
+    def local_directory?(local_file)
+      !generated_file?(local_file) && Pathname.new(local_file).directory?
+    end
+
     def service_filter
       [ "--filter", "label=service=#{service_name}" ]
     end
