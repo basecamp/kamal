@@ -50,6 +50,17 @@ class CliAccessoryTest < CliTestCase
     end
   end
 
+  test "upload directory file entry recursively" do
+    source = File.expand_path("test/fixtures/files/mysql/conf.d")
+    destination = "app-mysql/etc/mysql/conf.d"
+
+    SSHKit::Backend::Printer.any_instance.expects(:upload!).with(source, destination, recursive: true)
+
+    stdouted do
+      Kamal::Cli::Accessory.start([ "upload", "mysql", "-c", "test/fixtures/deploy_with_accessory_file_directory.yml" ])
+    end
+  end
+
   test "directories" do
     assert_match "mkdir -p $PWD/app-mysql/data", run_command("directories", "mysql")
   end
