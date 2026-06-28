@@ -10,7 +10,7 @@ class Kamal::Commands::Prune < Kamal::Commands::Base
     pipe \
       docker(:image, :ls, *service_filter, "--format", "'{{.ID}} {{.Repository}}:{{.Tag}}'"),
       grep("-v -w \"#{active_image_list}\""),
-      "while read image tag; do docker rmi $tag; done"
+      "while read image tag; do docker rmi $tag || true; done"
   end
 
   def app_containers(retain:)
