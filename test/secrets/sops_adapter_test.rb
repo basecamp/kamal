@@ -126,6 +126,20 @@ class SopsAdapterTest < SecretAdapterTestCase
     assert_equal "Could not find secret NOPE in secrets.enc.json", error.message
   end
 
+  test "fetch when the file does not decrypt to an object" do
+    stub_ticks.with("sops --version 2> /dev/null")
+    stub_ticks
+      .with("sops --decrypt --output-type json -- secrets.enc.json")
+      .returns(<<~JSON)
+        [ "not", "an", "object" ]
+      JSON
+
+    error = assert_raises RuntimeError do
+      run_command("fetch", "--from", "secrets.enc.json", "DB_PASSWORD")
+    end
+    assert_equal "Expected secrets.enc.json to decrypt to a JSON object", error.message
+  end
+
   test "fetch with decryption failure" do
     stub_ticks.with("sops --version 2> /dev/null")
     stub_ticks_with("sops --decrypt --output-type json -- secrets.enc.json", succeed: false)

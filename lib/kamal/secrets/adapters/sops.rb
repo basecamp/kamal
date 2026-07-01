@@ -50,7 +50,10 @@ class Kamal::Secrets::Adapters::Sops < Kamal::Secrets::Adapters::Base
       contents = `sops --decrypt --output-type json -- #{from.shellescape}`
       raise RuntimeError, "Could not decrypt #{from} with sops" unless $?.success?
 
-      JSON.parse(contents)
+      parsed = JSON.parse(contents)
+      raise RuntimeError, "Expected #{from} to decrypt to a JSON object" unless parsed.is_a?(Hash)
+
+      parsed
     end
 
     def select_secrets(all_secrets, secrets, from:)
