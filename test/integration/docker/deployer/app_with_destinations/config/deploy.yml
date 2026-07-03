@@ -5,6 +5,7 @@ deploy_timeout: 2
 drain_timeout: 2
 readiness_delay: 0
 proxy:
+  loadbalancer: false
   host: localhost
   ssl: false
   healthcheck:
