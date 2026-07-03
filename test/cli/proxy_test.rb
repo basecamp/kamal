@@ -437,8 +437,8 @@ class CliProxyTest < CliTestCase
     Kamal::Configuration::Proxy.any_instance.unstub(:load_balancing?)
 
     run_command("details", fixture: :with_loadbalancer).tap do |output|
-      assert_match "docker ps --filter name=^kamal-proxy$", output
-      assert_match "docker ps --filter name=^load-balancer$", output
+      assert_match "docker ps --filter 'name=^kamal-proxy$'", output
+      assert_match "docker ps --filter 'name=^load-balancer$'", output
     end
   end
 
@@ -446,7 +446,7 @@ class CliProxyTest < CliTestCase
     Kamal::Configuration::Proxy.any_instance.unstub(:load_balancing?)
 
     SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info)
-      .with(:docker, :ps, "--filter", "name=^load-balancer$")
+      .with(:docker, :ps, "--filter", "'name=^load-balancer$'")
       .returns("CONTAINER ID   IMAGE   STATUS")
 
     run_command("loadbalancer", "info", fixture: :with_loadbalancer).tap do |output|
@@ -549,7 +549,7 @@ class CliProxyTest < CliTestCase
 
     run_command("loadbalancer", "info", fixture: :with_loadbalancer_on_proxy_host).tap do |output|
       # When on proxy host, loadbalancer uses kamal-proxy container name
-      assert_match "docker ps --filter name=^kamal-proxy$", output
+      assert_match "docker ps --filter 'name=^kamal-proxy$'", output
     end
   end
 

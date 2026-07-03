@@ -241,6 +241,14 @@ class CommandsBuilderTest < ActiveSupport::TestCase
     end
   end
 
+  test "clone reset runs git gc --auto to bound pack growth" do
+    command = new_builder_command
+    clone_reset_commands = command.clone_reset_steps.map { |a| a.join(" ") }
+
+    assert clone_reset_commands.any? { |c| c.end_with?(" gc --auto --quiet") },
+      "expected clone_reset_steps to run git gc --auto, got: #{clone_reset_commands.inspect}"
+  end
+
   test "local builder with local registry includes network host driver option" do
     builder = new_builder_command(registry: { "server" => "localhost:5000" })
     assert_equal "local", builder.name

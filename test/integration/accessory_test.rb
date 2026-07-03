@@ -55,11 +55,11 @@ class AccessoryTest < IntegrationTest
 
   private
     def assert_accessory_running(name)
-      assert_match /registry:4443\/busybox:1.36.0   "sh -c 'echo \\"Start/, accessory_details(name)
+      assert_match /busybox:1.36.0   "sh -c 'echo \\"Start/, accessory_details(name)
     end
 
     def assert_accessory_not_running(name)
-      assert_no_match /registry:4443\/busybox:1.36.0   "sh -c 'echo \\"Start/, accessory_details(name)
+      assert_no_match /busybox:1.36.0   "sh -c 'echo \\"Start/, accessory_details(name)
     end
 
     def assert_accessory_volume_mount_options(name)
@@ -82,19 +82,26 @@ class AccessoryTest < IntegrationTest
     end
 
     def assert_netcat_is_up
-      response = netcat_response
-      debug_response_code(response, "200")
-      assert_equal "200", response.code
+      assert_equal "200", wait_for_netcat_response("200")
     end
 
     def assert_netcat_not_found
+      assert_equal "404", wait_for_netcat_response("404")
+    end
+
+    def wait_for_netcat_response(expected, timeout: 20)
+      timeout_at = Time.now + timeout
       response = netcat_response
-      debug_response_code(response, "404")
-      assert_equal "404", response.code
+      while response.code != expected && timeout_at > Time.now
+        sleep 0.1
+        response = netcat_response
+      end
+      debug_response_code(response, expected)
+      response.code
     end
 
     def netcat_response
-      uri = URI.parse("http://127.0.0.1:12345/up")
+      uri = URI.parse("http://127.0.0.1:#{@http_port}/up")
       http = Net::HTTP.new(uri.host, uri.port)
       request = Net::HTTP::Get.new(uri)
       request["Host"] = "netcat"

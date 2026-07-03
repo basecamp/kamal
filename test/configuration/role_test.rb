@@ -278,6 +278,40 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
     assert_equal [ "-t", 30 ], config_with_roles.role(:workers).stop_args
   end
 
+  test "restart policy" do
+    @deploy_with_roles[:servers]["workers"]["options"] = { "restart" => "on-failure:3", "memory" => "2g" }
+
+    assert_equal "on-failure:3", config_with_roles.role(:workers).restart_policy
+    assert_equal [ "--memory", "\"2g\"" ], config_with_roles.role(:workers).option_args
+  end
+
+  test "default restart policy" do
+    assert_equal "unless-stopped", config_with_roles.role(:workers).restart_policy
+  end
+
+  test "stop args with proxy and stop_timeout" do
+    @deploy_with_roles[:servers]["web"] = { "hosts" => [ "1.1.1.1", "1.1.1.2" ], "stop_timeout" => 60 }
+    assert_equal [ "-t", 60 ], config_with_roles.role(:web).stop_args
+  end
+
+  test "stop args with no proxy and stop_timeout" do
+    @deploy_with_roles[:servers]["workers"] = { "hosts" => [ "1.1.1.3", "1.1.1.4" ], "cmd" => "bin/jobs", "stop_timeout" => 60 }
+    assert_equal [ "-t", 60 ], config_with_roles.role(:workers).stop_args
+  end
+
+  test "stop args with root stop_timeout" do
+    @deploy_with_roles[:stop_timeout] = 45
+    assert_equal [ "-t", 45 ], config_with_roles.role(:web).stop_args
+    assert_equal [ "-t", 45 ], config_with_roles.role(:workers).stop_args
+  end
+
+  test "stop args with role stop_timeout overriding root" do
+    @deploy_with_roles[:stop_timeout] = 45
+    @deploy_with_roles[:servers]["web"] = { "hosts" => [ "1.1.1.1", "1.1.1.2" ], "stop_timeout" => 60 }
+    assert_equal [ "-t", 60 ], config_with_roles.role(:web).stop_args
+    assert_equal [ "-t", 45 ], config_with_roles.role(:workers).stop_args
+  end
+
   test "role specific proxy config" do
     @deploy_with_roles[:proxy] = { "response_timeout" => 15 }
     @deploy_with_roles[:servers]["workers"]["proxy"] = { "response_timeout" => 18 }
@@ -286,12 +320,14 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
     assert_equal "18s", config_with_roles.role(:workers).proxy.deploy_options[:"target-timeout"]
   end
 
-  test "can't set restart in options" do
-    @deploy_with_roles[:servers]["workers"]["options"] = { "restart" => "always" }
+  test "invalid boolean restart policy" do
+    @deploy_with_roles[:servers]["workers"]["options"] = { "restart" => false }
 
-    assert_raises Kamal::ConfigurationError, "servers/workers: Cannot set restart policy in docker options, unless-stopped is required" do
+    error = assert_raises Kamal::ConfigurationError do
       Kamal::Configuration.new(@deploy_with_roles)
     end
+
+    assert_equal %(servers/workers/options/restart: should be a string. Use "no" to disable restarts), error.message
   end
 
   private

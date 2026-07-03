@@ -6,7 +6,7 @@ module Kamal::Git
   end
 
   def user_name
-    `git config user.name`.strip
+    `git config user.name`.force_encoding(Encoding::UTF_8).strip
   end
 
   def email

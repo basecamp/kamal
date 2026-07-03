@@ -14,8 +14,12 @@ class Kamal::Secrets::Adapters::AwsSecretsManager < Kamal::Secrets::Adapters::Ba
           secret_name = secret["Name"]
           secret_string = JSON.parse(secret["SecretString"])
 
-          secret_string.each do |key, value|
-            results["#{secret_name}/#{key}"] = value
+          if secret_string.is_a?(Hash)
+            secret_string.each do |key, value|
+              results["#{secret_name}/#{key}"] = stringify_secret_value(value)
+            end
+          else
+            results["#{secret_name}"] = stringify_secret_value(secret_string)
           end
         rescue JSON::ParserError
           results["#{secret_name}"] = secret["SecretString"]
@@ -38,6 +42,10 @@ class Kamal::Secrets::Adapters::AwsSecretsManager < Kamal::Secrets::Adapters::Ba
 
         raise RuntimeError, secrets["Errors"].map { |error| "#{error['SecretId']}: #{error['Message']}" }.join(" ")
       end
+    end
+
+    def stringify_secret_value(value)
+      value.is_a?(String) ? value : JSON.dump(value)
     end
 
     def check_dependencies!

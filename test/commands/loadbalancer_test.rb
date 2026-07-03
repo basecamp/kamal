@@ -58,7 +58,7 @@ class CommandsLoadbalancerTest < ActiveSupport::TestCase
 
   test "info" do
     assert_equal \
-      "docker ps --filter name=^load-balancer$",
+      "docker ps --filter 'name=^load-balancer$'",
       new_command.info.join(" ")
   end
 

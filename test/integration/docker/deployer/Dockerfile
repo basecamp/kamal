@@ -14,7 +14,7 @@ RUN echo \
   "$(. /etc/os-release && echo "$VERSION_CODENAME")" stable" | \
   tee /etc/apt/sources.list.d/docker.list > /dev/null
 
-RUN apt-get update --fix-missing && apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+RUN apt-get update --fix-missing && apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin fuse-overlayfs
 
 COPY . .
 
@@ -32,6 +32,6 @@ RUN rm -rf /root/.ssh && \
     cd /app_with_parallel_roles && git init && git add . && git commit -am "Initial version" && \
     cd /app_with_destinations && git init && git add . && git commit -am "Initial version"
 
-HEALTHCHECK --interval=1s CMD pgrep sleep
+HEALTHCHECK --interval=1s CMD docker info > /dev/null 2>&1 && pgrep sleep
 
 CMD ["./boot.sh"]

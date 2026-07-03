@@ -111,6 +111,12 @@ class SecretsTest < ActiveSupport::TestCase
     end
   end
 
+  test "default secrets_path" do
+    with_test_secrets("secrets" => "SECRET=ABC") do
+      assert_equal "ABC", Kamal::Secrets.new["SECRET"]
+    end
+  end
+
   test "custom secrets_path error message" do
     Dir.mktmpdir do |tmpdir|
       Dir.chdir(tmpdir) do

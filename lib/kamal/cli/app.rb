@@ -1,7 +1,7 @@
 class Kamal::Cli::App < Kamal::Cli::Base
   desc "boot", "Boot app on servers (or reboot app if already running)"
   def boot
-    with_lock do
+    modify(lock: true) do
       say "Get most recent version available as an image...", :magenta unless options[:version]
       using_version(version_or_latest) do |version|
         say "Start container with version #{version} (or reboot if already running)...", :magenta
@@ -42,7 +42,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
 
   desc "start", "Start existing app container on servers"
   def start
-    with_lock do
+    modify(lock: true) do
       on_roles(KAMAL.roles, hosts: KAMAL.app_hosts, parallel: KAMAL.config.boot.parallel_roles) do |host, role|
         app = KAMAL.app(role: role, host: host)
         execute *KAMAL.auditor.record("Started app version #{KAMAL.config.version}"), verbosity: :debug
@@ -61,7 +61,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
 
   desc "stop", "Stop app container on servers"
   def stop
-    with_lock do
+    modify(lock: true) do
       on_roles(KAMAL.roles, hosts: KAMAL.app_hosts, parallel: KAMAL.config.boot.parallel_roles) do |host, role|
         app = KAMAL.app(role: role, host: host)
         execute *KAMAL.auditor.record("Stopped app", role: role), verbosity: :debug
@@ -93,59 +93,68 @@ class Kamal::Cli::App < Kamal::Cli::Base
   option :reuse, type: :boolean, default: false, desc: "Reuse currently running container instead of starting a new one"
   option :env, aliases: "-e", type: :hash, desc: "Set environment variables for the command"
   option :detach, type: :boolean, default: false, desc: "Execute command in a detached container"
+  option :raw, type: :boolean, default: false, desc: "Output raw, unmodified stdout"
   def exec(*cmd)
-    pre_connect_if_required
+    raw = options[:raw]
 
     if (incompatible_options = [ :interactive, :reuse ].select { |key| options[:detach] && options[key] }.presence)
       raise ArgumentError, "Detach is not compatible with #{incompatible_options.join(" or ")}"
+    end
+
+    if raw && (incompatible_options = [ :interactive, :detach ].select { |key| options[key] }.presence)
+      raise ArgumentError, "Raw is not compatible with #{incompatible_options.join(" or ")}"
     end
 
     if cmd.empty?
       raise ArgumentError, "No command provided. You must specify a command to execute."
     end
 
-    cmd = Kamal::Utils.join_commands(cmd)
-    env = options[:env]
-    detach = options[:detach]
-    quiet = options[:quiet]
-    case
-    when options[:interactive] && options[:reuse]
-      say "Get current version of running container...", :magenta unless options[:version]
-      using_version(options[:version] || current_running_version) do |version|
-        say "Launching interactive command with version #{version} via SSH from existing container on #{KAMAL.primary_host}...", :magenta
-        run_locally { exec KAMAL.app(role: KAMAL.primary_role, host: KAMAL.primary_host).execute_in_existing_container_over_ssh(cmd, env: env) }
-      end
+    with_raw_output(raw) do
+      pre_connect_if_required
 
-    when options[:interactive]
-      say "Get most recent version available as an image...", :magenta unless options[:version]
-      using_version(version_or_latest) do |version|
-        say "Launching interactive command with version #{version} via SSH from new container on #{KAMAL.primary_host}...", :magenta
-        on(KAMAL.primary_host) { execute *KAMAL.registry.login }
-        run_locally do
-          exec KAMAL.app(role: KAMAL.primary_role, host: KAMAL.primary_host).execute_in_new_container_over_ssh(cmd, env: env)
+      cmd = Kamal::Utils.join_commands(cmd)
+      env = options[:env]
+      detach = options[:detach]
+      quiet = options[:quiet]
+      case
+      when options[:interactive] && options[:reuse]
+        say "Get current version of running container...", :magenta unless options[:version]
+        using_version(options[:version] || current_running_version) do |version|
+          say "Launching interactive command with version #{version} via SSH from existing container on #{KAMAL.primary_host}...", :magenta
+          run_locally { exec KAMAL.app(role: KAMAL.primary_role, host: KAMAL.primary_host).execute_in_existing_container_over_ssh(cmd, env: env) }
         end
-      end
 
-    when options[:reuse]
-      say "Get current version of running container...", :magenta unless options[:version]
-      using_version(options[:version] || current_running_version) do |version|
-        say "Launching command with version #{version} from existing container...", :magenta
-
-        on_roles(KAMAL.roles, hosts: KAMAL.app_hosts) do |host, role|
-          execute *KAMAL.auditor.record("Executed cmd '#{cmd}' on app version #{version}", role: role), verbosity: :debug
-          puts_by_host host, capture_with_info(*KAMAL.app(role: role, host: host).execute_in_existing_container(cmd, env: env)), quiet: quiet
+      when options[:interactive]
+        say "Get most recent version available as an image...", :magenta unless options[:version]
+        using_version(version_or_latest) do |version|
+          say "Launching interactive command with version #{version} via SSH from new container on #{KAMAL.primary_host}...", :magenta
+          on(KAMAL.primary_host) { execute *KAMAL.registry.login }
+          run_locally do
+            exec KAMAL.app(role: KAMAL.primary_role, host: KAMAL.primary_host).execute_in_new_container_over_ssh(cmd, env: env)
+          end
         end
-      end
 
-    else
-      say "Get most recent version available as an image...", :magenta unless options[:version]
-      using_version(version_or_latest) do |version|
-        say "Launching command with version #{version} from new container...", :magenta
-        on(KAMAL.app_hosts) { execute *KAMAL.registry.login }
+      when options[:reuse]
+        say "Get current version of running container...", :magenta unless options[:version]
+        using_version(options[:version] || current_running_version) do |version|
+          say "Launching command with version #{version} from existing container...", :magenta
 
-        on_roles(KAMAL.roles, hosts: KAMAL.app_hosts) do |host, role|
-          execute *KAMAL.auditor.record("Executed cmd '#{cmd}' on app version #{version}"), verbosity: :debug
-          puts_by_host host, capture_with_info(*KAMAL.app(role: role, host: host).execute_in_new_container(cmd, env: env, detach: detach)), quiet: quiet
+          on_roles(KAMAL.roles, hosts: KAMAL.app_hosts) do |host, role|
+            execute *KAMAL.auditor.record("Executed cmd '#{cmd}' on app version #{version}", role: role), verbosity: :debug
+            puts_by_host host, capture_with_info(*KAMAL.app(role: role, host: host).execute_in_existing_container(cmd, env: env), strip: !raw), quiet: quiet, raw: raw
+          end
+        end
+
+      else
+        say "Get most recent version available as an image...", :magenta unless options[:version]
+        using_version(version_or_latest) do |version|
+          say "Launching command with version #{version} from new container...", :magenta
+          on(KAMAL.app_hosts) { execute *KAMAL.registry.login }
+
+          on_roles(KAMAL.roles, hosts: KAMAL.app_hosts) do |host, role|
+            execute *KAMAL.auditor.record("Executed cmd '#{cmd}' on app version #{version}"), verbosity: :debug
+            puts_by_host host, capture_with_info(*KAMAL.app(role: role, host: host).execute_in_new_container(cmd, env: env, detach: detach), strip: !raw), quiet: quiet, raw: raw
+          end
         end
       end
     end
@@ -233,7 +242,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
 
   desc "remove", "Remove app containers and images from servers"
   def remove
-    with_lock do
+    modify(lock: true) do
       stop
       remove_containers
       remove_images
@@ -243,7 +252,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
 
   desc "live", "Set the app to live mode"
   def live
-    with_lock do
+    modify(lock: true) do
       on_roles(KAMAL.roles, hosts: KAMAL.proxy_hosts) do |host, role|
         execute *KAMAL.app(role: role, host: host).live if role.running_proxy?
       end
@@ -256,7 +265,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
   def maintenance
     maintenance_options = { drain_timeout: options[:drain_timeout] || KAMAL.config.drain_timeout, message: options[:message] }
 
-    with_lock do
+    modify(lock: true) do
       on_roles(KAMAL.roles, hosts: KAMAL.proxy_hosts) do |host, role|
         execute *KAMAL.app(role: role, host: host).maintenance(**maintenance_options) if role.running_proxy?
       end
@@ -265,7 +274,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
 
   desc "remove_container [VERSION]", "Remove app container with given version from servers", hide: true
   def remove_container(version)
-    with_lock do
+    modify(lock: true) do
       on_roles(KAMAL.roles, hosts: KAMAL.app_hosts) do |host, role|
         execute *KAMAL.auditor.record("Removed app container with version #{version}", role: role), verbosity: :debug
         execute *KAMAL.app(role: role, host: host).remove_container(version: version)
@@ -275,7 +284,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
 
   desc "remove_containers", "Remove all app containers from servers", hide: true
   def remove_containers
-    with_lock do
+    modify(lock: true) do
       on_roles(KAMAL.roles, hosts: KAMAL.app_hosts) do |host, role|
         execute *KAMAL.auditor.record("Removed all app containers", role: role), verbosity: :debug
         execute *KAMAL.app(role: role, host: host).remove_containers
@@ -285,7 +294,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
 
   desc "remove_images", "Remove all app images from servers", hide: true
   def remove_images
-    with_lock do
+    modify(lock: true) do
       on(hosts_removing_all_roles) do
         execute *KAMAL.auditor.record("Removed all app images"), verbosity: :debug
         execute *KAMAL.app.remove_images
@@ -295,7 +304,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
 
   desc "remove_app_directories", "Remove the app directories from servers", hide: true
   def remove_app_directories
-    with_lock do
+    modify(lock: true) do
       on(hosts_removing_all_roles) do |host|
         execute *KAMAL.server.remove_app_directory, raise_on_non_zero_exit: false
         execute *KAMAL.auditor.record("Removed #{KAMAL.config.app_directory}"), verbosity: :debug
@@ -347,7 +356,7 @@ class Kamal::Cli::App < Kamal::Cli::Base
 
     def with_lock_if_stopping
       if options[:stop]
-        with_lock { yield }
+        modify(lock: true) { yield }
       else
         yield
       end

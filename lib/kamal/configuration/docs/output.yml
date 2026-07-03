@@ -1,0 +1,25 @@
+# Output
+#
+# Configure where Kamal sends command output logs.
+
+# Output options
+#
+# The options are specified under the output key in the configuration file.
+output:
+
+  # OTel
+  #
+  # Ship deploy logs to an OpenTelemetry-compatible endpoint via OTLP HTTP.
+  #
+  # Logs are sent as OTLP log records with resource attributes derived from
+  # Kamal's deploy tags (service, version, performer, destination, etc.)
+  otel:
+    endpoint: http://otel-gateway:4318
+
+  # File
+  #
+  # Write deploy logs to a file on the local machine.
+  #
+  # One log file is created per deploy, named with the timestamp and command.
+  file:
+    path: /var/log/kamal/

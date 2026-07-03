@@ -29,8 +29,8 @@ class AppTest < IntegrationTest
     images = kamal :app, :images, capture: true
     assert_match "App Host: vm1", images
     assert_match "App Host: vm2", images
-    assert_match /localhost:5000\/app\s+#{latest_app_version}/, images
-    assert_match /localhost:5000\/app\s+latest/, images
+    assert_match /localhost:5000\/app[:\s]+#{latest_app_version}/, images
+    assert_match /localhost:5000\/app[:\s]+latest/, images
 
     containers = kamal :app, :containers, capture: true
     assert_match "App Host: vm1", containers
@@ -47,6 +47,14 @@ class AppTest < IntegrationTest
     assert_match "App Host: vm2", exec_output
     assert_match "App Host: vm1", exec_output
     assert_match /1 root      0:\d\d nginx/, exec_output
+
+    binary = "head -c 512 /dev/zero"
+    expected_md5 = deployer_exec(%(sh -c "#{binary} | md5sum"), capture: true)[/\h{32}/]
+    piped_md5 = deployer_exec(
+      %(sh -c "kamal app exec --reuse --raw --primary '#{binary}' | md5sum"),
+      capture: true
+    )[/\h{32}/]
+    assert_equal expected_md5, piped_md5
 
     kamal :app, :maintenance
     assert_app_in_maintenance
