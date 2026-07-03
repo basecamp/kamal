@@ -44,7 +44,9 @@ class CliBuildTest < CliTestCase
         .returns("")
 
       run_command("push", "--verbose", fixture: :with_remote_builder).tap do |output|
-        assert_no_match "Running docker login -u [REDACTED] -p [REDACTED] as ", output
+        # Fork behavior: we always log in locally for non-local registries (reverts #1664),
+        # so the remote builder can push to the registry through the local credentials.
+        assert_match "Running docker login -u [REDACTED] -p [REDACTED] as ", output
         assert_match "docker buildx inspect kamal-remote-ssh---app-1-1-1-5 | grep -q Endpoint:.*kamal-remote-ssh---app-1-1-1-5-context && docker context inspect kamal-remote-ssh---app-1-1-1-5-context --format '{{.Endpoints.docker.Host}}' | grep -xq ssh://app@1.1.1.5 || (echo no compatible builder && exit 1)", output
         assert_match "Command: ( export BUILDKIT_NO_CLIENT_TOKEN=\"1\" ; docker buildx build --output=type=registry --platform linux/arm64 --builder kamal-remote-ssh---app-1-1-1-5 -t dhh/app:999 -t dhh/app:latest --label service=\"app\" --file Dockerfile . 2>&1 )", output
       end

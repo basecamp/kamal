@@ -15,6 +15,7 @@ readiness_delay: 0
 boot:
   parallel_roles: true
 proxy:
+  loadbalancer: false
   host: localhost
   ssl: false
   healthcheck:

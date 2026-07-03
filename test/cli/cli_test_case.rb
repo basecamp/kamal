@@ -7,6 +7,9 @@ class CliTestCase < ActiveSupport::TestCase
     ENV["MYSQL_ROOT_PASSWORD"] = "secret123"
     Object.send(:remove_const, :KAMAL)
     Object.const_set(:KAMAL, Kamal::Commander.new)
+
+    # Ensure no loadbalancer functionality interferes with tests
+    Kamal::Configuration::Proxy.any_instance.stubs(:load_balancing?).returns(false)
   end
 
   teardown do

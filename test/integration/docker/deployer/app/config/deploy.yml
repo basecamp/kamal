@@ -34,6 +34,7 @@ output:
     endpoint: http://otel_collector:4318
 proxy:
   host: 127.0.0.1
+  loadbalancer: false
 registry:
   server: localhost:5000
 builder:

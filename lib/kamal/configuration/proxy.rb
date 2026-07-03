@@ -3,6 +3,7 @@ class Kamal::Configuration::Proxy
 
   DEFAULT_LOG_REQUEST_HEADERS = [ "Cache-Control", "Last-Modified", "User-Agent" ]
   CONTAINER_NAME = "kamal-proxy"
+  LOADBALANCER_CONTAINER_NAME = "kamal-loadbalancer"
 
   delegate :argumentize, :optionize, to: Kamal::Utils
 
@@ -27,6 +28,26 @@ class Kamal::Configuration::Proxy
 
   def hosts
     proxy_config["hosts"] || proxy_config["host"]&.split(",") || []
+  end
+
+  def loadbalancer
+    proxy_config["loadbalancer"]
+  end
+
+  def load_balancing?
+    effective_loadbalancer.present?
+  end
+
+  def effective_loadbalancer
+    return false if loadbalancer == false
+    return loadbalancer if loadbalancer.present?
+    return config.primary_role.hosts.first if config.primary_role && Array(config.primary_role.hosts).size > 1
+
+    nil
+  end
+
+  def loadbalancer_on_proxy_host?
+    load_balancing? && config.proxy_hosts.include?(effective_loadbalancer)
   end
 
   def custom_ssl_certificate?
@@ -68,7 +89,7 @@ class Kamal::Configuration::Proxy
   end
 
   def deploy_options
-    {
+    opts = {
       host: hosts,
       tls: ssl? ? true : nil,
       "tls-certificate-path": container_tls_cert,
@@ -92,6 +113,13 @@ class Kamal::Configuration::Proxy
       "log-response-header": proxy_config.dig("logging", "response_headers"),
       "error-pages": error_pages
     }.compact
+
+    if load_balancing?
+      opts.delete(:host)
+      opts.delete(:tls)
+    end
+
+    opts
   end
 
   def deploy_command_args(target:)

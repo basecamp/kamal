@@ -14,6 +14,7 @@ drain_timeout: 2
 readiness_delay: 0
 
 proxy:
+  loadbalancer: false
   host: localhost
   ssl:
     certificate_pem: CUSTOM_CERT

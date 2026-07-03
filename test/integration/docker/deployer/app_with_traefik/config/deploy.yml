@@ -17,6 +17,7 @@ builder:
   args:
     COMMIT_SHA: <%= `git rev-parse HEAD` %>
 proxy:
+  loadbalancer: false
   run:
     publish: false
     options:
