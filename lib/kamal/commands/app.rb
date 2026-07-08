@@ -114,6 +114,8 @@ class Kamal::Commands::App < Kamal::Commands::Base
         filters << "label=destination=#{config.destination}"
         filters << "label=role=#{role}" if role
         statuses&.each do |status|
+          # Podman has no "restarting" container state; it rejects the filter outright.
+          next if config.container_engine == :podman && status.to_sym == :restarting
           filters << "status=#{status}"
         end
       end

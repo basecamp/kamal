@@ -30,6 +30,12 @@ service: myapp
 # The image will be pushed to the configured registry.
 image: my-image
 
+# The container engine
+#
+# Kamal drives Docker by default. Set this to `podman` to build and run
+# containers with Podman instead. Absent or `docker` is fully stock behavior.
+container_engine: docker
+
 # Labels
 #
 # Additional labels to add to the container:

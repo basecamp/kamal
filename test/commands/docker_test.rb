@@ -39,4 +39,11 @@ class CommandsDockerTest < ActiveSupport::TestCase
   test "refresh_session" do
     assert_equal "kill -HUP $PPID", @docker.refresh_session.join(" ")
   end
+
+  test "rootless boot-survival commands under podman" do
+    podman = Kamal::Commands::Docker.new(Kamal::Configuration.new(@config.merge(container_engine: "podman", ssh: { "user" => "deploy" })))
+    assert_equal "podman info --format '{{.Host.Security.Rootless}}' | grep -q true", podman.rootless?.join(" ")
+    assert_equal "loginctl enable-linger deploy", podman.enable_linger.join(" ")
+    assert_equal "systemctl --user enable --now podman-restart.service", podman.enable_podman_restart.join(" ")
+  end
 end

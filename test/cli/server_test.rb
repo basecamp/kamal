@@ -104,6 +104,40 @@ class CliServerTest < CliTestCase
     end
   end
 
+  test "bootstrap checks for podman and never runs the docker installer" do
+    stub_setup
+    SSHKit::Backend::Abstract.any_instance.expects(:execute).with(:podman, "-v", raise_on_non_zero_exit: false).returns(false).at_least_once
+    SSHKit::Backend::Abstract.any_instance.expects(:execute).with(:mkdir, "-p", ".kamal").returns("").at_least_once
+    # The docker install script must never be invoked under podman.
+    SSHKit::Backend::Abstract.any_instance.expects(:execute).with(:sh, "-c", regexp_matches(/get.docker.com/), "|", :sh).never
+
+    assert_raise RuntimeError do
+      stdouted { Kamal::Cli::Server.start([ "bootstrap", "-c", "test/fixtures/deploy_with_podman.yml" ]) }
+    end
+  end
+
+  test "bootstrap enables rootless podman boot survival when podman is rootless" do
+    stub_setup
+    SSHKit::Backend::Abstract.any_instance.expects(:execute).with(:mkdir, "-p", ".kamal").returns("").at_least_once
+    SSHKit::Backend::Abstract.any_instance.expects(:execute).with(:podman, "-v", raise_on_non_zero_exit: false).returns(true).at_least_once
+    SSHKit::Backend::Abstract.any_instance.expects(:execute).with(:podman, :info, "--format", "'{{.Host.Security.Rootless}}'", "|", :grep, "-q", "true", raise_on_non_zero_exit: false).returns(true).at_least_once
+    SSHKit::Backend::Abstract.any_instance.expects(:execute).with(:loginctl, "enable-linger", "root", raise_on_non_zero_exit: false).at_least_once
+    SSHKit::Backend::Abstract.any_instance.expects(:execute).with(:systemctl, "--user", "enable", "--now", "podman-restart.service", raise_on_non_zero_exit: false).at_least_once
+
+    stdouted { Kamal::Cli::Server.start([ "bootstrap", "-c", "test/fixtures/deploy_with_podman.yml" ]) }
+  end
+
+  test "bootstrap skips rootless setup for rootful podman" do
+    stub_setup
+    SSHKit::Backend::Abstract.any_instance.expects(:execute).with(:mkdir, "-p", ".kamal").returns("").at_least_once
+    SSHKit::Backend::Abstract.any_instance.expects(:execute).with(:podman, "-v", raise_on_non_zero_exit: false).returns(true).at_least_once
+    SSHKit::Backend::Abstract.any_instance.expects(:execute).with(:podman, :info, "--format", "'{{.Host.Security.Rootless}}'", "|", :grep, "-q", "true", raise_on_non_zero_exit: false).returns(false).at_least_once
+    SSHKit::Backend::Abstract.any_instance.expects(:execute).with(:loginctl, "enable-linger", "root", raise_on_non_zero_exit: false).never
+    SSHKit::Backend::Abstract.any_instance.expects(:execute).with(:systemctl, "--user", "enable", "--now", "podman-restart.service", raise_on_non_zero_exit: false).never
+
+    stdouted { Kamal::Cli::Server.start([ "bootstrap", "-c", "test/fixtures/deploy_with_podman.yml" ]) }
+  end
+
   private
     def run_command(*command)
       stdouted { Kamal::Cli::Server.start([ *command, "-c", "test/fixtures/deploy_with_accessories.yml" ]) }

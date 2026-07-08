@@ -28,7 +28,7 @@ class Kamal::Configuration::Accessory
   end
 
   def image
-    [ registry&.server, accessory_config["image"] ].compact.join("/")
+    config.image_reference([ registry&.server, accessory_config["image"] ].compact.join("/"))
   end
 
   def hosts

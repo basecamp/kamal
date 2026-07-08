@@ -279,7 +279,31 @@ class CommandsBuilderTest < ActiveSupport::TestCase
       builder.create.join(" ")
   end
 
+  test "podman builds locally with podman build and pushes each tag" do
+    builder = podman_builder_command
+    assert_equal "podman", builder.name
+    assert_equal \
+      "podman build --platform linux/amd64 -t docker.io/dhh/app:123 -t docker.io/dhh/app:latest --label service=\"app\" --file Dockerfile . 2>&1 && podman push docker.io/dhh/app:123 && podman push docker.io/dhh/app:latest",
+      builder.push.join(" ")
+  end
+
+  test "podman builder create, remove, and inspect are no-ops" do
+    builder = podman_builder_command
+    assert_nil builder.create
+    assert_nil builder.remove
+    assert_nil builder.inspect_builder
+  end
+
+  test "podman rejects remote, cloud, and multi-arch builds" do
+    assert_raises(ArgumentError) { podman_builder_command(builder: { "remote" => "ssh://app@127.0.0.1", "local" => false }).name }
+    assert_raises(ArgumentError) { podman_builder_command(builder: { "arch" => [ "amd64", "arm64" ] }).name }
+  end
+
   private
+    def podman_builder_command(additional_config = {})
+      new_builder_command(additional_config.deep_merge(container_engine: "podman"))
+    end
+
     def new_builder_command(additional_config = {})
       Kamal::Configuration.new(@config.deep_merge(additional_config), version: "123").then do |config|
         KAMAL.reset

@@ -17,7 +17,10 @@ class Kamal::Commands::Builder < Kamal::Commands::Base
   end
 
   def target
-    if remote?
+    if config.container_engine == :podman
+      ensure_podman_builder_supported
+      podman
+    elsif remote?
       if local?
         hybrid
       else
@@ -30,6 +33,10 @@ class Kamal::Commands::Builder < Kamal::Commands::Base
     else
       local
     end
+  end
+
+  def podman
+    @podman ||= Kamal::Commands::Builder::Podman.new(config)
   end
 
   def remote
@@ -51,4 +58,15 @@ class Kamal::Commands::Builder < Kamal::Commands::Base
   def cloud
     @cloud ||= Kamal::Commands::Builder::Cloud.new(config)
   end
+
+  private
+    def ensure_podman_builder_supported
+      if remote? || cloud? || pack?
+        raise ArgumentError, "Podman builds must be local: remote, cloud, and pack builders aren't supported under container_engine: podman"
+      end
+
+      if config.builder.arches.size > 1
+        raise ArgumentError, "Podman builds are single-arch: set a single builder arch under container_engine: podman"
+      end
+    end
 end

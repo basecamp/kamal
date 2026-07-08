@@ -39,6 +39,26 @@ class Kamal::Commands::Docker < Kamal::Commands::Base
     docker :network, :create, :kamal
   end
 
+  # Only rootless Podman needs the linger + user restart service for boot survival;
+  # rootful Podman and Docker are managed by system systemd / the daemon.
+  def rootless?
+    pipe \
+      docker(:info, "--format", "'{{.Host.Security.Rootless}}'"),
+      [ :grep, "-q", "true" ]
+  end
+
+  # Keep the user manager (and thus the containers) running after logout and across
+  # reboots — the rootless analog of the Docker daemon starting at boot.
+  def enable_linger
+    [ :loginctl, "enable-linger", config.ssh.user ]
+  end
+
+  # Restart `unless-stopped`/`always` containers on boot (should-start-on-boot=true),
+  # the rootless analog of the Docker daemon restarting them.
+  def enable_podman_restart
+    [ :systemctl, "--user", "enable", "--now", "podman-restart.service" ]
+  end
+
   private
     def get_docker
       shell \

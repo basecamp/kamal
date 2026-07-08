@@ -217,6 +217,13 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
       new_command(:busybox).remove.join(" ")
   end
 
+  test "pull image qualifies docker hub images under podman" do
+    @config[:container_engine] = "podman"
+    assert_equal \
+      "podman image pull docker.io/redis:latest",
+      new_command(:redis).pull_image.join(" ")
+  end
+
   private
     def new_command(accessory)
       Kamal::Commands::Accessory.new(Kamal::Configuration.new(@config), name: accessory)

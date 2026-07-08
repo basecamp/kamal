@@ -56,6 +56,45 @@ class ConfigurationTest < ActiveSupport::TestCase
     }).image
   end
 
+  test "container engine defaults to docker" do
+    assert_equal :docker, @config.container_engine
+  end
+
+  test "container engine can be set to podman" do
+    assert_equal :podman, Kamal::Configuration.new(@deploy.merge(container_engine: "podman")).container_engine
+  end
+
+  test "container engine must be docker or podman" do
+    assert_raise(Kamal::ConfigurationError) do
+      Kamal::Configuration.new(@deploy.merge(container_engine: "containerd"))
+    end
+  end
+
+  test "image_reference is a no-op under docker" do
+    assert_equal "redis:latest", @config.image_reference("redis:latest")
+    assert_equal "dhh/app", @config.image_reference("dhh/app")
+  end
+
+  test "image_reference qualifies only bare docker hub references under podman" do
+    podman = Kamal::Configuration.new(@deploy.merge(container_engine: "podman"))
+    assert_equal "docker.io/redis:latest", podman.image_reference("redis:latest")
+    assert_equal "docker.io/dhh/app", podman.image_reference("dhh/app")
+    assert_equal "docker.io/basecamp/kamal-proxy:v1", podman.image_reference("basecamp/kamal-proxy:v1")
+    assert_equal "ghcr.io/me/app", podman.image_reference("ghcr.io/me/app")
+    assert_equal "localhost:5000/app", podman.image_reference("localhost:5000/app")
+  end
+
+  test "repository qualifies docker hub images under podman" do
+    assert_equal "docker.io/dhh/app",
+      Kamal::Configuration.new(@deploy.merge(container_engine: "podman")).repository
+
+    assert_equal "registry.example.com/dhh/app",
+      Kamal::Configuration.new(@deploy.merge(
+        container_engine: "podman",
+        registry: { "server" => "registry.example.com", "username" => "dhh", "password" => "secret" }
+      )).repository
+  end
+
   test "service name valid" do
     assert_nothing_raised do
       Kamal::Configuration.new(@deploy.tap { |config| config[:service] = "hey-app1_primary" })

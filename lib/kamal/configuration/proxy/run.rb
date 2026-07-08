@@ -66,7 +66,7 @@ class Kamal::Configuration::Proxy::Run
   end
 
   def image
-    "#{[ registry, repository ].compact.join("/")}:#{version}"
+    config.image_reference("#{[ registry, repository ].compact.join("/")}:#{version}")
   end
 
   def container_name
@@ -93,6 +93,7 @@ class Kamal::Configuration::Proxy::Run
 
   def docker_options_args
     [
+      *("--cap-add=net_bind_service" if config.container_engine == :podman),
       *apps_volume_args,
       *publish_args,
       *logging_args,

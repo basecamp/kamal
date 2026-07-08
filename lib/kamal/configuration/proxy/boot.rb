@@ -24,9 +24,16 @@ class Kamal::Configuration::Proxy::Boot
 
   def default_boot_options
     [
+      *bind_capability,
       *(publish_args(Kamal::Configuration::Proxy::Run::DEFAULT_HTTP_PORT, Kamal::Configuration::Proxy::Run::DEFAULT_HTTPS_PORT, nil)),
       *(logging_args(Kamal::Configuration::Proxy::Run::DEFAULT_LOG_MAX_SIZE))
     ]
+  end
+
+  # Rootful Podman doesn't grant NET_BIND_SERVICE by default, so the proxy can't
+  # bind 80/443 without it. Docker grants it out of the box.
+  def bind_capability
+    "--cap-add=net_bind_service" if config.container_engine == :podman
   end
 
   def repository_name
@@ -38,7 +45,7 @@ class Kamal::Configuration::Proxy::Boot
   end
 
   def image_default
-    "#{repository_name}/#{image_name}"
+    config.image_reference("#{repository_name}/#{image_name}")
   end
 
   def container_name

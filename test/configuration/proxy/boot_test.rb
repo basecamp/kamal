@@ -18,6 +18,13 @@ class ConfigurationProxyBootTest < ActiveSupport::TestCase
     @proxy_boot_config = @config.proxy_boot
   end
 
+  test "default boot options add net_bind_service only under podman" do
+    assert_equal "--publish 80:80 --publish 443:443 --log-opt max-size=10m", @config.proxy_boot.default_boot_options.join(" ")
+
+    podman = Kamal::Configuration.new(@deploy.merge(container_engine: "podman"))
+    assert_equal "--cap-add=net_bind_service --publish 80:80 --publish 443:443 --log-opt max-size=10m", podman.proxy_boot.default_boot_options.join(" ")
+  end
+
   test "proxy directories" do
     assert_equal ".kamal/proxy/apps-config", @proxy_boot_config.apps_directory
     assert_equal "/home/kamal-proxy/.apps-config", @proxy_boot_config.apps_container_directory

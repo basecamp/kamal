@@ -81,7 +81,7 @@ module Kamal::Commands
       end
 
       def docker(*args)
-        args.compact.unshift :docker
+        args.compact.unshift config.container_engine
       end
 
       def pack(*args)
@@ -137,7 +137,8 @@ module Kamal::Commands
       end
 
       def ensure_local_buildx_installed
-        docker :buildx, "version"
+        # Podman has no buildx; only Docker needs the plugin checked.
+        docker :buildx, "version" unless config.container_engine == :podman
       end
 
       def docker_interactive_args

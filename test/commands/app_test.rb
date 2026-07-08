@@ -599,6 +599,20 @@ class CommandsAppTest < ActiveSupport::TestCase
       new_command.remove_proxy_app_directory.join(" ")
   end
 
+  test "logs swaps the embedded binary under podman" do
+    @config[:container_engine] = "podman"
+    assert_equal \
+      "sh -c 'echo C137' | xargs podman logs --timestamps 2>&1",
+      new_command.logs(container_id: "C137").join(" ")
+  end
+
+  test "podman drops the restarting status filter it doesn't support" do
+    @config[:container_engine] = "podman"
+    command = new_command.logs.join(" ")
+    assert_no_match(/status=restarting/, command)
+    assert_match(/status=running/, command)
+  end
+
   private
     def new_command(role: "web", host: "1.1.1.1", **additional_config)
       config = Kamal::Configuration.new(@config.merge(additional_config), destination: @destination, version: "999")

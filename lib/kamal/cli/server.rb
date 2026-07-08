@@ -38,10 +38,12 @@ class Kamal::Cli::Server < Kamal::Cli::Base
   def bootstrap
     modify(lock: true) do
       missing = []
+      engine = KAMAL.config.container_engine
 
       on(KAMAL.hosts) do |host|
         unless execute(*KAMAL.docker.installed?, raise_on_non_zero_exit: false)
-          if execute(*KAMAL.docker.superuser?, raise_on_non_zero_exit: false)
+          # Only Docker can be auto-installed via a universal script; Podman is distro-specific.
+          if engine == :docker && execute(*KAMAL.docker.superuser?, raise_on_non_zero_exit: false)
             info "Missing Docker on #{host}. Installing…"
             execute *KAMAL.docker.install
 
@@ -61,7 +63,23 @@ class Kamal::Cli::Server < Kamal::Cli::Base
       end
 
       if missing.any?
-        raise "Docker is not installed on #{missing.join(", ")} and can't be automatically installed without having root access and either `wget` or `curl`. Install Docker manually: https://docs.docker.com/engine/install/"
+        if engine == :docker
+          raise "Docker is not installed on #{missing.join(", ")} and can't be automatically installed without having root access and either `wget` or `curl`. Install Docker manually: https://docs.docker.com/engine/install/"
+        else
+          raise "Podman is not installed on #{missing.join(", ")}. Kamal can't install Podman automatically; install it manually: https://podman.io/docs/installation"
+        end
+      end
+
+      if engine == :podman
+        # Rootless Podman survives reboot via linger + the user restart service — the
+        # analog of the Docker daemon starting at boot and restarting containers.
+        on(KAMAL.hosts) do |host|
+          if execute(*KAMAL.docker.rootless?, raise_on_non_zero_exit: false)
+            info "Enabling rootless Podman boot survival on #{host}…"
+            execute *KAMAL.docker.enable_linger, raise_on_non_zero_exit: false
+            execute *KAMAL.docker.enable_podman_restart, raise_on_non_zero_exit: false
+          end
+        end
       end
 
       run_hook "docker-setup"

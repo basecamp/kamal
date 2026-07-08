@@ -7,6 +7,7 @@ require "net/ssh/proxy/jump"
 
 class Kamal::Configuration
   HOOKS_OUTPUT_LEVELS = [ :quiet, :verbose ].freeze
+  CONTAINER_ENGINES = [ :docker, :podman ].freeze
 
   delegate :service, :labels, :hooks_path, to: :raw_config, allow_nil: true
   delegate :argumentize, :optionize, to: Kamal::Utils
@@ -88,6 +89,25 @@ class Kamal::Configuration
     ensure_local_registry_remote_builder_has_ssh_url
     ensure_no_conflicting_proxy_runs
     ensure_valid_hooks_output!
+    ensure_valid_container_engine
+  end
+
+  # The container binary every command routes through — docker (default) or podman.
+  def container_engine
+    (raw_config.container_engine || "docker").to_sym
+  end
+
+  # Podman doesn't assume Docker's implicit "docker.io/" for bare Docker Hub
+  # references, so qualify them explicitly when the engine is podman. No-op for docker.
+  def image_reference(reference)
+    return reference unless container_engine == :podman
+
+    registry, slash, _rest = reference.to_s.partition("/")
+    if slash.empty? || !(registry.include?(".") || registry.include?(":") || registry == "localhost")
+      "docker.io/#{reference}"
+    else
+      reference
+    end
   end
 
   def version=(version)
@@ -190,7 +210,7 @@ class Kamal::Configuration
   end
 
   def repository
-    [ registry.server, image ].compact.join("/")
+    image_reference([ registry.server, image ].compact.join("/"))
   end
 
   def absolute_image
@@ -430,6 +450,14 @@ class Kamal::Configuration
 
     def role_names
       raw_config.servers.is_a?(Array) ? [ "web" ] : raw_config.servers.keys.sort
+    end
+
+    def ensure_valid_container_engine
+      unless CONTAINER_ENGINES.include?(container_engine)
+        raise Kamal::ConfigurationError, "Invalid container_engine '#{container_engine}', must be one of: #{CONTAINER_ENGINES.join(", ")}"
+      end
+
+      true
     end
 
     def ensure_valid_hooks_output!

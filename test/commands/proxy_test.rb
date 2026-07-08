@@ -221,6 +221,13 @@ class CommandsProxyTest < ActiveSupport::TestCase
       new_command.run.join(" ")
   end
 
+  test "run qualifies the proxy image and flips the binary under podman" do
+    @config[:container_engine] = "podman"
+    command = new_command.run.join(" ")
+    assert_match %r{echo "docker.io/basecamp/kamal-proxy"}, command
+    assert_match %r{\| xargs podman run }, command
+  end
+
   private
     def new_command
       Kamal::Commands::Proxy.new(Kamal::Configuration.new(@config, version: "123"), host: "1.1.1.1")
