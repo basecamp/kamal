@@ -295,10 +295,10 @@ class ConfigurationTest < ActiveSupport::TestCase
     @deploy.delete(:builder)
     @deploy[:require_destination] = true
 
-error = assert_raises(ArgumentError) do
-  Kamal::Configuration.new(@deploy)
-end
-assert_equal "You must specify a destination", error.message
+    error = assert_raises(ArgumentError) do
+      Kamal::Configuration.new(@deploy)
+    end
+    assert_equal "You must specify a destination", error.message
   end
 
   test "to_h" do
