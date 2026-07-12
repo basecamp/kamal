@@ -114,10 +114,14 @@ proxy:
   # the deploy timeout, with a 5-second timeout for each request.
   #
   # Once the app is up, the proxy will stop hitting the healthcheck endpoint.
+  #
+  # Set `debug` to true to log the body of the last failed healthcheck response
+  # when a deploy fails, which can help diagnose why the container is unhealthy.
   healthcheck:
     interval: 3
     path: /health
     timeout: 3
+    debug: false
 
   # Buffering
   #

@@ -54,13 +54,24 @@ class Kamal::Cli::App::Boot
       if running_proxy?
         endpoint = capture_with_info(*app.container_id_for_version(version)).strip
         raise Kamal::Cli::BootError, "Failed to get endpoint for #{role} on #{host}, did the container boot?" if endpoint.empty?
-        execute *app.deploy(target: endpoint)
+        begin
+          execute *app.deploy(target: endpoint)
+        rescue SSHKit::Command::Failed
+          show_health_check_response(endpoint) if role.proxy.healthcheck_debug?
+          raise
+        end
       else
         Kamal::Cli::Healthcheck::Poller.wait_for_healthy { capture_with_info(*app.status(version: version)) }
       end
     rescue => e
       error "Failed to boot #{role} on #{host}"
       raise e
+    end
+
+    def show_health_check_response(endpoint)
+      response = capture_with_info(*app.health_check_response(target: endpoint), raise_on_non_zero_exit: false)
+      error "Health check response:\n#{response}" if response.present?
+    rescue StandardError
     end
 
     def stop_new_version
