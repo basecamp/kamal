@@ -11,5 +11,7 @@ class Kamal::Configuration::Validator::Builder < Kamal::Configuration::Validator
     error "buildpacks only support building for one arch" if config["pack"] && config["arch"].is_a?(Array) && config["arch"].size > 1
 
     error "Cannot disable local builds, no remote is set" if config["local"] == false && config["remote"].blank?
+
+    error "Cannot set the output type, Kamal sets this based on the build" if config["output_options"] && config["output_options"].key?("type")
   end
 end

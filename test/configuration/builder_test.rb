@@ -171,14 +171,22 @@ class ConfigurationBuilderTest < ActiveSupport::TestCase
     assert_equal true, config.builder.sbom
   end
 
-  test "output" do
-    assert_nil config.builder.output
+  test "output options" do
+    assert_equal({}, config.builder.output_options)
   end
 
-  test "setting output" do
-    @deploy[:builder]["output"] = "compression=zstd,compression-level=3,force-compression=true"
+  test "setting output options" do
+    @deploy[:builder]["output_options"] = { "compression" => "zstd", "compression-level" => 3, "force-compression" => true }
 
-    assert_equal "compression=zstd,compression-level=3,force-compression=true", config.builder.output
+    assert_equal({ "compression" => "zstd", "compression-level" => 3, "force-compression" => true }, config.builder.output_options)
+  end
+
+  test "setting the output type" do
+    @deploy[:builder]["output_options"] = { "type" => "docker" }
+
+    assert_raises(Kamal::ConfigurationError) do
+      config.builder
+    end
   end
 
   test "local disabled but no remote set" do

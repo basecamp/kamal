@@ -135,8 +135,8 @@ class Kamal::Configuration::Builder
     builder_config["sbom"]
   end
 
-  def output
-    builder_config["output"]
+  def output_options
+    builder_config["output_options"] || {}
   end
 
   def git_clone?

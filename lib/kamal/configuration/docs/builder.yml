@@ -131,8 +131,12 @@ builder:
   # The value can also be a boolean to enable or disable SBOM generation.
   sbom: true
 
-  # Output
+  # Output options
   #
-  # Docker output type parameters appended to the buildx `--output=type=...` flag.
-  # Useful for configuring the compression type:
-  output: compression=zstd,compression-level=3,force-compression=true
+  # Extra parameters for the buildx `--output` flag, useful for configuring the compression.
+  #
+  # The output type is set by Kamal and cannot be overridden here.
+  output_options:
+    compression: zstd
+    compression-level: 3
+    force-compression: true
