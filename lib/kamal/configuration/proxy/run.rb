@@ -1,3 +1,5 @@
+require "shellwords"
+
 class Kamal::Configuration::Proxy::Run
   MINIMUM_VERSION = "v0.9.2"
   DEFAULT_HTTP_PORT = 80
@@ -93,7 +95,7 @@ class Kamal::Configuration::Proxy::Run
   end
 
   def docker_socket
-    DEFAULT_DOCKER_SOCKET if config.any_role_use_proxy_idle?
+    run_config.fetch("docker_socket", DEFAULT_DOCKER_SOCKET) if config.any_role_use_proxy_idle?
   end
 
   def docker_options_args
@@ -130,7 +132,12 @@ class Kamal::Configuration::Proxy::Run
   end
 
   def docker_socket_volume_args
-    [ "--volume=#{docker_socket}:#{docker_socket}" ] if docker_socket
+    if docker_socket
+      socket_mount = Shellwords.escape("#{docker_socket}:#{docker_socket}")
+      socket_path = Shellwords.escape(docker_socket)
+
+      [ "--volume=#{socket_mount}", "--group-add", %("$(stat -c %g #{socket_path})") ]
+    end
   end
 
   def app_directory
