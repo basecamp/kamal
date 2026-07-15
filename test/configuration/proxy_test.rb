@@ -105,6 +105,32 @@ class ConfigurationProxyTest < ActiveSupport::TestCase
     end
   end
 
+  test "idle configuration" do
+    @deploy[:proxy] = { "idle" => { "timeout" => 300, "wake_timeout" => 30 } }
+
+    assert_predicate config.proxy, :idle?
+    assert_equal "300s", config.proxy.deploy_options[:"idle-timeout"]
+    assert_equal "30s", config.proxy.deploy_options[:"idle-wake-timeout"]
+  end
+
+  test "idle configuration requires integer durations" do
+    @deploy[:proxy] = { "idle" => { "timeout" => "300" } }
+
+    assert_raises(Kamal::ConfigurationError) { config }
+  end
+
+  test "idle configuration requires positive durations" do
+    @deploy[:proxy] = { "idle" => { "timeout" => 0 } }
+
+    assert_raises(Kamal::ConfigurationError, "Idle timeout must be greater than zero") { config }
+  end
+
+  test "idle configuration requires a timeout" do
+    @deploy[:proxy] = { "idle" => { "wake_timeout" => 30 } }
+
+    assert_raises(Kamal::ConfigurationError, "Idle timeout is required") { config }
+  end
+
   private
     def config
       Kamal::Configuration.new(@deploy)

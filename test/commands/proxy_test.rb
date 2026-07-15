@@ -221,6 +221,14 @@ class CommandsProxyTest < ActiveSupport::TestCase
       new_command.run.join(" ")
   end
 
+  test "idle mounts and configures the Docker socket" do
+    @config[:proxy] = { "idle" => { "timeout" => 300 } }
+
+    assert_equal \
+      "docker run --name kamal-proxy --network kamal --detach --restart unless-stopped --volume kamal-proxy-config:/home/kamal-proxy/.config/kamal-proxy --volume $PWD/.kamal/proxy/apps-config:/home/kamal-proxy/.apps-config --volume=/var/run/docker.sock:/var/run/docker.sock --publish 80:80 --publish 443:443 --log-opt max-size=10m basecamp/kamal-proxy:v0.9.2 kamal-proxy run --docker-socket \"/var/run/docker.sock\"",
+      new_command.run.join(" ")
+  end
+
   private
     def new_command
       Kamal::Commands::Proxy.new(Kamal::Configuration.new(@config, version: "123"), host: "1.1.1.1")

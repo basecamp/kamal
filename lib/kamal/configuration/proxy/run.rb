@@ -3,6 +3,7 @@ class Kamal::Configuration::Proxy::Run
   DEFAULT_HTTP_PORT = 80
   DEFAULT_HTTPS_PORT = 443
   DEFAULT_LOG_MAX_SIZE = "10m"
+  DEFAULT_DOCKER_SOCKET = "/var/run/docker.sock"
 
   attr_reader :config, :run_config
   delegate :argumentize, :optionize, to: Kamal::Utils
@@ -88,12 +89,17 @@ class Kamal::Configuration::Proxy::Run
   end
 
   def run_command_options
-    { debug: debug? || nil, "metrics-port": metrics_port }.compact
+    { debug: debug? || nil, "metrics-port": metrics_port, "docker-socket": docker_socket }.compact
+  end
+
+  def docker_socket
+    DEFAULT_DOCKER_SOCKET if config.any_role_use_proxy_idle?
   end
 
   def docker_options_args
     [
       *apps_volume_args,
+      *docker_socket_volume_args,
       *publish_args,
       *logging_args,
       *("--expose=#{metrics_port}" if metrics_port.present?),
@@ -121,6 +127,10 @@ class Kamal::Configuration::Proxy::Run
 
   def apps_volume_args
     [ apps_volume.docker_args ]
+  end
+
+  def docker_socket_volume_args
+    [ "--volume=#{docker_socket}:#{docker_socket}" ] if docker_socket
   end
 
   def app_directory

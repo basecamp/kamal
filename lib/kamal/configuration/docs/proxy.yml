@@ -148,6 +148,18 @@ proxy:
       - X-Request-ID
       - X-Request-Start
 
+  # Idle
+  #
+  # Stop the application container after a period without requests and start it
+  # again when the next request arrives. Both values are in seconds.
+  #
+  # Enabling idle access automatically mounts the Docker socket into kamal-proxy.
+  # This grants the proxy control over Docker on the host, so only enable it in
+  # environments where the proxy container is trusted with that access.
+  idle:
+    timeout: 300        # Stop the container after 5 minutes without requests
+    wake_timeout: 30    # Maximum time to wait for the container to become healthy
+
   # Run configuration
   #
   # These options are used when booting the proxy container.
