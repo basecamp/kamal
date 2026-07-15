@@ -204,10 +204,12 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
       timestamps = !options[:skip_timestamps]
 
       if options[:follow]
-        run_locally do
-          info "Following logs on #{hosts}..."
-          info accessory.follow_logs(timestamps: timestamps, grep: grep, grep_options: grep_options)
-          exec accessory.follow_logs(timestamps: timestamps, grep: grep, grep_options: grep_options)
+        if hosts.any?
+          run_locally do
+            info "Following logs on #{hosts.first}..."
+            info accessory.follow_logs(host: hosts.first, timestamps: timestamps, grep: grep, grep_options: grep_options)
+            exec accessory.follow_logs(host: hosts.first, timestamps: timestamps, grep: grep, grep_options: grep_options)
+          end
         end
       else
         since = options[:since]
