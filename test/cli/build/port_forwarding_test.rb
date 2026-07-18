@@ -35,6 +35,11 @@ class PortForwardingTest < ActiveSupport::TestCase
     assert_includes_sequence command, [ "-o", "ServerAliveInterval=45" ]
   end
 
+  test "omits keepalives when keepalive is disabled" do
+    assert_empty ssh_command(keepalive: false).grep(/ServerAlive/)
+    assert_includes_sequence ssh_command(keepalive: true), [ "-o", "ServerAliveCountMax=4" ]
+  end
+
   test "fails fast instead of prompting, but accepts unknown host keys like net-ssh" do
     command = ssh_command
 

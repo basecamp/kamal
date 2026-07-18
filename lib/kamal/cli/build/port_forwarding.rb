@@ -84,6 +84,10 @@ class Kamal::Cli::Build::PortForwarding
     # Closing stdin sends EOF to the remote `cat`, so ssh usually exits on its
     # own; TERM then KILL are a backstop.
     def terminate(wait_thread)
+      # Once the wait thread has reaped the process, the PID may be recycled —
+      # don't signal it.
+      return unless wait_thread.alive?
+
       Process.kill "TERM", wait_thread.pid
       return if wait_thread.join(TEARDOWN_GRACE)
 
@@ -102,8 +106,7 @@ class Kamal::Cli::Build::PortForwarding
         # accept unknown keys, reject changed ones.
         "-o", "BatchMode=yes",
         "-o", "StrictHostKeyChecking=accept-new",
-        "-o", "ServerAliveInterval=#{ssh_options[:keepalive_interval] || 15}",
-        "-o", "ServerAliveCountMax=4",
+        *keepalive_options,
         *port_option,
         *key_options,
         *config_option,
@@ -120,6 +123,12 @@ class Kamal::Cli::Build::PortForwarding
 
     def port_option
       ssh_options[:port] ? [ "-p", ssh_options[:port].to_s ] : []
+    end
+
+    def keepalive_options
+      return [] if ssh_options[:keepalive] == false
+
+      [ "-o", "ServerAliveInterval=#{ssh_options[:keepalive_interval] || 15}", "-o", "ServerAliveCountMax=4" ]
     end
 
     def key_options
