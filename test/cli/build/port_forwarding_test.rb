@@ -35,6 +35,13 @@ class PortForwardingTest < ActiveSupport::TestCase
     assert_includes_sequence command, [ "-o", "ServerAliveInterval=45" ]
   end
 
+  test "fails fast instead of prompting, but accepts unknown host keys like net-ssh" do
+    command = ssh_command
+
+    assert_includes_sequence command, [ "-o", "BatchMode=yes" ]
+    assert_includes_sequence command, [ "-o", "StrictHostKeyChecking=accept-new" ]
+  end
+
   test "reads the default ssh config files when config is unset or true" do
     assert_not_includes ssh_command, "-F"
     assert_not_includes ssh_command(config: true), "-F"
@@ -69,7 +76,7 @@ class PortForwardingTest < ActiveSupport::TestCase
     error = assert_raises(RuntimeError) do
       forwarding.send(:wait_until_ready, { host: "1.1.1.1", output: reader }, monotonic_now - 1)
     end
-    assert_equal "Timed out waiting for port forwarding to be established", error.message
+    assert_equal "Timed out waiting for port forwarding to be established on 1.1.1.1", error.message
 
     writer.puts Kamal::Cli::Build::PortForwarding::READY_TOKEN
     forwarding.send(:wait_until_ready, { host: "1.1.1.1", output: reader }, monotonic_now + 5)

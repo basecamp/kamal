@@ -62,7 +62,7 @@ class Kamal::Cli::Build::PortForwarding
         raise "Failed to establish port forward on #{child[:host]} (ssh exited #{child[:wait_thread].value.exitstatus})"
       end
     rescue Timeout::Error
-      raise "Timed out waiting for port forwarding to be established"
+      raise "Timed out waiting for port forwarding to be established on #{child[:host]}"
     end
 
     def stop
@@ -97,7 +97,11 @@ class Kamal::Cli::Build::PortForwarding
       [
         "ssh", "-T",
         "-o", "ExitOnForwardFailure=yes",
+        # BatchMode fails fast instead of prompting — a background tunnel can't
+        # service prompts. accept-new keeps net-ssh's default host key policy:
+        # accept unknown keys, reject changed ones.
         "-o", "BatchMode=yes",
+        "-o", "StrictHostKeyChecking=accept-new",
         "-o", "ServerAliveInterval=#{ssh_options[:keepalive_interval] || 15}",
         "-o", "ServerAliveCountMax=4",
         *port_option,
