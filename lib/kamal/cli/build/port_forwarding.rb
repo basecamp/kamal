@@ -12,6 +12,10 @@ class Kamal::Cli::Build::PortForwarding
     @hosts = hosts
     @port = port
     @ssh_options = ssh_options
+
+    if Array(ssh_options[:key_data]).any?
+      raise "ssh key_data is not supported when forwarding the local registry port; use keys or an ssh agent instead (key_data is deprecated and will be removed in Kamal 3)"
+    end
   end
 
   def forward
@@ -31,10 +35,12 @@ class Kamal::Cli::Build::PortForwarding
     # window is exhausted, and the transfer wedges. Carry the tunnel over the
     # OS ssh client instead, which handles bulk transfer reliably. See #1886.
     def forward_ports
-      hosts.each do |host|
-        @children << start_forward(host)
-        wait_until_ready(@children.last)
-      end
+      hosts.each { |host| @children << start_forward(host) }
+
+      # The tunnels establish in parallel once spawned, so READY_TIMEOUT is a
+      # single deadline shared across all hosts, not a per-host allowance.
+      deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + READY_TIMEOUT
+      @children.each { |child| wait_until_ready(child, deadline) }
     end
 
     def start_forward(host)
@@ -44,8 +50,11 @@ class Kamal::Cli::Build::PortForwarding
 
     # With ExitOnForwardFailure=yes the remote command only runs once the
     # reverse forward is established, so receiving READY proves the tunnel is up.
-    def wait_until_ready(child)
-      Timeout.timeout(READY_TIMEOUT) do
+    def wait_until_ready(child, deadline)
+      remaining = deadline - Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      raise Timeout::Error if remaining <= 0
+
+      Timeout.timeout(remaining) do
         while (line = child[:output].gets)
           return if line.strip == READY_TOKEN
         end
@@ -117,7 +126,24 @@ class Kamal::Cli::Build::PortForwarding
     end
 
     def config_option
-      ssh_options[:config] ? [ "-F", ssh_options[:config].to_s ] : []
+      case (config = ssh_options[:config])
+      when nil, true
+        [] # ssh reads its default config files, matching net-ssh's default
+      when false
+        [ "-F", "/dev/null" ] # ignore all config files
+      else
+        config_file_option Array(config)
+      end
+    end
+
+    def config_file_option(paths)
+      # OpenSSH honors only the last -F flag, so multiple config files can't
+      # be passed through faithfully.
+      if paths.size > 1
+        raise "Multiple ssh config files (#{paths.join(", ")}) are not supported when forwarding the local registry port; combine them into one file, e.g. with Include"
+      end
+
+      [ "-F", (paths.first || "/dev/null").to_s ]
     end
 
     def proxy_option

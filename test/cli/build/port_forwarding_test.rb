@@ -35,6 +35,48 @@ class PortForwardingTest < ActiveSupport::TestCase
     assert_includes_sequence command, [ "-o", "ServerAliveInterval=45" ]
   end
 
+  test "reads the default ssh config files when config is unset or true" do
+    assert_not_includes ssh_command, "-F"
+    assert_not_includes ssh_command(config: true), "-F"
+  end
+
+  test "ignores ssh config files when config is false" do
+    assert_includes_sequence ssh_command(config: false), [ "-F", "/dev/null" ]
+  end
+
+  test "maps a config file array like a single path" do
+    assert_includes_sequence ssh_command(config: [ "/my/ssh_config" ]), [ "-F", "/my/ssh_config" ]
+    assert_includes_sequence ssh_command(config: []), [ "-F", "/dev/null" ]
+  end
+
+  test "rejects multiple ssh config files" do
+    error = assert_raises(RuntimeError) { ssh_command(config: [ "/a", "/b" ]) }
+    assert_match(/Multiple ssh config files/, error.message)
+  end
+
+  test "rejects inline key_data instead of silently ignoring it" do
+    error = assert_raises(RuntimeError) do
+      Kamal::Cli::Build::PortForwarding.new([ "1.1.1.1" ], 5000, key_data: [ "-----BEGIN OPENSSH PRIVATE KEY-----" ])
+    end
+
+    assert_match(/key_data/, error.message)
+  end
+
+  test "waits for readiness against a shared deadline" do
+    forwarding = Kamal::Cli::Build::PortForwarding.new([ "1.1.1.1" ], 5000)
+    reader, writer = IO.pipe
+
+    error = assert_raises(RuntimeError) do
+      forwarding.send(:wait_until_ready, { host: "1.1.1.1", output: reader }, monotonic_now - 1)
+    end
+    assert_equal "Timed out waiting for port forwarding to be established", error.message
+
+    writer.puts Kamal::Cli::Build::PortForwarding::READY_TOKEN
+    forwarding.send(:wait_until_ready, { host: "1.1.1.1", output: reader }, monotonic_now + 5)
+  ensure
+    [ reader, writer ].each(&:close)
+  end
+
   test "maps a jump proxy to -J" do
     command = ssh_command(proxy: Net::SSH::Proxy::Jump.new("root@bastion"))
 
@@ -50,6 +92,10 @@ class PortForwardingTest < ActiveSupport::TestCase
   private
     def ssh_command(**ssh_options)
       Kamal::Cli::Build::PortForwarding.new([ "1.1.1.1" ], 5000, **ssh_options).send(:ssh_command, "1.1.1.1")
+    end
+
+    def monotonic_now
+      Process.clock_gettime(Process::CLOCK_MONOTONIC)
     end
 
     def assert_includes_sequence(array, subarray)
