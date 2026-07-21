@@ -95,7 +95,7 @@ class Kamal::Configuration::Proxy::Run
   end
 
   def docker_socket
-    run_config.fetch("docker_socket", DEFAULT_DOCKER_SOCKET) if config.any_role_use_proxy_idle?
+    run_config.fetch("docker_socket", DEFAULT_DOCKER_SOCKET) if config.any_service_use_proxy_idle?
   end
 
   def docker_options_args

@@ -121,8 +121,8 @@ class Kamal::Configuration
     servers.roles
   end
 
-  def any_role_use_proxy_idle?
-    roles.any? { |role| role.proxy&.idle? }
+  def any_service_use_proxy_idle?
+    (roles + accessories).any? { |service| service.proxy&.idle? }
   end
 
   def role(name)

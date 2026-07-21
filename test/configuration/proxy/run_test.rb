@@ -70,6 +70,20 @@ class ConfigurationProxyRunTest < ActiveSupport::TestCase
     assert_equal "/run/user/1000/docker.sock", Kamal::Configuration.new(deploy).proxy.run.docker_socket
   end
 
+  test "accessory idle uses the default Docker socket" do
+    deploy = base_deploy.deep_merge(
+      accessories: {
+        "review" => {
+          "image" => "dhh/review",
+          "host" => "1.1.1.1",
+          "proxy" => { "host" => "review.example.com", "idle" => { "timeout" => 300 } }
+        }
+      }
+    )
+
+    assert_equal "/var/run/docker.sock", Kamal::Configuration.new(deploy).accessory(:review).proxy.run.docker_socket
+  end
+
   test "Docker socket lifecycle is disabled without idle" do
     deploy = base_deploy.deep_merge(proxy: { "run" => { "docker_socket" => "/run/user/1000/docker.sock" } })
 
