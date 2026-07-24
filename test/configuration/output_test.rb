@@ -39,6 +39,30 @@ class ConfigurationOutputTest < ActiveSupport::TestCase
     assert_kind_of Kamal::Output::FileLogger, @config.output.loggers.first
   end
 
+  test "enabled with console" do
+    @deploy[:output] = { "console" => {} }
+    @config = Kamal::Configuration.new(@deploy)
+
+    assert @config.output.enabled?
+    assert_equal 1, @config.output.loggers.length
+    assert_kind_of Kamal::Output::ConsoleLogger, @config.output.loggers.first
+  end
+
+  test "console accepts spinner and color settings" do
+    @deploy[:output] = { "console" => { "spinner" => false, "color" => false } }
+    @config = Kamal::Configuration.new(@deploy)
+
+    assert_kind_of Kamal::Output::ConsoleLogger, @config.output.loggers.first
+  end
+
+  test "console rejects unknown settings" do
+    @deploy[:output] = { "console" => { "bogus" => true } }
+
+    assert_raises(Kamal::ConfigurationError) do
+      Kamal::Configuration.new(@deploy)
+    end
+  end
+
   test "enabled with both otel and file" do
     @deploy[:output] = {
       "otel" => { "endpoint" => "http://otel-gateway:4318" },

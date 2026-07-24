@@ -21,6 +21,8 @@ Gem::Specification.new do |spec|
   spec.add_dependency "bcrypt_pbkdf", "~> 1.0"
   spec.add_dependency "concurrent-ruby", "~> 1.2"
   spec.add_dependency "base64", "~> 0.2"
+  spec.add_dependency "tty-spinner", "~> 0.9"
+  spec.add_dependency "pastel", "~> 0.8"
 
   spec.add_development_dependency "debug"
   spec.add_development_dependency "minitest", "< 6"

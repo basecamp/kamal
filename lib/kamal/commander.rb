@@ -21,6 +21,7 @@ class Kamal::Commander
     self.lock_wait = false
     self.lock_wait_timeout = 900
     self.lock_wait_interval = 15
+    @console_output = false
     @modify_depth = 0
     @specifics = @specific_roles = @specific_hosts = nil
     @config = @config_kwargs = nil
@@ -170,6 +171,10 @@ class Kamal::Commander
     self.holding_lock
   end
 
+  def console_output?
+    @console_output
+  end
+
   def connected?
     self.connected
   end
@@ -208,7 +213,10 @@ class Kamal::Commander
 
       config.output.loggers.each { |logger| output_logger.broadcast_to(logger) }
 
-      SSHKit.config.output = Kamal::Output::Formatter.new($stdout, output_logger)
+      # A console backend renders to the screen itself, so drop SSHKit's raw stream (still teed to other backends).
+      @console_output = config.output.loggers.any? { |logger| logger.is_a?(Kamal::Output::ConsoleLogger) }
+      formatter_output = @console_output ? File.open(File::NULL, "w") : $stdout
+      SSHKit.config.output = Kamal::Output::Formatter.new(formatter_output, output_logger)
 
       at_exit { @output_logger&.close }
     rescue => e

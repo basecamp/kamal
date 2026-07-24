@@ -23,3 +23,17 @@ output:
   # One log file is created per deploy, named with the timestamp and command.
   file:
     path: /var/log/kamal/
+
+  # Console
+  #
+  # Replace the raw command firehose on the terminal with a condensed view: a
+  # header panel, one section per deploy phase, a live status line per host,
+  # and a summary panel. The raw output is suppressed on success and replayed
+  # for any host that fails. Run with -v/--verbose to restore the full firehose.
+  #
+  # Both options are optional:
+  #   spinner - show animated per-host spinners on a TTY (default: true)
+  #   color   - force color on/off (default: auto-detect from the terminal)
+  console:
+    spinner: true
+    color: true
