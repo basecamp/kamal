@@ -3,7 +3,8 @@ class Kamal::Configuration::Output
 
   LOGGER_TYPES = {
     "otel" => "Kamal::Output::OtelLogger",
-    "file" => "Kamal::Output::FileLogger"
+    "file" => "Kamal::Output::FileLogger",
+    "console" => "Kamal::Output::ConsoleLogger"
   }
 
   attr_reader :output_config, :loggers

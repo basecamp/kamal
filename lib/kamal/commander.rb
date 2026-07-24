@@ -21,6 +21,9 @@ class Kamal::Commander
     self.lock_wait = false
     self.lock_wait_timeout = 900
     self.lock_wait_interval = 15
+    @console_output = false
+    @null_output&.close
+    @null_output = nil
     @modify_depth = 0
     @specifics = @specific_roles = @specific_hosts = nil
     @config = @config_kwargs = nil
@@ -170,6 +173,10 @@ class Kamal::Commander
     self.holding_lock
   end
 
+  def console_output?
+    @console_output
+  end
+
   def connected?
     self.connected
   end
@@ -208,9 +215,20 @@ class Kamal::Commander
 
       config.output.loggers.each { |logger| output_logger.broadcast_to(logger) }
 
-      SSHKit.config.output = Kamal::Output::Formatter.new($stdout, output_logger)
+      # A console backend renders to the screen itself, so drop SSHKit's raw stream
+      # (still teed to other backends). -v/--verbose skips it to restore the firehose.
+      console = config.output.loggers.find { |logger| logger.is_a?(Kamal::Output::ConsoleLogger) }
+      @console_output = !console.nil? && verbosity != :debug
+      console&.disable! unless @console_output
 
-      at_exit { @output_logger&.close }
+      if @console_output
+        @null_output = File.open(File::NULL, "w")
+        SSHKit.config.output = Kamal::Output::Formatter.new(@null_output, output_logger)
+      else
+        SSHKit.config.output = Kamal::Output::Formatter.new($stdout, output_logger)
+      end
+
+      at_exit { @output_logger&.close; @null_output&.close }
     rescue => e
       $stderr.puts "Output logger setup failed: #{e.class}: #{e.message}"
       $stderr.puts e.backtrace.join("\n") if ENV["VERBOSE"]
