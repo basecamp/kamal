@@ -20,6 +20,7 @@ class Kamal::Output::Console::Renderer
   def phase(name); end
   def host_active(host); end
   def end_phase(statuses); end
+  def notice(message, color); end
   def summary(ok:, failed:, needs_attention:, runtime:, exception:); end
   def replay(host, lines); end
   def host_error(host); end

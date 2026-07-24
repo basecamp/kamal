@@ -45,6 +45,7 @@ class Kamal::Output::ConsoleLogger < Kamal::Output::BaseLogger
 
   def <<(message)
     host = Thread.current[:kamal_host]
+    say = Thread.current[:kamal_say]
     say_color = Thread.current[:kamal_say_color]
 
     synchronize do
@@ -52,8 +53,8 @@ class Kamal::Output::ConsoleLogger < Kamal::Output::BaseLogger
 
       if host
         record_host_output(host.to_s, message)
-      elsif say_color
-        begin_phase(message)
+      elsif say
+        record_say(message, say_color)
       end
     end
   end
@@ -104,6 +105,17 @@ class Kamal::Output::ConsoleLogger < Kamal::Output::BaseLogger
     end
 
     # --- Event handling (all called while holding the mutex) ---
+
+    # say ..., :magenta narrates a deploy phase; other colors (:red, :yellow) are
+    # errors/warnings — surface them as notices rather than opening a phase.
+    def record_say(message, color)
+      if color == :magenta
+        begin_phase(message)
+      else
+        text = message.to_s.strip
+        renderer.notice(text, color) unless text.empty?
+      end
+    end
 
     def begin_phase(message)
       end_phase

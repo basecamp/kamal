@@ -24,6 +24,10 @@ class Kamal::Output::Console::PlainRenderer < Kamal::Output::Console::Renderer
     end
   end
 
+  def notice(message, color)
+    puts color ? pastel.decorate(message, color) : message
+  end
+
   def summary(ok:, failed:, needs_attention:, runtime:, exception:)
     counts = [ pastel.green("#{OK} #{ok} ok") ]
     counts << pastel.red("#{FAIL} #{failed} failed") if failed > 0

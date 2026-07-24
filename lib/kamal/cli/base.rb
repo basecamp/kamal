@@ -91,15 +91,17 @@ module Kamal::Cli
       end
 
       def say(message = "", color = nil, *)
-        # A console backend renders the markers itself, but only while it's
-        # active (inside a modify block, i.e. KAMAL.logging). Outside of that
-        # — e.g. read-only commands — fall back to printing normally.
+        # A console backend renders say output itself, but only while it's active
+        # (inside a modify block, i.e. KAMAL.logging). Outside of that — e.g.
+        # read-only commands — fall back to printing normally.
         super unless options[:raw] || (KAMAL.console_output? && KAMAL.logging)
-        # Expose the color to the console backend so it can tell phase markers
-        # (say ..., :magenta) apart from the rest of the logged line stream.
+        # Flag the origin and color so the console backend can tell phase markers
+        # (say ..., :magenta) from notices (errors/warnings) in the line stream.
+        Thread.current[:kamal_say] = true
         Thread.current[:kamal_say_color] = color
         KAMAL.log(message.to_s)
       ensure
+        Thread.current[:kamal_say] = nil
         Thread.current[:kamal_say_color] = nil
       end
 

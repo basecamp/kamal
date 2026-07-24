@@ -29,6 +29,17 @@ class Kamal::Output::Console::TtyRenderer < Kamal::Output::Console::PlainRendere
     spinner.auto_spin
   end
 
+  # tty-spinner has no safe way to print between its live spinners, so hold
+  # notices raised during a phase and flush them once the phase resolves.
+  def notice(message, color)
+    line = color ? pastel.decorate(message, color) : message
+    if @multi
+      (@pending_notices ||= []) << line
+    else
+      puts line
+    end
+  end
+
   def end_phase(statuses)
     return super unless @multi
 
@@ -52,5 +63,12 @@ class Kamal::Output::Console::TtyRenderer < Kamal::Output::Console::PlainRendere
       @spinners.each_value { |spinner| spinner.stop if spinner.spinning? }
       @multi = nil
       @spinners = {}
+      flush_notices
+    end
+
+    def flush_notices
+      return unless @pending_notices
+      @pending_notices.each { |line| puts line }
+      @pending_notices = nil
     end
 end

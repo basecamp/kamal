@@ -22,6 +22,7 @@ class Kamal::Commander
     self.lock_wait_timeout = 900
     self.lock_wait_interval = 15
     @console_output = false
+    @null_output&.close
     @null_output = nil
     @modify_depth = 0
     @specifics = @specific_roles = @specific_hosts = nil

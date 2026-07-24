@@ -117,6 +117,25 @@ class OutputConsoleLoggerTest < ActiveSupport::TestCase
     assert_empty rendered
   end
 
+  test "only magenta say markers open phase sections" do
+    start
+    say "Build and push app image...", color: :magenta
+    say "Skipping something", color: :yellow
+    finish
+
+    assert_match "❯ Build and push app image", rendered
+    refute_match "❯ Skipping something", rendered
+  end
+
+  test "non-phase say output is surfaced as a notice, not dropped" do
+    start
+    say "Boot app...", color: :magenta
+    say "Aborted", color: :red
+    finish
+
+    assert_match "Aborted", rendered
+  end
+
   test "host output before any marker opens an implicit phase" do
     start
     host_line "10.0.0.1", "docker run"
@@ -162,19 +181,20 @@ class OutputConsoleLoggerTest < ActiveSupport::TestCase
     end
 
     def say(message, color: :magenta)
-      with_context(say_color: color) { @logger << "#{message}\n" }
+      with_context(say: true, say_color: color) { @logger << "#{message}\n" }
     end
 
     def host_line(host, message)
       with_context(host: host) { @logger << "#{message}\n" }
     end
 
-    def with_context(host: nil, say_color: nil)
+    def with_context(host: nil, say: nil, say_color: nil)
       Thread.current[:kamal_host] = host
+      Thread.current[:kamal_say] = say
       Thread.current[:kamal_say_color] = say_color
       yield
     ensure
-      Thread.current[:kamal_host] = Thread.current[:kamal_say_color] = nil
+      Thread.current[:kamal_host] = Thread.current[:kamal_say] = Thread.current[:kamal_say_color] = nil
     end
 
     def rendered
