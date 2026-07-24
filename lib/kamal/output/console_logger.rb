@@ -179,7 +179,9 @@ class Kamal::Output::ConsoleLogger < Kamal::Output::BaseLogger
     end
 
     def clean_phase(message)
-      message.to_s.strip.sub(/[.:\s]+\z/, "")
+      phase = message.to_s.strip
+      phase = phase.chop while phase.end_with?(".", ":")
+      phase
     end
 
     def full_command(payload)
