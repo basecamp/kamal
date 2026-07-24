@@ -37,16 +37,21 @@ class Kamal::Output::ConsoleLogger < Kamal::Output::BaseLogger
     super()
   end
 
+  # Stay out of the way — used when -v/--verbose asks for the raw firehose
+  # instead of the condensed view.
+  def disable!
+    @disabled = true
+  end
+
   def <<(message)
     host = Thread.current[:kamal_host]
-    severity = Thread.current[:kamal_severity]
     say_color = Thread.current[:kamal_say_color]
 
     synchronize do
       next unless @active
 
       if host
-        record_host_output(host.to_s, message, severity)
+        record_host_output(host.to_s, message)
       elsif say_color
         begin_phase(message)
       end
@@ -59,8 +64,8 @@ class Kamal::Output::ConsoleLogger < Kamal::Output::BaseLogger
     def on_start(payload)
       synchronize do
         reset_state
+        next if @disabled
         @active = true
-        @started_at = clock
         renderer.header(
           command: full_command(payload),
           service: config.service,
@@ -74,6 +79,7 @@ class Kamal::Output::ConsoleLogger < Kamal::Output::BaseLogger
 
     def on_finish(payload, runtime)
       synchronize do
+        next unless @active
         note_exception(payload[:exception])
         end_phase
         render_summary(runtime)
@@ -90,9 +96,7 @@ class Kamal::Output::ConsoleLogger < Kamal::Output::BaseLogger
 
     def reset_state
       @active = false
-      @started_at = nil
       @current_phase = nil
-      @phase_started_at = nil
       @phase_hosts = {}
       @errored_hosts = Set.new
       @seen_hosts = Set.new
@@ -104,7 +108,6 @@ class Kamal::Output::ConsoleLogger < Kamal::Output::BaseLogger
     def begin_phase(message)
       end_phase
       @current_phase = clean_phase(message)
-      @phase_started_at = clock
       @phase_hosts = {}
       renderer.phase(@current_phase)
     end
@@ -120,11 +123,10 @@ class Kamal::Output::ConsoleLogger < Kamal::Output::BaseLogger
       @current_phase = nil
     end
 
-    def record_host_output(host, message, severity)
+    def record_host_output(host, message)
       begin_phase("Running") unless @current_phase
       note_host(host)
       retain(host, message)
-      mark_failed(host) if error?(severity)
     end
 
     def note_host(host)
@@ -145,10 +147,20 @@ class Kamal::Output::ConsoleLogger < Kamal::Output::BaseLogger
       return unless exception
 
       # exception is [ class_name, message ]; our SSHKit patches embed the failing
-      # host/role names in the message, so flag every seen host it mentions.
+      # host/role names in the message. Match each candidate host as a whole token
+      # so 10.0.0.1 isn't flagged by a failure on 10.0.0.10, and include hosts that
+      # failed before emitting any output (so aren't in @seen_hosts yet).
       message = Array(exception).join(" ")
-      @seen_hosts.each { |host| mark_failed(host) if message.include?(host) }
+      candidate_hosts.each { |host| mark_failed(host) if message.match?(host_token(host)) }
       @exception = exception
+    end
+
+    def candidate_hosts
+      (config.all_hosts.map(&:to_s) + @seen_hosts.to_a).uniq
+    end
+
+    def host_token(host)
+      /(?<![-\w.])#{Regexp.escape(host)}(?![-\w.])/
     end
 
     def render_summary(runtime)
@@ -172,10 +184,6 @@ class Kamal::Output::ConsoleLogger < Kamal::Output::BaseLogger
       buffer = @retained[host]
       buffer.concat(message.to_s.split("\n", -1).reject(&:empty?))
       buffer.shift(buffer.size - MAX_RETAINED_LINES) if buffer.size > MAX_RETAINED_LINES
-    end
-
-    def error?(severity)
-      severity == Logger::ERROR || severity == Logger::FATAL
     end
 
     def clean_phase(message)
