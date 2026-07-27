@@ -71,7 +71,8 @@ class Kamal::Cli::App::Boot
     def show_health_check_response(endpoint)
       response = capture_with_info(*app.health_check_response(target: endpoint), raise_on_non_zero_exit: false)
       error "Health check response:\n#{response}" if response.present?
-    rescue StandardError
+    rescue StandardError => e
+      info "Could not fetch health check response: #{e.class}: #{e.message}"
     end
 
     def stop_new_version
