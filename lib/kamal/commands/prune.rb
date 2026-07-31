@@ -15,7 +15,7 @@ class Kamal::Commands::Prune < Kamal::Commands::Base
 
   def app_containers(retain:)
     pipe \
-      docker(:ps, "-q", "-a", *service_filter, *stopped_containers_filters),
+      docker(:ps, "-q", "-a", *service_filter, *destination_filter, *stopped_containers_filters),
       "tail -n +#{retain + 1}",
       "while read container_id; do docker rm $container_id; done"
   end
@@ -27,12 +27,16 @@ class Kamal::Commands::Prune < Kamal::Commands::Base
 
     def active_image_list
       # Pull the images that are used by any containers
-      # Append repo:latest - to avoid deleting the latest tag
       # Append repo:<none> - to avoid deleting dangling images that are in use. Unused dangling images are deleted separately
-      "$(docker container ls -a --format '{{.Image}}\\|' --filter label=service=#{config.service} | tr -d '\\n')#{config.latest_image}\\|#{config.repository}:<none>"
+      # Append a repo-agnostic latest pattern - to preserve destination tags that use another repository
+      "$(docker container ls -a --format '{{.Image}}\\|' --filter label=service=#{config.service} | tr -d '\\n')#{config.repository}:<none>\\|[^ ]*:latest\\(-[^ ]*\\)\\?$"
     end
 
     def service_filter
       [ "--filter", "label=service=#{config.service}" ]
+    end
+
+    def destination_filter
+      [ "--filter", "label=destination=#{config.destination}" ]
     end
 end

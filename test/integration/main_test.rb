@@ -113,7 +113,7 @@ class MainTest < IntegrationTest
     assert_match "GNU/Linux", output
   end
 
-  test "deploy with destinations" do
+  test "deploy and prune with destinations" do
     @app = "app_with_destinations"
 
     kamal :staging_deploy
@@ -124,6 +124,32 @@ class MainTest < IntegrationTest
 
     config = YAML.load(kamal(:production_config, capture: true))
     assert_equal [ "vm2", "vm3" ], config[:hosts]
+
+    image = "registry:4443/app_with_destinations:#{latest_app_version}"
+    docker_compose "exec vm1 docker create --name production-old --label service=app_with_destinations --label destination=production #{image}"
+    docker_compose "exec vm1 docker create --name staging-old --label service=app_with_destinations --label destination=staging #{image}"
+    docker_compose "exec vm1 docker create --name staging-new --label service=app_with_destinations --label destination=staging #{image}"
+
+    kamal :prune, :containers, "-d", "staging", "--retain", "1"
+
+    containers = docker_compose("exec vm1 docker container ls -a --format '{{.Names}}'", capture: true).lines.map(&:strip)
+    assert_includes containers, "production-old"
+    assert_not_includes containers, "staging-old"
+    assert_includes containers, "staging-new"
+
+    docker_compose "exec vm1 docker tag #{image} other/app:latest"
+    docker_compose "exec vm1 docker tag #{image} other/app:latest-production"
+    docker_compose "exec vm1 docker tag #{image} other/app:latest.backup"
+    docker_compose "exec vm1 docker tag #{image} other/app:unused"
+
+    kamal :prune, :images, "-d", "staging"
+
+    images = docker_compose("exec vm1 docker image ls --filter label=service=app_with_destinations --format '{{.Repository}}:{{.Tag}}'", capture: true).lines.map(&:strip)
+    assert_includes images, "registry:4443/app_with_destinations:latest-staging"
+    assert_includes images, "other/app:latest"
+    assert_includes images, "other/app:latest-production"
+    assert_not_includes images, "other/app:latest.backup"
+    assert_not_includes images, "other/app:unused"
   end
 
   test "setup and remove" do

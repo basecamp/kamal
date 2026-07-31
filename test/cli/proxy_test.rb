@@ -202,7 +202,7 @@ class CliProxyTest < CliTestCase
       assert_match "docker container ls --all --filter 'name=^app-web-12345678$' --quiet | xargs docker stop", output
       assert_match "docker tag dhh/app:latest dhh/app:latest", output
       assert_match "/usr/bin/env mkdir -p .kamal", output
-      assert_match "docker ps -q -a --filter label=service=app --filter status=created --filter status=exited --filter status=dead | tail -n +6 | while read container_id; do docker rm $container_id; done", output
+      assert_match "docker ps -q -a --filter label=service=app --filter label=destination= --filter status=created --filter status=exited --filter status=dead | tail -n +6 | while read container_id; do docker rm $container_id; done", output
       assert_match "docker image prune --force --filter label=service=app", output
       assert_match "Upgraded proxy on 1.1.1.1,1.1.1.2,1.1.1.3,1.1.1.4", output
     end
