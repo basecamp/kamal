@@ -115,9 +115,9 @@ proxy:
   #
   # Once the app is up, the proxy will stop hitting the healthcheck endpoint.
   #
-  # Set `debug` to true to log the HTTP status code and response body of the last failed healthcheck
-  # when a deploy fails (this may include sensitive data), which can help diagnose why the container is unhealthy.
-  healthcheck:
+  # Set `debug` to true to log the HTTP status code and response body from an additional
+  # debug healthcheck request made after a deploy fails (this may include sensitive data),
+  # which can help diagnose why the container is unhealthy.
     interval: 3
     path: /health
     timeout: 3
