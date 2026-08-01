@@ -118,6 +118,7 @@ proxy:
   # Set `debug` to true to log the HTTP status code and response body from an additional
   # debug healthcheck request made after a deploy fails (this may include sensitive data),
   # which can help diagnose why the container is unhealthy.
+  healthcheck:
     interval: 3
     path: /health
     timeout: 3
