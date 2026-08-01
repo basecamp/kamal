@@ -599,6 +599,18 @@ class CommandsAppTest < ActiveSupport::TestCase
       new_command.remove_proxy_app_directory.join(" ")
   end
 
+  test "health_check_response" do
+    assert_equal \
+      "docker inspect --format '{{.NetworkSettings.Networks.kamal.IPAddress}}' abc123 | xargs -I{} curl -s -o - -w '\\n%{http_code}' --max-time 5 http://{}:80/up",
+      new_command.health_check_response(target: "abc123").join(" ")
+  end
+
+  test "health_check_response with custom path" do
+    assert_equal \
+      "docker inspect --format '{{.NetworkSettings.Networks.kamal.IPAddress}}' abc123 | xargs -I{} curl -s -o - -w '\\n%{http_code}' --max-time 5 http://{}:80/healthz",
+      new_command(proxy: { "healthcheck" => { "path" => "/healthz" } }).health_check_response(target: "abc123").join(" ")
+  end
+
   private
     def new_command(role: "web", host: "1.1.1.1", **additional_config)
       config = Kamal::Configuration.new(@config.merge(additional_config), destination: @destination, version: "999")
