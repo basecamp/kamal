@@ -38,6 +38,14 @@ class ConfigurationSshTest < ActiveSupport::TestCase
 
     config = Kamal::Configuration.new(@deploy.tap { |c| c.merge!(ssh: { "config" => [ "~/config.mine.1", "~/config.mine.2" ] }) })
     assert_equal [ "~/config.mine.1", "~/config.mine.2" ], config.ssh.options[:config]
+
+    assert_nil @config.ssh.options[:forward_agent]
+
+    config = Kamal::Configuration.new(@deploy.tap { |c| c.merge!(ssh: { "forward_agent" => false }) })
+    assert_equal false, config.ssh.options[:forward_agent]
+
+    config = Kamal::Configuration.new(@deploy.tap { |c| c.merge!(ssh: { "forward_agent" => true }) })
+    assert_equal true, config.ssh.options[:forward_agent]
   end
 
   test "ssh options with proxy host" do
@@ -52,7 +60,8 @@ class ConfigurationSshTest < ActiveSupport::TestCase
 
   test "ssh key_data with plain value array" do
     config = Kamal::Configuration.new(@deploy.tap { |c| c.merge!(ssh: { "key_data" => [ "-----BEGIN OPENSSH PRIVATE KEY-----" ] }) })
-    assert_equal [ "-----BEGIN OPENSSH PRIVATE KEY-----" ], config.ssh.options[:key_data]
+    _out, err = capture_io { assert_equal [ "-----BEGIN OPENSSH PRIVATE KEY-----" ], config.ssh.options[:key_data] }
+    assert_match(/Inline key_data usage is deprecated/, err)
   end
 
   test "ssh key_data with array containing one secret string" do

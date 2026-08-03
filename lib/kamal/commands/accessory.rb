@@ -4,7 +4,7 @@ class Kamal::Commands::Accessory < Kamal::Commands::Base
   attr_reader :accessory_config
   delegate :service_name, :image, :hosts, :port, :files, :directories, :cmd,
            :network_args, :publish_args, :env_args, :volume_args, :label_args, :option_args,
-           :secrets_io, :secrets_path, :env_directory, :proxy, :running_proxy?, :registry,
+           :restart_policy, :secrets_io, :secrets_path, :env_directory, :proxy, :running_proxy?, :registry,
            to: :accessory_config
 
   def initialize(config, name:)
@@ -16,7 +16,7 @@ class Kamal::Commands::Accessory < Kamal::Commands::Base
     docker :run,
       "--name", service_name,
       "--detach",
-      "--restart", "unless-stopped",
+      "--restart", restart_policy,
       *network_args,
       *config.logging_args,
       *publish_args,

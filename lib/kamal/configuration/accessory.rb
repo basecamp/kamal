@@ -102,11 +102,11 @@ class Kamal::Configuration::Accessory
   end
 
   def option_args
-    if args = accessory_config["options"]
-      optionize args
-    else
-      []
-    end
+    optionize docker_options.reject { |key, _| key.to_s == "restart" }
+  end
+
+  def restart_policy
+    restart_policy_option || "unless-stopped"
   end
 
   def cmd
@@ -171,6 +171,14 @@ class Kamal::Configuration::Accessory
 
     def specific_volumes
       accessory_config["volumes"] || []
+    end
+
+    def docker_options
+      accessory_config["options"] || {}
+    end
+
+    def restart_policy_option
+      docker_options.find { |key, _| key.to_s == "restart" }&.last
     end
 
     def path_volumes(paths)

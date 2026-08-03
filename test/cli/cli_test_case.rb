@@ -54,7 +54,7 @@ class CliTestCase < ActiveSupport::TestCase
     end
 
     def with_build_directory
-      build_directory = File.join Dir.tmpdir, "kamal-clones", "app-#{pwd_sha}", "kamal"
+      build_directory = File.join Dir.tmpdir, "kamal-clones", "app-#{pwd_sha}", File.basename(Kamal::Git.root)
       FileUtils.mkdir_p build_directory
       FileUtils.touch File.join build_directory, "Dockerfile"
       yield build_directory + "/"

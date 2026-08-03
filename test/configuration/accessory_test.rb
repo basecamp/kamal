@@ -307,6 +307,18 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
     assert_equal [ "--cpus", "\"4\"", "--memory", "\"2GB\"" ], @config.accessory(:redis).option_args
   end
 
+  test "restart policy" do
+    @deploy[:accessories]["redis"]["options"]["restart"] = "always"
+    config = Kamal::Configuration.new(@deploy)
+
+    assert_equal "always", config.accessory(:redis).restart_policy
+    assert_equal [ "--cpus", "\"4\"", "--memory", "\"2GB\"" ], config.accessory(:redis).option_args
+  end
+
+  test "default restart policy" do
+    assert_equal "unless-stopped", @config.accessory(:redis).restart_policy
+  end
+
   test "network_args default" do
     assert_equal [ "--network", "kamal" ], @config.accessory(:mysql).network_args
   end
@@ -321,11 +333,13 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
     assert_equal [ "monitoring.example.com" ], @config.accessory(:monitoring).proxy.hosts
   end
 
-  test "can't set restart in options" do
-    @deploy[:accessories]["mysql"]["options"] = { "restart" => "always" }
+  test "invalid boolean restart policy" do
+    @deploy[:accessories]["mysql"]["options"] = { "restart" => false }
 
-    assert_raises Kamal::ConfigurationError, "servers/workers: Cannot set restart policy in docker options, unless-stopped is required" do
+    error = assert_raises Kamal::ConfigurationError do
       Kamal::Configuration.new(@deploy)
     end
+
+    assert_equal %(accessories/mysql/options/restart: should be a string. Use "no" to disable restarts), error.message
   end
 end

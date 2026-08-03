@@ -20,6 +20,16 @@ class CommandsLockTest < ActiveSupport::TestCase
       new_command.acquire("Hello", "123").join(" ")
   end
 
+  test "acquire encodes non-ASCII lock details for shell" do
+    Kamal::Git.stubs(:user_name).returns("Сергей Федоров")
+
+    command = new_command.acquire("Hello", "123").join(" ")
+    encoded_details = command.match(/echo "(.*)" > \.kamal\/lock-app-production\/details/m)[1]
+
+    assert_predicate command, :ascii_only?
+    assert_includes Base64.decode64(encoded_details).force_encoding(Encoding::UTF_8), "Locked by: Сергей Федоров"
+  end
+
   test "release" do
     assert_match \
       "rm .kamal/lock-app-production/details && rm -r .kamal/lock-app-production",

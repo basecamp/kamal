@@ -93,59 +93,68 @@ class Kamal::Cli::App < Kamal::Cli::Base
   option :reuse, type: :boolean, default: false, desc: "Reuse currently running container instead of starting a new one"
   option :env, aliases: "-e", type: :hash, desc: "Set environment variables for the command"
   option :detach, type: :boolean, default: false, desc: "Execute command in a detached container"
+  option :raw, type: :boolean, default: false, desc: "Output raw, unmodified stdout"
   def exec(*cmd)
-    pre_connect_if_required
+    raw = options[:raw]
 
     if (incompatible_options = [ :interactive, :reuse ].select { |key| options[:detach] && options[key] }.presence)
       raise ArgumentError, "Detach is not compatible with #{incompatible_options.join(" or ")}"
+    end
+
+    if raw && (incompatible_options = [ :interactive, :detach ].select { |key| options[key] }.presence)
+      raise ArgumentError, "Raw is not compatible with #{incompatible_options.join(" or ")}"
     end
 
     if cmd.empty?
       raise ArgumentError, "No command provided. You must specify a command to execute."
     end
 
-    cmd = Kamal::Utils.join_commands(cmd)
-    env = options[:env]
-    detach = options[:detach]
-    quiet = options[:quiet]
-    case
-    when options[:interactive] && options[:reuse]
-      say "Get current version of running container...", :magenta unless options[:version]
-      using_version(options[:version] || current_running_version) do |version|
-        say "Launching interactive command with version #{version} via SSH from existing container on #{KAMAL.primary_host}...", :magenta
-        run_locally { exec KAMAL.app(role: KAMAL.primary_role, host: KAMAL.primary_host).execute_in_existing_container_over_ssh(cmd, env: env) }
-      end
+    with_raw_output(raw) do
+      pre_connect_if_required
 
-    when options[:interactive]
-      say "Get most recent version available as an image...", :magenta unless options[:version]
-      using_version(version_or_latest) do |version|
-        say "Launching interactive command with version #{version} via SSH from new container on #{KAMAL.primary_host}...", :magenta
-        on(KAMAL.primary_host) { execute *KAMAL.registry.login }
-        run_locally do
-          exec KAMAL.app(role: KAMAL.primary_role, host: KAMAL.primary_host).execute_in_new_container_over_ssh(cmd, env: env)
+      cmd = Kamal::Utils.join_commands(cmd)
+      env = options[:env]
+      detach = options[:detach]
+      quiet = options[:quiet]
+      case
+      when options[:interactive] && options[:reuse]
+        say "Get current version of running container...", :magenta unless options[:version]
+        using_version(options[:version] || current_running_version) do |version|
+          say "Launching interactive command with version #{version} via SSH from existing container on #{KAMAL.primary_host}...", :magenta
+          run_locally { exec KAMAL.app(role: KAMAL.primary_role, host: KAMAL.primary_host).execute_in_existing_container_over_ssh(cmd, env: env) }
         end
-      end
 
-    when options[:reuse]
-      say "Get current version of running container...", :magenta unless options[:version]
-      using_version(options[:version] || current_running_version) do |version|
-        say "Launching command with version #{version} from existing container...", :magenta
-
-        on_roles(KAMAL.roles, hosts: KAMAL.app_hosts) do |host, role|
-          execute *KAMAL.auditor.record("Executed cmd '#{cmd}' on app version #{version}", role: role), verbosity: :debug
-          puts_by_host host, capture_with_info(*KAMAL.app(role: role, host: host).execute_in_existing_container(cmd, env: env)), quiet: quiet
+      when options[:interactive]
+        say "Get most recent version available as an image...", :magenta unless options[:version]
+        using_version(version_or_latest) do |version|
+          say "Launching interactive command with version #{version} via SSH from new container on #{KAMAL.primary_host}...", :magenta
+          on(KAMAL.primary_host) { execute *KAMAL.registry.login }
+          run_locally do
+            exec KAMAL.app(role: KAMAL.primary_role, host: KAMAL.primary_host).execute_in_new_container_over_ssh(cmd, env: env)
+          end
         end
-      end
 
-    else
-      say "Get most recent version available as an image...", :magenta unless options[:version]
-      using_version(version_or_latest) do |version|
-        say "Launching command with version #{version} from new container...", :magenta
-        on(KAMAL.app_hosts) { execute *KAMAL.registry.login }
+      when options[:reuse]
+        say "Get current version of running container...", :magenta unless options[:version]
+        using_version(options[:version] || current_running_version) do |version|
+          say "Launching command with version #{version} from existing container...", :magenta
 
-        on_roles(KAMAL.roles, hosts: KAMAL.app_hosts) do |host, role|
-          execute *KAMAL.auditor.record("Executed cmd '#{cmd}' on app version #{version}"), verbosity: :debug
-          puts_by_host host, capture_with_info(*KAMAL.app(role: role, host: host).execute_in_new_container(cmd, env: env, detach: detach)), quiet: quiet
+          on_roles(KAMAL.roles, hosts: KAMAL.app_hosts) do |host, role|
+            execute *KAMAL.auditor.record("Executed cmd '#{cmd}' on app version #{version}", role: role), verbosity: :debug
+            puts_by_host host, capture_with_info(*KAMAL.app(role: role, host: host).execute_in_existing_container(cmd, env: env), strip: !raw), quiet: quiet, raw: raw
+          end
+        end
+
+      else
+        say "Get most recent version available as an image...", :magenta unless options[:version]
+        using_version(version_or_latest) do |version|
+          say "Launching command with version #{version} from new container...", :magenta
+          on(KAMAL.app_hosts) { execute *KAMAL.registry.login }
+
+          on_roles(KAMAL.roles, hosts: KAMAL.app_hosts) do |host, role|
+            execute *KAMAL.auditor.record("Executed cmd '#{cmd}' on app version #{version}"), verbosity: :debug
+            puts_by_host host, capture_with_info(*KAMAL.app(role: role, host: host).execute_in_new_container(cmd, env: env, detach: detach), strip: !raw), quiet: quiet, raw: raw
+          end
         end
       end
     end

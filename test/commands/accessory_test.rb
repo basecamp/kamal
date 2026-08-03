@@ -81,6 +81,14 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
       new_command(:busybox).run.join(" ")
   end
 
+  test "run with custom restart policy" do
+    @config[:accessories]["mysql"]["options"]["restart"] = "on-failure"
+
+    assert_equal \
+      "docker run --name app-mysql --detach --restart on-failure --network kamal --log-opt max-size=\"10m\" --publish 3306:3306 --env MYSQL_ROOT_HOST=\"%\" --env-file .kamal/apps/app/env/accessories/mysql.env --label service=\"app-mysql\" --cpus \"4\" --memory \"2GB\" private.registry/mysql:8.0",
+      new_command(:mysql).run.join(" ")
+  end
+
   test "run in custom network" do
     @config[:accessories]["mysql"]["network"] = "custom"
 
@@ -111,6 +119,17 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
     assert_equal \
       "docker run --rm --network kamal --env MYSQL_ROOT_HOST=\"%\" --env-file .kamal/apps/app/env/accessories/mysql.env --cpus \"4\" --memory \"2GB\" private.registry/mysql:8.0 mysql -u root",
       new_command(:mysql).execute_in_new_container("mysql", "-u", "root").join(" ")
+  end
+
+  test "execute in new container excludes restart policy" do
+    @config[:accessories]["mysql"]["options"]["restart"] = "on-failure"
+
+    command = new_command(:mysql).execute_in_new_container("mysql", "-u", "root").join(" ")
+
+    assert_equal \
+      "docker run --rm --network kamal --env MYSQL_ROOT_HOST=\"%\" --env-file .kamal/apps/app/env/accessories/mysql.env --cpus \"4\" --memory \"2GB\" private.registry/mysql:8.0 mysql -u root",
+      command
+    assert_no_match(/--restart/, command)
   end
 
   test "execute in existing container" do

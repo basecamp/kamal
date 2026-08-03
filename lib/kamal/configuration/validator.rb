@@ -232,8 +232,20 @@ class Kamal::Configuration::Validator
     end
 
     def validate_docker_options!(options)
-      if options
-        error "Cannot set restart policy in docker options, unless-stopped is required" if options["restart"]
+      if restart_policy = options&.find { |key, _| key.to_s == "restart" }
+        validate_restart_policy!(restart_policy.last)
+      end
+    end
+
+    def validate_restart_policy!(restart_policy)
+      with_context("options/restart") do
+        unless restart_policy.is_a?(String)
+          error %(should be a string. Use "no" to disable restarts)
+        end
+
+        unless restart_policy.match?(/\A(?:no|always|unless-stopped|on-failure(?::\d+)?)\z/)
+          error "should be no, always, unless-stopped, on-failure, or on-failure:N"
+        end
       end
     end
 end

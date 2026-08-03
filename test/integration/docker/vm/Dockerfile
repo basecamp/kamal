@@ -2,7 +2,7 @@ FROM ubuntu:22.04
 
 WORKDIR /work
 
-RUN apt-get update --fix-missing && apt-get -y install openssh-client openssh-server docker.io
+RUN apt-get update --fix-missing && apt-get -y install openssh-client openssh-server docker.io fuse-overlayfs
 
 COPY boot.sh .
 
@@ -12,6 +12,6 @@ RUN mkdir /root/.ssh && \
     ln -s /shared/certs/domain.crt /etc/docker/certs.d/registry:4443/ca.crt && \
     echo "HOST_TOKEN=abcd" >> /etc/environment
 
-HEALTHCHECK --interval=1s CMD pgrep dockerd
+HEALTHCHECK --interval=1s CMD docker info > /dev/null 2>&1
 
 CMD ["./boot.sh"]

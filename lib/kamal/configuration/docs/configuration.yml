@@ -99,7 +99,6 @@ hooks_path: /user_home/kamal/hooks
 #
 # Global setting for all hooks:
 hooks_output: :verbose
-
 # Or per-hook settings:
 hooks_output:
   pre-deploy: :verbose
@@ -108,13 +107,16 @@ hooks_output:
 # Secrets path
 #
 # Path to secrets, defaults to `.kamal/secrets`.
-# Kamal will look for `<secrets_path>-common` and `<secrets_path>` (or `<secrets_path>.<destination>` when using destinations):
+# Kamal looks for `<secrets_path>-common` first and then `<secrets_path>`.
+# When using destinations, it instead looks for `<secrets_path>-common` first and then
+# `<secrets_path>.<destination>`. Later files override earlier ones.
 secrets_path: /user_home/kamal/secrets
 
 # Error pages
 #
 # A directory relative to the app root to find error pages for the proxy to serve.
-# Any files in the format 4xx.html or 5xx.html will be copied to the hosts.
+# Name each page after the HTTP status code it serves, e.g. 404.html, 500.html,
+# 502.html, 503.html, and 504.html.
 error_pages_path: public
 
 # Require destinations
@@ -158,6 +160,13 @@ deploy_timeout: 10
 #
 # How long to wait for a container to drain, default 30:
 drain_timeout: 10
+
+# Stop timeout
+#
+# How long to wait for a container to stop after SIGTERM, default is
+# the drain_timeout for non-proxied roles and 10s (Docker default) for proxied roles.
+# Can be overridden per role:
+stop_timeout: 30
 
 # Run directory
 #

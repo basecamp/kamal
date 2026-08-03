@@ -11,10 +11,12 @@ class OutputOtelLoggerTest < ActiveSupport::TestCase
     Kamal::OtelShipper.any_instance.stubs(:start_flush_thread)
     Kamal::OtelShipper.any_instance.stubs(:flush)
     @logger = Kamal::Output::OtelLogger.new(endpoint: "http://localhost:4318", tags: @tags, service: "myapp")
+    @original_stdout, $stdout = $stdout, StringIO.new
   end
 
   teardown do
     @logger.close
+    $stdout = @original_stdout
   end
 
   test "start event includes subcommand in command" do

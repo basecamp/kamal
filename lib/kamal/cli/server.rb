@@ -1,26 +1,35 @@
 class Kamal::Cli::Server < Kamal::Cli::Base
   desc "exec", "Run a custom command on the server (use --help to show options)"
   option :interactive, type: :boolean, aliases: "-i", default: false, desc: "Run the command interactively (use for console/bash)"
+  option :raw, type: :boolean, default: false, desc: "Output raw, unmodified stdout"
   def exec(*cmd)
-    pre_connect_if_required
+    raw = options[:raw]
 
-    cmd = Kamal::Utils.join_commands(cmd)
-    hosts = KAMAL.hosts
-    quiet = options[:quiet]
+    if raw && options[:interactive]
+      raise ArgumentError, "Raw is not compatible with interactive"
+    end
 
-    case
-    when options[:interactive]
-      host = KAMAL.primary_host
+    with_raw_output(raw) do
+      pre_connect_if_required
 
-      say "Running '#{cmd}' on #{host} interactively...", :magenta
+      cmd = Kamal::Utils.join_commands(cmd)
+      hosts = KAMAL.hosts
+      quiet = options[:quiet]
 
-      run_locally { exec KAMAL.server.run_over_ssh(cmd, host: host) }
-    else
-      say "Running '#{cmd}' on #{hosts.join(', ')}...", :magenta
+      case
+      when options[:interactive]
+        host = KAMAL.primary_host
 
-      on(hosts) do |host|
-        execute *KAMAL.auditor.record("Executed cmd '#{cmd}' on #{host}"), verbosity: :debug
-        puts_by_host host, capture_with_info(cmd), quiet: quiet
+        say "Running '#{cmd}' on #{host} interactively...", :magenta
+
+        run_locally { exec KAMAL.server.run_over_ssh(cmd, host: host) }
+      else
+        say "Running '#{cmd}' on #{hosts.join(', ')}...", :magenta
+
+        on(hosts) do |host|
+          execute *KAMAL.auditor.record("Executed cmd '#{cmd}' on #{host}"), verbosity: :debug
+          puts_by_host host, capture_with_info(cmd, strip: !raw), quiet: quiet, raw: raw
+        end
       end
     end
   end

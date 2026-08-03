@@ -146,36 +146,45 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
   desc "exec [NAME] [CMD...]", "Execute a custom command on servers within the accessory container (use --help to show options)"
   option :interactive, aliases: "-i", type: :boolean, default: false, desc: "Execute command over ssh for an interactive shell (use for console/bash)"
   option :reuse, type: :boolean, default: false, desc: "Reuse currently running container instead of starting a new one"
+  option :raw, type: :boolean, default: false, desc: "Output raw, unmodified stdout"
   def exec(name, *cmd)
-    pre_connect_if_required
+    raw = options[:raw]
 
-    cmd = Kamal::Utils.join_commands(cmd)
-    quiet = options[:quiet]
+    if raw && options[:interactive]
+      raise ArgumentError, "Raw is not compatible with interactive"
+    end
 
-    with_accessory(name) do |accessory, hosts|
-      case
-      when options[:interactive] && options[:reuse]
-        say "Launching interactive command via SSH from existing container...", :magenta
-        run_locally { exec accessory.execute_in_existing_container_over_ssh(cmd) }
+    with_raw_output(raw) do
+      pre_connect_if_required
 
-      when options[:interactive]
-        say "Launching interactive command via SSH from new container...", :magenta
-        on(accessory.hosts.first) { execute *KAMAL.registry.login }
-        run_locally { exec accessory.execute_in_new_container_over_ssh(cmd) }
+      cmd = Kamal::Utils.join_commands(cmd)
+      quiet = options[:quiet]
 
-      when options[:reuse]
-        say "Launching command from existing container...", :magenta
-        on(hosts) do |host|
-          execute *KAMAL.auditor.record("Executed cmd '#{cmd}' on #{name} accessory"), verbosity: :debug
-          puts_by_host host, capture_with_info(*accessory.execute_in_existing_container(cmd)), quiet: quiet
-        end
+      with_accessory(name) do |accessory, hosts|
+        case
+        when options[:interactive] && options[:reuse]
+          say "Launching interactive command via SSH from existing container...", :magenta
+          run_locally { exec accessory.execute_in_existing_container_over_ssh(cmd) }
 
-      else
-        say "Launching command from new container...", :magenta
-        on(hosts) do |host|
-          execute *KAMAL.registry.login
-          execute *KAMAL.auditor.record("Executed cmd '#{cmd}' on #{name} accessory"), verbosity: :debug
-          puts_by_host host, capture_with_info(*accessory.execute_in_new_container(cmd)), quiet: quiet
+        when options[:interactive]
+          say "Launching interactive command via SSH from new container...", :magenta
+          on(accessory.hosts.first) { execute *KAMAL.registry.login }
+          run_locally { exec accessory.execute_in_new_container_over_ssh(cmd) }
+
+        when options[:reuse]
+          say "Launching command from existing container...", :magenta
+          on(hosts) do |host|
+            execute *KAMAL.auditor.record("Executed cmd '#{cmd}' on #{name} accessory"), verbosity: :debug
+            puts_by_host host, capture_with_info(*accessory.execute_in_existing_container(cmd), strip: !raw), quiet: quiet, raw: raw
+          end
+
+        else
+          say "Launching command from new container...", :magenta
+          on(hosts) do |host|
+            execute *KAMAL.registry.login
+            execute *KAMAL.auditor.record("Executed cmd '#{cmd}' on #{name} accessory"), verbosity: :debug
+            puts_by_host host, capture_with_info(*accessory.execute_in_new_container(cmd), strip: !raw), quiet: quiet, raw: raw
+          end
         end
       end
     end
