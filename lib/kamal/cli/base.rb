@@ -99,6 +99,9 @@ module Kamal::Cli
             say message
           end
 
+          # Export remaining keys so the ERB in the config file can read them
+          output.except("KAMAL_DESTINATION", "KAMAL_MESSAGE").each { |key, value| ENV[key] = value }
+
           output["KAMAL_DESTINATION"]
         rescue SSHKit::Command::Failed => e
           raise HookError.new("Hook `pre-configure` failed:\n#{e.message}")
