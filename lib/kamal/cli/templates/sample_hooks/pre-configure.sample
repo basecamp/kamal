@@ -17,6 +17,8 @@
 #
 # KAMAL_DESTINATION — sets or overwrites the destination for this deploy
 # KAMAL_MESSAGE — printed to the user after the hook runs
-# Any other keys are accumulated and available to subsequent hooks
+# Any other keys are exported as environment variables before the config file
+# is rendered — so its ERB can read them, e.g. <%= ENV["MY_HOST"] %> — and are
+# also available to subsequent hooks
 
 echo "pre-configure hook called for destination: ${KAMAL_DESTINATION:-<none>}"

@@ -35,6 +35,36 @@ class CliPreConfigureTest < CliTestCase
     end
   end
 
+  test "pre-configure hook output is exported to ENV for config ERB" do
+    config_yaml = <<~YAML
+      service: app
+      image: dhh/app
+      registry:
+        username: dhh
+        password: secret
+      servers:
+        - <%= ENV["PRE_CONFIGURE_HOST"] %>
+      builder:
+        arch: amd64
+    YAML
+
+    with_pre_configure_hook({ "PRE_CONFIGURE_HOST" => "1.2.3.4" }, config_yaml: config_yaml) do
+      run_command("exec", "date", "-c", "config/deploy.yml")
+
+      assert_includes KAMAL.config.all_hosts, "1.2.3.4"
+    end
+  ensure
+    ENV.delete("PRE_CONFIGURE_HOST")
+  end
+
+  test "pre-configure hook does not export reserved keys to ENV" do
+    with_pre_configure_hook({ "KAMAL_MESSAGE" => "Deploying to beta2" }) do
+      run_command("exec", "date", "-c", config_file_path("deploy_with_accessories"))
+
+      assert_nil ENV["KAMAL_MESSAGE"]
+    end
+  end
+
   test "pre-configure hook failure raises HookError" do
     with_pre_configure_hook_that_fails do
       assert_raises(Kamal::Cli::HookError) do
@@ -131,7 +161,7 @@ class CliPreConfigureTest < CliTestCase
       "test/fixtures/#{fixture_name}.yml"
     end
 
-    def with_pre_configure_hook(output, hooks_path: nil, destination: nil)
+    def with_pre_configure_hook(output, hooks_path: nil, destination: nil, config_yaml: nil)
       Dir.mktmpdir do |tmpdir|
         original_pwd = Dir.pwd
         old_dest = ENV["KAMAL_DESTINATION"]
@@ -149,6 +179,12 @@ class CliPreConfigureTest < CliTestCase
           hook_dir = File.join(tmpdir, resolved_hooks_path)
           FileUtils.mkdir_p(hook_dir)
           File.write(File.join(hook_dir, "pre-configure"), "#!/bin/bash\n")
+
+          if config_yaml
+            config_dir = File.join(tmpdir, "config")
+            FileUtils.mkdir_p(config_dir)
+            File.write(File.join(config_dir, "deploy.yml"), config_yaml)
+          end
 
           # If custom hooks_path, write a config that uses it (with raw ERB intact),
           # plus a destination overlay so config loads successfully after rewrite
