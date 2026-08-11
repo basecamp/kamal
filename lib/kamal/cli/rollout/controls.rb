@@ -1,4 +1,4 @@
-module Kamal::Rollout
+module Kamal::Cli::Rollout::Controls
   private
     def rollout_proxy_hosts
       KAMAL.rollout_roles.select(&:running_proxy?).flat_map(&:hosts).uniq & KAMAL.rollout_hosts

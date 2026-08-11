@@ -1,5 +1,5 @@
 class Kamal::Cli::Rollout < Kamal::Cli::Base
-  include Kamal::Rollout
+  include Controls
 
   desc "boot", "Boot rollout containers, without sending them any traffic"
   option :skip_push, aliases: "-P", type: :boolean, default: false, desc: "Skip image build and push"
