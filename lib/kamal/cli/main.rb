@@ -1,4 +1,6 @@
 class Kamal::Cli::Main < Kamal::Cli::Base
+  include Kamal::Cli::RolloutSupport
+
   desc "setup", "Setup all accessories, push the env, and deploy app to servers"
   option :skip_push, aliases: "-P", type: :boolean, default: false, desc: "Skip image build and push"
   option :no_cache, type: :boolean, default: false, desc: "Build without using Docker's build cache"
@@ -18,7 +20,6 @@ class Kamal::Cli::Main < Kamal::Cli::Base
   desc "deploy", "Deploy app to servers"
   option :skip_push, aliases: "-P", type: :boolean, default: false, desc: "Skip image build and push"
   option :no_cache, type: :boolean, default: false, desc: "Build without using Docker's build cache"
-  option :rollout, desc: "What to do with a live rollout: keep, ask, or disable (defaults to rollout/on_deploy)"
   def deploy(boot_accessories: false)
     modify do
       runtime = print_runtime do
@@ -59,7 +60,6 @@ class Kamal::Cli::Main < Kamal::Cli::Base
   desc "redeploy", "Deploy app to servers without bootstrapping servers, starting kamal-proxy and pruning"
   option :skip_push, aliases: "-P", type: :boolean, default: false, desc: "Skip image build and push"
   option :no_cache, type: :boolean, default: false, desc: "Build without using Docker's build cache"
-  option :rollout, desc: "What to do with a live rollout: keep, ask, or disable (defaults to rollout/on_deploy)"
   def redeploy
     modify do
       runtime = print_runtime do
@@ -90,7 +90,6 @@ class Kamal::Cli::Main < Kamal::Cli::Base
   end
 
   desc "rollback [VERSION]", "Rollback app to VERSION"
-  option :rollout, desc: "What to do with a live rollout: keep, ask, or disable (defaults to rollout/on_deploy)"
   def rollback(version)
     rolled_back = false
 

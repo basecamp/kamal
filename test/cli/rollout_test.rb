@@ -157,10 +157,10 @@ class CliRolloutTest < CliTestCase
     end
   end
 
-  test "deploy disables a live rollout when told to" do
+  test "deploy disables a live rollout when on_deploy says so" do
     stub_deploy_invocations
 
-    run_deploy("--rollout", "disable").tap do |output|
+    run_deploy(fixture: :with_rollout_disabling).tap do |output|
       assert_match "Rollout still live (web at 1234, workers at 1234). Disabling it.", output
       assert_match "docker exec kamal-proxy kamal-proxy rollout disable app-web", output
     end
@@ -175,10 +175,6 @@ class CliRolloutTest < CliTestCase
     end
   end
 
-  test "deploy rejects an unknown rollout behaviour" do
-    assert_raises(Kamal::Cli::RolloutError) { run_deploy("--rollout", "bogus") }
-  end
-
   private
     def stub_deploy_invocations
       Kamal::Cli::Main.any_instance.stubs(:invoke)
@@ -186,8 +182,8 @@ class CliRolloutTest < CliTestCase
       SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info).returns("1234")
     end
 
-    def run_deploy(*extra)
-      with_argv([ "deploy", "-P", *extra, "-c", "test/fixtures/deploy_with_rollout.yml" ]) do
+    def run_deploy(fixture: :with_rollout)
+      with_argv([ "deploy", "-P", "-c", "test/fixtures/deploy_#{fixture}.yml" ]) do
         stdouted { Kamal::Cli::Main.start }
       end
     end

@@ -1,4 +1,6 @@
 class Kamal::Cli::Rollout < Kamal::Cli::Base
+  include Kamal::Cli::RolloutSupport
+
   desc "boot", "Boot rollout containers, without sending them any traffic"
   option :skip_push, aliases: "-P", type: :boolean, default: false, desc: "Skip image build and push"
   def boot
@@ -115,21 +117,6 @@ class Kamal::Cli::Rollout < Kamal::Cli::Base
     end
   end
 
-  def self.split_summary(listed, service_name)
-    service = JSON.parse(listed.presence || "{}")["services"]&.dig(service_name)
-    return "No rollout registered" if service.nil? || service["rollout_target"].blank?
-
-    parts = []
-    parts << "#{service["rollout_percentage"]}%" if service["rollout_percentage"].to_i > 0
-    parts << "list of #{service["rollout_allowlist"].size}" if service["rollout_allowlist"].present?
-    parts << "no split set" if parts.empty?
-    parts << (service["rollout_enabled"] ? "enabled" : "disabled")
-
-    "Rollout #{parts.join(", ")} -> #{service["rollout_target"]}"
-  rescue JSON::ParserError
-    "Could not read the rollout split"
-  end
-
   desc "logs", "Show log lines from the rollout containers"
   option :since, aliases: "-s", desc: "Show lines since timestamp (e.g. 2013-01-02T13:23:37Z) or relative (e.g. 42m for 42 minutes)"
   option :lines, type: :numeric, aliases: "-n", desc: "Number of lines to show from each server"
@@ -153,5 +140,20 @@ class Kamal::Cli::Rollout < Kamal::Cli::Base
         puts_by_host host, "Nothing found", quiet: quiet
       end
     end
+  end
+
+  def self.split_summary(listed, service_name)
+    service = JSON.parse(listed.presence || "{}")["services"]&.dig(service_name)
+    return "No rollout registered" if service.nil? || service["rollout_target"].blank?
+
+    parts = []
+    parts << "#{service["rollout_percentage"]}%" if service["rollout_percentage"].to_i > 0
+    parts << "list of #{service["rollout_allowlist"].size}" if service["rollout_allowlist"].present?
+    parts << "no split set" if parts.empty?
+    parts << (service["rollout_enabled"] ? "enabled" : "disabled")
+
+    "Rollout #{parts.join(", ")} -> #{service["rollout_target"]}"
+  rescue JSON::ParserError
+    "Could not read the rollout split"
   end
 end
