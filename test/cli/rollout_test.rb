@@ -1,7 +1,7 @@
 require_relative "cli_test_case"
 
 class CliRolloutTest < CliTestCase
-  test "boot registers rollout targets and resets the split" do
+  test "boot registers rollout targets and leaves them disabled" do
     stub_rollout_booting
 
     run_command("boot").tap do |output|
@@ -12,16 +12,16 @@ class CliRolloutTest < CliTestCase
       assert_match "--label role=\"web-rollout\"", output
 
       assert_match "docker exec kamal-proxy kamal-proxy rollout deploy app-web --target=", output
-      assert_match "docker exec kamal-proxy kamal-proxy rollout stop app-web", output
+      assert_match "docker exec kamal-proxy kamal-proxy rollout disable app-web", output
     end
   end
 
-  test "boot clears any open split before registering the new targets" do
+  test "boot disables before registering the new targets" do
     stub_rollout_booting
 
     run_command("boot").tap do |output|
-      assert_operator output.index("rollout stop app-web"), :<, output.index("rollout deploy app-web"),
-        "the split must be cleared before the new targets are registered, or stop would clear them again"
+      assert_operator output.index("rollout disable app-web"), :<, output.index("rollout deploy app-web"),
+        "a new rollout must not inherit traffic from the split that was already open"
     end
   end
 
@@ -45,12 +45,12 @@ class CliRolloutTest < CliTestCase
     end
   end
 
-  test "boot keeps the split when on_boot is keep" do
+  test "boot leaves it enabled when on_boot is keep" do
     stub_rollout_booting
 
     run_command("boot", fixture: :with_rollout_keeping_split).tap do |output|
       assert_match "docker run --detach --restart unless-stopped --name app-web-rollout-latest", output
-      assert_no_match "kamal-proxy rollout stop", output
+      assert_no_match "kamal-proxy rollout disable", output
     end
   end
 
@@ -66,10 +66,18 @@ class CliRolloutTest < CliTestCase
     end
   end
 
-  test "set percent 0 closes the split but leaves the rollout registered" do
-    run_command("set", "--percent", "0").tap do |output|
-      assert_match "docker exec kamal-proxy kamal-proxy rollout set app-web --percent=\"0\"", output
+  test "disable turns traffic off without unregistering" do
+    run_command("disable").tap do |output|
+      assert_match "docker exec kamal-proxy kamal-proxy rollout disable app-web", output
       assert_no_match "kamal-proxy rollout stop", output
+      assert_no_match "kamal-proxy rollout set", output
+    end
+  end
+
+  test "enable turns traffic back on without a percentage" do
+    run_command("enable").tap do |output|
+      assert_match "docker exec kamal-proxy kamal-proxy rollout enable app-web", output
+      assert_no_match "kamal-proxy rollout set", output
     end
   end
 
@@ -91,14 +99,7 @@ class CliRolloutTest < CliTestCase
     assert_raises(Kamal::ConfigurationError) { run_command("set") }
   end
 
-  test "stop resets the split without removing containers" do
-    run_command("stop").tap do |output|
-      assert_match "docker exec kamal-proxy kamal-proxy rollout stop app-web", output
-      assert_no_match "docker container prune", output
-    end
-  end
-
-  test "remove stops the split then removes the containers" do
+  test "remove unregisters then removes the containers" do
     run_command("remove", "-y").tap do |output|
       assert_match "docker exec kamal-proxy kamal-proxy rollout stop app-web", output
       assert_match "docker container prune --force --filter label=service=app --filter label=destination= --filter label=role=web-rollout", output
@@ -117,16 +118,16 @@ class CliRolloutTest < CliTestCase
 
     run_deploy.tap do |output|
       assert_match "Rollout still live (web at 1234, workers at 1234). This deploy leaves it alone", output
-      assert_no_match "kamal-proxy rollout stop", output
+      assert_no_match "kamal-proxy rollout disable", output
     end
   end
 
-  test "deploy stops a live rollout when told to" do
+  test "deploy disables a live rollout when told to" do
     stub_deploy_invocations
 
-    run_deploy("--rollout", "stop").tap do |output|
-      assert_match "Rollout still live (web at 1234, workers at 1234). Stopping the split.", output
-      assert_match "docker exec kamal-proxy kamal-proxy rollout stop app-web", output
+    run_deploy("--rollout", "disable").tap do |output|
+      assert_match "Rollout still live (web at 1234, workers at 1234). Disabling it.", output
+      assert_match "docker exec kamal-proxy kamal-proxy rollout disable app-web", output
     end
   end
 

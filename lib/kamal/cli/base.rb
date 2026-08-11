@@ -126,7 +126,16 @@ module Kamal::Cli
         KAMAL.rollout_roles.select(&:running_proxy?).flat_map(&:hosts).uniq & KAMAL.rollout_hosts
       end
 
-      def reset_rollout_split
+      # Turns the split off while remembering it, so enabling needs no arguments
+      def set_rollout_enabled(enabled)
+        on(rollout_proxy_hosts) do |host|
+          role = KAMAL.rollout_roles_on(host).find(&:running_proxy?)
+          execute *KAMAL.app(role: role, host: host).rollout_enable(enabled), raise_on_non_zero_exit: false
+        end
+      end
+
+      # Unregisters the targets, for when the containers are going away
+      def unregister_rollout
         on(rollout_proxy_hosts) do |host|
           role = KAMAL.rollout_roles_on(host).find(&:running_proxy?)
           execute *KAMAL.app(role: role, host: host).rollout_stop, raise_on_non_zero_exit: false
@@ -166,15 +175,15 @@ module Kamal::Cli
 
         case behaviour
         when "keep"
-          say "Rollout still live (#{summary}). This deploy leaves it alone, so that cohort stays on the rollout version — run `kamal rollout stop` when you are done with it.", :yellow
-        when "stop"
-          say "Rollout still live (#{summary}). Stopping the split.", :yellow
-          reset_rollout_split
+          say "Rollout still live (#{summary}). This deploy leaves it alone, so that cohort stays on the rollout version — run `kamal rollout disable` when you are done with it.", :yellow
+        when "disable"
+          say "Rollout still live (#{summary}). Disabling it.", :yellow
+          set_rollout_enabled false
         when "ask"
-          if ask("Rollout still live (#{summary}). Stop the split and continue?", limited_to: %w[ y N ], default: "N") == "y"
-            reset_rollout_split
+          if ask("Rollout still live (#{summary}). Disable it and continue?", limited_to: %w[ y N ], default: "N") == "y"
+            set_rollout_enabled false
           else
-            raise Kamal::Cli::RolloutError, "Aborted — run `kamal rollout stop` first, or pass --rollout=keep"
+            raise Kamal::Cli::RolloutError, "Aborted — run `kamal rollout disable` first, or pass --rollout=keep"
           end
         end
       end

@@ -1,8 +1,8 @@
 class Kamal::Configuration::Rollout
   include Kamal::Configuration::Validation
 
-  ON_DEPLOY = [ "keep", "ask", "stop" ]
-  ON_BOOT = [ "reset", "keep" ]
+  ON_DEPLOY = [ "keep", "ask", "disable" ]
+  ON_BOOT = [ "disable", "keep" ]
 
   attr_reader :rollout_config
 
@@ -24,7 +24,7 @@ class Kamal::Configuration::Rollout
   end
 
   def on_boot
-    rollout_config.fetch("on_boot", "reset").to_s.inquiry
+    rollout_config.fetch("on_boot", "disable").to_s.inquiry
   end
 
   private

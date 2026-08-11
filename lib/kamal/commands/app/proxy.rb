@@ -25,6 +25,10 @@ module Kamal::Commands::App::Proxy
     proxy_exec :rollout, :set, role.proxy_service_name, *role.proxy.rollout_set_command_args(percent: percent, list: list)
   end
 
+  def rollout_enable(enabled)
+    proxy_exec :rollout, (enabled ? :enable : :disable), role.proxy_service_name
+  end
+
   def rollout_stop
     proxy_exec :rollout, :stop, role.proxy_service_name
   end

@@ -6,9 +6,9 @@ class Kamal::Cli::Rollout < Kamal::Cli::Base
       using_version(version_or_latest) do |version|
         say "Booting rollout containers with version #{version}...", :magenta
 
-        # Tear down any open split before registering the new targets, so that a
-        # rollout never inherits traffic it was not explicitly given.
-        reset_rollout_split if KAMAL.config.rollout.on_boot.reset?
+        # Disable before registering the new targets, so that a rollout never
+        # inherits traffic it was not explicitly given.
+        set_rollout_enabled false if KAMAL.config.rollout.on_boot.disable?
 
         on(KAMAL.rollout_hosts) do
           KAMAL.rollout_roles_on(host).each do |role|
@@ -20,7 +20,7 @@ class Kamal::Cli::Rollout < Kamal::Cli::Base
           Kamal::Cli::Rollout::Boot.new(host, role, self, version).run
         end
 
-        if KAMAL.config.rollout.on_boot.reset?
+        if KAMAL.config.rollout.on_boot.disable?
           say "Rollout booted. It takes no traffic until you run `kamal rollout set`.", :magenta
         else
           say "Rollout booted.", :magenta
@@ -52,20 +52,27 @@ class Kamal::Cli::Rollout < Kamal::Cli::Base
     end
   end
 
-  desc "stop", "Stop the rollout and unregister it from the proxy, leaving its containers running"
-  def stop
+  desc "disable", "Stop sending traffic to the rollout, remembering its split"
+  def disable
     with_lock do
-      reset_rollout_split
-      say "Rollout stopped. Its containers are still running — boot it again to send it traffic.", :magenta
+      set_rollout_enabled false
+      say "Rollout disabled. Run `kamal rollout enable` to send it traffic again.", :magenta
     end
   end
 
-  desc "remove", "Stop the rollout and remove its containers"
+  desc "enable", "Send traffic to the rollout again, using the split it was last set to"
+  def enable
+    with_lock do
+      set_rollout_enabled true
+    end
+  end
+
+  desc "remove", "Unregister the rollout and remove its containers"
   option :confirmed, aliases: "-y", type: :boolean, default: false, desc: "Proceed without confirmation question"
   def remove
     confirming "This will stop the rollout and remove its containers. Are you sure?" do
       modify(lock: true) do
-        reset_rollout_split
+        unregister_rollout
 
         on_roles(KAMAL.rollout_roles, hosts: KAMAL.rollout_hosts) do |host, role|
           app = KAMAL.app(role: role, host: host)
