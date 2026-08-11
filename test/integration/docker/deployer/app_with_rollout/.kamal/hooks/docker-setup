@@ -1,0 +1,3 @@
+#!/bin/sh
+echo "Docker set up!"
+mkdir -p /tmp/${TEST_ID} && touch /tmp/${TEST_ID}/docker-setup

@@ -33,6 +33,10 @@ module Kamal::Commands::App::Proxy
     proxy_exec :rollout, :stop, role.proxy_service_name
   end
 
+  def proxy_list
+    proxy_exec :list, "--format", "json"
+  end
+
   def remove_proxy_app_directory
     remove_directory config.proxy_boot.app_directory
   end

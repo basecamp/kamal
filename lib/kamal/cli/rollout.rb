@@ -1,9 +1,21 @@
 class Kamal::Cli::Rollout < Kamal::Cli::Base
   desc "boot", "Boot rollout containers, without sending them any traffic"
-  option :version, desc: "Version to roll out (defaults to the latest tag)"
+  option :skip_push, aliases: "-P", type: :boolean, default: false, desc: "Skip image build and push"
   def boot
+    invoke_options = { "version" => KAMAL.config.version }.merge(options.without("skip_push"))
+
+    if options[:skip_push]
+      say "Pull app image...", :magenta
+      invoke "kamal:cli:build:pull", [], invoke_options
+    else
+      say "Build and push app image...", :magenta
+      invoke "kamal:cli:build:deliver", [], invoke_options
+    end
+
     modify(lock: true) do
-      using_version(version_or_latest) do |version|
+      # Not the latest tag: that points at whatever the last deploy tagged, which is the
+      # live version, so rolling out `latest` would boot a copy of what is already there.
+      using_version(KAMAL.config.version) do |version|
         say "Booting rollout containers with version #{version}...", :magenta
 
         # Disable before registering the new targets, so that a rollout never
@@ -83,16 +95,39 @@ class Kamal::Cli::Rollout < Kamal::Cli::Base
     end
   end
 
-  desc "details", "Show details about rollout containers"
+  desc "details", "Show the current split and the rollout containers"
   def details
     if KAMAL.rollout_roles.empty?
       say "No roles take part in rollouts", :yellow
       return
     end
 
-    on_roles(KAMAL.rollout_roles, hosts: KAMAL.rollout_hosts) do |host, role|
-      puts_by_host host, capture_with_info(*KAMAL.app(role: role, host: host).info), quiet: options[:quiet]
+    quiet = options[:quiet]
+
+    on(rollout_proxy_hosts) do |host|
+      role = KAMAL.rollout_roles_on(host).find(&:running_proxy?)
+      listed = capture_with_info(*KAMAL.app(role: role, host: host).proxy_list, raise_on_non_zero_exit: false)
+      puts_by_host host, Kamal::Cli::Rollout.split_summary(listed, role.proxy_service_name), quiet: quiet
     end
+
+    on_roles(KAMAL.rollout_roles, hosts: KAMAL.rollout_hosts) do |host, role|
+      puts_by_host host, capture_with_info(*KAMAL.app(role: role, host: host).info), quiet: quiet
+    end
+  end
+
+  def self.split_summary(listed, service_name)
+    service = JSON.parse(listed.presence || "{}")["services"]&.dig(service_name)
+    return "No rollout registered" if service.nil? || service["rollout_target"].blank?
+
+    parts = []
+    parts << "#{service["rollout_percentage"]}%" if service["rollout_percentage"].to_i > 0
+    parts << "list of #{service["rollout_allowlist"].size}" if service["rollout_allowlist"].present?
+    parts << "no split set" if parts.empty?
+    parts << (service["rollout_enabled"] ? "enabled" : "disabled")
+
+    "Rollout #{parts.join(", ")} -> #{service["rollout_target"]}"
+  rescue JSON::ParserError
+    "Could not read the rollout split"
   end
 
   desc "logs", "Show log lines from the rollout containers"
@@ -104,15 +139,18 @@ class Kamal::Cli::Rollout < Kamal::Cli::Base
   def logs
     since = options[:since]
     grep = options[:grep]
+    grep_options = options[:grep_options]
+    timestamps = !options[:skip_timestamps]
+    quiet = options[:quiet]
     lines = options[:lines].presence || ((since || grep) ? nil : 100)
 
     on_roles(KAMAL.rollout_roles, hosts: KAMAL.rollout_hosts) do |host, role|
       begin
         puts_by_host host, capture_with_info(*KAMAL.app(role: role, host: host).logs(
-          timestamps: !options[:skip_timestamps], since: since, lines: lines,
-          grep: grep, grep_options: options[:grep_options])), quiet: options[:quiet]
+          timestamps: timestamps, since: since, lines: lines,
+          grep: grep, grep_options: grep_options)), quiet: quiet
       rescue SSHKit::Command::Failed
-        puts_by_host host, "Nothing found", quiet: options[:quiet]
+        puts_by_host host, "Nothing found", quiet: quiet
       end
     end
   end

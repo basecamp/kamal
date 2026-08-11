@@ -599,6 +599,41 @@ class CommandsAppTest < ActiveSupport::TestCase
       new_command.live.join(" ")
   end
 
+  test "rollout deploy carries only the target and the timeouts" do
+    assert_equal \
+      "docker exec kamal-proxy kamal-proxy rollout deploy app-web --target=\"abc123:80\" --deploy-timeout=\"30s\" --drain-timeout=\"30s\"",
+      new_command.rollout_deploy(target: "abc123").join(" ")
+  end
+
+  test "rollout deploy does not inherit the service deploy options" do
+    command = new_command(proxy: { "host" => "example.com", "ssl" => true }).rollout_deploy(target: "abc123").join(" ")
+
+    assert_no_match(/--host|--tls|--buffer-requests|--log-request-header/, command)
+  end
+
+  test "rollout set" do
+    assert_equal \
+      "docker exec kamal-proxy kamal-proxy rollout set app-web --percent=\"5\"",
+      new_command.rollout_set(percent: 5).join(" ")
+
+    assert_equal \
+      "docker exec kamal-proxy kamal-proxy rollout set app-web --list=\"1234\" --list=\"5678\"",
+      new_command.rollout_set(list: %w[ 1234 5678 ]).join(" ")
+  end
+
+  test "rollout enable and disable" do
+    assert_equal "docker exec kamal-proxy kamal-proxy rollout enable app-web", new_command.rollout_enable(true).join(" ")
+    assert_equal "docker exec kamal-proxy kamal-proxy rollout disable app-web", new_command.rollout_enable(false).join(" ")
+  end
+
+  test "rollout stop" do
+    assert_equal "docker exec kamal-proxy kamal-proxy rollout stop app-web", new_command.rollout_stop.join(" ")
+  end
+
+  test "proxy list" do
+    assert_equal "docker exec kamal-proxy kamal-proxy list --format json", new_command.proxy_list.join(" ")
+  end
+
   test "maintenance" do
     assert_equal \
       "docker exec kamal-proxy kamal-proxy stop app-web",

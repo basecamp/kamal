@@ -135,14 +135,20 @@ class IntegrationTest < ActiveSupport::TestCase
       assert_equal up_times, up_count
     end
 
-    def app_response(app: @app, cert: nil)
+    def app_response(app: @app, cert: nil, cookie: nil)
       uri = cert ? URI.parse("https://#{app_host(app)}:#{@https_port}/version") : URI.parse("http://#{app_host(app)}:#{@http_port}/version")
 
       if cert
         https_response_with_cert(uri, cert)
+      elsif cookie
+        Net::HTTP.get_response(uri, { "Cookie" => cookie })
       else
         Net::HTTP.get_response(uri)
       end
+    end
+
+    def app_version_for(cookie: nil)
+      app_response(cookie: cookie).body.strip
     end
 
     def update_app_rev

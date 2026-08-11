@@ -1,0 +1,35 @@
+service: app_with_rollout
+image: app_with_rollout
+servers:
+  web:
+    hosts:
+      - vm1
+      - vm2
+deploy_timeout: 2
+drain_timeout: 2
+readiness_delay: 0
+
+rollout:
+  max_percent: 50
+
+proxy:
+  run:
+    registry: registry:4443
+    version: <%= ENV.fetch("KAMAL_PROXY_IMAGE_VERSION", Kamal::Configuration::Proxy::Run::MINIMUM_VERSION) %>
+  host: localhost
+  ssl: false
+  healthcheck:
+    interval: 1
+    timeout: 1
+    path: "/up"
+  response_timeout: 2
+
+registry:
+  server: registry:4443
+  username: root
+  password: root
+builder:
+  driver: docker
+  arch: <%= Kamal::Utils.docker_arch %>
+  args:
+    COMMIT_SHA: <%= `git rev-parse HEAD` %>
