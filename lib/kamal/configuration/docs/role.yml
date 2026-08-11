@@ -52,3 +52,13 @@ servers:
     env:
       ...
     asset_path: /public
+
+    # Rollout overrides for this role, merged over its own configuration.
+    #
+    # Roles behind the proxy take part by default, set `rollout: false` to leave one
+    # out. Other roles opt in with `rollout: true` or a map of overrides.
+    #
+    # `hosts` is only allowed for roles that are not behind the proxy, since
+    # kamal-proxy only routes to containers on its own host. See kamal docs rollout.
+    rollout:
+      ...

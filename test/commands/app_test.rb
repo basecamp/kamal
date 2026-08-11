@@ -565,7 +565,18 @@ class CommandsAppTest < ActiveSupport::TestCase
       :cp, "-rnT", ".kamal/apps/app/assets/extracted/web-999", ".kamal/apps/app/assets/volumes/web-999", ";",
       :cp, "-rnT", ".kamal/apps/app/assets/extracted/web-999", ".kamal/apps/app/assets/volumes/web-998", "|| true", ";",
       :cp, "-rnT", ".kamal/apps/app/assets/extracted/web-998", ".kamal/apps/app/assets/volumes/web-999", "|| true"
-    ], new_command(asset_path: "/public/assets").sync_asset_volumes(old_version: 998)
+    ], new_command(asset_path: "/public/assets").sync_asset_volumes(other_versions: [ 998 ])
+  end
+
+  test "sync asset volumes bridges every other live version" do
+    assert_equal [
+      :mkdir, "-p", ".kamal/apps/app/assets/volumes/web-999", ";",
+      :cp, "-rnT", ".kamal/apps/app/assets/extracted/web-999", ".kamal/apps/app/assets/volumes/web-999", ";",
+      :cp, "-rnT", ".kamal/apps/app/assets/extracted/web-999", ".kamal/apps/app/assets/volumes/web-998", "|| true", ";",
+      :cp, "-rnT", ".kamal/apps/app/assets/extracted/web-998", ".kamal/apps/app/assets/volumes/web-999", "|| true", ";",
+      :cp, "-rnT", ".kamal/apps/app/assets/extracted/web-999", ".kamal/apps/app/assets/volumes/web-997", "|| true", ";",
+      :cp, "-rnT", ".kamal/apps/app/assets/extracted/web-997", ".kamal/apps/app/assets/volumes/web-999", "|| true"
+    ], new_command(asset_path: "/public/assets").sync_asset_volumes(other_versions: [ 998, 997 ])
   end
 
   test "clean up assets" do
@@ -573,6 +584,13 @@ class CommandsAppTest < ActiveSupport::TestCase
       :find, ".kamal/apps/app/assets/extracted", "-maxdepth 1", "-name", "'web-*'", "!", "-name", "web-999", "-exec rm -rf \"{}\" +", ";",
       :find, ".kamal/apps/app/assets/volumes", "-maxdepth 1", "-name", "'web-*'", "!", "-name", "web-999", "-exec rm -rf \"{}\" +"
     ], new_command(asset_path: "/public/assets").clean_up_assets
+  end
+
+  test "clean up assets keeps the rollout version" do
+    assert_equal [
+      :find, ".kamal/apps/app/assets/extracted", "-maxdepth 1", "-name", "'web-*'", "!", "-name", "web-999", "!", "-name", "web-998", "-exec rm -rf \"{}\" +", ";",
+      :find, ".kamal/apps/app/assets/volumes", "-maxdepth 1", "-name", "'web-*'", "!", "-name", "web-999", "!", "-name", "web-998", "-exec rm -rf \"{}\" +"
+    ], new_command(asset_path: "/public/assets").clean_up_assets(keep_versions: [ 998 ])
   end
 
   test "live" do

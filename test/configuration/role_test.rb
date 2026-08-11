@@ -330,6 +330,61 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
     assert_equal %(servers/workers/options/restart: should be a string. Use "no" to disable restarts), error.message
   end
 
+  test "no rollout roles unless the config asks for them" do
+    assert_empty config.rollout_roles
+    assert_empty config_with_roles.rollout_roles
+    assert_nil config_with_roles.role(:web).counterpart
+  end
+
+  test "proxied roles take part in rollouts once configured, others opt in" do
+    @deploy_with_roles[:rollout] = { "max_percent" => 25 }
+
+    assert_equal [ "web" ], config_with_roles.rollout_roles.map(&:name)
+  end
+
+  test "rollout can be turned off for a proxied role and on for another" do
+    @deploy_with_roles[:servers]["web"] = { "hosts" => [ "1.1.1.1" ], "rollout" => false }
+    @deploy_with_roles[:servers]["workers"]["rollout"] = true
+
+    assert_equal [ "workers" ], config_with_roles.rollout_roles.map(&:name)
+  end
+
+  test "rollout role naming keeps the proxy service name" do
+    @deploy_with_roles[:rollout] = {}
+    role = config_with_roles.rollout_role(:web)
+
+    assert role.rollout?
+    assert_equal "app-web-rollout", role.container_prefix
+    assert_equal "app-web", role.proxy_service_name
+    assert_equal "web-rollout", role.role_label
+    assert_equal ".kamal/apps/app/env/roles/web-rollout.env", role.secrets_path
+    assert_equal "web", role.counterpart.name
+    assert_not role.counterpart.rollout?
+  end
+
+  test "rollout overrides are merged over the role config" do
+    @deploy_with_roles[:servers]["workers"]["rollout"] = {
+      "hosts" => [ "1.1.1.9" ], "cmd" => "bin/jobs --rollout", "options" => { "memory" => "2g" }
+    }
+    role = config_with_roles.rollout_role(:workers)
+
+    assert_equal [ "1.1.1.9" ], role.hosts
+    assert_equal "bin/jobs --rollout", role.cmd
+    assert_equal [ "--memory", "\"2g\"" ], role.option_args
+    assert_equal "redis://a/b", role.env("1.1.1.9").clear["REDIS_URL"]
+    assert_equal [ "1.1.1.3", "1.1.1.4" ], config_with_roles.role(:workers).hosts
+  end
+
+  test "rollout hosts are rejected for a proxied role" do
+    @deploy_with_roles[:servers]["web"] = { "hosts" => [ "1.1.1.1" ], "rollout" => { "hosts" => [ "1.1.1.9" ] } }
+
+    error = assert_raises Kamal::ConfigurationError do
+      Kamal::Configuration.new(@deploy_with_roles)
+    end
+
+    assert_match "servers/web/rollout/hosts: not supported for roles behind the proxy", error.message
+  end
+
   private
     def config
       Kamal::Configuration.new(@deploy)

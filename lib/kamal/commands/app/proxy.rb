@@ -2,19 +2,31 @@ module Kamal::Commands::App::Proxy
   delegate :container_name, to: :"config.proxy_boot", prefix: :proxy
 
   def deploy(target:)
-    proxy_exec :deploy, role.container_prefix, *role.proxy.deploy_command_args(target: target)
+    proxy_exec :deploy, role.proxy_service_name, *role.proxy.deploy_command_args(target: target)
   end
 
   def remove
-    proxy_exec :remove, role.container_prefix
+    proxy_exec :remove, role.proxy_service_name
   end
 
   def live
-    proxy_exec :resume, role.container_prefix
+    proxy_exec :resume, role.proxy_service_name
   end
 
   def maintenance(**options)
-    proxy_exec :stop, role.container_prefix, *role.proxy.stop_command_args(**options)
+    proxy_exec :stop, role.proxy_service_name, *role.proxy.stop_command_args(**options)
+  end
+
+  def rollout_deploy(target:)
+    proxy_exec :rollout, :deploy, role.proxy_service_name, *role.proxy.rollout_deploy_command_args(target: target)
+  end
+
+  def rollout_set(percent: nil, list: nil)
+    proxy_exec :rollout, :set, role.proxy_service_name, *role.proxy.rollout_set_command_args(percent: percent, list: list)
+  end
+
+  def rollout_stop
+    proxy_exec :rollout, :stop, role.proxy_service_name
   end
 
   def remove_proxy_app_directory

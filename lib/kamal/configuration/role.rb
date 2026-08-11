@@ -7,8 +7,9 @@ class Kamal::Configuration::Role
 
   alias to_s name
 
-  def initialize(name, config:)
+  def initialize(name, config:, rollout: false)
     @name, @config = name.inquiry, config
+    @rollout = rollout
     validate! \
       role_config,
       example: validation_yml["servers"]["workers"],
@@ -25,6 +26,29 @@ class Kamal::Configuration::Role
       context: "servers/#{name}/logging"
 
     initialize_specialized_proxy
+    ensure_rollout_hosts_allowed
+  end
+
+  def rollout?
+    @rollout
+  end
+
+  def rollout_available?
+    if running_proxy?
+      # only false means no rollout for proxied roles
+      rollout_specializations != false
+    else
+      # false and nil both mean no rollout for other roles
+      !!rollout_specializations
+    end
+  end
+
+  def role_label
+    rollout? ? "#{name}-rollout" : name
+  end
+
+  def counterpart
+    rollout? ? config.role(name) : config.rollout_role(name)
   end
 
   def primary_host
@@ -108,7 +132,7 @@ class Kamal::Configuration::Role
   end
 
   def secrets_path
-    File.join(config.env_directory, "roles", "#{name}.env")
+    File.join(config.env_directory, "roles", "#{role_label}.env")
   end
 
   def asset_volume_args
@@ -125,8 +149,13 @@ class Kamal::Configuration::Role
     [ container_prefix, version || config.version ].compact.join("-")
   end
 
-  def container_prefix
+  # Live and rollout containers register against the same proxy service, in different slots
+  def proxy_service_name
     [ config.service, name, config.destination ].compact.join("-")
+  end
+
+  def container_prefix
+    [ proxy_service_name, ("rollout" if rollout?) ].compact.join("-")
   end
 
 
@@ -205,16 +234,35 @@ class Kamal::Configuration::Role
         config.raw_config.servers
       else
         servers = config.raw_config.servers[name]
-        servers.is_a?(Array) ? servers : Array(servers["hosts"])
+        servers.is_a?(Array) ? servers : Array(specializations["hosts"])
       end
     end
 
     def default_labels
-      { "service" => config.service, "role" => name, "destination" => config.destination }
+      { "service" => config.service, "role" => role_label, "destination" => config.destination }
     end
 
     def specializations
-      @specializations ||= role_config.is_a?(Array) ? {} : role_config
+      @specializations ||= begin
+        base = role_config.is_a?(Array) ? {} : role_config.except("rollout")
+        rollout? ? base.deep_merge(rollout_overrides) : base
+      end
+    end
+
+    def rollout_specializations
+      role_config.is_a?(Array) ? nil : role_config["rollout"]
+    end
+
+    def rollout_overrides
+      rollout_specializations.is_a?(Hash) ? rollout_specializations : {}
+    end
+
+    def ensure_rollout_hosts_allowed
+      if running_proxy? && rollout_overrides["hosts"].present?
+        raise Kamal::ConfigurationError,
+          "servers/#{name}/rollout/hosts: not supported for roles behind the proxy, " \
+          "since kamal-proxy only routes to containers on its own host — omit it to run the rollout container alongside the live one"
+      end
     end
 
     def role_config

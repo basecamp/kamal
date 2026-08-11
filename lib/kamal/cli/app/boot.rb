@@ -1,4 +1,6 @@
 class Kamal::Cli::App::Boot
+  include Kamal::Cli::App::CounterpartVersion
+
   attr_reader :host, :role, :version, :barrier, :sshkit
   delegate :execute, :capture_with_info, :capture_with_pretty_json, :info, :error, :upload!, to: :sshkit
   delegate :assets?, :running_proxy?, to: :role
@@ -69,7 +71,7 @@ class Kamal::Cli::App::Boot
 
     def stop_old_version(version)
       execute *app.stop(version: version), raise_on_non_zero_exit: false
-      execute *app.clean_up_assets if assets?
+      execute *app.clean_up_assets(keep_versions: counterpart_versions) if assets?
       execute *app.clean_up_error_pages if KAMAL.config.error_pages_path
     end
 

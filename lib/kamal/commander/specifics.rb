@@ -18,6 +18,23 @@ class Kamal::Commander::Specifics
     roles.select { |role| role.hosts.include?(host.to_s) }
   end
 
+  def rollout_roles
+    @rollout_roles ||= config.rollout_roles
+      .select { |role| specific_role_names.nil? || specific_role_names.include?(role.name) }
+      .select { |role| specific_hosts.nil? || (specific_hosts & role.hosts).any? }
+  end
+
+  def rollout_hosts
+    @rollout_hosts ||= begin
+      hosts = rollout_roles.flat_map(&:hosts).uniq
+      specific_hosts ? hosts & specific_hosts : hosts
+    end
+  end
+
+  def rollout_roles_on(host)
+    rollout_roles.select { |role| role.hosts.include?(host.to_s) }
+  end
+
   def app_hosts
     @app_hosts ||= sort_primary_role_hosts_first!(config.app_hosts & specified_hosts)
   end
@@ -32,6 +49,10 @@ class Kamal::Commander::Specifics
 
   private
     attr_reader :config, :specific_hosts, :specific_roles
+
+    def specific_role_names
+      specific_roles&.map(&:name)
+    end
 
     def primary_specific_role
       primary_or_first_role(specific_roles) if specific_roles.present?

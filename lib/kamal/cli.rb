@@ -3,6 +3,7 @@ module Kamal::Cli
   class HookError < StandardError; end
   class LockError < StandardError; end
   class DependencyError < StandardError; end
+  class RolloutError < StandardError; end
 end
 
 # SSHKit uses instance eval, so we need a global const for ergonomics

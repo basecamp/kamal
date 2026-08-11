@@ -98,6 +98,18 @@ class Kamal::Configuration::Proxy
     optionize ({ target: "#{target}:#{app_port}" }).merge(deploy_options), with: "="
   end
 
+  def rollout_deploy_command_args(target:)
+    optionize({
+      target: "#{target}:#{app_port}",
+      "deploy-timeout": seconds_duration(config.deploy_timeout),
+      "drain-timeout": seconds_duration(config.drain_timeout)
+    }.compact, with: "=")
+  end
+
+  def rollout_set_command_args(percent: nil, list: nil)
+    optionize({ percent: percent, list: list }.compact, with: "=")
+  end
+
   def stop_options(drain_timeout: nil, message: nil)
     {
       "drain-timeout": seconds_duration(drain_timeout),

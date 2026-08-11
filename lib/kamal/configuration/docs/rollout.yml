@@ -1,0 +1,43 @@
+# Rollout
+#
+# A rollout runs a second version of your app beside the live one and sends a
+# slice of traffic to it.
+#
+# kamal-proxy picks the slice from the `kamal-rollout` cookie. Your app sets that
+# cookie — the proxy never does, and a request without it always goes to the live
+# version. Set it to something stable, such as an account id, so that
+# `--percent 2` means two percent of accounts rather than two percent of requests.
+#
+# Rollouts are off until the config asks for them, and cost nothing until then.
+# Declare this section, or a `rollout:` block on a role, to turn them on. Once on,
+# roles behind the proxy take part by default — see `kamal docs role` to add other
+# roles or leave one out.
+#
+#   kamal rollout boot           # boot the containers, no traffic yet
+#   kamal rollout set --percent 2
+#   kamal rollout stop           # back to no traffic, containers stay up
+#   kamal rollout remove         # stop, then remove the containers
+
+rollout:
+
+  # The highest percentage `kamal rollout set` accepts.
+  #
+  # Use it to hold yourself to a ramp. Defaults to 100.
+  max_percent: 25
+
+  # What a deploy does when a rollout is already live.
+  #
+  #   keep - leave the rollout alone (default)
+  #   ask  - ask before stopping it, and abort when there is no terminal
+  #   stop - stop the split without asking
+  #
+  # A rollout never expires on its own. With `keep`, deploying twice while one is
+  # live leaves that cohort on an older version than everyone else, so Kamal
+  # prints a notice on every deploy while a rollout is running.
+  on_deploy: keep
+
+  # What `kamal rollout boot` does to a split that is already open.
+  #
+  #   reset - put the split back to 0, so opening it stays a separate step (default)
+  #   keep  - leave the split where it is
+  on_boot: reset

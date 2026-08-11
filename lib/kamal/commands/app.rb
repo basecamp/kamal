@@ -24,6 +24,7 @@ class Kamal::Commands::App < Kamal::Commands::Base
       "--env", "KAMAL_VERSION=\"#{config.version}\"",
       "--env", "KAMAL_HOST=\"#{host}\"",
       *([ "--env", "KAMAL_DESTINATION=\"#{config.destination}\"" ] if config.destination),
+      *([ "--env", "KAMAL_ROLLOUT=\"1\"" ] if role.rollout?),
       *role.env_args(host),
       *role.logging_args,
       *config.volume_args,
@@ -112,7 +113,7 @@ class Kamal::Commands::App < Kamal::Commands::Base
     def container_filters(statuses: nil)
       [ "label=service=#{config.service}" ].tap do |filters|
         filters << "label=destination=#{config.destination}"
-        filters << "label=role=#{role}" if role
+        filters << "label=role=#{role.role_label}" if role
         statuses&.each do |status|
           filters << "status=#{status}"
         end

@@ -122,6 +122,81 @@ module Kamal::Cli
         end
       end
 
+      def rollout_proxy_hosts
+        KAMAL.rollout_roles.select(&:running_proxy?).flat_map(&:hosts).uniq & KAMAL.rollout_hosts
+      end
+
+      def reset_rollout_split
+        on(rollout_proxy_hosts) do |host|
+          role = KAMAL.rollout_roles_on(host).find(&:running_proxy?)
+          execute *KAMAL.app(role: role, host: host).rollout_stop, raise_on_non_zero_exit: false
+        end
+      end
+
+      def live_rollouts
+        return [] if KAMAL.rollout_roles.empty?
+
+        found = []
+        mutex = Mutex.new
+
+        on(KAMAL.rollout_hosts) do |host|
+          KAMAL.rollout_roles_on(host).each do |role|
+            version = capture_with_info(
+              *KAMAL.app(role: role, host: host).current_running_version,
+              raise_on_non_zero_exit: false
+            ).strip.presence
+
+            mutex.synchronize { found << [ role.name, version ] } if version
+          end
+        end
+
+        found.uniq
+      end
+
+      def handle_live_rollout
+        behaviour = options[:rollout] || KAMAL.config.rollout.on_deploy
+
+        unless Kamal::Configuration::Rollout::ON_DEPLOY.include?(behaviour)
+          raise Kamal::Cli::RolloutError, "--rollout should be #{Kamal::Configuration::Rollout::ON_DEPLOY.join(", ")}"
+        end
+
+        return if (rollouts = live_rollouts).empty?
+
+        summary = rollouts.map { |role, version| "#{role} at #{version}" }.join(", ")
+
+        case behaviour
+        when "keep"
+          say "Rollout still live (#{summary}). This deploy leaves it alone, so that cohort stays on the rollout version — run `kamal rollout stop` when you are done with it.", :yellow
+        when "stop"
+          say "Rollout still live (#{summary}). Stopping the split.", :yellow
+          reset_rollout_split
+        when "ask"
+          if ask("Rollout still live (#{summary}). Stop the split and continue?", limited_to: %w[ y N ], default: "N") == "y"
+            reset_rollout_split
+          else
+            raise Kamal::Cli::RolloutError, "Aborted — run `kamal rollout stop` first, or pass --rollout=keep"
+          end
+        end
+      end
+
+      def using_version(new_version)
+        if new_version
+          begin
+            old_version = KAMAL.config.version
+            KAMAL.config.version = new_version
+            yield new_version
+          ensure
+            KAMAL.config.version = old_version
+          end
+        else
+          yield KAMAL.config.version
+        end
+      end
+
+      def version_or_latest
+        options[:version] || KAMAL.config.latest_tag
+      end
+
       def confirming(question)
         return yield if options[:confirmed]
 

@@ -8,6 +8,7 @@ class Kamal::Commander
   attr_accessor :verbosity, :holding_lock, :connected, :logging, :lock_wait, :lock_wait_timeout, :lock_wait_interval
   attr_reader :specific_roles, :specific_hosts
   delegate :hosts, :roles, :primary_host, :primary_role, :roles_on, :app_hosts, :proxy_hosts, :accessory_hosts, to: :specifics
+  delegate :rollout_roles, :rollout_hosts, :rollout_roles_on, to: :specifics
 
   def initialize
     reset
@@ -64,7 +65,7 @@ class Kamal::Commander
   def specific_hosts=(hosts)
     @specifics = nil
     @specific_hosts = if hosts.present?
-      filtered = Kamal::Utils.filter_specific_items(hosts, config.all_hosts)
+      filtered = Kamal::Utils.filter_specific_items(hosts, config.all_hosts | config.rollout_hosts)
       raise ArgumentError, "No --hosts match for #{hosts.join(',')}" if filtered.empty?
       filtered
     end

@@ -24,7 +24,7 @@ class Kamal::Configuration::Validator
             example_value = example[key]
 
             if example_value == "..."
-              unless key.to_s == "proxy" && boolean?(value.class)
+              unless %w[ proxy rollout ].include?(key.to_s) && boolean?(value.class)
                 validate_type! value, *(Array if key == :servers), Hash
               end
             elsif key.to_s == "ssl"

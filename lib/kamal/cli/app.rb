@@ -327,20 +327,6 @@ class Kamal::Cli::App < Kamal::Cli::Base
       KAMAL.app_hosts.select { |host| KAMAL.roles_on(host).map(&:name).sort == KAMAL.config.host_roles(host.to_s).map(&:name).sort }
     end
 
-    def using_version(new_version)
-      if new_version
-        begin
-          old_version = KAMAL.config.version
-          KAMAL.config.version = new_version
-          yield new_version
-        ensure
-          KAMAL.config.version = old_version
-        end
-      else
-        yield KAMAL.config.version
-      end
-    end
-
     def current_running_version(host: KAMAL.primary_host)
       version = nil
       on(host) do
@@ -348,10 +334,6 @@ class Kamal::Cli::App < Kamal::Cli::Base
         version = capture_with_info(*KAMAL.app(role: role, host: host).current_running_version).strip
       end
       version.presence
-    end
-
-    def version_or_latest
-      options[:version] || KAMAL.config.latest_tag
     end
 
     def with_lock_if_stopping

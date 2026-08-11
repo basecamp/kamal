@@ -18,10 +18,13 @@ class Kamal::Cli::Main < Kamal::Cli::Base
   desc "deploy", "Deploy app to servers"
   option :skip_push, aliases: "-P", type: :boolean, default: false, desc: "Skip image build and push"
   option :no_cache, type: :boolean, default: false, desc: "Build without using Docker's build cache"
+  option :rollout, desc: "What to do with a live rollout: keep, ask, or stop (defaults to rollout/on_deploy)"
   def deploy(boot_accessories: false)
     modify do
       runtime = print_runtime do
         invoke_options = deploy_options
+
+        handle_live_rollout
 
         if options[:skip_push]
           say "Pull app image...", :magenta
@@ -56,10 +59,13 @@ class Kamal::Cli::Main < Kamal::Cli::Base
   desc "redeploy", "Deploy app to servers without bootstrapping servers, starting kamal-proxy and pruning"
   option :skip_push, aliases: "-P", type: :boolean, default: false, desc: "Skip image build and push"
   option :no_cache, type: :boolean, default: false, desc: "Build without using Docker's build cache"
+  option :rollout, desc: "What to do with a live rollout: keep, ask, or stop (defaults to rollout/on_deploy)"
   def redeploy
     modify do
       runtime = print_runtime do
         invoke_options = deploy_options
+
+        handle_live_rollout
 
         if options[:skip_push]
           say "Pull app image...", :magenta
@@ -84,6 +90,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
   end
 
   desc "rollback [VERSION]", "Rollback app to VERSION"
+  option :rollout, desc: "What to do with a live rollout: keep, ask, or stop (defaults to rollout/on_deploy)"
   def rollback(version)
     rolled_back = false
 
@@ -91,6 +98,8 @@ class Kamal::Cli::Main < Kamal::Cli::Base
       runtime = print_runtime do
         modify(lock: true) do
           invoke_options = deploy_options
+
+          handle_live_rollout
 
           KAMAL.config.version = version
 
@@ -253,6 +262,9 @@ class Kamal::Cli::Main < Kamal::Cli::Base
 
   desc "registry", "Login and -out of the image registry"
   subcommand "registry", Kamal::Cli::Registry
+
+  desc "rollout", "Run a new version for a slice of traffic"
+  subcommand "rollout", Kamal::Cli::Rollout
 
   desc "secrets", "Helpers for extracting secrets"
   subcommand "secrets", Kamal::Cli::Secrets

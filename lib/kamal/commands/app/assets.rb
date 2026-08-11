@@ -11,36 +11,36 @@ module Kamal::Commands::App::Assets
       by: "&&"
   end
 
-  def sync_asset_volumes(old_version: nil)
+  def sync_asset_volumes(other_versions: [])
+    versions = Array(other_versions).compact.uniq - [ config.version ]
     new_extracted_path, new_volume_path = role.asset_extracted_directory(config.version), role.asset_volume.host_path
-    if old_version.present?
-      old_extracted_path, old_volume_path = role.asset_extracted_directory(old_version), role.asset_volume(old_version).host_path
-    end
 
     commands = [ make_directory(new_volume_path), copy_contents(new_extracted_path, new_volume_path) ]
 
-    if old_version.present?
-      commands << copy_contents(new_extracted_path, old_volume_path, continue_on_error: true)
-      commands << copy_contents(old_extracted_path, new_volume_path, continue_on_error: true)
+    versions.each do |version|
+      commands << copy_contents(new_extracted_path, role.asset_volume(version).host_path, continue_on_error: true)
+      commands << copy_contents(role.asset_extracted_directory(version), new_volume_path, continue_on_error: true)
     end
 
     chain *commands
   end
 
-  def clean_up_assets
+  def clean_up_assets(keep_versions: [])
+    versions = [ config.version, *keep_versions ].compact.uniq
+
     chain \
-      find_and_remove_older_siblings(role.asset_extracted_directory),
-      find_and_remove_older_siblings(role.asset_volume_directory)
+      find_and_remove_other_siblings(versions.map { |version| role.asset_extracted_directory(version) }),
+      find_and_remove_other_siblings(versions.map { |version| role.asset_volume_directory(version) })
   end
 
   private
-    def find_and_remove_older_siblings(path)
+    def find_and_remove_other_siblings(paths)
       [
         :find,
-        Pathname.new(path).dirname.to_s,
+        Pathname.new(paths.first).dirname.to_s,
         "-maxdepth 1",
         "-name", "'#{role.name}-*'",
-        "!", "-name", Pathname.new(path).basename.to_s,
+        *paths.flat_map { |path| [ "!", "-name", Pathname.new(path).basename.to_s ] },
         "-exec rm -rf \"{}\" +"
       ]
     end

@@ -226,3 +226,9 @@ output:
 # Alias configuration, see kamal docs alias:
 aliases:
   ...
+
+# Rollout
+#
+# Run a second version for a slice of traffic, see kamal docs rollout:
+rollout:
+  ...

@@ -12,7 +12,7 @@ class Kamal::Configuration
   delegate :argumentize, :optionize, to: Kamal::Utils
 
   attr_reader :destination, :raw_config, :secrets
-  attr_reader :accessories, :aliases, :boot, :builder, :env, :logging, :output, :proxy, :proxy_boot, :servers, :ssh, :sshkit, :registry
+  attr_reader :accessories, :aliases, :boot, :builder, :env, :logging, :output, :proxy, :proxy_boot, :rollout, :servers, :ssh, :sshkit, :registry
 
   include Validation
 
@@ -74,6 +74,7 @@ class Kamal::Configuration
     @output = Output.new(config: self)
     @proxy = Proxy.new(config: self, proxy_config: @raw_config.proxy, secrets: secrets)
     @proxy_boot = Proxy::Boot.new(config: self)
+    @rollout = Rollout.new(config: self)
     @ssh = Ssh.new(config: self)
     @sshkit = Sshkit.new(config: self)
 
@@ -123,6 +124,18 @@ class Kamal::Configuration
 
   def role(name)
     roles.detect { |r| r.name == name.to_s }
+  end
+
+  def rollout_roles
+    servers.rollout_roles
+  end
+
+  def rollout_role(name)
+    rollout_roles.detect { |r| r.name == name.to_s }
+  end
+
+  def rollout_hosts
+    rollout_roles.flat_map(&:hosts).uniq
   end
 
   def accessory(name)
