@@ -47,6 +47,18 @@ proxy:
   # Defaults to `false`:
   ssl: true
 
+  # On-demand TLS
+  #
+  # For apps serving customer-supplied domains, which aren't known at deploy time.
+  # kamal-proxy asks the given endpoint whether a host may have a certificate issued,
+  # sending the hostname as a `host` query parameter and provisioning only on a 200
+  # response. The value is a path served by the app, or an absolute http(s) URL.
+  #
+  # Requires `ssl: true`, and cannot be combined with `host`/`hosts` or a custom SSL
+  # certificate. The app becomes the wildcard target, so it must approve its own
+  # domain too.
+  tls_on_demand_url: /up/tls_on_demand
+
   # Custom SSL certificate
   #
   # In some cases, using Let's Encrypt for automatic certificate management is not an
