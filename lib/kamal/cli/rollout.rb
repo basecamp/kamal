@@ -6,6 +6,10 @@ class Kamal::Cli::Rollout < Kamal::Cli::Base
       using_version(version_or_latest) do |version|
         say "Booting rollout containers with version #{version}...", :magenta
 
+        # Tear down any open split before registering the new targets, so that a
+        # rollout never inherits traffic it was not explicitly given.
+        reset_split if KAMAL.config.rollout.on_boot.reset?
+
         on(KAMAL.rollout_hosts) do
           KAMAL.rollout_roles_on(host).each do |role|
             Kamal::Cli::App::Assets.new(host, role, self).run
@@ -17,7 +21,6 @@ class Kamal::Cli::Rollout < Kamal::Cli::Base
         end
 
         if KAMAL.config.rollout.on_boot.reset?
-          reset_split
           say "Rollout booted. It takes no traffic until you run `kamal rollout set`.", :magenta
         else
           say "Rollout booted.", :magenta
@@ -49,10 +52,11 @@ class Kamal::Cli::Rollout < Kamal::Cli::Base
     end
   end
 
-  desc "stop", "Stop sending traffic to the rollout, leaving its containers running"
+  desc "stop", "Stop the rollout and unregister it from the proxy, leaving its containers running"
   def stop
     with_lock do
       reset_split
+      say "Rollout stopped. Its containers are still running — boot it again to send it traffic.", :magenta
     end
   end
 

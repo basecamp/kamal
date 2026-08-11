@@ -16,6 +16,15 @@ class CliRolloutTest < CliTestCase
     end
   end
 
+  test "boot clears any open split before registering the new targets" do
+    stub_rollout_booting
+
+    run_command("boot").tap do |output|
+      assert_operator output.index("rollout stop app-web"), :<, output.index("rollout deploy app-web"),
+        "the split must be cleared before the new targets are registered, or stop would clear them again"
+    end
+  end
+
   test "boot leaves the live containers and the latest tag alone" do
     stub_rollout_booting
 

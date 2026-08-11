@@ -15,8 +15,12 @@
 #
 #   kamal rollout boot           # boot the containers, no traffic yet
 #   kamal rollout set --percent 2
-#   kamal rollout stop           # back to no traffic, containers stay up
+#   kamal rollout stop           # unregister from the proxy, containers stay up
 #   kamal rollout remove         # stop, then remove the containers
+#
+# `stop` unregisters the targets as well as closing the split, so that a later
+# `set` cannot resume traffic to containers that have since been removed. Boot
+# the rollout again to send it traffic.
 
 rollout:
 
