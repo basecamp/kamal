@@ -8,7 +8,7 @@ class Kamal::Cli::Rollout < Kamal::Cli::Base
 
         # Tear down any open split before registering the new targets, so that a
         # rollout never inherits traffic it was not explicitly given.
-        reset_split if KAMAL.config.rollout.on_boot.reset?
+        reset_rollout_split if KAMAL.config.rollout.on_boot.reset?
 
         on(KAMAL.rollout_hosts) do
           KAMAL.rollout_roles_on(host).each do |role|
@@ -45,7 +45,7 @@ class Kamal::Cli::Rollout < Kamal::Cli::Base
     end
 
     with_lock do
-      on(proxy_rollout_hosts) do |host|
+      on(rollout_proxy_hosts) do |host|
         role = KAMAL.rollout_roles_on(host).find(&:running_proxy?)
         execute *KAMAL.app(role: role, host: host).rollout_set(percent: percent, list: list)
       end
@@ -55,7 +55,7 @@ class Kamal::Cli::Rollout < Kamal::Cli::Base
   desc "stop", "Stop the rollout and unregister it from the proxy, leaving its containers running"
   def stop
     with_lock do
-      reset_split
+      reset_rollout_split
       say "Rollout stopped. Its containers are still running — boot it again to send it traffic.", :magenta
     end
   end
@@ -65,7 +65,7 @@ class Kamal::Cli::Rollout < Kamal::Cli::Base
   def remove
     confirming "This will stop the rollout and remove its containers. Are you sure?" do
       modify(lock: true) do
-        reset_split
+        reset_rollout_split
 
         on_roles(KAMAL.rollout_roles, hosts: KAMAL.rollout_hosts) do |host, role|
           app = KAMAL.app(role: role, host: host)
@@ -109,16 +109,4 @@ class Kamal::Cli::Rollout < Kamal::Cli::Base
       end
     end
   end
-
-  private
-    def reset_split
-      on(proxy_rollout_hosts) do |host|
-        role = KAMAL.rollout_roles_on(host).find(&:running_proxy?)
-        execute *KAMAL.app(role: role, host: host).rollout_stop, raise_on_non_zero_exit: false
-      end
-    end
-
-    def proxy_rollout_hosts
-      KAMAL.rollout_roles.select(&:running_proxy?).flat_map(&:hosts).uniq & KAMAL.rollout_hosts
-    end
 end
