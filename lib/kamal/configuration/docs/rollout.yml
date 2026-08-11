@@ -13,14 +13,18 @@
 # roles behind the proxy take part by default — see `kamal docs role` to add other
 # roles or leave one out.
 #
-#   kamal rollout boot           # boot the containers, no traffic yet
+#   kamal rollout boot            # boot the containers, no traffic yet
 #   kamal rollout set --percent 2
-#   kamal rollout stop           # unregister from the proxy, containers stay up
-#   kamal rollout remove         # stop, then remove the containers
+#   kamal rollout set --percent 0 # close the split, ready to reopen
+#   kamal rollout stop            # unregister from the proxy, containers stay up
+#   kamal rollout remove          # stop, then remove the containers
 #
-# `stop` unregisters the targets as well as closing the split, so that a later
-# `set` cannot resume traffic to containers that have since been removed. Boot
-# the rollout again to send it traffic.
+# To pull traffic and put it back, set the percentage to 0 and then set it again.
+# The containers stay registered, so reopening is immediate.
+#
+# `stop` goes further and unregisters the targets as well, so that a later `set`
+# cannot resume traffic to containers that have since been removed. After a stop
+# you boot the rollout again to send it traffic.
 
 rollout:
 

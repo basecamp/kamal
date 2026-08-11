@@ -66,6 +66,13 @@ class CliRolloutTest < CliTestCase
     end
   end
 
+  test "set percent 0 closes the split but leaves the rollout registered" do
+    run_command("set", "--percent", "0").tap do |output|
+      assert_match "docker exec kamal-proxy kamal-proxy rollout set app-web --percent=\"0\"", output
+      assert_no_match "kamal-proxy rollout stop", output
+    end
+  end
+
   test "set only touches proxied roles" do
     run_command("set", "--percent", "5").tap do |output|
       assert_no_match "app-workers", output
