@@ -375,6 +375,33 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
     assert_equal [ "1.1.1.3", "1.1.1.4" ], config_with_roles.role(:workers).hosts
   end
 
+  test "rollout env merges whichever form the role and the rollout block each use" do
+    @deploy_with_roles[:servers]["workers"]["env"] = { "PLAIN" => "1" }
+    @deploy_with_roles[:servers]["workers"]["rollout"] = { "env" => { "clear" => { "FROM_ROLLOUT" => "2" } } }
+
+    env = config_with_roles.rollout_role(:workers).env("1.1.1.3").clear
+    assert_equal "1", env["PLAIN"]
+    assert_equal "2", env["FROM_ROLLOUT"]
+  end
+
+  test "rollout env merges when only the rollout block uses the plain form" do
+    @deploy_with_roles[:servers]["workers"]["env"] = { "clear" => { "FROM_ROLE" => "1" } }
+    @deploy_with_roles[:servers]["workers"]["rollout"] = { "env" => { "PLAIN" => "2" } }
+
+    env = config_with_roles.rollout_role(:workers).env("1.1.1.3").clear
+    assert_equal "1", env["FROM_ROLE"]
+    assert_equal "2", env["PLAIN"]
+  end
+
+  test "rollout keeps the role's secrets while adding its own env" do
+    @deploy_with_roles[:servers]["workers"]["env"] = { "secret" => [ "REDIS_PASSWORD" ] }
+    @deploy_with_roles[:servers]["workers"]["rollout"] = { "env" => { "clear" => { "JOB_POOL" => "rollout" } } }
+
+    role = config_with_roles.rollout_role(:workers)
+    assert_equal [ "REDIS_PASSWORD" ], role.env("1.1.1.3").secret_keys
+    assert_equal "rollout", role.env("1.1.1.3").clear["JOB_POOL"]
+  end
+
   test "rollout hosts are rejected for a proxied role" do
     @deploy_with_roles[:servers]["web"] = { "hosts" => [ "1.1.1.1" ], "rollout" => { "hosts" => [ "1.1.1.9" ] } }
 

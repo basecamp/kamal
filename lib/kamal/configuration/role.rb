@@ -245,8 +245,21 @@ class Kamal::Configuration::Role
     def specializations
       @specializations ||= begin
         base = role_config.is_a?(Array) ? {} : role_config.except("rollout")
-        rollout? ? base.deep_merge(rollout_overrides) : base
+        rollout? ? base.deep_merge(rollout_overrides).merge(merged_rollout_env(base)) : base
       end
+    end
+
+    # A role's env can be written plainly or under clear/secret/tags, and a rollout block
+    # need not use the same form, so normalize both before merging them.
+    def merged_rollout_env(base)
+      envs = [ base["env"], rollout_overrides["env"] ].compact
+      return {} if envs.empty?
+
+      { "env" => envs.map { |env| clear_form_env(env) }.reduce(:deep_merge) }
+    end
+
+    def clear_form_env(env)
+      (env.keys & %w[ clear secret tags ]).any? ? env : { "clear" => env }
     end
 
     def rollout_specializations
