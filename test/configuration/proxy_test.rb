@@ -97,6 +97,12 @@ class ConfigurationProxyTest < ActiveSupport::TestCase
     assert_equal "mqtt", options[:"health-check-websocket-subprotocol"]
   end
 
+  test "an empty healthcheck protocol passes no flag" do
+    @deploy[:proxy] = { "host" => "example.com", "healthcheck" => { "protocol" => "" } }
+
+    assert_not config.proxy.deploy_options.key?(:"health-check-protocol")
+  end
+
   test "an unknown healthcheck protocol is rejected" do
     @deploy[:proxy] = { "host" => "example.com", "healthcheck" => { "protocol" => "websockets" } }
 
