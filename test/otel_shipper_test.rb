@@ -50,6 +50,23 @@ class OtelShipperTest < ActiveSupport::TestCase
     assert_includes attr_keys, "kamal.deploy_version"
   end
 
+  test "command output arrives as binary, and must not break JSON generation" do
+    @shipper.append("container — dash\nsecond line\n".dup.force_encoding(Encoding::BINARY))
+
+    records = drain_buffer
+    bodies = records.map { |r| r[:body][:stringValue] }
+
+    assert_equal [ "container — dash", "second line" ], bodies
+    bodies.each { |body| assert_equal Encoding::UTF_8, body.encoding }
+    assert_nothing_raised { JSON.generate(logRecords: records) }
+  end
+
+  test "invalid bytes in command output are scrubbed rather than raising" do
+    @shipper.append("bad \xFF byte".dup.force_encoding(Encoding::BINARY))
+
+    assert_nothing_raised { JSON.generate(logRecords: drain_buffer) }
+  end
+
   test "append includes server.address and log.iostream attributes" do
     @shipper.append("output line", host: "1.1.1.1", iostream: "stdout")
 

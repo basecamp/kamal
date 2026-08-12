@@ -59,7 +59,11 @@ class Kamal::OtelShipper
   def append(str, host: nil, iostream: nil, severity: nil)
     otel_severity = LOGGER_SEVERITIES.fetch(severity, :info)
     extra = build_context_attributes(host: host, iostream: iostream)
-    str.to_s.each_line do |line|
+    # SSHKit hands back command output as BINARY. JSON.generate warns on a binary string
+    # holding UTF-8 today and raises from json 3.0, and output can be arbitrary bytes.
+    text = str.to_s.dup.force_encoding(Encoding::UTF_8).scrub
+
+    text.each_line do |line|
       enqueue build_record(line.chomp, severity: otel_severity, attributes: extra)
     end
 
