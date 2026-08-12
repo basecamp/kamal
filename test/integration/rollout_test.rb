@@ -75,7 +75,7 @@ class RolloutTest < IntegrationTest
     kamal :rollout, :boot
     kamal :rollout, :set, "--list", "in-the-cohort"
 
-    assert_match "Rollout list of 1, enabled ->", kamal(:rollout, :details, capture: true)
+    assert_match "Split     list of 1, enabled ->", kamal(:rollout, :details, capture: true)
     assert_equal rollout_version, app_version_for(cookie: "kamal-rollout=in-the-cohort")
 
     kamal :rollout, :disable

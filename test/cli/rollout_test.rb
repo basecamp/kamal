@@ -116,7 +116,7 @@ class CliRolloutTest < CliTestCase
     end
   end
 
-  test "details reports the split alongside the containers" do
+  test "details summarises the split and the container counts" do
     listed = {
       services: {
         "app-web" => {
@@ -129,26 +129,30 @@ class CliRolloutTest < CliTestCase
     SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info).returns(listed)
 
     run_command("details").tap do |output|
-      assert_match "Rollout 5%, list of 1, enabled -> 172.17.0.5:80", output
+      assert_match "Split     5%, list of 1, enabled -> 172.17.0.5:80", output
+      assert_match "web       2/2 running", output
+      assert_match "workers   1/1 running", output
+      # One line for the split, not one per host
+      assert_equal 1, output.scan("Split ").size
     end
   end
 
   test "split summary reads the proxy listing" do
     listed = ->(service) { { services: { "app-web" => service } }.to_json }
 
-    assert_equal "Rollout 5%, enabled -> 1.2.3.4:80",
+    assert_equal "5%, enabled -> 1.2.3.4:80",
       Kamal::Cli::Rollout.split_summary(listed.call(rollout_target: "1.2.3.4:80", rollout_percentage: 5, rollout_enabled: true), "app-web")
 
-    assert_equal "Rollout 2%, disabled -> 1.2.3.4:80",
+    assert_equal "2%, disabled -> 1.2.3.4:80",
       Kamal::Cli::Rollout.split_summary(listed.call(rollout_target: "1.2.3.4:80", rollout_percentage: 2, rollout_enabled: false), "app-web")
 
-    assert_equal "Rollout no split set, disabled -> 1.2.3.4:80",
+    assert_equal "no split set, disabled -> 1.2.3.4:80",
       Kamal::Cli::Rollout.split_summary(listed.call(rollout_target: "1.2.3.4:80"), "app-web")
 
-    assert_equal "No rollout registered", Kamal::Cli::Rollout.split_summary(listed.call({}), "app-web")
-    assert_equal "No rollout registered", Kamal::Cli::Rollout.split_summary("{}", "app-web")
-    assert_equal "No rollout registered", Kamal::Cli::Rollout.split_summary("", "app-web")
-    assert_equal "Could not read the rollout split", Kamal::Cli::Rollout.split_summary("not json", "app-web")
+    assert_equal "none registered", Kamal::Cli::Rollout.split_summary(listed.call({}), "app-web")
+    assert_equal "none registered", Kamal::Cli::Rollout.split_summary("{}", "app-web")
+    assert_equal "none registered", Kamal::Cli::Rollout.split_summary("", "app-web")
+    assert_equal "could not be read", Kamal::Cli::Rollout.split_summary("not json", "app-web")
   end
 
   test "details reports nothing when rollouts are not configured" do

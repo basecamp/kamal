@@ -102,16 +102,24 @@ class Kamal::Cli::Rollout < Kamal::Cli::Base
       return
     end
 
-    quiet = options[:quiet]
+    versions = rollout_versions_by_role
+    running = versions.values.flat_map(&:values).compact.uniq
 
-    on(rollout_proxy_hosts) do |host|
-      role = KAMAL.rollout_roles_on(host).find(&:running_proxy?)
-      listed = capture_with_info(*KAMAL.app(role: role, host: host).proxy_list, raise_on_non_zero_exit: false)
-      puts_by_host host, Kamal::Cli::Rollout.split_summary(listed, role.proxy_service_name), quiet: quiet
+    if running.empty?
+      say "No rollout containers are running", :yellow
+    else
+      say "Version   #{running.join(", ")}", :magenta
     end
 
-    on_roles(KAMAL.rollout_roles, hosts: KAMAL.rollout_hosts) do |host, role|
-      puts_by_host host, capture_with_info(*KAMAL.app(role: role, host: host).info), quiet: quiet
+    splits = rollout_splits_by_host
+    splits.values.tally.each do |summary, count|
+      say "Split     #{summary}#{" (#{count} of #{splits.size} hosts)" unless count == splits.size}"
+    end
+
+    versions.each do |role, by_host|
+      missing = by_host.select { |_, version| version.nil? }.keys
+      say "#{role.ljust(9)} #{by_host.size - missing.size}/#{by_host.size} running" \
+        "#{" — missing on #{missing.join(", ")}" if missing.any?}"
     end
   end
 
@@ -142,7 +150,7 @@ class Kamal::Cli::Rollout < Kamal::Cli::Base
 
   def self.split_summary(listed, service_name)
     service = JSON.parse(listed.presence || "{}")["services"]&.dig(service_name)
-    return "No rollout registered" if service.nil? || service["rollout_target"].blank?
+    return "none registered" if service.nil? || service["rollout_target"].blank?
 
     parts = []
     parts << "#{service["rollout_percentage"]}%" if service["rollout_percentage"].to_i > 0
@@ -150,8 +158,40 @@ class Kamal::Cli::Rollout < Kamal::Cli::Base
     parts << "no split set" if parts.empty?
     parts << (service["rollout_enabled"] ? "enabled" : "disabled")
 
-    "Rollout #{parts.join(", ")} -> #{service["rollout_target"]}"
+    "#{parts.join(", ")} -> #{service["rollout_target"]}"
   rescue JSON::ParserError
-    "Could not read the rollout split"
+    "could not be read"
   end
+
+  private
+    def rollout_versions_by_role
+      versions = {}
+      mutex = Mutex.new
+
+      on_roles(KAMAL.rollout_roles, hosts: KAMAL.rollout_hosts) do |host, role|
+        version = capture_with_info(
+          *KAMAL.app(role: role, host: host).current_running_version,
+          raise_on_non_zero_exit: false
+        ).strip.presence
+
+        mutex.synchronize { (versions[role.name.to_s] ||= {})[host.to_s] = version }
+      end
+
+      versions
+    end
+
+    def rollout_splits_by_host
+      splits = {}
+      mutex = Mutex.new
+
+      on(rollout_proxy_hosts) do |host|
+        role = KAMAL.rollout_roles_on(host).find(&:running_proxy?)
+        listed = capture_with_info(*KAMAL.app(role: role, host: host).proxy_list, raise_on_non_zero_exit: false)
+        summary = Kamal::Cli::Rollout.split_summary(listed, role.proxy_service_name)
+
+        mutex.synchronize { splits[host.to_s] = summary }
+      end
+
+      splits
+    end
 end
