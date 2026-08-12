@@ -66,19 +66,17 @@ class Kamal::Cli::Rollout < Kamal::Cli::Base
     end
   end
 
+  # No deploy lock on either: they only flip a flag in the proxy, and turning the split
+  # off has to work while a deploy holds the lock — which is when a rollout is still live.
   desc "disable", "Stop sending traffic to the rollout, remembering its split"
   def disable
-    with_lock do
-      set_rollout_enabled false
-      say "Rollout disabled. Run `kamal rollout enable` to send it traffic again.", :magenta
-    end
+    set_rollout_enabled false
+    say "Rollout disabled. Run `kamal rollout enable` to send it traffic again.", :magenta
   end
 
   desc "enable", "Send traffic to the rollout again, using the split it was last set to"
   def enable
-    with_lock do
-      set_rollout_enabled true
-    end
+    set_rollout_enabled true
   end
 
   desc "remove", "Unregister the rollout and remove its containers"

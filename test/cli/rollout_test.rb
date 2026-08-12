@@ -81,6 +81,15 @@ class CliRolloutTest < CliTestCase
     end
   end
 
+  test "enable and disable do not wait on the deploy lock" do
+    run_command("disable").tap { |output| assert_no_match "Acquiring the deploy lock", output }
+    run_command("enable").tap { |output| assert_no_match "Acquiring the deploy lock", output }
+  end
+
+  test "set takes the deploy lock" do
+    run_command("set", "--percent", "5").tap { |output| assert_match "Acquiring the deploy lock", output }
+  end
+
   test "set only touches proxied roles" do
     run_command("set", "--percent", "5").tap do |output|
       assert_no_match "app-workers", output
