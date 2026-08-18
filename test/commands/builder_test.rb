@@ -150,6 +150,20 @@ class CommandsBuilderTest < ActiveSupport::TestCase
       builder.push.join(" ")
   end
 
+  test "build additional contexts" do
+    builder = new_builder_command(builder: { "additional_contexts" => { "scripts" => "../../scripts", "assets" => "../../assets" } })
+    assert_equal \
+      "--label service=\"app\" --file Dockerfile --build-context scripts=\"../../scripts\" --build-context assets=\"../../assets\"",
+      builder.target.build_options.join(" ")
+  end
+
+  test "push with additional contexts" do
+    builder = new_builder_command(builder: { "additional_contexts" => { "scripts" => "../../scripts", "assets" => "../../assets" } })
+    assert_equal \
+      "docker buildx build --output=type=registry --platform linux/amd64 --builder kamal-local-docker-container -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile --build-context scripts=\"../../scripts\" --build-context assets=\"../../assets\" . 2>&1",
+      builder.push.join(" ")
+  end
+
   test "push with build args" do
     builder = new_builder_command(builder: { "args" => { "a" => 1, "b" => 2 } })
     assert_equal \
