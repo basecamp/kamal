@@ -291,6 +291,39 @@ class CliMainTest < CliTestCase
     assert_match /held manually/, error.message
   end
 
+  test "deploy can retain the lock through post-deploy" do
+    invoke_options = base_invoke_options(config_file: "deploy_with_post_deploy_lock.yml")
+
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:deliver", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:proxy:boot", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true))
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:boot", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:prune:all", [], invoke_options)
+
+    hook_lock_states = {}
+    Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).with do |hook|
+      hook_lock_states[hook] = KAMAL.holding_lock?
+      true
+    end.returns(true)
+
+    run_command("deploy", config_file: "deploy_with_post_deploy_lock").tap do |output|
+      assert_operator output.index("Acquiring the deploy lock"), :<, output.index("Build and push app image")
+      assert_operator output.index("Build and push app image"), :<, output.index("post-deploy")
+      assert_operator output.index("post-deploy"), :<, output.index("Releasing the deploy lock")
+      assert hook_lock_states["post-deploy"]
+    end
+  end
+
+  test "deploy releases the retained lock when post-deploy fails" do
+    Kamal::Cli::Main.any_instance.stubs(:invoke)
+    fail_hook "post-deploy"
+
+    assert_raises(Kamal::Cli::HookError) do
+      stderred { run_command("deploy", config_file: "deploy_with_post_deploy_lock") }
+    end
+    assert_not KAMAL.holding_lock?
+  end
+
   test "deploy when inheriting lock" do
     Thread.report_on_exception = false
 
