@@ -79,6 +79,7 @@ class Kamal::Configuration
 
     ensure_destination_if_required
     ensure_required_keys_present
+    ensure_valid_boot_role_order!
     ensure_valid_kamal_version
     ensure_retain_containers_valid
     ensure_valid_service_name
@@ -362,6 +363,20 @@ class Kamal::Configuration
 
     def ensure_valid_service_name
       raise Kamal::ConfigurationError, "Service name can only include alphanumeric characters, hyphens, and underscores" unless raw_config[:service] =~ /^[a-z0-9_-]+$/i
+
+      true
+    end
+
+    def ensure_valid_boot_role_order!
+      duplicates = boot.role_order.tally.select { |_, count| count > 1 }.keys
+      if duplicates.any?
+        raise Kamal::ConfigurationError, "Duplicate roles in boot.role_order: #{duplicates.join(", ")}"
+      end
+
+      unknown_roles = boot.role_order - roles.map(&:name)
+      if unknown_roles.any?
+        raise Kamal::ConfigurationError, "Unknown roles in boot.role_order: #{unknown_roles.join(", ")}"
+      end
 
       true
     end

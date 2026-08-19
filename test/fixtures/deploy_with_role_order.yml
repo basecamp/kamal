@@ -1,0 +1,24 @@
+service: app
+image: dhh/app
+servers:
+  web:
+    - "1.1.1.1"
+  cron:
+    hosts:
+      - "1.1.1.1"
+    cmd: sleep infinity
+  workers:
+    hosts:
+      - "1.1.1.1"
+    cmd: sleep infinity
+boot:
+  parallel_roles: false
+  role_order:
+    - workers
+    - cron
+builder:
+  arch: amd64
+
+registry:
+  username: user
+  password: pw

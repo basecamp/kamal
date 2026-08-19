@@ -18,12 +18,13 @@ class Kamal::Cli::App < Kamal::Cli::Base
 
         # Primary hosts and roles are returned first, so they can open the barrier
         barrier = Kamal::Cli::Healthcheck::Barrier.new
+        boot_roles = KAMAL.config.boot.ordered_roles(KAMAL.roles, primary_role: KAMAL.primary_role)
 
         host_boot_groups.each do |hosts|
           host_list = Array(hosts).join(",")
           run_hook "pre-app-boot", hosts: host_list
 
-          on_roles(KAMAL.roles, hosts: hosts, parallel: KAMAL.config.boot.parallel_roles) do |host, role|
+          on_roles(boot_roles, hosts: hosts, parallel: KAMAL.config.boot.parallel_roles) do |host, role|
             Kamal::Cli::App::Boot.new(host, role, self, version, barrier).run
           end
 

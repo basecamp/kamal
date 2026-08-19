@@ -61,6 +61,22 @@ class CliAppTest < CliTestCase
     run_command("boot", config: :without_parallel_roles, host: nil)
   end
 
+  test "boot uses configured role order" do
+    stub_running
+    SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info)
+      .with { |*args| args.first == :docker && args.include?(:inspect) }
+      .returns("running")
+
+    run_command("boot", config: :with_role_order, host: nil).tap do |output|
+      web = output.index("docker run --detach --restart unless-stopped --name app-web-latest")
+      workers = output.index("docker run --detach --restart unless-stopped --name app-workers-latest")
+      cron = output.index("docker run --detach --restart unless-stopped --name app-cron-latest")
+
+      assert_operator web, :<, workers
+      assert_operator workers, :<, cron
+    end
+  end
+
   test "boot with parallel roles" do
     # With parallel_roles: each role gets its own on() call
     Kamal::Cli::App.any_instance.expects(:on).with("1.1.1.1").with_block_given.twice

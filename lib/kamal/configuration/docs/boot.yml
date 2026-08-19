@@ -19,3 +19,10 @@ boot:
   #
   # Defaults to false.
   parallel_roles: true
+
+  # The order in which to boot roles when parallel_roles is false.
+  #
+  # The primary role always boots first so it can open the healthcheck barrier. Any roles not listed here boot afterwards in their existing order.
+  role_order:
+    - listener
+    - workers

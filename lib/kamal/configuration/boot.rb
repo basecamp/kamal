@@ -26,4 +26,18 @@ class Kamal::Configuration::Boot
   def parallel_roles
     boot_config["parallel_roles"]
   end
+
+  def role_order
+    boot_config["role_order"] || []
+  end
+
+  def ordered_roles(roles, primary_role:)
+    return roles if role_order.empty?
+
+    priorities = role_order.each_with_index.to_h
+
+    roles.each_with_index.sort_by do |role, index|
+      [ role == primary_role ? 0 : 1, priorities.fetch(role.name, priorities.length), index ]
+    end.map(&:first)
+  end
 end
