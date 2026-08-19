@@ -324,6 +324,47 @@ class CliMainTest < CliTestCase
     assert_not KAMAL.holding_lock?
   end
 
+  test "redeploy can retain the lock through post-deploy" do
+    invoke_options = base_invoke_options(config_file: "deploy_with_post_deploy_lock.yml")
+
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:deliver", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true))
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:boot", [], invoke_options)
+
+    hook_lock_states = {}
+    Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).with do |hook|
+      hook_lock_states[hook] = KAMAL.holding_lock?
+      true
+    end.returns(true)
+
+    run_command("redeploy", config_file: "deploy_with_post_deploy_lock").tap do |output|
+      assert_operator output.index("Acquiring the deploy lock"), :<, output.index("Build and push app image")
+      assert_operator output.index("Build and push app image"), :<, output.index("post-deploy")
+      assert_operator output.index("post-deploy"), :<, output.index("Releasing the deploy lock")
+      assert hook_lock_states["post-deploy"]
+    end
+  end
+
+  test "rollback can retain the lock through post-deploy" do
+    invoke_options = base_invoke_options(config_file: "deploy_with_post_deploy_lock.yml")
+
+    Kamal::Cli::Main.any_instance.stubs(:container_available?).with("123").returns(true)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:boot", [], invoke_options.merge(version: "123"))
+
+    hook_lock_states = {}
+    Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).with do |hook|
+      hook_lock_states[hook] = KAMAL.holding_lock?
+      true
+    end.returns(true)
+
+    run_command("rollback", "123", config_file: "deploy_with_post_deploy_lock").tap do |output|
+      assert_operator output.index("Acquiring the deploy lock"), :<, output.index("pre-deploy")
+      assert_operator output.index("pre-deploy"), :<, output.index("post-deploy")
+      assert_operator output.index("post-deploy"), :<, output.index("Releasing the deploy lock")
+      assert hook_lock_states["post-deploy"]
+    end
+  end
+
   test "deploy when inheriting lock" do
     Thread.report_on_exception = false
 
