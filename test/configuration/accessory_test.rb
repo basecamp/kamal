@@ -182,6 +182,50 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
     end
   end
 
+  test "parallel erb file renders keep accessory env interpolations" do
+    @deploy[:accessories]["mysql"]["files"] = [
+      "test/fixtures/files/structure.sql.erb:/docker-entrypoint-initdb.d/structure.sql"
+    ]
+    @deploy[:accessories]["mysql"]["env"]["secret"] << "ENV_VAR:SECRET_VAR"
+
+    with_test_secrets("secrets" => "MYSQL_ROOT_PASSWORD=secret123\nSECRET_VAR=secret_env_value") do
+      accessory = Kamal::Configuration.new(@deploy).accessory(:mysql)
+      original_result = ERB.instance_method(:result)
+      entered, release, finished = Queue.new, Queue.new, Queue.new
+      renders = {}
+
+      begin
+        ERB.define_method(:result) do |*args, **kwargs|
+          entered.push(true)
+          release.pop
+          original_result.bind_call(self, *args, **kwargs)
+        end
+
+        threads = [ :host_a, :host_b ].map do |host|
+          Thread.new do
+            renders[host] = accessory.files.keys.first.read
+          ensure
+            finished.push(host)
+          end
+        end
+
+        2.times { entered.pop }
+        release.push(true)
+        finished.pop
+        release.push(true)
+        threads.each(&:value)
+
+        renders.each do |host, contents|
+          assert_match "secret123", contents, "#{host} lost MYSQL_ROOT_PASSWORD"
+          assert_match "secret_env_value", contents, "#{host} lost ENV_VAR"
+          assert_match "%", contents, "#{host} lost MYSQL_ROOT_HOST"
+        end
+      ensure
+        ERB.define_method(:result, original_result)
+      end
+    end
+  end
+
   test "directory with a relative path" do
     @deploy[:accessories]["mysql"]["directories"] = [ "data:/var/lib/mysql" ]
     assert_equal({ "$PWD/app-mysql/data" => { host_path: "app-mysql/data", container_path: "/var/lib/mysql", options: nil, mode: nil, owner: nil } }, @config.accessory(:mysql).directories)
