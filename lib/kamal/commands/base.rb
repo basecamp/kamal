@@ -84,6 +84,10 @@ module Kamal::Commands
         args.compact.unshift :docker
       end
 
+      def apple_container(*args)
+        args.compact.unshift :container
+      end
+
       def pack(*args)
         args.compact.unshift :pack
       end

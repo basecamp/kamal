@@ -21,6 +21,114 @@ class CommandsBuilderTest < ActiveSupport::TestCase
       builder.push.join(" ")
   end
 
+  test "target apple container engine locally" do
+    builder = new_builder_command(builder: { "engine" => "apple-container", "arch" => "amd64" })
+
+    assert_equal "apple_container", builder.name
+    assert_equal \
+      "container build --platform linux/amd64 -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile . 2>&1 && container image push dhh/app:123 && container image push dhh/app:latest",
+      builder.push.join(" ")
+  end
+
+  test "apple container engine uses repeated platform arguments" do
+    builder = new_builder_command(builder: { "engine" => "apple-container", "arch" => [ "amd64", "arm64" ] })
+
+    assert_equal \
+      "container build --platform linux/amd64 --platform linux/arm64 -t dhh/app:123 -t dhh/app:latest --label service=\"app\" --file Dockerfile . 2>&1 && container image push dhh/app:123 && container image push dhh/app:latest",
+      builder.push.join(" ")
+  end
+
+  test "apple container engine supports local image-store output" do
+    builder = new_builder_command(builder: { "engine" => "apple-container", "arch" => "arm64" })
+
+    assert_equal \
+      "container build --platform linux/arm64 -t dhh/app:123-dirty -t dhh/app:latest-dirty --label service=\"app\" --file Dockerfile . 2>&1",
+      builder.push("docker", tag_as_dirty: true).join(" ")
+  end
+
+  test "apple container engine pushes to a local registry over http" do
+    @config[:registry] = { "server" => "localhost:5000" }
+    builder = new_builder_command(builder: { "engine" => "apple-container", "arch" => "amd64" })
+
+    assert_equal \
+      "container build --platform linux/amd64 -t localhost:5000/dhh/app:123 -t localhost:5000/dhh/app:latest --label service=\"app\" --file Dockerfile . 2>&1 && container image push --scheme http localhost:5000/dhh/app:123 && container image push --scheme http localhost:5000/dhh/app:latest",
+      builder.push.join(" ")
+  end
+
+  test "apple container engine pushes to a registry with its configured scheme" do
+    @config[:registry] = { "server" => "127.0.0.1:5000", "username" => "dhh", "password" => "secret", "scheme" => "http" }
+    builder = new_builder_command(builder: { "engine" => "apple-container", "arch" => "amd64" })
+
+    assert_equal \
+      "container build --platform linux/amd64 -t 127.0.0.1:5000/dhh/app:123 -t 127.0.0.1:5000/dhh/app:latest --label service=\"app\" --file Dockerfile . 2>&1 && container image push --scheme http 127.0.0.1:5000/dhh/app:123 && container image push --scheme http 127.0.0.1:5000/dhh/app:latest",
+      builder.push.join(" ")
+  end
+
+  test "apple container engine keeps http for a local registry asking for auto" do
+    @config[:registry] = { "server" => "localhost:5000", "scheme" => "auto" }
+    builder = new_builder_command(builder: { "engine" => "apple-container", "arch" => "amd64" })
+
+    assert_match "container image push --scheme http localhost:5000/dhh/app:123", builder.push.join(" ")
+  end
+
+  test "apple container engine build secrets name their environment source" do
+    with_test_secrets("secrets" => "token_a=foo\ntoken_b=bar") do
+      FileUtils.touch("Dockerfile")
+      builder = new_builder_command(builder: { "engine" => "apple-container", "arch" => "arm64", "secrets" => [ "token_a", "token_b" ] })
+
+      assert_equal \
+        "--label service=\"app\" --secret id=\"token_a\",env=\"token_a\" --secret id=\"token_b\",env=\"token_b\" --file Dockerfile",
+        builder.target.build_options.join(" ")
+    end
+  end
+
+  test "apple container engine uses its default SSH agent syntax" do
+    original_ssh_auth_sock = ENV["SSH_AUTH_SOCK"]
+    ENV["SSH_AUTH_SOCK"] = "/tmp/custom-agent.sock"
+
+    builder = new_builder_command(builder: { "engine" => "apple-container", "arch" => "arm64", "ssh" => "default=$SSH_AUTH_SOCK" })
+
+    assert_equal \
+      "--label service=\"app\" --file Dockerfile --ssh default",
+      builder.target.build_options.join(" ")
+    assert_equal({ "SSH_AUTH_SOCK" => "/tmp/custom-agent.sock" }, builder.push_env)
+
+    literal_builder = new_builder_command(builder: { "engine" => "apple-container", "arch" => "arm64", "ssh" => "default=/tmp/literal-agent.sock" })
+    assert_equal({ "SSH_AUTH_SOCK" => "/tmp/literal-agent.sock" }, literal_builder.push_env)
+
+    default_builder = new_builder_command(builder: { "engine" => "apple-container", "arch" => "arm64", "ssh" => "default" })
+    assert_equal({}, default_builder.push_env)
+  ensure
+    ENV["SSH_AUTH_SOCK"] = original_ssh_auth_sock
+  end
+
+  test "apple container engine lifecycle" do
+    builder = new_builder_command(builder: { "engine" => "apple-container", "arch" => "arm64" })
+
+    assert_equal "container --version && container system status", builder.ensure_installed.join(" ")
+    assert_equal "container builder start", builder.create.join(" ")
+    assert_equal "container builder status", builder.inspect_builder.join(" ")
+    assert_equal "container builder stop", builder.remove.join(" ")
+  end
+
+  test "missing dependencies are reported for the engine in use" do
+    builder = new_builder_command
+
+    assert_equal "Docker is not installed locally", builder.install_error("bash: docker: command not found")
+    assert_equal "Docker buildx plugin is not installed locally", builder.install_error("no buildx")
+
+    apple_builder = new_builder_command(builder: { "engine" => "apple-container" })
+
+    assert_equal "Apple container is not installed locally", apple_builder.install_error("bash: container: command not found")
+    assert_equal "Apple container system service is not running locally", apple_builder.install_error("apiserver is not running")
+  end
+
+  test "the local registry speaks the builder's engine" do
+    assert_instance_of Kamal::Commands::Registry, new_builder_command.local_registry
+    assert_instance_of Kamal::Commands::Registry::AppleContainer,
+      new_builder_command(builder: { "engine" => "apple-container" }).local_registry
+  end
+
   test "build with caching" do
     builder = new_builder_command(builder: { "cache" => { "type" => "gha" } })
     assert_equal "local", builder.name

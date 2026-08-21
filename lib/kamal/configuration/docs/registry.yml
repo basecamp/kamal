@@ -51,6 +51,10 @@ registry:
 # Here’s the final configuration:
 registry:
   server: <your registry region>-docker.pkg.dev
+  # Only Apple's `container` CLI reads this; Docker ignores it. A localhost
+  # registry already uses plain HTTP, so set this to `http` only for a
+  # plain-HTTP registry on another host. One of `auto`, `http`, or `https`:
+  scheme: auto
   username: _json_key_base64
   password:
     - KAMAL_REGISTRY_PASSWORD
