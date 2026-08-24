@@ -91,15 +91,21 @@ class CommandsBuilderTest < ActiveSupport::TestCase
     assert_equal \
       "--label service=\"app\" --file Dockerfile --ssh default",
       builder.target.build_options.join(" ")
-    assert_equal({ "SSH_AUTH_SOCK" => "/tmp/custom-agent.sock" }, builder.push_env)
+    assert_equal({ "CONTAINER_DEFAULT_PLATFORM" => "", "SSH_AUTH_SOCK" => "/tmp/custom-agent.sock" }, builder.push_env)
 
     literal_builder = new_builder_command(builder: { "engine" => "apple-container", "arch" => "arm64", "ssh" => "default=/tmp/literal-agent.sock" })
-    assert_equal({ "SSH_AUTH_SOCK" => "/tmp/literal-agent.sock" }, literal_builder.push_env)
+    assert_equal({ "CONTAINER_DEFAULT_PLATFORM" => "", "SSH_AUTH_SOCK" => "/tmp/literal-agent.sock" }, literal_builder.push_env)
 
     default_builder = new_builder_command(builder: { "engine" => "apple-container", "arch" => "arm64", "ssh" => "default" })
-    assert_equal({}, default_builder.push_env)
+    assert_equal({ "CONTAINER_DEFAULT_PLATFORM" => "" }, default_builder.push_env)
   ensure
     ENV["SSH_AUTH_SOCK"] = original_ssh_auth_sock
+  end
+
+  test "apple container engine keeps the configured arches authoritative on push" do
+    builder = new_builder_command(builder: { "engine" => "apple-container", "arch" => [ "amd64", "arm64" ] })
+
+    assert_equal({ "CONTAINER_DEFAULT_PLATFORM" => "" }, builder.push_env)
   end
 
   test "apple container engine lifecycle" do

@@ -58,11 +58,13 @@ class Kamal::Commands::Builder::AppleContainer < Kamal::Commands::Builder::Base
     [ *build_labels, *build_args, *build_secrets, *build_dockerfile, *build_target, *build_ssh ]
   end
 
+  # The push commands carry no --platform, so `container` would take one from
+  # CONTAINER_DEFAULT_PLATFORM and narrow the push to it. Empty reads as unset.
   def push_env
-    if (socket = ssh_socket)
-      { "SSH_AUTH_SOCK" => socket }
-    else
-      {}
+    socket = ssh_socket
+
+    { "CONTAINER_DEFAULT_PLATFORM" => "" }.tap do |env|
+      env["SSH_AUTH_SOCK"] = socket if socket
     end
   end
 
