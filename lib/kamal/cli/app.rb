@@ -224,8 +224,8 @@ class Kamal::Cli::App < Kamal::Cli::Base
         role = KAMAL.roles_on(KAMAL.primary_host).first
 
         app = KAMAL.app(role: role, host: host)
-        info app.follow_logs(host: KAMAL.primary_host, container_id: container_id, timestamps: timestamps, lines: lines, grep: grep, grep_options: grep_options)
-        exec app.follow_logs(host: KAMAL.primary_host, container_id: container_id, timestamps: timestamps, lines: lines, grep: grep, grep_options: grep_options)
+        info app.follow_logs(host: KAMAL.primary_host, container_id: container_id, timestamps: timestamps, since: since, lines: lines, grep: grep, grep_options: grep_options)
+        exec app.follow_logs(host: KAMAL.primary_host, container_id: container_id, timestamps: timestamps, since: since, lines: lines, grep: grep, grep_options: grep_options)
       end
     else
       lines = options[:lines].presence || ((since || grep) ? nil : 100) # Default to 100 lines if since or grep isn't set
