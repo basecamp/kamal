@@ -11,7 +11,7 @@ class Kamal::Secrets::Adapters::OnePassword < Kamal::Secrets::Adapters::Base
     fetch_secrets(secrets, from: from, environment: environment, account: account, session: session)
   end
 
-  def requires_account?(environment)
+  def requires_account?(environment = nil)
     environment.blank?
   end
 
