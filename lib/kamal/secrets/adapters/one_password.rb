@@ -1,6 +1,15 @@
 class Kamal::Secrets::Adapters::OnePassword < Kamal::Secrets::Adapters::Base
   delegate :optionize, to: Kamal::Utils
 
+  def fetch(secrets, account: nil, from: nil, environment: nil)
+    raise RuntimeError, "Missing required option '--account'" if requires_account? && account.blank?
+
+    check_dependencies!
+
+    session = login(account)
+    fetch_secrets(secrets, from: from, environment: environment, account: account, session: session)
+  end
+
   private
     def login(account)
       unless loggedin?(account)
@@ -14,15 +23,6 @@ class Kamal::Secrets::Adapters::OnePassword < Kamal::Secrets::Adapters::Base
       `op account get --account #{account.shellescape} 2> /dev/null`
       $?.success?
     end
-
-  def fetch(secrets, account: nil, from: nil, environment: nil)
-    raise RuntimeError, "Missing required option '--account'" if requires_account? && account.blank?
-
-    check_dependencies!
-
-    session = login(account)
-    fetch_secrets(secrets, from: from, environment: environment, account: account, session: session)
-  end
 
     def fetch_secrets(secrets, from:, environment:, account:, session:)
       if secrets.blank?
