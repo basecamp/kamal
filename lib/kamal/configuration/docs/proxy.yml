@@ -26,6 +26,16 @@ proxy:
     - foo.example.com
     - bar.example.com
 
+  # Canonical host
+  #
+  # Redirect all requests to this host. Can be used to enfore a consistent host
+  # while accepting requests on many hosts. For example, to enforce the use
+  # of the `www` subdomain when your app is served both with and without it.
+  #
+  # The canonical host must be one of the hosts listed in `hosts`, or the deploy
+  # will fail.
+  canonical_host: foo.example.com
+
   # App port
   #
   # The port the application container is exposed on.

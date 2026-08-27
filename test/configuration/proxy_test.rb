@@ -128,6 +128,16 @@ class ConfigurationProxyTest < ActiveSupport::TestCase
     assert_not config.proxy.deploy_options.key?(:"exclude-metrics-path")
   end
 
+  test "canonical host" do
+    @deploy[:proxy] = { "hosts" => [ "example.com", "www.example.com" ], "canonical_host" => "example.com" }
+    assert_equal "example.com", config.proxy.deploy_options[:"canonical-host"]
+  end
+
+  test "canonical host not set" do
+    @deploy[:proxy] = {}
+    assert_not config.proxy.deploy_options.key?(:"canonical-host")
+  end
+
   private
     def config
       Kamal::Configuration.new(@deploy)

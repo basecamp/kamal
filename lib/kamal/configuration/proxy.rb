@@ -70,6 +70,7 @@ class Kamal::Configuration::Proxy
   def deploy_options
     {
       host: hosts,
+      "canonical-host": proxy_config.dig("canonical_host"),
       tls: ssl? ? true : nil,
       "tls-certificate-path": container_tls_cert,
       "tls-private-key-path": container_tls_key,
