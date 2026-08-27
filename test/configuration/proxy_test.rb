@@ -115,6 +115,19 @@ class ConfigurationProxyTest < ActiveSupport::TestCase
     assert_not config.proxy.deploy_options.key?(:"client-ip-header")
   end
 
+  test "exclude metrics paths" do
+    @deploy[:proxy] = { "exclude_metrics_paths" => [ "/up", "/healthz" ] }
+    proxy = config.proxy
+    assert_equal [ "/up", "/healthz" ], proxy.deploy_options[:"exclude-metrics-path"]
+    assert_includes proxy.deploy_command_args(target: "172.1.0.2"), "--exclude-metrics-path=\"/up\""
+    assert_includes proxy.deploy_command_args(target: "172.1.0.2"), "--exclude-metrics-path=\"/healthz\""
+  end
+
+  test "exclude metrics paths not set" do
+    @deploy[:proxy] = {}
+    assert_not config.proxy.deploy_options.key?(:"exclude-metrics-path")
+  end
+
   private
     def config
       Kamal::Configuration.new(@deploy)

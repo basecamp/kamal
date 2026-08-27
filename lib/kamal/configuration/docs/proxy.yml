@@ -158,6 +158,18 @@ proxy:
       - X-Request-ID
       - X-Request-Start
 
+  # Excluding paths from metrics
+  #
+  # When metrics are enabled (see `metrics_port` under `run`), every request is recorded
+  # in the Prometheus output. Health checks from load balancers or uptime monitors can
+  # add noise to those metrics.
+  #
+  # List request paths to exclude from the metrics. Matches are exact. Excluded requests
+  # are still logged; only the Prometheus counters and in-flight gauge are skipped.
+  exclude_metrics_paths:
+    - /up
+    - /healthz
+
   # Run configuration
   #
   # These options are used when booting the proxy container.

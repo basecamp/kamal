@@ -91,6 +91,7 @@ class Kamal::Configuration::Proxy
       "tls-redirect": proxy_config.dig("ssl_redirect"),
       "log-request-header": proxy_config.dig("logging", "request_headers") || DEFAULT_LOG_REQUEST_HEADERS,
       "log-response-header": proxy_config.dig("logging", "response_headers"),
+      "exclude-metrics-path": proxy_config.dig("exclude_metrics_paths"),
       "error-pages": error_pages
     }.compact
   end
