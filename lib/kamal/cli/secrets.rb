@@ -8,12 +8,12 @@ class Kamal::Cli::Secrets < Kamal::Cli::Base
   def fetch(*secrets)
     adapter = initialize_adapter(options[:adapter])
 
-    if adapter_requires_account?(adapter) && options[:account].blank?
-      return puts "No value provided for required options '--account'"
-    end
-
     if options[:environment] && !adapter.supports_environment?
       return puts "Option '--environment' is not supported by this adapter"
+    end
+
+    if adapter_requires_account?(adapter) && options[:account].blank?
+      return puts "No value provided for required options '--account'"
     end
 
     results = adapter.fetch(secrets, **options.slice(:account, :from, :environment).compact.symbolize_keys)
