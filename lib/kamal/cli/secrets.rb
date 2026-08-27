@@ -8,7 +8,7 @@ class Kamal::Cli::Secrets < Kamal::Cli::Base
   def fetch(*secrets)
     adapter = initialize_adapter(options[:adapter])
 
-    if adapter.requires_account? && options[:account].blank?
+    if adapter_requires_account?(adapter) && options[:account].blank?
       return puts "No value provided for required options '--account'"
     end
 
@@ -40,6 +40,14 @@ class Kamal::Cli::Secrets < Kamal::Cli::Base
     def initialize_adapter(adapter)
       Kamal::Secrets::Adapters.lookup(adapter)
     end
+
+  def adapter_requires_account?(adapter)
+    if adapter.method(:requires_account?).arity.zero?
+      adapter.requires_account?
+    else
+      adapter.requires_account?(options[:environment])
+    end
+  end
 
     def return_or_puts(value, inline: nil)
       if inline

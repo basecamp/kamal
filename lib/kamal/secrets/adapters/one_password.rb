@@ -2,7 +2,7 @@ class Kamal::Secrets::Adapters::OnePassword < Kamal::Secrets::Adapters::Base
   delegate :optionize, to: Kamal::Utils
 
   def fetch(secrets, account: nil, from: nil, environment: nil)
-    raise RuntimeError, "Missing required option '--account'" if requires_account? && account.blank?
+    raise RuntimeError, "Missing required option '--account'" if requires_account?(environment) && account.blank?
 
     check_dependencies!
 
@@ -10,8 +10,14 @@ class Kamal::Secrets::Adapters::OnePassword < Kamal::Secrets::Adapters::Base
     fetch_secrets(secrets, from: from, environment: environment, account: account, session: session)
   end
 
+  def requires_account?(environment)
+    environment.blank?
+  end
+
   private
     def login(account)
+      return if account.blank?
+
       unless loggedin?(account)
         `op signin #{to_options(account: account, force: true, raw: true)}`.tap do
           raise RuntimeError, "Failed to login to 1Password" unless $?.success?
@@ -121,9 +127,10 @@ class Kamal::Secrets::Adapters::OnePassword < Kamal::Secrets::Adapters::Base
     def op_environment_read(environment, account:, session:)
       raise ArgumentError, "environment must be present" if environment.blank?
 
-      options = { account: account, session: session.presence }
+      options = { account: account.presence, session: session.presence }
+      command = [ "op environment read #{environment.shellescape}", to_options(**options) ].reject(&:blank?).join(" ")
 
-      output = `op environment read #{environment.shellescape} #{to_options(**options)}`.tap do
+      output = `#{command}`.tap do
         raise RuntimeError, "Could not read the #{environment} 1Password Environment" unless $?.success?
       end
 

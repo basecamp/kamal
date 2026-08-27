@@ -45,7 +45,7 @@ class SecretsOnePasswordAdapterTest < SecretAdapterTestCase
         ]
       JSON
 
-    json = JSON.parse(run_command("fetch", "--from", "op://myvault/myitem", "section/SECRET1", "section/SECRET2", "section2/SECRET3"))
+    json = JSON.parse(run_command("fetch", "--account", "myaccount", "--from", "op://myvault/myitem", "section/SECRET1", "section/SECRET2", "section2/SECRET3"))
 
     expected_json = {
       "myvault/myitem/section/SECRET1"=>"VALUE1",
@@ -105,7 +105,7 @@ class SecretsOnePasswordAdapterTest < SecretAdapterTestCase
         }
       JSON
 
-    json = JSON.parse(run_command("fetch", "--from", "op://myvault", "myitem/section/SECRET1", "myitem/section/SECRET2", "myitem2/section2/SECRET3"))
+    json = JSON.parse(run_command("fetch", "--account", "myaccount", "--from", "op://myvault", "myitem/section/SECRET1", "myitem/section/SECRET2", "myitem2/section2/SECRET3"))
 
     expected_json = {
       "myvault/myitem/section/SECRET1"=>"VALUE1",
@@ -163,7 +163,7 @@ class SecretsOnePasswordAdapterTest < SecretAdapterTestCase
         }
       JSON
 
-    json = JSON.parse(run_command("fetch", "--from", "op://myvault/myitem"))
+    json = JSON.parse(run_command("fetch", "--account", "myaccount", "--from", "op://myvault/myitem"))
 
     expected_json = {
       "myvault/myitem/section/SECRET1"=>"VALUE1",
@@ -183,7 +183,7 @@ class SecretsOnePasswordAdapterTest < SecretAdapterTestCase
       .with("op item get myitem --vault \"myvault\" --format \"json\" --account \"myaccount\" --fields \"label=section.SECRET1\"")
       .returns(single_item_json)
 
-    json = JSON.parse(run_command("fetch", "--from", "op://myvault/myitem", "section/SECRET1"))
+    json = JSON.parse(run_command("fetch", "--account", "myaccount", "--from", "op://myvault/myitem", "section/SECRET1"))
 
     expected_json = {
       "myvault/myitem/section/SECRET1"=>"VALUE1"
@@ -202,7 +202,7 @@ class SecretsOnePasswordAdapterTest < SecretAdapterTestCase
       .with("op item get myitem --vault \"myvault\" --format \"json\" --account \"myaccount\" --session \"1234567890\" --fields \"label=section.SECRET1\"")
       .returns(single_item_json)
 
-    json = JSON.parse(run_command("fetch", "--from", "op://myvault/myitem", "section/SECRET1"))
+    json = JSON.parse(run_command("fetch", "--account", "myaccount", "--from", "op://myvault/myitem", "section/SECRET1"))
 
     expected_json = {
       "myvault/myitem/section/SECRET1"=>"VALUE1"
@@ -215,17 +215,16 @@ class SecretsOnePasswordAdapterTest < SecretAdapterTestCase
     stub_ticks_with("op --version 2> /dev/null", succeed: false)
 
     error = assert_raises RuntimeError do
-      JSON.parse(run_command("fetch", "--from", "op://myvault/myitem", "section/SECRET1", "section/SECRET2", "section2/SECRET3"))
+      JSON.parse(run_command("fetch", "--account", "myaccount", "--from", "op://myvault/myitem", "section/SECRET1", "section/SECRET2", "section2/SECRET3"))
     end
     assert_equal "1Password CLI is not installed", error.message
   end
 
   test "fetch all variables from environment" do
     stub_ticks.with("op --version 2> /dev/null")
-    stub_ticks.with("op account get --account myaccount 2> /dev/null")
 
     stub_ticks
-      .with("op environment read asdf --account \"myaccount\"")
+      .with("op environment read asdf")
       .returns(<<~ENV)
         SECRET1=VALUE1
         SECRET2=VALUE2
@@ -243,10 +242,9 @@ class SecretsOnePasswordAdapterTest < SecretAdapterTestCase
 
   test "fetch specified variables from environment" do
     stub_ticks.with("op --version 2> /dev/null")
-    stub_ticks.with("op account get --account myaccount 2> /dev/null")
 
     stub_ticks
-      .with("op environment read asdf --account \"myaccount\"")
+      .with("op environment read asdf")
       .returns(<<~ENV)
         SECRET1=VALUE1
         SECRET2=VALUE2
@@ -265,10 +263,9 @@ class SecretsOnePasswordAdapterTest < SecretAdapterTestCase
 
   test "fetch missing variable from environment" do
     stub_ticks.with("op --version 2> /dev/null")
-    stub_ticks.with("op account get --account myaccount 2> /dev/null")
 
     stub_ticks
-      .with("op environment read asdf --account \"myaccount\"")
+      .with("op environment read asdf")
       .returns(<<~ENV)
         SECRET1=VALUE1
       ENV
@@ -279,42 +276,13 @@ class SecretsOnePasswordAdapterTest < SecretAdapterTestCase
     assert_equal "Could not read SECRET2 from the asdf 1Password Environment", error.message
   end
 
-  test "fetch from environment with signin, no session" do
-    stub_ticks.with("op --version 2> /dev/null")
+  test "fetch from environment without CLI installed" do
+    stub_ticks_with("op --version 2> /dev/null", succeed: false)
 
-    stub_ticks_with("op account get --account myaccount 2> /dev/null", succeed: false)
-    stub_ticks_with("op signin --account \"myaccount\" --force --raw", succeed: true).returns("")
-
-    stub_ticks
-      .with("op environment read asdf --account \"myaccount\"")
-      .returns(<<~ENV)
-        SECRET1=VALUE1
-      ENV
-
-    json = JSON.parse(run_command("fetch", "--environment", "asdf"))
-
-    expected_json = { "SECRET1"=>"VALUE1" }
-
-    assert_equal expected_json, json
-  end
-
-  test "fetch from environment with signin and session" do
-    stub_ticks.with("op --version 2> /dev/null")
-
-    stub_ticks_with("op account get --account myaccount 2> /dev/null", succeed: false)
-    stub_ticks_with("op signin --account \"myaccount\" --force --raw", succeed: true).returns("1234567890")
-
-    stub_ticks
-      .with("op environment read asdf --account \"myaccount\" --session \"1234567890\"")
-      .returns(<<~ENV)
-        SECRET1=VALUE1
-      ENV
-
-    json = JSON.parse(run_command("fetch", "--environment", "asdf"))
-
-    expected_json = { "SECRET1"=>"VALUE1" }
-
-    assert_equal expected_json, json
+    error = assert_raises RuntimeError do
+      run_command("fetch", "--environment", "asdf")
+    end
+    assert_equal "1Password CLI is not installed", error.message
   end
 
   private
@@ -323,8 +291,7 @@ class SecretsOnePasswordAdapterTest < SecretAdapterTestCase
         Kamal::Cli::Secrets.start \
           [ *command,
             "-c", "test/fixtures/deploy_with_accessories.yml",
-            "--adapter", "1password",
-            "--account", "myaccount" ]
+            "--adapter", "1password" ]
       end
     end
 
