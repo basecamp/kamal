@@ -105,6 +105,16 @@ class ConfigurationProxyTest < ActiveSupport::TestCase
     end
   end
 
+  test "client ip header" do
+    @deploy[:proxy] = { "client_ip_header" => "True-Client-IP" }
+    assert_equal "True-Client-IP", config.proxy.deploy_options[:"client-ip-header"]
+  end
+
+  test "client ip header not set" do
+    @deploy[:proxy] = {}
+    assert_not config.proxy.deploy_options.key?(:"client-ip-header")
+  end
+
   private
     def config
       Kamal::Configuration.new(@deploy)

@@ -80,6 +80,16 @@ proxy:
   # will forward them if it is set to `false`.
   forward_headers: true
 
+  # Client IP header
+  #
+  # If a proxy or CDN in front of kamal-proxy passes the original client IP in a header
+  # other than `X-Forwarded-For`, name that header here. For example, Cloudflare uses
+  # `True-Client-IP`.
+  #
+  # When set, kamal-proxy copies the value of this header into `X-Forwarded-For` before
+  # logging the request and forwarding it to your application.
+  client_ip_header: True-Client-IP
+
   # Response timeout
   #
   # How long to wait for requests to complete before timing out, defaults to 30 seconds:

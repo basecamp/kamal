@@ -87,6 +87,7 @@ class Kamal::Configuration::Proxy
       "path-prefix": path_prefixes,
       "strip-path-prefix": proxy_config.dig("strip_path_prefix"),
       "forward-headers": proxy_config.dig("forward_headers"),
+      "client-ip-header": proxy_config.dig("client_ip_header"),
       "tls-redirect": proxy_config.dig("ssl_redirect"),
       "log-request-header": proxy_config.dig("logging", "request_headers") || DEFAULT_LOG_REQUEST_HEADERS,
       "log-response-header": proxy_config.dig("logging", "response_headers"),
