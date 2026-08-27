@@ -225,13 +225,13 @@ class SecretsOnePasswordAdapterTest < SecretAdapterTestCase
     stub_ticks.with("op account get --account myaccount 2> /dev/null")
 
     stub_ticks
-      .with("op environment read 7mw7kfmwe2hpbcksbgco4ove7i --account \"myaccount\"")
+      .with("op environment read asdf --account \"myaccount\"")
       .returns(<<~ENV)
         SECRET1=VALUE1
         SECRET2=VALUE2
       ENV
 
-    json = JSON.parse(run_command("fetch", "--environment", "7mw7kfmwe2hpbcksbgco4ove7i"))
+    json = JSON.parse(run_command("fetch", "--environment", "asdf"))
 
     expected_json = {
       "SECRET1"=>"VALUE1",
@@ -246,14 +246,14 @@ class SecretsOnePasswordAdapterTest < SecretAdapterTestCase
     stub_ticks.with("op account get --account myaccount 2> /dev/null")
 
     stub_ticks
-      .with("op environment read 7mw7kfmwe2hpbcksbgco4ove7i --account \"myaccount\"")
+      .with("op environment read asdf --account \"myaccount\"")
       .returns(<<~ENV)
         SECRET1=VALUE1
         SECRET2=VALUE2
         SECRET3=VALUE3
       ENV
 
-    json = JSON.parse(run_command("fetch", "--environment", "7mw7kfmwe2hpbcksbgco4ove7i", "SECRET1", "SECRET3"))
+    json = JSON.parse(run_command("fetch", "--environment", "asdf", "SECRET1", "SECRET3"))
 
     expected_json = {
       "SECRET1"=>"VALUE1",
@@ -268,15 +268,15 @@ class SecretsOnePasswordAdapterTest < SecretAdapterTestCase
     stub_ticks.with("op account get --account myaccount 2> /dev/null")
 
     stub_ticks
-      .with("op environment read 7mw7kfmwe2hpbcksbgco4ove7i --account \"myaccount\"")
+      .with("op environment read asdf --account \"myaccount\"")
       .returns(<<~ENV)
         SECRET1=VALUE1
       ENV
 
     error = assert_raises RuntimeError do
-      run_command("fetch", "--environment", "7mw7kfmwe2hpbcksbgco4ove7i", "SECRET1", "SECRET2")
+      run_command("fetch", "--environment", "asdf", "SECRET1", "SECRET2")
     end
-    assert_equal "Could not read SECRET2 from the 7mw7kfmwe2hpbcksbgco4ove7i 1Password Environment", error.message
+    assert_equal "Could not read SECRET2 from the asdf 1Password Environment", error.message
   end
 
   test "fetch from environment with signin, no session" do
@@ -286,12 +286,12 @@ class SecretsOnePasswordAdapterTest < SecretAdapterTestCase
     stub_ticks_with("op signin --account \"myaccount\" --force --raw", succeed: true).returns("")
 
     stub_ticks
-      .with("op environment read 7mw7kfmwe2hpbcksbgco4ove7i --account \"myaccount\"")
+      .with("op environment read asdf --account \"myaccount\"")
       .returns(<<~ENV)
         SECRET1=VALUE1
       ENV
 
-    json = JSON.parse(run_command("fetch", "--environment", "7mw7kfmwe2hpbcksbgco4ove7i"))
+    json = JSON.parse(run_command("fetch", "--environment", "asdf"))
 
     expected_json = { "SECRET1"=>"VALUE1" }
 
@@ -305,12 +305,12 @@ class SecretsOnePasswordAdapterTest < SecretAdapterTestCase
     stub_ticks_with("op signin --account \"myaccount\" --force --raw", succeed: true).returns("1234567890")
 
     stub_ticks
-      .with("op environment read 7mw7kfmwe2hpbcksbgco4ove7i --account \"myaccount\" --session \"1234567890\"")
+      .with("op environment read asdf --account \"myaccount\" --session \"1234567890\"")
       .returns(<<~ENV)
         SECRET1=VALUE1
       ENV
 
-    json = JSON.parse(run_command("fetch", "--environment", "7mw7kfmwe2hpbcksbgco4ove7i"))
+    json = JSON.parse(run_command("fetch", "--environment", "asdf"))
 
     expected_json = { "SECRET1"=>"VALUE1" }
 
