@@ -2,6 +2,7 @@ class Kamal::Secrets::Adapters::OnePassword < Kamal::Secrets::Adapters::Base
   delegate :optionize, to: Kamal::Utils
 
   def fetch(secrets, account: nil, from: nil, environment: nil)
+    raise RuntimeError, "Options '--from' and '--environment' cannot be used together" if from.present? && environment.present?
     raise RuntimeError, "Missing required option '--account'" if requires_account?(environment) && account.blank?
 
     check_dependencies!
