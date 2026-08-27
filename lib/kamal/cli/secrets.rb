@@ -12,7 +12,7 @@ class Kamal::Cli::Secrets < Kamal::Cli::Base
       return puts "No value provided for required options '--account'"
     end
 
-    results = adapter.fetch(secrets, **options.slice(:account, :from, :environment).symbolize_keys)
+    results = adapter.fetch(secrets, **options.slice(:account, :from, :environment).compact.symbolize_keys)
     json = JSON.dump(results)
 
     return_or_puts options[:inline] ? json.shellescape : json, inline: options[:inline]
