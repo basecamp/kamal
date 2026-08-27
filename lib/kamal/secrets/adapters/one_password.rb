@@ -16,7 +16,9 @@ class Kamal::Secrets::Adapters::OnePassword < Kamal::Secrets::Adapters::Base
     end
 
     def fetch_secrets(secrets, from:, account:, session:)
-      if secrets.blank?
+      if (environment = from_environment(from))
+        fetch_environment_secrets(secrets, environment: environment, account: account, session: session)
+      elsif secrets.blank?
         fetch_all_secrets(from: from, account: account, session: session)
       else
         fetch_specified_secrets(secrets, from: from, account: account, session: session)
@@ -45,11 +47,31 @@ class Kamal::Secrets::Adapters::OnePassword < Kamal::Secrets::Adapters::Base
             results.merge!(fields_map(fields_json))
           end
         end
+    end
+  end
+
+  def fetch_environment_secrets(secrets, environment:, account:, session:)
+    all_variables = op_environment_read(environment, account: account, session: session)
+
+    if secrets.blank?
+      all_variables
+    else
+      all_variables.slice(*secrets).tap do |results|
+        missing = secrets - results.keys
+
+        if missing.any?
+          raise RuntimeError, "Could not read #{missing.join(", ")} from the #{environment} 1Password Environment"
+        end
       end
     end
+  end
 
     def to_options(**options)
       optionize(options.compact).join(" ")
+    end
+
+    def from_environment(from)
+      from.delete_prefix("environment-") if from&.start_with?("environment-")
     end
 
     def vaults_items_fields(secrets)
@@ -90,6 +112,23 @@ class Kamal::Secrets::Adapters::OnePassword < Kamal::Secrets::Adapters::Base
 
       `op item get #{item.shellescape} #{to_options(**options)}`.tap do
         raise RuntimeError, "Could not read #{"#{fields.join(", ")} " if fields.present?}from #{item} in the #{vault} 1Password vault" unless $?.success?
+      end
+    end
+
+    def op_environment_read(environment, account:, session:)
+      raise ArgumentError, "environment must be present" if environment.blank?
+
+      options = { account: account, session: session.presence }
+
+      output = `op environment read #{environment.shellescape} #{to_options(**options)}`.tap do
+        raise RuntimeError, "Could not read the #{environment} 1Password Environment" unless $?.success?
+      end
+
+      output.each_line.with_object({}) do |line, results|
+        line = line.strip
+        next if line.empty?
+        key, value = line.split("=", 2)
+        results[key] = value if key.present?
       end
     end
 

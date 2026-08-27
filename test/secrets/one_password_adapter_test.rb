@@ -220,6 +220,103 @@ class SecretsOnePasswordAdapterTest < SecretAdapterTestCase
     assert_equal "1Password CLI is not installed", error.message
   end
 
+  test "fetch all variables from environment" do
+    stub_ticks.with("op --version 2> /dev/null")
+    stub_ticks.with("op account get --account myaccount 2> /dev/null")
+
+    stub_ticks
+      .with("op environment read 7mw7kfmwe2hpbcksbgco4ove7i --account \"myaccount\"")
+      .returns(<<~ENV)
+        SECRET1=VALUE1
+        SECRET2=VALUE2
+      ENV
+
+    json = JSON.parse(run_command("fetch", "--from", "environment-7mw7kfmwe2hpbcksbgco4ove7i"))
+
+    expected_json = {
+      "SECRET1"=>"VALUE1",
+      "SECRET2"=>"VALUE2"
+    }
+
+    assert_equal expected_json, json
+  end
+
+  test "fetch specified variables from environment" do
+    stub_ticks.with("op --version 2> /dev/null")
+    stub_ticks.with("op account get --account myaccount 2> /dev/null")
+
+    stub_ticks
+      .with("op environment read 7mw7kfmwe2hpbcksbgco4ove7i --account \"myaccount\"")
+      .returns(<<~ENV)
+        SECRET1=VALUE1
+        SECRET2=VALUE2
+        SECRET3=VALUE3
+      ENV
+
+    json = JSON.parse(run_command("fetch", "--from", "environment-7mw7kfmwe2hpbcksbgco4ove7i", "SECRET1", "SECRET3"))
+
+    expected_json = {
+      "SECRET1"=>"VALUE1",
+      "SECRET3"=>"VALUE3"
+    }
+
+    assert_equal expected_json, json
+  end
+
+  test "fetch missing variable from environment" do
+    stub_ticks.with("op --version 2> /dev/null")
+    stub_ticks.with("op account get --account myaccount 2> /dev/null")
+
+    stub_ticks
+      .with("op environment read 7mw7kfmwe2hpbcksbgco4ove7i --account \"myaccount\"")
+      .returns(<<~ENV)
+        SECRET1=VALUE1
+      ENV
+
+    error = assert_raises RuntimeError do
+      run_command("fetch", "--from", "environment-7mw7kfmwe2hpbcksbgco4ove7i", "SECRET1", "SECRET2")
+    end
+    assert_equal "Could not read SECRET2 from the 7mw7kfmwe2hpbcksbgco4ove7i 1Password Environment", error.message
+  end
+
+  test "fetch from environment with signin, no session" do
+    stub_ticks.with("op --version 2> /dev/null")
+
+    stub_ticks_with("op account get --account myaccount 2> /dev/null", succeed: false)
+    stub_ticks_with("op signin --account \"myaccount\" --force --raw", succeed: true).returns("")
+
+    stub_ticks
+      .with("op environment read 7mw7kfmwe2hpbcksbgco4ove7i --account \"myaccount\"")
+      .returns(<<~ENV)
+        SECRET1=VALUE1
+      ENV
+
+    json = JSON.parse(run_command("fetch", "--from", "environment-7mw7kfmwe2hpbcksbgco4ove7i"))
+
+    expected_json = { "SECRET1"=>"VALUE1" }
+
+    assert_equal expected_json, json
+  end
+
+  test "fetch from environment with signin and session" do
+    stub_ticks.with("op --version 2> /dev/null")
+
+    stub_ticks_with("op account get --account myaccount 2> /dev/null", succeed: false)
+    stub_ticks_with("op signin --account \"myaccount\" --force --raw", succeed: true).returns("1234567890")
+
+    stub_ticks
+      .with("op environment read 7mw7kfmwe2hpbcksbgco4ove7i --account \"myaccount\" --session \"1234567890\"")
+      .returns(<<~ENV)
+        SECRET1=VALUE1
+      ENV
+
+    json = JSON.parse(run_command("fetch", "--from", "environment-7mw7kfmwe2hpbcksbgco4ove7i"))
+
+    expected_json = { "SECRET1"=>"VALUE1" }
+
+    assert_equal expected_json, json
+  end
+
   private
     def run_command(*command)
       stdouted do
