@@ -41,13 +41,13 @@ class Kamal::Cli::Secrets < Kamal::Cli::Base
       Kamal::Secrets::Adapters.lookup(adapter)
     end
 
-  def adapter_requires_account?(adapter)
-    if adapter.method(:requires_account?).arity.zero?
-      adapter.requires_account?
-    else
-      adapter.requires_account?(options[:environment])
+    def adapter_requires_account?(adapter)
+      if adapter.method(:requires_account?).arity.zero?
+        adapter.requires_account?
+      else
+        adapter.requires_account?(options[:environment])
+      end
     end
-  end
 
     def return_or_puts(value, inline: nil)
       if inline
