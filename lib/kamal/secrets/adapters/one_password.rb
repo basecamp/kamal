@@ -47,24 +47,24 @@ class Kamal::Secrets::Adapters::OnePassword < Kamal::Secrets::Adapters::Base
             results.merge!(fields_map(fields_json))
           end
         end
+      end
     end
-  end
 
-  def fetch_environment_secrets(secrets, environment:, account:, session:)
-    all_variables = op_environment_read(environment, account: account, session: session)
+    def fetch_environment_secrets(secrets, environment:, account:, session:)
+      all_variables = op_environment_read(environment, account: account, session: session)
 
-    if secrets.blank?
-      all_variables
-    else
-      all_variables.slice(*secrets).tap do |results|
-        missing = secrets - results.keys
+      if secrets.blank?
+        all_variables
+      else
+        all_variables.slice(*secrets).tap do |results|
+          missing = secrets - results.keys
 
-        if missing.any?
-          raise RuntimeError, "Could not read #{missing.join(", ")} from the #{environment} 1Password Environment"
+          if missing.any?
+            raise RuntimeError, "Could not read #{missing.join(", ")} from the #{environment} 1Password Environment"
+          end
         end
       end
     end
-  end
 
     def to_options(**options)
       optionize(options.compact).join(" ")
