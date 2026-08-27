@@ -12,6 +12,10 @@ class Kamal::Cli::Secrets < Kamal::Cli::Base
       return puts "No value provided for required options '--account'"
     end
 
+    if options[:environment] && !adapter.supports_environment?
+      return puts "Option '--environment' is not supported by this adapter"
+    end
+
     results = adapter.fetch(secrets, **options.slice(:account, :from, :environment).compact.symbolize_keys)
     json = JSON.dump(results)
 

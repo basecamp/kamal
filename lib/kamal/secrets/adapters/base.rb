@@ -14,6 +14,10 @@ class Kamal::Secrets::Adapters::Base
     true
   end
 
+  def supports_environment?
+    false
+  end
+
   private
     def login(...)
       raise NotImplementedError

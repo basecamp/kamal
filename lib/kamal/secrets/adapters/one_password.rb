@@ -15,6 +15,10 @@ class Kamal::Secrets::Adapters::OnePassword < Kamal::Secrets::Adapters::Base
     environment.blank?
   end
 
+  def supports_environment?
+    true
+  end
+
   private
     def login(account)
       return if account.blank?
