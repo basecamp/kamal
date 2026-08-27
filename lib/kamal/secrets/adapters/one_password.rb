@@ -15,6 +15,15 @@ class Kamal::Secrets::Adapters::OnePassword < Kamal::Secrets::Adapters::Base
       $?.success?
     end
 
+  def fetch(secrets, account: nil, from: nil, environment: nil)
+    raise RuntimeError, "Missing required option '--account'" if requires_account? && account.blank?
+
+    check_dependencies!
+
+    session = login(account)
+    fetch_secrets(secrets, from: from, environment: environment, account: account, session: session)
+  end
+
     def fetch_secrets(secrets, from:, environment:, account:, session:)
       if secrets.blank?
         fetch_all_secrets(from: from, environment: environment, account: account, session: session)
