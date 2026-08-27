@@ -1,13 +1,13 @@
 class Kamal::Secrets::Adapters::Base
   delegate :optionize, to: Kamal::Utils
 
-  def fetch(secrets, account: nil, from: nil)
+  def fetch(secrets, account: nil, from: nil, environment: nil)
     raise RuntimeError, "Missing required option '--account'" if requires_account? && account.blank?
 
     check_dependencies!
 
     session = login(account)
-    fetch_secrets(secrets, from: from, account: account, session: session)
+    fetch_secrets(secrets, from: from, environment: environment, account: account, session: session)
   end
 
   def requires_account?

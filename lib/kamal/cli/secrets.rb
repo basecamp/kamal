@@ -3,6 +3,7 @@ class Kamal::Cli::Secrets < Kamal::Cli::Base
   option :adapter, type: :string, aliases: "-a", required: true, desc: "Which vault adapter to use"
   option :account, type: :string, required: false, desc: "The account identifier or username"
   option :from, type: :string, required: false, desc: "A vault or folder to fetch the secrets from"
+  option :environment, type: :string, required: false, desc: "A 1Password Environment ID to fetch secrets from (1Password adapter only)"
   option :inline, type: :boolean, required: false, hidden: true
   def fetch(*secrets)
     adapter = initialize_adapter(options[:adapter])
@@ -11,7 +12,7 @@ class Kamal::Cli::Secrets < Kamal::Cli::Base
       return puts "No value provided for required options '--account'"
     end
 
-    results = adapter.fetch(secrets, **options.slice(:account, :from).symbolize_keys)
+    results = adapter.fetch(secrets, **options.slice(:account, :from, :environment).symbolize_keys)
     json = JSON.dump(results)
 
     return_or_puts options[:inline] ? json.shellescape : json, inline: options[:inline]
