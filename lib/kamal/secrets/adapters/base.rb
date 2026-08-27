@@ -10,7 +10,7 @@ class Kamal::Secrets::Adapters::Base
     fetch_secrets(secrets, from: from, account: account, session: session)
   end
 
-  def requires_account?
+  def requires_account?(environment = nil)
     true
   end
 
