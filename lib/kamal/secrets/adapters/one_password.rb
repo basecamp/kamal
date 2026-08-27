@@ -125,8 +125,9 @@ class Kamal::Secrets::Adapters::OnePassword < Kamal::Secrets::Adapters::Base
       end
 
       output.each_line.with_object({}) do |line, results|
-        line = line.strip
-        next if line.empty?
+        line = line.chomp
+        next if line.blank?
+
         key, value = line.split("=", 2)
         results[key] = value if key.present?
       end
