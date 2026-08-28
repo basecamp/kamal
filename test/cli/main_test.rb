@@ -19,8 +19,7 @@ class CliMainTest < CliTestCase
     invoke_options = base_invoke_options
 
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:server:bootstrap", [], invoke_options)
-    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:accessory:boot", [ "all" ], invoke_options)
-    # deploy
+    # deploy (deploy_simple.yml has no accessories, so no accessory:boot invocations expected)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:pull", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:proxy:boot", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true))
@@ -67,8 +66,7 @@ class CliMainTest < CliTestCase
     invoke_options = base_invoke_options(no_cache: true)
 
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:server:bootstrap", [], invoke_options)
-    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:accessory:boot", [ "all" ], invoke_options)
-    # deploy
+    # deploy (deploy_simple.yml has no accessories, so no accessory:boot invocations expected)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:deliver", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:proxy:boot", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true))
@@ -81,6 +79,29 @@ class CliMainTest < CliTestCase
       assert_match /Build and push app image/, output
       assert_match /Ensure kamal-proxy is running/, output
       assert_match /Detect stale containers/, output
+      assert_match /Prune old containers and images/, output
+    end
+  end
+
+  test "setup with error pages and proxied accessory boots accessories in correct order" do
+    invoke_options = base_invoke_options(config_file: "deploy_with_error_pages_and_accessories.yml")
+
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:server:bootstrap", [], invoke_options)
+    # Non-proxied accessory (mysql) should be booted first
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:accessory:boot", [ "mysql" ], invoke_options)
+    # deploy
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:deliver", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:proxy:boot", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true))
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:boot", [], invoke_options)
+    # Proxied accessory (cache) should be booted after app:boot to ensure error pages directory exists
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:accessory:boot", [ "cache" ], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:prune:all", [], invoke_options)
+
+    run_command("setup", config_file: "deploy_with_error_pages_and_accessories.yml").tap do |output|
+      assert_match /Ensure Docker is installed.../, output
+      assert_match /Build and push app image/, output
+      assert_match /Ensure kamal-proxy is running/, output
       assert_match /Prune old containers and images/, output
     end
   end
