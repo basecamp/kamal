@@ -39,7 +39,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
 
           # Boot non-proxied accessories first to avoid error pages directory validation issues on fresh servers.
           # Proxied accessories will be booted after app:boot to ensure error pages are available.
-          # Each accessory boots in a separate modify(lock:true) block; locks are released between groups.
+          # The outer deploy lock remains held across both accessory groups and app:boot.
           if boot_accessories
             non_proxied_accessories = KAMAL.accessory_names.filter { |name| !KAMAL.accessory(name).running_proxy? }
             non_proxied_accessories.each { |name| invoke "kamal:cli:accessory:boot", [ name ], invoke_options }
