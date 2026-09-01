@@ -148,21 +148,27 @@ class Kamal::Configuration::Accessory
 
     def expand_local_file(local_file)
       if local_file.end_with?("erb")
-        with_env_loaded { read_dynamic_file(local_file) }
+        read_dynamic_file(local_file)
       else
         Pathname.new(File.expand_path(local_file)).to_s
       end
     end
 
-    def with_env_loaded
-      env.to_h.each { |k, v| ENV[k] = v }
-      yield
-    ensure
-      env.to_h.each { |k, v| ENV.delete(k) }
+    def read_dynamic_file(local_file)
+      StringIO.new(render_dynamic_erb(File.read(local_file)))
     end
 
-    def read_dynamic_file(local_file)
-      StringIO.new(ERB.new(File.read(local_file)).result)
+    # Render with a per-call ENV constant so parallel host threads cannot
+    # clobber process-global ENV (SSHKit runs on(hosts) in :parallel).
+    def render_dynamic_erb(template)
+      renderer = Class.new
+      renderer.const_set(:ENV, ENV.to_h.merge(env.to_h))
+      renderer.class_eval <<~RUBY, __FILE__, __LINE__ + 1
+        def render(template)
+          ::ERB.new(template).result(binding)
+        end
+      RUBY
+      renderer.new.render(template)
     end
 
     def expand_remote_file(remote_file)
