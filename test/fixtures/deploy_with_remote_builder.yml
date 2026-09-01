@@ -36,5 +36,5 @@ accessories:
 readiness_delay: 0
 
 builder:
-  arch: <%= Kamal::Utils.docker_arch == "arm64" ? "amd64" : "arm64" %>
+  arch: <%= ArchHelper.remote_arch %>
   remote: ssh://app@1.1.1.5
