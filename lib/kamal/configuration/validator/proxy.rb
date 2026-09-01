@@ -21,6 +21,12 @@ class Kamal::Configuration::Validator::Proxy < Kamal::Configuration::Validator
         end
       end
 
+      if config["basic_auth"].is_a?(Hash)
+        if config["basic_auth"]["username"].blank? || config["basic_auth"]["password"].blank?
+          error "basic_auth requires both username and password to be set"
+        end
+      end
+
       if run_config = config["run"]
         if run_config["bind_ips"].present?
           ensure_valid_bind_ips(config["bind_ips"])
