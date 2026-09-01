@@ -326,6 +326,11 @@ class ConfigurationTest < ActiveSupport::TestCase
     assert_equal ".kamal", config.run_directory
   end
 
+  test "custom run directory" do
+    config = Kamal::Configuration.new(@deploy.merge(run_directory: "/etc/kamal"))
+    assert_equal "/etc/kamal", config.run_directory
+  end
+
   test "asset path" do
     assert_nil @config.asset_path
     assert_equal "foo", Kamal::Configuration.new(@deploy.merge!(asset_path: "foo")).asset_path
