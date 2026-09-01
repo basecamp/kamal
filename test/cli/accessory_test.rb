@@ -174,6 +174,26 @@ class CliAccessoryTest < CliTestCase
     assert_match "docker logs app-mysql --timestamps --tail 10 --follow 2>&1 | grep \"hey\" -C 2", run_command("logs", "mysql", "--follow", "--grep", "hey", "--grep-options", "-C 2")
   end
 
+  test "logs with follow defaults to first host" do
+    SSHKit::Backend::Abstract.any_instance.stubs(:exec)
+      .with("ssh -t root@1.1.1.1 -p 22 'docker logs app-redis --timestamps --tail 10 --follow 2>&1'")
+
+    assert_match "ssh -t root@1.1.1.1 -p 22 'docker logs app-redis", run_command("logs", "redis", "--follow")
+  end
+
+  test "logs with follow respects hosts" do
+    SSHKit::Backend::Abstract.any_instance.stubs(:exec)
+      .with("ssh -t root@1.1.1.2 -p 22 'docker logs app-redis --timestamps --tail 10 --follow 2>&1'")
+
+    assert_match "ssh -t root@1.1.1.2 -p 22 'docker logs app-redis", run_command("logs", "redis", "--follow", "--hosts", "1.1.1.2")
+  end
+
+  test "logs with follow does nothing when accessory does not run on the hosts" do
+    SSHKit::Backend::Abstract.any_instance.expects(:exec).never
+
+    run_command("logs", "mysql", "--follow", "--hosts", "1.1.1.1")
+  end
+
   test "remove with confirmation" do
     Kamal::Cli::Accessory.any_instance.expects(:stop).with("mysql")
     Kamal::Cli::Accessory.any_instance.expects(:remove_container).with("mysql")
