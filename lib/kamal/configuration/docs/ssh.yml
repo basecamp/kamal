@@ -29,8 +29,8 @@ ssh:
 
   # Proxy host
   #
-  # Specified in the form <host> or <user>@<host>:
-  proxy: root@proxy-host
+  # Specified in the form <host> or <user>@<host>
+  proxy: proxy-host
 
   # Proxy command
   #
