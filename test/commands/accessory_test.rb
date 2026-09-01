@@ -179,12 +179,18 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
 
   test "follow logs" do
     assert_equal \
-      "ssh -t root@1.1.1.5 -p 22 'docker logs app-mysql --timestamps --tail 10 --follow 2>&1'",
+      "ssh -t root@1.1.1.5 -p 22 'docker logs app-mysql --timestamps --follow 2>&1'",
       new_command(:mysql).follow_logs(host: "1.1.1.5")
 
     assert_equal \
-      "ssh -t root@1.1.1.5 -p 22 'docker logs app-mysql --tail 10 --follow 2>&1'",
+      "ssh -t root@1.1.1.5 -p 22 'docker logs app-mysql --follow 2>&1'",
       new_command(:mysql).follow_logs(host: "1.1.1.5", timestamps: false)
+  end
+
+  test "follow logs with since and lines" do
+    assert_equal \
+      "ssh -t root@1.1.1.5 -p 22 'docker logs app-mysql --timestamps --since 5m --tail 123 --follow 2>&1'",
+      new_command(:mysql).follow_logs(host: "1.1.1.5", since: "5m", lines: 123)
   end
 
   test "remove container" do
