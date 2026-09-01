@@ -243,10 +243,12 @@ class Kamal::Cli::App < Kamal::Cli::Base
   desc "remove", "Remove app containers and images from servers"
   def remove
     modify(lock: true) do
+      run_hook "pre-app-remove"
       stop
       remove_containers
       remove_images
       remove_app_directories
+      run_hook "post-app-remove"
     end
   end
 
