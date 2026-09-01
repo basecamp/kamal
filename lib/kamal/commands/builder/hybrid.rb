@@ -8,7 +8,7 @@ class Kamal::Commands::Builder::Hybrid < Kamal::Commands::Builder::Remote
 
   private
     def builder_name
-      "kamal-hybrid-#{driver}-#{remote_builder_name_suffix}"
+      "kamal-hybrid-#{driver}-#{remote_builder_name_suffix}-#{registry_digest}"
     end
 
     def create_local_buildx

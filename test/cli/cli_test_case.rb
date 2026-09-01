@@ -37,7 +37,7 @@ class CliTestCase < ActiveSupport::TestCase
       SSHKit::Backend::Abstract.any_instance.stubs(:execute)
         .with { |arg1, arg2| arg1 == :rm && arg2 == ".kamal/lock-app/details" }
       SSHKit::Backend::Abstract.any_instance.stubs(:execute)
-        .with(:docker, :buildx, :inspect, "kamal-local-docker-container")
+        .with(:docker, :buildx, :inspect, "kamal-local-docker-container-6e208c509c5d")
     end
 
     def assert_hook_ran(hook, output, count: 1)
