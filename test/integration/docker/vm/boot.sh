@@ -10,11 +10,19 @@ service ssh restart
 mkdir -p /etc/docker
 # Point this inner daemon at the hub-cache pull-through cache so Docker Hub base
 # images are fetched at most once per run instead of on every test.
+# Keep this daemon's own networks off 172.16.0.0/12, Docker's default address
+# pool. The outer daemon allocates its bridge from that pool too, and hands
+# containers its bridge gateway as their DNS upstream (resolv.conf ExtServers).
+# An inner network landing on the same subnet shadows that address: the route
+# stays inside this container, DNS to the outer host silently dies, and only
+# name resolution breaks while raw IP traffic keeps working.
 cat > /etc/docker/daemon.json <<'EOF'
 {
   "storage-driver": "fuse-overlayfs",
   "registry-mirrors": [ "http://hub-cache:5000" ],
-  "insecure-registries": [ "hub-cache:5000" ]
+  "insecure-registries": [ "hub-cache:5000" ],
+  "bip": "10.222.0.1/24",
+  "default-address-pools": [ { "base": "10.223.0.0/16", "size": 24 } ]
 }
 EOF
 
