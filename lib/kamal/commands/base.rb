@@ -73,7 +73,7 @@ module Kamal::Commands
       end
 
       def xargs(command)
-        [ :xargs, command ].flatten
+        [ :xargs, "-r", command ].flatten
       end
 
       def shell(command)

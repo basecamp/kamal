@@ -456,7 +456,7 @@ class CliMainTest < CliTestCase
     end
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
-      .with(:docker, :container, :ls, "--all", "--filter", "'name=^app-workers-123$'", "--quiet", "|", :xargs, :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
+      .with(:docker, :container, :ls, "--all", "--filter", "'name=^app-workers-123$'", "--quiet", "|", :xargs, "-r", :docker, :inspect, "--format", "'{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}'")
       .returns("running").at_least_once # health check
 
     Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
@@ -465,7 +465,7 @@ class CliMainTest < CliTestCase
       assert_hook_ran "pre-deploy", output
       assert_match "docker tag dhh/app:123 dhh/app:latest", output
       assert_match "docker run --detach --restart unless-stopped --name app-web-123", output
-      assert_match "docker container ls --all --filter 'name=^app-web-version-to-rollback$' --quiet | xargs docker stop", output, "Should stop the container that was previously running"
+      assert_match "docker container ls --all --filter 'name=^app-web-version-to-rollback$' --quiet | xargs -r docker stop", output, "Should stop the container that was previously running"
       assert_hook_ran "post-deploy", output
     end
   end
@@ -690,7 +690,7 @@ class CliMainTest < CliTestCase
       assert_match /docker container prune --force --filter label=org.opencontainers.image.title=kamal-proxy/, output
       assert_match /docker image prune --all --force --filter label=org.opencontainers.image.title=kamal-proxy/, output
 
-      assert_match /docker ps --quiet --filter label=service=app | xargs docker stop/, output
+      assert_match /docker ps --quiet --filter label=service=app | xargs -r docker stop/, output
       assert_match /docker container prune --force --filter label=service=app/, output
       assert_match /docker image prune --all --force --filter label=service=app/, output
       assert_match "/usr/bin/env rm -r .kamal/apps/app", output

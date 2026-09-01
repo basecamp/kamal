@@ -94,35 +94,35 @@ class CommandsAppTest < ActiveSupport::TestCase
 
   test "stop" do
     assert_equal \
-      "sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting' | head -1 | xargs docker stop",
+      "sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting' | head -1 | xargs -r docker stop",
       new_command.stop.join(" ")
   end
 
   test "stop with custom drain timeout" do
     @config[:drain_timeout] = 20
     assert_equal \
-      "sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting' | head -1 | xargs docker stop",
+      "sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting' | head -1 | xargs -r docker stop",
       new_command.stop.join(" ")
 
     assert_equal \
-      "sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=destination= --filter label=role=workers --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=destination= --filter label=role=workers --filter status=running --filter status=restarting' | head -1 | xargs docker stop -t 20",
+      "sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=destination= --filter label=role=workers --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=destination= --filter label=role=workers --filter status=running --filter status=restarting' | head -1 | xargs -r docker stop -t 20",
       new_command(role: "workers").stop.join(" ")
   end
 
   test "stop with stop_timeout" do
     @config[:servers] = { "web" => { "hosts" => [ "1.1.1.1" ], "stop_timeout" => 30 }, "workers" => { "hosts" => [ "1.1.1.2" ], "cmd" => "bin/jobs", "stop_timeout" => 60 } }
     assert_equal \
-      "sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting' | head -1 | xargs docker stop -t 30",
+      "sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting' | head -1 | xargs -r docker stop -t 30",
       new_command.stop.join(" ")
 
     assert_equal \
-      "sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=destination= --filter label=role=workers --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=destination= --filter label=role=workers --filter status=running --filter status=restarting' | head -1 | xargs docker stop -t 60",
+      "sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=destination= --filter label=role=workers --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=destination= --filter label=role=workers --filter status=running --filter status=restarting' | head -1 | xargs -r docker stop -t 60",
       new_command(role: "workers").stop.join(" ")
   end
 
   test "stop with version" do
     assert_equal \
-      "docker container ls --all --filter 'name=^app-web-123$' --quiet | xargs docker stop",
+      "docker container ls --all --filter 'name=^app-web-123$' --quiet | xargs -r docker stop",
       new_command.stop(version: "123").join(" ")
   end
 
@@ -488,14 +488,14 @@ class CommandsAppTest < ActiveSupport::TestCase
 
   test "remove_container" do
     assert_equal \
-      "docker container ls --all --filter 'name=^app-web-999$' --quiet | xargs docker container rm",
+      "docker container ls --all --filter 'name=^app-web-999$' --quiet | xargs -r docker container rm",
       new_command.remove_container(version: "999").join(" ")
   end
 
   test "remove_container with destination" do
     @destination = "staging"
     assert_equal \
-      "docker container ls --all --filter 'name=^app-web-staging-999$' --quiet | xargs docker container rm",
+      "docker container ls --all --filter 'name=^app-web-staging-999$' --quiet | xargs -r docker container rm",
       new_command.remove_container(version: "999").join(" ")
   end
 
