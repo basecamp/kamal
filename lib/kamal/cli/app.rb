@@ -40,6 +40,18 @@ class Kamal::Cli::App < Kamal::Cli::Base
     end
   end
 
+  desc "boot_env", "Upload the app env files to the servers", hide: true
+  def boot_env
+    modify(lock: true) do
+      on(KAMAL.app_hosts) do |host|
+        KAMAL.roles_on(host).each do |role|
+          execute *KAMAL.app(role: role, host: host).ensure_env_directory
+          upload! role.secrets_io(host), role.secrets_path, mode: "0600"
+        end
+      end
+    end
+  end
+
   desc "start", "Start existing app container on servers"
   def start
     modify(lock: true) do

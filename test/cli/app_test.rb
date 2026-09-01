@@ -10,6 +10,13 @@ class CliAppTest < CliTestCase
     end
   end
 
+  test "boot_env uploads the env files to the servers" do
+    run_command("boot_env").tap do |output|
+      assert_match "/usr/bin/env mkdir -p .kamal/apps/app/env/roles", output
+      assert_match %r{Uploading .* to .kamal/apps/app/env/roles/web.env}, output
+    end
+  end
+
   test "boot will rename if same version is already running" do
     Object.any_instance.stubs(:sleep)
     run_command("details") # Preheat Kamal const
