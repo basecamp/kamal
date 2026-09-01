@@ -20,6 +20,10 @@ class CommandsDockerTest < ActiveSupport::TestCase
     assert_equal "docker version", @docker.running?.join(" ")
   end
 
+  test "logging driver" do
+    assert_equal "docker info --format '{{.LoggingDriver}}'", @docker.logging_driver.join(" ")
+  end
+
   test "superuser?" do
     assert_equal '[ "${EUID:-$(id -u)}" -eq 0 ] || sudo -nl usermod >/dev/null', @docker.superuser?.join(" ")
   end

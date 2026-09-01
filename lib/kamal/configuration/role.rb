@@ -59,8 +59,8 @@ class Kamal::Configuration::Role
     argumentize "--label", labels
   end
 
-  def logging_args
-    logging.args
+  def logging_args(default_logging_driver: nil)
+    logging.args(default_logging_driver: default_logging_driver)
   end
 
   def logging

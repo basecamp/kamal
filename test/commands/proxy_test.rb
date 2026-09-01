@@ -27,6 +27,12 @@ class CommandsProxyTest < ActiveSupport::TestCase
       new_command.run.join(" ")
   end
 
+  test "run skips implicit log max size for unsupported default logging driver" do
+    assert_equal \
+      "echo $(cat .kamal/proxy/options 2> /dev/null || echo \"--publish 80:80 --publish 443:443\") $(cat .kamal/proxy/image 2> /dev/null || echo \"basecamp/kamal-proxy\"):$(cat .kamal/proxy/image_version 2> /dev/null || echo \"#{Kamal::Configuration::Proxy::Run::MINIMUM_VERSION}\") $(cat .kamal/proxy/run_command 2> /dev/null || echo \"\") | xargs docker run --name kamal-proxy --network kamal --detach --restart unless-stopped --volume kamal-proxy-config:/home/kamal-proxy/.config/kamal-proxy --volume $PWD/.kamal/proxy/apps-config:/home/kamal-proxy/.apps-config",
+      new_command.run(default_logging_driver: "syslog").join(" ")
+  end
+
   test "proxy start" do
     assert_equal \
       "docker container start kamal-proxy",
@@ -198,6 +204,20 @@ class CommandsProxyTest < ActiveSupport::TestCase
     assert_equal \
       "docker run --name kamal-proxy --network kamal --detach --restart unless-stopped --volume kamal-proxy-config:/home/kamal-proxy/.config/kamal-proxy --volume $PWD/.kamal/proxy/apps-config:/home/kamal-proxy/.apps-config --publish 80:80 --publish 443:443 --log-opt max-size=50m basecamp/kamal-proxy:v0.9.2 kamal-proxy run",
       new_command.run.join(" ")
+  end
+
+  test "run config skips implicit log max size for unsupported default logging driver" do
+    @config[:proxy] = { "run" => { "debug" => true } }
+    assert_equal \
+      "docker run --name kamal-proxy --network kamal --detach --restart unless-stopped --volume kamal-proxy-config:/home/kamal-proxy/.config/kamal-proxy --volume $PWD/.kamal/proxy/apps-config:/home/kamal-proxy/.apps-config --publish 80:80 --publish 443:443 basecamp/kamal-proxy:v0.9.2 kamal-proxy run --debug",
+      new_command.run(default_logging_driver: "syslog").join(" ")
+  end
+
+  test "run config keeps configured log max size for unsupported default logging driver" do
+    @config[:proxy] = { "run" => { "log_max_size" => "50m" } }
+    assert_equal \
+      "docker run --name kamal-proxy --network kamal --detach --restart unless-stopped --volume kamal-proxy-config:/home/kamal-proxy/.config/kamal-proxy --volume $PWD/.kamal/proxy/apps-config:/home/kamal-proxy/.apps-config --publish 80:80 --publish 443:443 --log-opt max-size=50m basecamp/kamal-proxy:v0.9.2 kamal-proxy run",
+      new_command.run(default_logging_driver: "fluentd").join(" ")
   end
 
   test "debug run config" do

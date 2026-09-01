@@ -14,6 +14,10 @@ class Kamal::Commands::Docker < Kamal::Commands::Base
     docker :version
   end
 
+  def logging_driver
+    docker :info, "--format", "'{{.LoggingDriver}}'"
+  end
+
   # Do we have superuser access to install Docker and start system services?
   def superuser?
     [ '[ "${EUID:-$(id -u)}" -eq 0 ] || sudo -nl usermod >/dev/null' ]
