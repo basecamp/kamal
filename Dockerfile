@@ -12,9 +12,11 @@ COPY Gemfile Gemfile.lock kamal.gemspec ./
 # Required in kamal.gemspec
 COPY lib/kamal/version.rb /kamal/lib/kamal/version.rb
 
-# Install system dependencies
+# Install system dependencies. The image only ever runs the kamal binary, so
+# skip the development and rubocop groups.
 RUN apk add --no-cache build-base git docker-cli openssh-client-default yaml-dev \
     && gem install bundler --version=2.6.5 \
+    && bundle config set --local without "development rubocop" \
     && bundle install
 
 # Copy the rest of our application code into the container.
