@@ -111,12 +111,13 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
       with_accessory(name) do |accessory, hosts|
         on(hosts) do
           execute *KAMAL.auditor.record("Stopped #{name} accessory"), verbosity: :debug
+          target = if accessory.running_proxy?
+            capture_with_info(*accessory.container_id_for(container_name: accessory.service_name, only_running: true)).strip
+          end
+
           execute *accessory.stop, raise_on_non_zero_exit: false
 
-          if accessory.running_proxy?
-            target = capture_with_info(*accessory.container_id_for(container_name: accessory.service_name, only_running: true)).strip
-            execute *accessory.remove if target
-          end
+          execute *accessory.remove, raise_on_non_zero_exit: false if target.present?
         end
       end
     end
