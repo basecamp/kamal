@@ -221,6 +221,46 @@ class CommandsProxyTest < ActiveSupport::TestCase
       new_command.run.join(" ")
   end
 
+  test "idle mounts and configures the Docker socket" do
+    @config[:proxy] = { "idle" => { "timeout" => 300 } }
+
+    assert_equal \
+      "docker run --name kamal-proxy --network kamal --detach --restart unless-stopped --volume kamal-proxy-config:/home/kamal-proxy/.config/kamal-proxy --volume $PWD/.kamal/proxy/apps-config:/home/kamal-proxy/.apps-config --volume=/var/run/docker.sock:/var/run/docker.sock --group-add \"$(stat -c %g /var/run/docker.sock)\" --publish 80:80 --publish 443:443 --log-opt max-size=10m basecamp/kamal-proxy:v0.9.2 kamal-proxy run --docker-socket \"/var/run/docker.sock\"",
+      new_command.run.join(" ")
+  end
+
+  test "idle mounts, configures and looks up the group for a custom Docker socket" do
+    @config[:proxy] = {
+      "idle" => { "timeout" => 300 },
+      "run" => { "docker_socket" => "/run/user/1000/docker.sock" }
+    }
+
+    command = new_command.run.join(" ")
+    assert_includes command, "--volume=/run/user/1000/docker.sock:/run/user/1000/docker.sock"
+    assert_includes command, "--group-add \"$(stat -c %g /run/user/1000/docker.sock)\""
+    assert_includes command, "kamal-proxy run --docker-socket \"/run/user/1000/docker.sock\""
+  end
+
+  test "Docker socket path is shell escaped" do
+    @config[:proxy] = {
+      "idle" => { "timeout" => 300 },
+      "run" => { "docker_socket" => "/run/docker socket's.sock" }
+    }
+
+    command = new_command.run.join(" ")
+    assert_includes command, "--volume=/run/docker\\ socket\\'s.sock:/run/docker\\ socket\\'s.sock"
+    assert_includes command, "--group-add \"$(stat -c %g /run/docker\\ socket\\'s.sock)\""
+  end
+
+  test "Docker socket access is not added when idle is disabled" do
+    @config[:proxy] = { "run" => { "docker_socket" => "/run/user/1000/docker.sock" } }
+
+    command = new_command.run.join(" ")
+    assert_no_match(/--volume=.*docker\.sock/, command)
+    assert_no_match(/--group-add/, command)
+    assert_no_match(/--docker-socket/, command)
+  end
+
   private
     def new_command
       Kamal::Commands::Proxy.new(Kamal::Configuration.new(@config, version: "123"), host: "1.1.1.1")
