@@ -267,6 +267,27 @@ class ConfigurationTest < ActiveSupport::TestCase
     assert_equal "1.1.1.3", config.all_hosts.first
   end
 
+  test "destination yml proxy hosts overrides base proxy host" do
+    dest_config_file = Pathname.new(File.expand_path("fixtures/deploy_with_proxy_host_for_dest.yml", __dir__))
+
+    config = Kamal::Configuration.create_from config_file: dest_config_file, destination: "world"
+    assert_equal [ "myapp.dev", "files.myapp.dev" ], config.proxy.hosts
+  end
+
+  test "destination yml proxy host overrides base proxy hosts" do
+    dest_config_file = Pathname.new(File.expand_path("fixtures/deploy_with_proxy_hosts_for_dest.yml", __dir__))
+
+    config = Kamal::Configuration.create_from config_file: dest_config_file, destination: "world"
+    assert_equal [ "myapp.dev" ], config.proxy.hosts
+  end
+
+  test "destination yml accessory roles overrides base accessory host" do
+    dest_config_file = Pathname.new(File.expand_path("fixtures/deploy_with_accessory_host_for_dest.yml", __dir__))
+
+    config = Kamal::Configuration.create_from config_file: dest_config_file, destination: "world"
+    assert_equal [ "1.1.1.1" ], config.accessory(:mysql).hosts
+  end
+
   test "destination yml config file missing" do
     dest_config_file = Pathname.new(File.expand_path("fixtures/deploy_for_dest.yml", __dir__))
 
