@@ -267,6 +267,14 @@ class ConfigurationTest < ActiveSupport::TestCase
     assert_equal "1.1.1.3", config.all_hosts.first
   end
 
+  test "destination yaml config merge" do
+    dest_config_file = Pathname.new(File.expand_path("fixtures/deploy_for_dest_yaml.yaml", __dir__))
+
+    config = Kamal::Configuration.create_from config_file: dest_config_file, destination: "world"
+    assert_equal "1.1.1.3", config.all_hosts.first
+    assert_equal "redis://a/b", config.env.clear["REDIS_URL"]
+  end
+
   test "destination yml config file missing" do
     dest_config_file = Pathname.new(File.expand_path("fixtures/deploy_for_dest.yml", __dir__))
 

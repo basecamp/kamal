@@ -47,7 +47,8 @@ class Kamal::Configuration
       end
 
       def destination_config_file(base_config_file, destination)
-        base_config_file.sub_ext(".#{destination}.yml") if destination
+        extension = base_config_file.extname.presence || ".yml"
+        base_config_file.sub_ext(".#{destination}#{extension}") if destination
       end
   end
 
