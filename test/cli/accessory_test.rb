@@ -160,18 +160,32 @@ class CliAccessoryTest < CliTestCase
     assert_match "docker logs app-mysql --timestamps --tail 10 --follow 2>&1", run_command("logs", "mysql", "--follow")
   end
 
+  test "logs with follow and since" do
+    SSHKit::Backend::Abstract.any_instance.stubs(:exec)
+      .with("ssh -t root@1.1.1.3 -p 22 'docker logs app-mysql --timestamps --since 5m --follow 2>&1'")
+
+    assert_match "docker logs app-mysql --timestamps --since 5m --follow 2>&1", run_command("logs", "mysql", "--follow", "--since", "5m")
+  end
+
+  test "logs with follow and lines" do
+    SSHKit::Backend::Abstract.any_instance.stubs(:exec)
+      .with("ssh -t root@1.1.1.3 -p 22 'docker logs app-mysql --timestamps --tail 123 --follow 2>&1'")
+
+    assert_match "docker logs app-mysql --timestamps --tail 123 --follow 2>&1", run_command("logs", "mysql", "--follow", "--lines", "123")
+  end
+
   test "logs with follow and grep" do
     SSHKit::Backend::Abstract.any_instance.stubs(:exec)
-      .with("ssh -t root@1.1.1.3 -p 22 'docker logs app-mysql --timestamps --tail 10 --follow 2>&1 | grep \"hey\"'")
+      .with("ssh -t root@1.1.1.3 -p 22 'docker logs app-mysql --timestamps --follow 2>&1 | grep \"hey\"'")
 
-    assert_match "docker logs app-mysql --timestamps --tail 10 --follow 2>&1 | grep \"hey\"", run_command("logs", "mysql", "--follow", "--grep", "hey")
+    assert_match "docker logs app-mysql --timestamps --follow 2>&1 | grep \"hey\"", run_command("logs", "mysql", "--follow", "--grep", "hey")
   end
 
   test "logs with follow, grep, and grep options" do
     SSHKit::Backend::Abstract.any_instance.stubs(:exec)
-      .with("ssh -t root@1.1.1.3 -p 22 'docker logs app-mysql --timestamps --tail 10 --follow 2>&1 | grep \"hey\" -C 2'")
+      .with("ssh -t root@1.1.1.3 -p 22 'docker logs app-mysql --timestamps --follow 2>&1 | grep \"hey\" -C 2'")
 
-    assert_match "docker logs app-mysql --timestamps --tail 10 --follow 2>&1 | grep \"hey\" -C 2", run_command("logs", "mysql", "--follow", "--grep", "hey", "--grep-options", "-C 2")
+    assert_match "docker logs app-mysql --timestamps --follow 2>&1 | grep \"hey\" -C 2", run_command("logs", "mysql", "--follow", "--grep", "hey", "--grep-options", "-C 2")
   end
 
   test "logs with follow defaults to first host" do

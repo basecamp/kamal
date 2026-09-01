@@ -202,17 +202,19 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
       grep = options[:grep]
       grep_options = options[:grep_options]
       timestamps = !options[:skip_timestamps]
+      since = options[:since]
 
       if options[:follow]
         if hosts.any?
+          lines = options[:lines].presence || ((since || grep) ? nil : 10) # Default to 10 lines if since or grep isn't set
+
           run_locally do
             info "Following logs on #{hosts.first}..."
-            info accessory.follow_logs(host: hosts.first, timestamps: timestamps, grep: grep, grep_options: grep_options)
-            exec accessory.follow_logs(host: hosts.first, timestamps: timestamps, grep: grep, grep_options: grep_options)
+            info accessory.follow_logs(host: hosts.first, timestamps: timestamps, since: since, lines: lines, grep: grep, grep_options: grep_options)
+            exec accessory.follow_logs(host: hosts.first, timestamps: timestamps, since: since, lines: lines, grep: grep, grep_options: grep_options)
           end
         end
       else
-        since = options[:since]
         lines = options[:lines].presence || ((since || grep) ? nil : 100) # Default to 100 lines if since or grep isn't set
 
         on(hosts) do

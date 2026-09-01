@@ -47,10 +47,10 @@ class Kamal::Commands::Accessory < Kamal::Commands::Base
       ("grep '#{grep}'#{" #{grep_options}" if grep_options}" if grep)
   end
 
-  def follow_logs(host:, timestamps: true, grep: nil, grep_options: nil)
+  def follow_logs(host:, timestamps: true, since: nil, lines: nil, grep: nil, grep_options: nil)
     run_over_ssh \
       pipe(
-        docker(:logs, service_name, ("--timestamps" if timestamps), "--tail", "10", "--follow", "2>&1"),
+        docker(:logs, service_name, ("--timestamps" if timestamps), ("--since #{since}" if since), ("--tail #{lines}" if lines), "--follow", "2>&1"),
         (%(grep "#{grep}"#{" #{grep_options}" if grep_options}) if grep)
       ),
       host: host
