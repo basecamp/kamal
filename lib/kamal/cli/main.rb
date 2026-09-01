@@ -37,12 +37,24 @@ class Kamal::Cli::Main < Kamal::Cli::Base
           say "Ensure kamal-proxy is running...", :magenta
           invoke "kamal:cli:proxy:boot", [], invoke_options
 
-          invoke "kamal:cli:accessory:boot", [ "all" ], invoke_options if boot_accessories
+          # Boot non-proxied accessories first to avoid error pages directory validation issues on fresh servers.
+          # Proxied accessories will be booted after app:boot to ensure error pages are available.
+          # The outer deploy lock remains held across both accessory groups and app:boot.
+          if boot_accessories
+            non_proxied_accessories = KAMAL.accessory_names.filter { |name| !KAMAL.accessory(name).running_proxy? }
+            non_proxied_accessories.each { |name| invoke "kamal:cli:accessory:boot", [ name ], invoke_options }
+          end
 
           say "Detect stale containers...", :magenta
           invoke "kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true)
 
           invoke "kamal:cli:app:boot", [], invoke_options
+
+          # Boot proxied accessories after app:boot to ensure error pages directory exists
+          if boot_accessories
+            proxied_accessories = KAMAL.accessory_names.filter { |name| KAMAL.accessory(name).running_proxy? }
+            proxied_accessories.each { |name| invoke "kamal:cli:accessory:boot", [ name ], invoke_options }
+          end
 
           say "Prune old containers and images...", :magenta
           invoke "kamal:cli:prune:all", [], invoke_options
