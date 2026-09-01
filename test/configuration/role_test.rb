@@ -68,6 +68,20 @@ class ConfigurationRoleTest < ActiveSupport::TestCase
     assert_equal [ "--label", "service=\"app\"", "--label", "role=\"beta\"", "--label", "destination" ], config.role(:beta).label_args
   end
 
+  test "role proxy hosts replace root proxy host" do
+    @deploy_with_roles[:proxy] = { "host" => "app.example.com" }
+    @deploy_with_roles[:servers]["web"] = { "hosts" => [ "1.1.1.1" ], "proxy" => { "hosts" => [ "web.example.com", "files.example.com" ] } }
+
+    assert_equal [ "web.example.com", "files.example.com" ], config_with_roles.role(:web).proxy.hosts
+  end
+
+  test "role proxy host replaces root proxy hosts" do
+    @deploy_with_roles[:proxy] = { "hosts" => [ "app.example.com", "files.example.com" ] }
+    @deploy_with_roles[:servers]["workers"]["proxy"] = { "host" => "jobs.example.com" }
+
+    assert_equal [ "jobs.example.com" ], config_with_roles.role(:workers).proxy.hosts
+  end
+
   test "env overwritten by role" do
     assert_equal "redis://a/b", config_with_roles.role(:workers).env("1.1.1.3").clear["REDIS_URL"]
 

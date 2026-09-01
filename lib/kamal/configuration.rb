@@ -31,7 +31,50 @@ class Kamal::Configuration
 
     private
       def load_config_files(*files)
-        files.inject({}) { |config, file| config.deep_merge! load_config_file(file) }
+        files.inject({}) { |config, file| merge_config_file(config, load_config_file(file)) }
+      end
+
+      def merge_config_file(config, overrides)
+        remove_replaced_proxy_host_keys(config, overrides)
+        config.deep_merge! overrides
+      end
+
+      def remove_replaced_proxy_host_keys(config, overrides)
+        remove_replaced_host_key value_for(config, :proxy), value_for(overrides, :proxy)
+        remove_replaced_role_proxy_host_keys value_for(config, :servers), value_for(overrides, :servers)
+      end
+
+      def remove_replaced_role_proxy_host_keys(config, overrides)
+        return unless config.is_a?(Hash) && overrides.is_a?(Hash)
+
+        overrides.each do |role, role_overrides|
+          role_config = value_for(config, role)
+          remove_replaced_host_key value_for(role_config, "proxy"), value_for(role_overrides, "proxy")
+        end
+      end
+
+      def remove_replaced_host_key(config, overrides)
+        return unless config.is_a?(Hash) && overrides.is_a?(Hash)
+
+        delete_key(config, "host") if has_key?(overrides, "hosts")
+        delete_key(config, "hosts") if has_key?(overrides, "host")
+      end
+
+      def has_key?(config, key)
+        config.key?(key) || config.key?(key.to_sym)
+      end
+
+      def delete_key(config, key)
+        config.delete(key)
+        config.delete(key.to_sym)
+      end
+
+      def value_for(config, key)
+        return unless config.is_a?(Hash)
+
+        alternate_key = key.is_a?(Symbol) ? key.to_s : key.to_sym
+        return config[key] if config.key?(key)
+        config[alternate_key] if config.key?(alternate_key)
       end
 
       def load_config_file(file)
