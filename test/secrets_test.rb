@@ -26,6 +26,29 @@ class SecretsTest < ActiveSupport::TestCase
     end
   end
 
+  test "command interpolation preserves dollar signs in the output" do
+    # The command outputs pa$1wor$D. Built with tr because "$word" in the
+    # command text itself is substituted before running.
+    with_test_secrets("secrets" => "SECRET=$(echo 'paX1worXD' | tr X '$')") do
+      assert_equal "pa$1wor$D", Kamal::Secrets.new(secrets_path: ".kamal/secrets")["SECRET"]
+    end
+  end
+
+  test "command interpolation still substitutes variables in the command" do
+    with_test_secrets("secrets" => "SECRET1=ABC\nSECRET2=$(echo ${SECRET1}DEF)") do
+      assert_equal "ABCDEF", Kamal::Secrets.new(secrets_path: ".kamal/secrets")["SECRET2"]
+    end
+  end
+
+  test "inline kamal secrets commands preserve dollar signs in extracted values" do
+    # Single-quoted so the stored value matches what an inlined
+    # "kamal secrets fetch" returns: shell-escaped JSON.
+    secrets_json = { "vault/password" => "pa$1wor$D" }.to_json.shellescape
+    with_test_secrets("secrets" => "SECRETS='#{secrets_json}'\nPASSWORD=$(kamal secrets extract vault/password ${SECRETS})") do
+      assert_equal "pa$1wor$D", Kamal::Secrets.new(secrets_path: ".kamal/secrets")["PASSWORD"]
+    end
+  end
+
   test "variable references" do
     with_test_secrets("secrets" => "SECRET1=ABC\nSECRET2=${SECRET1}DEF") do
       assert_equal "ABC", Kamal::Secrets.new(secrets_path: ".kamal/secrets")["SECRET1"]
