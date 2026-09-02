@@ -3,15 +3,20 @@ class Kamal::Cli::Secrets < Kamal::Cli::Base
   option :adapter, type: :string, aliases: "-a", required: true, desc: "Which vault adapter to use"
   option :account, type: :string, required: false, desc: "The account identifier or username"
   option :from, type: :string, required: false, desc: "A vault or folder to fetch the secrets from"
+  option :environment, type: :string, required: false, desc: "A 1Password Environment ID to fetch secrets from (1Password adapter only)"
   option :inline, type: :boolean, required: false, hidden: true
   def fetch(*secrets)
     adapter = initialize_adapter(options[:adapter])
 
-    if adapter.requires_account? && options[:account].blank?
+    if options[:environment] && !adapter.supports_environment?
+      return puts "Option '--environment' is not supported by this adapter"
+    end
+
+    if adapter_requires_account?(adapter) && options[:account].blank?
       return puts "No value provided for required options '--account'"
     end
 
-    results = adapter.fetch(secrets, **options.slice(:account, :from).symbolize_keys)
+    results = adapter.fetch(secrets, **options.slice(:account, :from, :environment).compact.symbolize_keys)
     json = JSON.dump(results)
 
     return_or_puts options[:inline] ? json.shellescape : json, inline: options[:inline]
@@ -38,6 +43,14 @@ class Kamal::Cli::Secrets < Kamal::Cli::Base
   private
     def initialize_adapter(adapter)
       Kamal::Secrets::Adapters.lookup(adapter)
+    end
+
+    def adapter_requires_account?(adapter)
+      if adapter.method(:requires_account?).arity.zero?
+        adapter.requires_account?
+      else
+        adapter.requires_account?(options[:environment])
+      end
     end
 
     def return_or_puts(value, inline: nil)
