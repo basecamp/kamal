@@ -12,6 +12,18 @@ class ConfigurationBuilderTest < ActiveSupport::TestCase
     assert_equal true, config.builder.local?
   end
 
+  test "docker engine by default" do
+    assert_equal "docker", config.builder.engine
+    assert_not config.builder.apple_container?
+  end
+
+  test "apple container engine" do
+    @deploy[:builder] = { "engine" => "apple-container", "arch" => "arm64" }
+
+    assert_equal "apple-container", config.builder.engine
+    assert config.builder.apple_container?
+  end
+
   test "remote?" do
     assert_equal false, config.builder.remote?
   end

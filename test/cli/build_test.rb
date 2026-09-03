@@ -143,6 +143,19 @@ class CliBuildTest < CliTestCase
     end
   end
 
+  test "push with apple container does not invoke local docker" do
+    Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
+
+    run_command("push", "--verbose", fixture: :with_apple_container).tap do |output|
+      assert_match /container --version && container system status/, output
+      assert_match /echo \[REDACTED\] \| container registry login --username \[REDACTED\] --password-stdin docker.io/, output
+      assert_match %r{container builder status}, output
+      assert_match %r{container build --platform linux/amd64 -t dhh/app:999 -t dhh/app:latest --label service="app" --file Dockerfile \. 2>&1 && container image push dhh/app:999 && container image push dhh/app:latest}, output
+      assert_no_match /docker buildx/, output
+      assert_no_match /docker login.*localhost/, output
+    end
+  end
+
   test "push with no-cache" do
     Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
 
@@ -405,6 +418,19 @@ class CliBuildTest < CliTestCase
         assert_match(/docker --version && docker buildx version/, output)
         assert_match(/docker buildx build --output=type=docker --platform linux\/amd64 --builder kamal-local-docker-container-6e208c509c5d -t dhh\/app:999-dirty -t dhh\/app:latest-dirty --label service="app" --file Dockerfile \. 2>&1 as .*@localhost/, output)
       end
+    end
+  end
+
+  test "dev with apple container does not invoke local docker" do
+    Kamal::Docker.expects(:included_files).with { |**kwargs| kwargs[:builder].name == "apple_container" }.returns([])
+    Kamal::Git.stubs(:uncommitted_files).returns([])
+    Kamal::Git.stubs(:untracked_files).returns([])
+
+    run_command("dev", "--verbose", fixture: :with_apple_container).tap do |output|
+      assert_match /container --version && container system status/, output
+      assert_match %r{container build --platform linux/amd64 -t dhh/app:999-dirty -t dhh/app:latest-dirty --label service="app" --file Dockerfile \. 2>&1}, output
+      assert_no_match /container image push/, output
+      assert_no_match /docker buildx/, output
     end
   end
 

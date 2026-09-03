@@ -3,6 +3,7 @@ require "active_support/core_ext/string/filters"
 class Kamal::Commands::Builder < Kamal::Commands::Base
   delegate \
     :create, :remove, :dev, :push, :clean, :pull, :info, :inspect_builder,
+    :ensure_installed, :install_error, :local_registry, :build_check_commands,
     :validate_image, :first_mirror, :login_to_registry_locally?, :push_env,
     to: :target
 
@@ -37,7 +38,11 @@ class Kamal::Commands::Builder < Kamal::Commands::Base
   end
 
   def local
-    @local ||= Kamal::Commands::Builder::Local.new(config)
+    @local ||= if config.builder.apple_container?
+      Kamal::Commands::Builder::AppleContainer.new(config)
+    else
+      Kamal::Commands::Builder::Local.new(config)
+    end
   end
 
   def hybrid

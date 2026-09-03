@@ -5,7 +5,9 @@ module Kamal::Docker
   extend self
   BUILD_CHECK_TAG = "kamal-local-build-check"
 
-  def included_files
+  def included_files(builder:)
+    commands = nil
+
     Tempfile.create do |dockerfile|
       dockerfile.write(<<~DOCKERFILE)
         FROM busybox
@@ -15,13 +17,13 @@ module Kamal::Docker
       DOCKERFILE
       dockerfile.close
 
-      cmd = "docker buildx build -t=#{BUILD_CHECK_TAG} -f=#{dockerfile.path} ."
-      system(cmd) || raise("failed to build check image")
+      commands = builder.build_check_commands(dockerfile: dockerfile.path, tag: BUILD_CHECK_TAG)
+
+      system(*commands[:build]) || raise("failed to build check image")
     end
 
-    cmd = "docker run --rm #{BUILD_CHECK_TAG}"
-    out, err, status = Open3.capture3(cmd)
-    unless status
+    out, err, status = Open3.capture3(*commands[:run])
+    unless status.success?
       raise "failed to run check image:\n#{err}"
     end
 

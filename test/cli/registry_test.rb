@@ -22,6 +22,15 @@ class CliRegistryTest < CliTestCase
     end
   end
 
+  test "setup with apple container uses apple locally and docker remotely" do
+    run_command("setup", fixture: :with_apple_container).tap do |output|
+      assert_match /container --version && container system status/, output
+      assert_match /echo \[REDACTED\] \| container registry login --username \[REDACTED\] --password-stdin docker.io as .*@localhost/, output
+      assert_match /docker login -u \[REDACTED\] -p \[REDACTED\] on 1.1.1.\d/, output
+      assert_no_match /docker --version.*localhost/, output
+    end
+  end
+
   test "remove" do
     run_command("remove").tap do |output|
       assert_match /docker logout as .*@localhost/, output

@@ -9,6 +9,21 @@
 # Options go under the builder key in the root configuration.
 builder:
 
+  # Engine
+  #
+  # The local container engine used to build and push images. Set this to
+  # `apple-container` to build with Apple's `container` CLI instead of Docker;
+  # the deployment servers still use Docker. Needs Apple silicon and macOS 26,
+  # and is tested against `container` 1.2.2.
+  #
+  # It supports no remote or non-local builds, buildpacks, cache exports,
+  # attestations, custom drivers, or custom SSH agents. `build remove` stops its
+  # shared builder rather than deleting it, and a localhost registry has to be
+  # removed before switching engines.
+  #
+  # Defaults to docker:
+  engine: docker
+
   # Arch
   #
   # The architectures to build for — you can set an array or just a single value.

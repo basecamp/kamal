@@ -307,16 +307,12 @@ module Kamal::Cli
         ENV.update(current_env)
       end
 
-      def ensure_docker_installed
+      def ensure_builder_installed
         run_locally do
           begin
-            execute *KAMAL.builder.ensure_docker_installed
+            execute *KAMAL.builder.ensure_installed
           rescue SSHKit::Command::Failed => e
-            error = e.message =~ /command not found/ ?
-              "Docker is not installed locally" :
-              "Docker buildx plugin is not installed locally"
-
-            raise DependencyError, error
+            raise DependencyError, KAMAL.builder.install_error(e.message)
           end
         end
       end
