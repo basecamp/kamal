@@ -6,6 +6,11 @@ class UtilsTest < ActiveSupport::TestCase
       Kamal::Utils.argumentize("--label", { foo: "`bar`", baz: "qux", quux: nil, quuz: false })
   end
 
+  test "argumentize with empty string" do
+    assert_equal [ "--env", 'EMPTY=""', "--env", "FILLED=\"value\"" ], \
+      Kamal::Utils.argumentize("--env", { EMPTY: "", FILLED: "value" })
+  end
+
   test "argumentize with redacted" do
     assert_kind_of SSHKit::Redaction, \
       Kamal::Utils.argumentize("--label", { foo: "bar" }, sensitive: true).last
