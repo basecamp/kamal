@@ -47,7 +47,7 @@ class Kamal::Configuration::Validator
               case key.to_s
               when "options", "args"
                 validate_type! value, Hash
-              when "labels"
+              when "labels", "output_options"
                 validate_hash_of! value, example_value.first[1].class
               else
                 validate_against_example! value, example_value

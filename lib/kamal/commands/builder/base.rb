@@ -9,7 +9,7 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
   delegate \
     :args, :secrets, :dockerfile, :target, :arches, :local_arches, :remote_arches, :remote,
     :pack?, :pack_builder, :pack_buildpacks,
-    :cache_from, :cache_to, :ssh, :provenance, :sbom, :driver, :docker_driver?,
+    :cache_from, :cache_to, :ssh, :provenance, :sbom, :output_options, :driver, :docker_driver?,
     to: :builder_config
 
   def clean
@@ -18,7 +18,7 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
 
   def push(export_action = "registry", tag_as_dirty: false, no_cache: false)
     docker :buildx, :build,
-      "--output=type=#{export_action}",
+      build_output(export_action),
       *platform_options(arches),
       *([ "--builder", builder_name ] unless docker_driver?),
       *build_tag_options(tag_as_dirty: tag_as_dirty),
@@ -72,6 +72,12 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
   end
 
   private
+    def build_output(export_action)
+      output = [ "type=#{export_action}", *output_options.map { |key, value| "#{key}=#{value}" } ]
+
+      "--output=#{output.join(",")}"
+    end
+
     def build_tag_names(tag_as_dirty: false)
       tag_names = [ config.absolute_image, config.latest_image ]
       tag_names.map! { |t| "#{t}-dirty" } if tag_as_dirty
