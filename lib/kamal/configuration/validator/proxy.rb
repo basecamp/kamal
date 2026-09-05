@@ -3,12 +3,28 @@ class Kamal::Configuration::Validator::Proxy < Kamal::Configuration::Validator
     unless config.nil?
       super
 
-      if config["host"].blank? && config["hosts"].blank? && config["ssl"]
+      if config["host"].blank? && config["hosts"].blank? && config["ssl"] && config["tls_on_demand_url"].blank?
         error "Must set a host to enable automatic SSL"
       end
 
       if (config.keys & [ "host", "hosts" ]).size > 1
         error "Specify one of 'host' or 'hosts', not both"
+      end
+
+      if config.key?("tls_on_demand_url")
+        unless config["ssl"]
+          error "Must enable ssl to use tls_on_demand_url"
+        end
+
+        if config["host"].present? || config["hosts"].present?
+          error "Cannot set a host when using tls_on_demand_url"
+        end
+
+        if config["ssl"].is_a?(Hash)
+          error "Cannot use a custom SSL certificate with tls_on_demand_url"
+        end
+
+        ensure_valid_tls_on_demand_url config["tls_on_demand_url"]
       end
 
       if config["ssl"].is_a?(Hash)
@@ -36,6 +52,20 @@ class Kamal::Configuration::Validator::Proxy < Kamal::Configuration::Validator
   end
 
   private
+    # Mirrors kamal-proxy's own parsing: a path, or an absolute http(s) URL with a host.
+    def ensure_valid_tls_on_demand_url(url)
+      if url.is_a?(String) && url.present?
+        return if url.start_with?("/") && !url.start_with?("//")
+
+        uri = URI.parse(url)
+        return if uri.scheme.in?([ "http", "https" ]) && uri.host.present?
+      end
+
+      error "tls_on_demand_url must be a path or an absolute http(s) URL"
+    rescue URI::InvalidURIError
+      error "tls_on_demand_url must be a path or an absolute http(s) URL"
+    end
+
     def ensure_valid_bind_ips(bind_ips)
       bind_ips.present? && bind_ips.each do |ip|
         next if ip =~ Resolv::IPv4::Regex || ip =~ Resolv::IPv6::Regex
