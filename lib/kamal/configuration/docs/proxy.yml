@@ -157,6 +157,15 @@ proxy:
   # and adds the socket's numeric group ID to the container. This grants the proxy
   # control over Docker on the host, so only enable it in environments where the
   # proxy container is trusted with that access.
+  #
+  # While idle mode is configured, container pruning protects registered app
+  # targets (including sleeping, read, and rollout targets) before applying the
+  # retention limit. If proxy targets cannot be verified, container pruning is
+  # skipped on that host with a warning. Deploy changes that disable idle mode
+  # before pruning with that configuration.
+  #
+  # Protection uses Kamal's deploy lock. Direct Docker pruning or concurrent
+  # changes made through the proxy CLI do not participate in this protection.
   idle:
     timeout: 300        # Stop the container after 5 minutes without requests
     wake_timeout: 30    # Maximum time to wait for the container to become healthy
