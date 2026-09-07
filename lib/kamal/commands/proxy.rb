@@ -48,13 +48,13 @@ class Kamal::Commands::Proxy < Kamal::Commands::Base
 
   def logs(timestamps: true, since: nil, lines: nil, grep: nil, grep_options: nil)
     pipe \
-      docker(:logs, container_name, ("--since #{since}" if since), ("--tail #{lines}" if lines), ("--timestamps" if timestamps), "2>&1"),
+      docker_logs(timestamps: timestamps, since: since, lines: lines),
       ("grep '#{grep}'#{" #{grep_options}" if grep_options}" if grep)
   end
 
-  def follow_logs(host:, timestamps: true, grep: nil, grep_options: nil)
+  def follow_logs(host:, timestamps: true, since: nil, lines: nil, grep: nil, grep_options: nil)
     run_over_ssh pipe(
-      docker(:logs, container_name, ("--timestamps" if timestamps), "--tail", "10", "--follow", "2>&1"),
+      docker_logs(timestamps: timestamps, since: since, lines: lines, follow: true),
       (%(grep "#{grep}"#{" #{grep_options}" if grep_options}) if grep)
     ).join(" "), host: host
   end
@@ -142,5 +142,14 @@ class Kamal::Commands::Proxy < Kamal::Commands::Base
         "--restart", "unless-stopped",
         "--volume", "kamal-proxy-config:/home/kamal-proxy/.config/kamal-proxy",
         *config.proxy_boot.apps_volume.docker_args
+    end
+
+    def docker_logs(timestamps:, since:, lines:, follow: false)
+      docker :logs, container_name,
+        ("--since #{since}" if since),
+        ("--tail #{lines}" if lines),
+        ("--timestamps" if timestamps),
+        ("--follow" if follow),
+        "2>&1"
     end
 end
