@@ -21,6 +21,16 @@ module Kamal::Commands::App::Proxy
     remove_directory config.proxy_boot.app_directory
   end
 
+  def health_check_response(target:)
+    health_check_path = role.proxy.proxy_config.dig("healthcheck", "path") || "/up"
+    app_port = role.proxy.app_port
+
+    pipe \
+      docker(:inspect, "--format", "'{{.NetworkSettings.Networks.kamal.IPAddress}}'", target),
+      [ :xargs, "-I{}", :curl, "-s", "-o", "-", "-w", "'\\n%{http_code}'", "--max-time", "5",
+        "http://{}:#{app_port}#{health_check_path}" ]
+  end
+
   def create_ssl_directory
     make_directory(File.join(config.proxy_boot.tls_directory, role.name))
   end
