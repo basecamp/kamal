@@ -40,6 +40,10 @@ class Kamal::Commands::Proxy < Kamal::Commands::Base
     docker :ps, "--filter", "'name=^#{container_name}$'"
   end
 
+  def services
+    docker :exec, container_name, "kamal-proxy", :list, "--json"
+  end
+
   def version
     pipe \
       docker(:inspect, container_name, "--format '{{.Config.Image}}'"),

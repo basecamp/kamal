@@ -1,0 +1,16 @@
+service: app
+image: dhh/app
+servers:
+  web:
+    hosts: [1.1.1.1]
+  workers:
+    hosts: [1.1.1.1, 1.1.1.2]
+    proxy: false
+proxy:
+  idle:
+    timeout: 60
+registry:
+  username: dhh
+  password: secret
+builder:
+  arch: amd64
