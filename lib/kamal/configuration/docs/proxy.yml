@@ -26,6 +26,16 @@ proxy:
     - foo.example.com
     - bar.example.com
 
+  # Canonical host
+  #
+  # Redirect all requests to this host. Can be used to enfore a consistent host
+  # while accepting requests on many hosts. For example, to enforce the use
+  # of the `www` subdomain when your app is served both with and without it.
+  #
+  # The canonical host must be one of the hosts listed in `hosts`, or the deploy
+  # will fail.
+  canonical_host: foo.example.com
+
   # App port
   #
   # The port the application container is exposed on.
@@ -79,6 +89,16 @@ proxy:
   # By default, kamal-proxy will not forward the headers if the `ssl` option is set to `true`, and
   # will forward them if it is set to `false`.
   forward_headers: true
+
+  # Client IP header
+  #
+  # If a proxy or CDN in front of kamal-proxy passes the original client IP in a header
+  # other than `X-Forwarded-For`, name that header here. For example, Cloudflare uses
+  # `True-Client-IP`.
+  #
+  # When set, kamal-proxy copies the value of this header into `X-Forwarded-For` before
+  # logging the request and forwarding it to your application.
+  client_ip_header: True-Client-IP
 
   # Response timeout
   #
@@ -147,6 +167,18 @@ proxy:
     response_headers:
       - X-Request-ID
       - X-Request-Start
+
+  # Excluding paths from metrics
+  #
+  # When metrics are enabled (see `metrics_port` under `run`), every request is recorded
+  # in the Prometheus output. Health checks from load balancers or uptime monitors can
+  # add noise to those metrics.
+  #
+  # List request paths to exclude from the metrics. Matches are exact. Excluded requests
+  # are still logged; only the Prometheus counters and in-flight gauge are skipped.
+  exclude_metrics_paths:
+    - /up
+    - /healthz
 
   # Run configuration
   #
