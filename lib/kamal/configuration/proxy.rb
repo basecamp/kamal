@@ -14,11 +14,17 @@ class Kamal::Configuration::Proxy
     @role_name = role_name
     @secrets = secrets
     validate! @proxy_config, with: Kamal::Configuration::Validator::Proxy, context: context
-    @run = Kamal::Configuration::Proxy::Run.new(config, run_config: @proxy_config["run"], context: "#{context}/run") if @proxy_config && @proxy_config["run"].present?
+    if @proxy_config["run"].present? || idle?
+      @run = Kamal::Configuration::Proxy::Run.new(config, run_config: @proxy_config["run"] || {}, context: "#{context}/run")
+    end
   end
 
   def app_port
     proxy_config.fetch("app_port", 80)
+  end
+
+  def idle?
+    proxy_config.dig("idle", "timeout").present?
   end
 
   def ssl?
@@ -90,6 +96,8 @@ class Kamal::Configuration::Proxy
       "tls-redirect": proxy_config.dig("ssl_redirect"),
       "log-request-header": proxy_config.dig("logging", "request_headers") || DEFAULT_LOG_REQUEST_HEADERS,
       "log-response-header": proxy_config.dig("logging", "response_headers"),
+      "idle-timeout": seconds_duration(proxy_config.dig("idle", "timeout")),
+      "idle-wake-timeout": seconds_duration(proxy_config.dig("idle", "wake_timeout")),
       "error-pages": error_pages
     }.compact
   end

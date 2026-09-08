@@ -21,6 +21,18 @@ class Kamal::Configuration::Validator::Proxy < Kamal::Configuration::Validator
         end
       end
 
+      if idle_config = config["idle"]
+        if idle_config["timeout"].blank?
+          error "Idle timeout is required"
+        elsif idle_config["timeout"] <= 0
+          error "Idle timeout must be greater than zero"
+        end
+
+        if idle_config["wake_timeout"].present? && idle_config["wake_timeout"] <= 0
+          error "Idle wake timeout must be greater than zero"
+        end
+      end
+
       if run_config = config["run"]
         if run_config["bind_ips"].present?
           ensure_valid_bind_ips(config["bind_ips"])
