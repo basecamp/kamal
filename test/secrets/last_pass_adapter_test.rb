@@ -133,6 +133,13 @@ class LastPassAdapterTest < SecretAdapterTestCase
     assert_equal "LastPass CLI is not installed", error.message
   end
 
+  test "environment is provided as an option" do
+    stub_ticks_with("lpass --version 2> /dev/null", succeed: false)
+
+    message = run_command("fetch", "--environment", "asdf", "SECRET1", "FOLDER1/FSECRET1", "FOLDER1/FSECRET2")
+    assert_equal "Option '--environment' is not supported by this adapter", message
+  end
+
   private
     def run_command(*command)
       stdouted do
