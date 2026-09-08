@@ -15,7 +15,19 @@ class Kamal::Secrets::Dotenv::InlineCommandSubstitution
 
   class << self
     def install!
-      ::Dotenv::Parser.substitutions.map! { |sub| sub == ::Dotenv::Substitutions::Command ? self : sub }
+      substitutions = ::Dotenv::Parser.substitutions
+      substitutions.map! { |sub| sub == ::Dotenv::Substitutions::Command ? self : sub }
+
+      # Run variable substitution before command substitution, so command
+      # output is inserted literally. Otherwise a "$word" in the output --
+      # common in passwords and tokens -- is treated as a reference to a
+      # (usually undefined) variable and silently dropped. This matches
+      # POSIX shell semantics, where the output of command substitution is
+      # not subject to further expansion. Variable references inside the
+      # command itself are still substituted in #call before execution.
+      if substitutions.delete(::Dotenv::Substitutions::Variable)
+        substitutions.unshift(::Dotenv::Substitutions::Variable)
+      end
     end
 
     def call(value, env, overwrite: false)
