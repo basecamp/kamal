@@ -193,6 +193,18 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
       new_command(:mysql).follow_logs(host: "1.1.1.5", since: "5m", lines: 123)
   end
 
+  test "current image id names the container, so a stray label match cannot be picked" do
+    assert_equal \
+      "docker inspect app-mysql --format '{{.Image}}'",
+      new_command(:mysql).current_image_id.join(" ")
+  end
+
+  test "remove image id is unforced, so docker refuses while it is in use" do
+    assert_equal \
+      "docker image rm sha256:abc123",
+      new_command(:mysql).remove_image_id("sha256:abc123").join(" ")
+  end
+
   test "remove container" do
     assert_equal \
       "docker container prune --force --filter label=service=app-mysql",

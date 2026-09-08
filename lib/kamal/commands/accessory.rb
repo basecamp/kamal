@@ -109,6 +109,16 @@ class Kamal::Commands::Accessory < Kamal::Commands::Base
     docker :image, :rm, "--force", image
   end
 
+  def current_image_id
+    docker :inspect, service_name, "--format", "'{{.Image}}'"
+  end
+
+  # Refuses while any container still references it, so nothing has to compare
+  # the old image against the new one.
+  def remove_image_id(image_id)
+    docker :image, :rm, image_id
+  end
+
   def ensure_env_directory
     make_directory env_directory
   end
