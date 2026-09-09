@@ -446,6 +446,16 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
     assert_equal [ "monitoring.example.com" ], @config.accessory(:monitoring).proxy.hosts
   end
 
+  test "proxy with custom ssl certificate" do
+    @deploy[:accessories]["monitoring"]["proxy"]["ssl"] = { "certificate_pem" => "CERT_PEM", "private_key_pem" => "KEY_PEM" }
+    proxy = Kamal::Configuration.new(@deploy).accessory(:monitoring).proxy
+
+    assert_equal ".kamal/proxy/apps-config/app/tls/accessories/monitoring/cert.pem", proxy.host_tls_cert
+    assert_equal ".kamal/proxy/apps-config/app/tls/accessories/monitoring/key.pem", proxy.host_tls_key
+    assert_equal "/home/kamal-proxy/.apps-config/app/tls/accessories/monitoring/cert.pem", proxy.container_tls_cert
+    assert_equal "/home/kamal-proxy/.apps-config/app/tls/accessories/monitoring/key.pem", proxy.container_tls_key
+  end
+
   test "invalid boolean restart policy" do
     @deploy[:accessories]["mysql"]["options"] = { "restart" => false }
 
