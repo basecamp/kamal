@@ -67,6 +67,16 @@ class Kamal::Configuration::Proxy
     proxy_config["path_prefixes"] || proxy_config["path_prefix"]&.split(",") || []
   end
 
+  def basic_auth?
+    proxy_config["basic_auth"].is_a?(Hash)
+  end
+
+  def basic_auth
+    return nil unless basic_auth?
+    auth = proxy_config["basic_auth"]
+    "#{auth["username"]}:#{auth["password"]}"
+  end
+
   def deploy_options
     {
       host: hosts,
@@ -90,12 +100,19 @@ class Kamal::Configuration::Proxy
       "tls-redirect": proxy_config.dig("ssl_redirect"),
       "log-request-header": proxy_config.dig("logging", "request_headers") || DEFAULT_LOG_REQUEST_HEADERS,
       "log-response-header": proxy_config.dig("logging", "response_headers"),
-      "error-pages": error_pages
+      "error-pages": error_pages,
+      "basic-auth": basic_auth
     }.compact
   end
 
   def deploy_command_args(target:)
-    optionize ({ target: "#{target}:#{app_port}" }).merge(deploy_options), with: "="
+    options = deploy_options
+    basic_auth = options.delete(:"basic-auth")
+
+    [
+      *optionize({ target: "#{target}:#{app_port}" }.merge(options), with: "="),
+      *basic_auth_args(basic_auth)
+    ]
   end
 
   def stop_options(drain_timeout: nil, message: nil)
@@ -114,6 +131,13 @@ class Kamal::Configuration::Proxy
   end
 
   private
+    # Wrap the basic auth credentials so they're redacted in command logs and
+    # other human-visible output, while still passed verbatim to kamal-proxy.
+    def basic_auth_args(value)
+      return [] if value.blank?
+      [ Kamal::Utils.sensitive("--basic-auth=#{Kamal::Utils.escape_shell_value(value)}", redaction: "--basic-auth=[REDACTED]") ]
+    end
+
     def tls_path(directory, filename)
       File.join([ directory, role_name, filename ].compact) if custom_ssl_certificate?
     end
