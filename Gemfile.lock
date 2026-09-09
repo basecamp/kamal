@@ -76,7 +76,9 @@ GEM
     loofah (2.25.2)
       crass (~> 1.0.2)
       nokogiri (>= 1.12.0)
-    minitest (5.27.0)
+    minitest (6.0.6)
+      drb (~> 2.0)
+      prism (~> 1.5)
     mocha (3.1.0)
       ruby2_keywords (>= 0.0.5)
     net-scp (4.1.0)
@@ -189,7 +191,7 @@ GEM
     unicode-emoji (4.2.0)
     uri (1.1.1)
     useragent (0.16.11)
-    zeitwerk (2.8.2)
+    zeitwerk (2.8.3)
 
 PLATFORMS
   aarch64-linux-musl
@@ -201,7 +203,7 @@ PLATFORMS
 DEPENDENCIES
   debug
   kamal!
-  minitest (< 6)
+  minitest (< 7)
   mocha
   railties
   rubocop-rails-omakase
