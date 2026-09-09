@@ -19,6 +19,16 @@ class Kamal::Configuration::Registry
     lookup("password")
   end
 
+  # `auto` is the container CLI's own default, and it cannot reach a plain-HTTP
+  # registry: 1.2.2 attempts TLS for localhost and 127.0.0.1 alike and fails with
+  # "bad protocol version". Treat it as "let Kamal decide".
+  def scheme
+    configured = registry_config["scheme"]
+    configured = nil if configured == "auto"
+
+    configured || ("http" if local?)
+  end
+
   def local?
     server.to_s.match?("^localhost[:$]")
   end

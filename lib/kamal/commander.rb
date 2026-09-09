@@ -121,6 +121,10 @@ class Kamal::Commander
     @commands[:registry] ||= Kamal::Commands::Registry.new(config)
   end
 
+  def local_registry
+    @commands[:local_registry] ||= builder.local_registry
+  end
+
   def server
     @commands[:server] ||= Kamal::Commands::Server.new(config)
   end
@@ -198,6 +202,7 @@ class Kamal::Commander
         sshkit.ssh_options = config.ssh.options
       end
       SSHKit.config.command_map[:docker] = "docker" # No need to use /usr/bin/env, just clogs up the logs
+      SSHKit.config.command_map[:container] = "container"
       SSHKit.config.output_verbosity = verbosity
 
       configure_output_with(config)

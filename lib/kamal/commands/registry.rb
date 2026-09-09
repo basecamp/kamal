@@ -1,4 +1,6 @@
 class Kamal::Commands::Registry < Kamal::Commands::Base
+  LOCAL_REGISTRY_CONTAINER = "kamal-docker-registry"
+
   def login(registry_config: nil)
     registry_config ||= config.registry
 
@@ -20,15 +22,15 @@ class Kamal::Commands::Registry < Kamal::Commands::Base
     registry_config ||= config.registry
 
     combine \
-      docker(:start, "kamal-docker-registry"),
-      docker(:run, "--detach", "-p", "127.0.0.1:#{registry_config.local_port}:5000", "--name", "kamal-docker-registry", "registry:3"),
+      docker(:start, LOCAL_REGISTRY_CONTAINER),
+      docker(:run, "--detach", "-p", "127.0.0.1:#{registry_config.local_port}:5000", "--name", LOCAL_REGISTRY_CONTAINER, "registry:3"),
       by: "||"
   end
 
   def remove
     combine \
-      docker(:stop, "kamal-docker-registry"),
-      docker(:rm, "kamal-docker-registry"),
+      docker(:stop, LOCAL_REGISTRY_CONTAINER),
+      docker(:rm, LOCAL_REGISTRY_CONTAINER),
       by: "&&"
   end
 

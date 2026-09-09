@@ -8,6 +8,7 @@ class Kamal::Configuration::Validator::Registry < Kamal::Configuration::Validato
 
     validate_string_or_one_item_array! "username"
     validate_string_or_one_item_array! "password"
+    error "Invalid registry scheme: #{config["scheme"]}" if config["scheme"] && !%w[ auto http https ].include?(config["scheme"])
   end
 
   private

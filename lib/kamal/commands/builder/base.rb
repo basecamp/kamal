@@ -16,6 +16,27 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
     docker :image, :rm, "--force", config.absolute_image
   end
 
+  def ensure_installed
+    ensure_docker_installed
+  end
+
+  def install_error(output)
+    output.match?(/command not found/) ?
+      "Docker is not installed locally" :
+      "Docker buildx plugin is not installed locally"
+  end
+
+  # The local registry runs alongside the builder, so it speaks the builder's engine.
+  def local_registry
+    Kamal::Commands::Registry.new(config)
+  end
+
+  # Plain argv, not SSHKit commands: these run through Kernel#system and Open3.
+  def build_check_commands(dockerfile:, tag:)
+    { build: [ "docker", "buildx", "build", "--tag", tag, "--file", dockerfile, "." ],
+      run: [ "docker", "run", "--rm", tag ] }
+  end
+
   def push(export_action = "registry", tag_as_dirty: false, no_cache: false)
     docker :buildx, :build,
       "--output=type=#{export_action}",

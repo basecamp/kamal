@@ -17,7 +17,7 @@ class Kamal::Cli::Build < Kamal::Cli::Base
     # or the pre-build hooks.
     pre_connect_if_required
 
-    ensure_docker_installed
+    ensure_builder_installed
     setup_local_registry      if KAMAL.registry.local?
     login_to_registry_locally if !KAMAL.registry.local? && KAMAL.builder.login_to_registry_locally?
 
@@ -127,9 +127,9 @@ class Kamal::Cli::Build < Kamal::Cli::Base
   def dev
     cli = self
 
-    ensure_docker_installed
+    ensure_builder_installed
 
-    docker_included_files = Set.new(Kamal::Docker.included_files)
+    docker_included_files = Set.new(Kamal::Docker.included_files(builder: KAMAL.builder))
     git_uncommitted_files = Set.new(Kamal::Git.uncommitted_files)
     git_untracked_files = Set.new(Kamal::Git.untracked_files)
 
@@ -151,7 +151,7 @@ class Kamal::Cli::Build < Kamal::Cli::Base
       run_locally do
         build = KAMAL.builder.push(cli.options[:output], tag_as_dirty: true, no_cache: cli.options[:no_cache])
         KAMAL.with_verbosity(:debug) do
-          execute(*build)
+          execute(*build, env: KAMAL.builder.push_env)
         end
       end
     end
@@ -197,13 +197,13 @@ class Kamal::Cli::Build < Kamal::Cli::Base
 
     def setup_local_registry
       run_locally do
-        execute *KAMAL.registry.setup
+        execute *KAMAL.local_registry.setup
       end
     end
 
     def login_to_registry_locally
       run_locally do
-        execute *KAMAL.registry.login
+        execute *KAMAL.local_registry.login
       end
     end
 
