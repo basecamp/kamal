@@ -10,7 +10,7 @@ class ConfigurationValidationTest < ActiveSupport::TestCase
       assert_error "#{key}: should be a string", **{ key => [] }
     end
 
-    [ :require_destination, :allow_empty_roles ].each do |key|
+    [ :require_destination, :allow_empty_roles, :post_deploy_lock ].each do |key|
       assert_error "#{key}: should be a boolean", **{ key => "foo" }
     end
 

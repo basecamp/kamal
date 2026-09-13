@@ -302,6 +302,10 @@ class Kamal::Configuration
     end
   end
 
+  def post_deploy_lock?
+    raw_config.post_deploy_lock || false
+  end
+
   def to_h
     {
       roles: role_names,
