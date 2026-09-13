@@ -141,6 +141,16 @@ class ConfigurationBuilderTest < ActiveSupport::TestCase
     assert_equal "..", config.builder.context
   end
 
+  test "additional_contexts" do
+    assert_equal({}, config.builder.additional_contexts)
+  end
+
+  test "setting additional_contexts" do
+    @deploy[:builder]["additional_contexts"] = { "scripts" => "../../scripts", "assets" => "../../assets" }
+
+    assert_equal({ "scripts" => "../../scripts", "assets" => "../../assets" }, config.builder.additional_contexts)
+  end
+
   test "ssh" do
     assert_nil config.builder.ssh
   end

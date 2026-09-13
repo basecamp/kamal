@@ -85,6 +85,10 @@ class Kamal::Configuration::Builder
     builder_config["context"] || "."
   end
 
+  def additional_contexts
+    builder_config["additional_contexts"] || {}
+  end
+
   def driver
     builder_config.fetch("driver", "docker-container")
   end

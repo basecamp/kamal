@@ -67,6 +67,14 @@ builder:
   # The Dockerfile to use for building, defaults to `Dockerfile`:
   dockerfile: Dockerfile.production
 
+  # Additional build contexts
+  #
+  # Additional build contexts to use when building. They are referenced by
+  # name from the Dockerfile:
+  additional_contexts:
+    scripts: ../../scripts
+    assets: ../../assets
+
   # Build target
   #
   # If not set, then the default target is used:
