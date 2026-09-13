@@ -81,6 +81,61 @@ class ConfigurationProxyTest < ActiveSupport::TestCase
     end
   end
 
+  test "healthcheck options are passed through to the proxy" do
+    @deploy[:proxy] = {
+      "host" => "example.com",
+      "healthcheck" => {
+        "protocol" => "websocket",
+        "path" => "/mqtt",
+        "websocket_subprotocol" => "mqtt"
+      }
+    }
+
+    options = config.proxy.deploy_options
+    assert_equal "websocket", options[:"health-check-protocol"]
+    assert_equal "/mqtt", options[:"health-check-path"]
+    assert_equal "mqtt", options[:"health-check-websocket-subprotocol"]
+  end
+
+  test "an empty healthcheck protocol passes no flag" do
+    @deploy[:proxy] = { "host" => "example.com", "healthcheck" => { "protocol" => "" } }
+
+    assert_not config.proxy.deploy_options.key?(:"health-check-protocol")
+  end
+
+  test "an unknown healthcheck protocol is rejected" do
+    @deploy[:proxy] = { "host" => "example.com", "healthcheck" => { "protocol" => "websockets" } }
+
+    error = assert_raises(Kamal::ConfigurationError) { config.proxy }
+    assert_match(/Invalid healthcheck protocol: websockets/, error.message)
+  end
+
+  test "a websocket subprotocol without the websocket protocol is rejected" do
+    [ nil, "http" ].each do |protocol|
+      healthcheck = { "websocket_subprotocol" => "mqtt" }
+      healthcheck["protocol"] = protocol if protocol
+      @deploy[:proxy] = { "host" => "example.com", "healthcheck" => healthcheck }
+
+      error = assert_raises(Kamal::ConfigurationError) { config.proxy }
+      assert_match(/websocket_subprotocol/, error.message)
+    end
+  end
+
+  test "the supported healthcheck protocols are accepted" do
+    [ "http", "websocket" ].each do |protocol|
+      @deploy[:proxy] = { "host" => "example.com", "healthcheck" => { "protocol" => protocol } }
+      assert_equal protocol, config.proxy.deploy_options[:"health-check-protocol"]
+    end
+  end
+
+  test "healthcheck options are omitted when unset" do
+    @deploy[:proxy] = { "host" => "example.com" }
+
+    options = config.proxy.deploy_options
+    assert_not options.key?(:"health-check-protocol")
+    assert_not options.key?(:"health-check-websocket-subprotocol")
+  end
+
   test "ssl with certificate and no private key" do
     with_test_secrets("secrets" => "CERT_PEM=certificate") do
       @deploy[:proxy] = {

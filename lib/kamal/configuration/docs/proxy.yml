@@ -114,10 +114,21 @@ proxy:
   # the deploy timeout, with a 5-second timeout for each request.
   #
   # Once the app is up, the proxy will stop hitting the healthcheck endpoint.
+  #
+  # `protocol` is `http` (the default) or `websocket`. With `websocket` the
+  # proxy sends a WebSocket handshake and treats `101 Switching Protocols` as
+  # healthy, so a target that only speaks WebSocket can be checked on the port
+  # it serves.
+  #
+  # `websocket_subprotocol` sets `Sec-WebSocket-Protocol`. Optional, but some
+  # servers will not complete the handshake without the subprotocol they speak
+  # -- MQTT over WebSocket, for instance, expects `mqtt`.
   healthcheck:
     interval: 3
     path: /health
     timeout: 3
+    protocol: websocket
+    websocket_subprotocol: mqtt
 
   # Buffering
   #

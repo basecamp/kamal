@@ -446,6 +446,19 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
     assert_equal [ "monitoring.example.com" ], @config.accessory(:monitoring).proxy.hosts
   end
 
+  test "proxy healthcheck options reach the proxy" do
+    @deploy[:accessories]["monitoring"]["proxy"]["healthcheck"] = {
+      "protocol" => "websocket",
+      "path" => "/mqtt",
+      "websocket_subprotocol" => "mqtt"
+    }
+
+    options = @config.accessory(:monitoring).proxy.deploy_options
+    assert_equal "websocket", options[:"health-check-protocol"]
+    assert_equal "/mqtt", options[:"health-check-path"]
+    assert_equal "mqtt", options[:"health-check-websocket-subprotocol"]
+  end
+
   test "invalid boolean restart policy" do
     @deploy[:accessories]["mysql"]["options"] = { "restart" => false }
 
