@@ -257,6 +257,20 @@ class ConfigurationTest < ActiveSupport::TestCase
     assert_equal ENV["KAMAL_DESTINATION"], "world"
   end
 
+  test "load_raw_config sets destination env for alias resolution path" do
+    dest_config_file = Pathname.new(File.expand_path("fixtures/deploy_alias_needs_destination.yml", __dir__))
+
+    ENV.delete("KAMAL_DESTINATION")
+
+    assert_raises(RuntimeError, match: /destination missing/) do
+      Kamal::Configuration.load_raw_config(config_file: dest_config_file)
+    end
+
+    raw = Kamal::Configuration.load_raw_config(config_file: dest_config_file, destination: "staging")
+    assert_equal "staging", ENV["KAMAL_DESTINATION"]
+    assert_equal "app exec --interactive --reuse \"bin/rails console\"", raw[:aliases]["console"]
+  end
+
   test "destination yml config merge" do
     dest_config_file = Pathname.new(File.expand_path("fixtures/deploy_for_dest.yml", __dir__))
 
