@@ -13,6 +13,15 @@ class CliLockTest < CliTestCase
     end
   end
 
+  test "acquire ensures the run directory only on the primary host" do
+    run_command("acquire", "-m", "hello").tap do |output|
+      assert_match "Running /usr/bin/env mkdir -p .kamal on 1.1.1.1", output
+      assert_no_match(/mkdir -p \.kamal on 1\.1\.1\.2/, output)
+      assert_no_match(/mkdir -p \.kamal on 1\.1\.1\.3/, output)
+      assert_no_match(/mkdir -p \.kamal on 1\.1\.1\.4/, output)
+    end
+  end
+
   test "status when there is no deploy lock" do
     SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_debug)
       .raises(RuntimeError, "cat: .kamal/lock-app/details: No such file or directory")
