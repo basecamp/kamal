@@ -58,6 +58,8 @@ class Kamal::Configuration
 
     validate! raw_config, example: validation_yml.symbolize_keys, context: "", with: Kamal::Configuration::Validator::Configuration
 
+    ensure_destination_if_required
+
     @secrets = Kamal::Secrets.new(destination: destination, secrets_path: secrets_path)
 
     # Eager load config to validate it, these are first as they have dependencies later on
@@ -77,7 +79,6 @@ class Kamal::Configuration
     @ssh = Ssh.new(config: self)
     @sshkit = Sshkit.new(config: self)
 
-    ensure_destination_if_required
     ensure_required_keys_present
     ensure_valid_kamal_version
     ensure_retain_containers_valid
