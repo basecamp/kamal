@@ -31,7 +31,23 @@ class Kamal::Configuration
 
     private
       def load_config_files(*files)
-        files.inject({}) { |config, file| config.deep_merge! load_config_file(file) }
+        files.inject({}) { |config, file| merge_config(config, load_config_file(file)) }
+      end
+
+      def merge_config(config, override, parents = [])
+        config.merge(override) do |key, old_value, new_value|
+          if old_value.is_a?(Hash) && new_value.is_a?(Hash)
+            merge_config(old_value, new_value, parents + [ key.to_s ])
+          elsif direct_env_secret_key?(parents, key) && old_value.is_a?(Array) && new_value.is_a?(Array)
+            old_value | new_value
+          else
+            new_value
+          end
+        end
+      end
+
+      def direct_env_secret_key?(parents, key)
+        key.to_s == "secret" && parents == [ "env" ]
       end
 
       def load_config_file(file)
