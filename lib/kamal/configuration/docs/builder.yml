@@ -130,3 +130,13 @@ builder:
   # It is used to configure SBOM generation for the build result.
   # The value can also be a boolean to enable or disable SBOM generation.
   sbom: true
+
+  # Output options
+  #
+  # Extra parameters for the buildx `--output` flag, useful for configuring the compression.
+  #
+  # The output type is set by Kamal and cannot be overridden here.
+  output_options:
+    compression: zstd
+    compression-level: 3
+    force-compression: true
