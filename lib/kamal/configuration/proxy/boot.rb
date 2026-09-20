@@ -18,14 +18,16 @@ class Kamal::Configuration::Proxy::Boot
     end.join(" ")
   end
 
-  def logging_args(max_size)
-    argumentize "--log-opt", "max-size=#{max_size}" if max_size.present?
+  def logging_args(max_size, default_logging_driver: nil, configured: true)
+    if max_size.present? && (configured || Kamal::Configuration::Logging.default_log_max_size_driver?(default_logging_driver))
+      argumentize "--log-opt", "max-size=#{max_size}"
+    end
   end
 
-  def default_boot_options
+  def default_boot_options(default_logging_driver: nil)
     [
       *(publish_args(Kamal::Configuration::Proxy::Run::DEFAULT_HTTP_PORT, Kamal::Configuration::Proxy::Run::DEFAULT_HTTPS_PORT, nil)),
-      *(logging_args(Kamal::Configuration::Proxy::Run::DEFAULT_LOG_MAX_SIZE))
+      *(logging_args(Kamal::Configuration::Proxy::Run::DEFAULT_LOG_MAX_SIZE, default_logging_driver: default_logging_driver, configured: false))
     ]
   end
 

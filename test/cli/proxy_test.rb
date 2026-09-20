@@ -49,6 +49,7 @@ class CliProxyTest < CliTestCase
       .with(:docker, :inspect, "kamal-proxy", "--format '{{.Config.Image}}'", "|", :awk, "-F:", "'{print $NF}'")
       .returns(Kamal::Configuration::Proxy::Run::MINIMUM_VERSION)
       .at_least_once
+    stub_docker_logging_driver
 
     run_command("boot").tap do |output|
       assert_match "docker login", output
@@ -173,6 +174,7 @@ class CliProxyTest < CliTestCase
     Object.any_instance.stubs(:sleep)
 
     SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info).returns("12345678")
+    stub_docker_logging_driver
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
       .with(:docker, :inspect, "kamal-proxy", "--format '{{.Config.Image}}'", "|", :awk, "-F:", "'{print $NF}'")
@@ -212,6 +214,7 @@ class CliProxyTest < CliTestCase
     Object.any_instance.stubs(:sleep)
 
     SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info).returns("12345678")
+    stub_docker_logging_driver
 
     SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
       .with(:docker, :inspect, "kamal-proxy", "--format '{{.Config.Image}}'", "|", :awk, "-F:", "'{print $NF}'")
@@ -389,6 +392,7 @@ class CliProxyTest < CliTestCase
       .with(:echo, "$(cat .kamal/proxy/options 2> /dev/null || echo \"--publish 80:80 --publish 443:443 --log-opt max-size=10m\") $(cat .kamal/proxy/image 2> /dev/null || echo \"basecamp/kamal-proxy\"):$(cat .kamal/proxy/image_version 2> /dev/null || echo \"#{Kamal::Configuration::Proxy::Run::MINIMUM_VERSION}\") $(cat .kamal/proxy/run_command 2> /dev/null || echo \"\")")
       .returns("--publish 80:80 --publish 8443:443 --label=foo=bar basecamp/kamal-proxy:v1.0.0")
       .twice
+    stub_docker_logging_driver
 
     run_command("boot_config", "get").tap do |output|
       assert_match "Host 1.1.1.1: --publish 80:80 --publish 8443:443 --label=foo=bar basecamp/kamal-proxy:v1.0.0", output
