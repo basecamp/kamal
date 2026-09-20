@@ -33,6 +33,34 @@ class SecretsTest < ActiveSupport::TestCase
     end
   end
 
+  test "warns on unsupported parameter expansion" do
+    with_test_secrets("secrets" => "FOO=${BAR:-baz}") do
+      _, stderr = capture_io do
+        Kamal::Secrets.new(secrets_path: ".kamal/secrets").to_h
+      end
+      assert_match(/uses \$\{VAR:-default\}-style bash parameter expansion/, stderr)
+      assert_match(/\.kamal\/secrets/, stderr)
+    end
+  end
+
+  test "does not warn on supported expansions" do
+    with_test_secrets("secrets" => "FOO=bar\nBAZ=${FOO}\nQ=$(echo hi)") do
+      _, stderr = capture_io do
+        Kamal::Secrets.new(secrets_path: ".kamal/secrets").to_h
+      end
+      assert_equal "", stderr
+    end
+  end
+
+  test "does not warn on commented or escaped expansions" do
+    with_test_secrets("secrets" => "# FOO=${BAR:-baz}\nQUX=\\${BAR:-baz}") do
+      _, stderr = capture_io do
+        Kamal::Secrets.new(secrets_path: ".kamal/secrets").to_h
+      end
+      assert_equal "", stderr
+    end
+  end
+
   test "env references" do
     with_test_secrets("secrets" => "SECRET1=$SECRET1") do
       ENV["SECRET1"] = "ABC"
