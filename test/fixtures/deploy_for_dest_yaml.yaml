@@ -1,0 +1,13 @@
+service: app
+image: dhh/app
+registry:
+  server: registry.digitalocean.com
+  username: <%= "my-user" %>
+  password: <%= "my-password" %>
+builder:
+  arch: amd64
+servers:
+  - 1.1.1.1
+  - 1.1.1.2
+env:
+  REDIS_URL: redis://x/y
