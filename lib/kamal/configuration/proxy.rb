@@ -110,10 +110,19 @@ class Kamal::Configuration::Proxy
   end
 
   def merge(other)
-    self.class.new config: config, proxy_config: other.proxy_config.deep_merge(proxy_config), role_name: role_name, secrets: secrets
+    self.class.new config: config, proxy_config: merge_proxy_config(other.proxy_config, proxy_config), role_name: role_name, secrets: secrets
   end
 
   private
+    def merge_proxy_config(inherited_config, overrides)
+      inherited_config = inherited_config.dup
+
+      inherited_config.delete("host") if overrides.key?("hosts")
+      inherited_config.delete("hosts") if overrides.key?("host")
+
+      inherited_config.deep_merge(overrides)
+    end
+
     def tls_path(directory, filename)
       File.join([ directory, role_name, filename ].compact) if custom_ssl_certificate?
     end

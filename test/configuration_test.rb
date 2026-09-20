@@ -267,6 +267,122 @@ class ConfigurationTest < ActiveSupport::TestCase
     assert_equal "1.1.1.3", config.all_hosts.first
   end
 
+  test "destination proxy hosts replace proxy host" do
+    with_config_files(
+      "deploy.yml" => <<~YAML,
+        service: app
+        image: dhh/app
+        registry:
+          username: dhh
+          password: secret
+        builder:
+          arch: amd64
+        servers:
+          - 1.1.1.1
+        proxy:
+          host: myapp.dev
+      YAML
+      "deploy.staging.yml" => <<~YAML
+        proxy:
+          hosts:
+            - myapp.dev
+            - files.myapp.dev
+      YAML
+    ) do |config_file|
+      config = Kamal::Configuration.create_from config_file: config_file, destination: "staging"
+      assert_equal [ "myapp.dev", "files.myapp.dev" ], config.proxy.hosts
+    end
+  end
+
+  test "destination proxy host replaces proxy hosts" do
+    with_config_files(
+      "deploy.yml" => <<~YAML,
+        service: app
+        image: dhh/app
+        registry:
+          username: dhh
+          password: secret
+        builder:
+          arch: amd64
+        servers:
+          - 1.1.1.1
+        proxy:
+          hosts:
+            - myapp.dev
+            - files.myapp.dev
+      YAML
+      "deploy.staging.yml" => <<~YAML
+        proxy:
+          host: myapp.dev
+      YAML
+    ) do |config_file|
+      config = Kamal::Configuration.create_from config_file: config_file, destination: "staging"
+      assert_equal [ "myapp.dev" ], config.proxy.hosts
+    end
+  end
+
+  test "destination role proxy hosts replace role proxy host" do
+    with_config_files(
+      "deploy.yml" => <<~YAML,
+        service: app
+        image: dhh/app
+        registry:
+          username: dhh
+          password: secret
+        builder:
+          arch: amd64
+        servers:
+          web:
+            hosts:
+              - 1.1.1.1
+            proxy:
+              host: web.myapp.dev
+      YAML
+      "deploy.staging.yml" => <<~YAML
+        servers:
+          web:
+            proxy:
+              hosts:
+                - web.myapp.dev
+                - files.myapp.dev
+      YAML
+    ) do |config_file|
+      config = Kamal::Configuration.create_from config_file: config_file, destination: "staging"
+      assert_equal [ "web.myapp.dev", "files.myapp.dev" ], config.role(:web).proxy.hosts
+    end
+  end
+
+  test "destination role proxy host replaces role proxy hosts" do
+    with_config_files(
+      "deploy.yml" => <<~YAML,
+        service: app
+        image: dhh/app
+        registry:
+          username: dhh
+          password: secret
+        builder:
+          arch: amd64
+        servers:
+          web:
+            hosts:
+              - 1.1.1.1
+            proxy:
+              hosts:
+                - web.myapp.dev
+                - files.myapp.dev
+      YAML
+      "deploy.staging.yml" => <<~YAML
+        servers:
+          web:
+            proxy:
+              host: web.myapp.dev
+      YAML
+    ) do |config_file|
+      config = Kamal::Configuration.create_from config_file: config_file, destination: "staging"
+      assert_equal [ "web.myapp.dev" ], config.role(:web).proxy.hosts
+    end
+  end
+
   test "destination yml config file missing" do
     dest_config_file = Pathname.new(File.expand_path("fixtures/deploy_for_dest.yml", __dir__))
 
@@ -463,4 +579,15 @@ class ConfigurationTest < ActiveSupport::TestCase
     end
     assert_match /Invalid hooks_output 'invalid' for hook 'pre-deploy'/, error.message
   end
+
+  private
+    def with_config_files(files)
+      Dir.mktmpdir do |dir|
+        files.each do |name, contents|
+          File.write(File.join(dir, name), contents)
+        end
+
+        yield Pathname.new(File.join(dir, "deploy.yml"))
+      end
+    end
 end
