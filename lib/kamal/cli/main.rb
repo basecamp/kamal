@@ -32,6 +32,9 @@ class Kamal::Cli::Main < Kamal::Cli::Base
         end
 
         modify(lock: true) do
+          say "Ensure app env files are on the servers...", :magenta
+          invoke "kamal:cli:app:boot_env", [], invoke_options
+
           run_hook "pre-deploy", secrets: true
 
           say "Ensure kamal-proxy is running...", :magenta
@@ -70,6 +73,9 @@ class Kamal::Cli::Main < Kamal::Cli::Base
         end
 
         modify(lock: true) do
+          say "Ensure app env files are on the servers...", :magenta
+          invoke "kamal:cli:app:boot_env", [], invoke_options
+
           run_hook "pre-deploy", secrets: true
 
           say "Detect stale containers...", :magenta
@@ -95,6 +101,9 @@ class Kamal::Cli::Main < Kamal::Cli::Base
           KAMAL.config.version = version
 
           if container_available?(version)
+            say "Ensure app env files are on the servers...", :magenta
+            invoke "kamal:cli:app:boot_env", [], invoke_options
+
             run_hook "pre-deploy", secrets: true
 
             invoke "kamal:cli:app:boot", [], invoke_options.merge(version: version)
