@@ -78,6 +78,7 @@ class Kamal::Configuration::Proxy
       "health-check-interval": seconds_duration(proxy_config.dig("healthcheck", "interval")),
       "health-check-timeout": seconds_duration(proxy_config.dig("healthcheck", "timeout")),
       "health-check-path": proxy_config.dig("healthcheck", "path"),
+      "health-check-host": proxy_config.dig("healthcheck", "host"),
       "target-timeout": seconds_duration(proxy_config["response_timeout"]),
       "buffer-requests": proxy_config.fetch("buffering", { "requests": true }).fetch("requests", true),
       "buffer-responses": proxy_config.fetch("buffering", { "responses": true }).fetch("responses", true),
