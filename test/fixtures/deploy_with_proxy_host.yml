@@ -1,0 +1,13 @@
+service: app
+image: dhh/app
+servers:
+  web:
+    - "1.1.1.1"
+proxy:
+  ssl: true
+  host: app.example.com
+registry:
+  username: user
+  password: pw
+builder:
+  arch: amd64
