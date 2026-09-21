@@ -42,7 +42,10 @@ class Kamal::Cli::Main < Kamal::Cli::Base
           # The outer deploy lock remains held across both accessory groups and app:boot.
           if boot_accessories
             non_proxied_accessories = KAMAL.accessory_names.filter { |name| !KAMAL.accessory(name).running_proxy? }
-            non_proxied_accessories.each { |name| invoke "kamal:cli:accessory:boot", [ name ], invoke_options }
+            non_proxied_accessories.each do |name|
+              invoke "kamal:cli:accessory:boot", [ name ], invoke_options
+              Kamal::Cli::Accessory.reset_invocation("boot")
+            end
           end
 
           say "Detect stale containers...", :magenta
@@ -53,7 +56,10 @@ class Kamal::Cli::Main < Kamal::Cli::Base
           # Boot proxied accessories after app:boot to ensure error pages directory exists
           if boot_accessories
             proxied_accessories = KAMAL.accessory_names.filter { |name| KAMAL.accessory(name).running_proxy? }
-            proxied_accessories.each { |name| invoke "kamal:cli:accessory:boot", [ name ], invoke_options }
+            proxied_accessories.each do |name|
+              invoke "kamal:cli:accessory:boot", [ name ], invoke_options
+              Kamal::Cli::Accessory.reset_invocation("boot")
+            end
           end
 
           say "Prune old containers and images...", :magenta
@@ -99,6 +105,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
   def rollback(version)
     rolled_back = false
 
+  
     modify do
       runtime = print_runtime do
         modify(lock: true) do
