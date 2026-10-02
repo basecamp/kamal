@@ -90,6 +90,7 @@ class CliMainTest < CliTestCase
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:server:bootstrap", [], invoke_options)
     # Non-proxied accessory (mysql) should be booted first
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:accessory:boot", [ "mysql" ], invoke_options).in_sequence(boot_sequence)
+    Kamal::Cli::Main.any_instance.expects(:reset_invocation).with(Kamal::Cli::Accessory).in_sequence(boot_sequence)
     # deploy
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:deliver", [], invoke_options)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:proxy:boot", [], invoke_options)
@@ -97,6 +98,7 @@ class CliMainTest < CliTestCase
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:boot", [], invoke_options).in_sequence(boot_sequence)
     # Proxied accessory (cache) should be booted after app:boot to ensure error pages directory exists
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:accessory:boot", [ "cache" ], invoke_options).in_sequence(boot_sequence)
+    Kamal::Cli::Main.any_instance.expects(:reset_invocation).with(Kamal::Cli::Accessory).in_sequence(boot_sequence)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:prune:all", [], invoke_options)
 
     run_command("setup", config_file: "deploy_with_error_pages_and_accessories.yml").tap do |output|
