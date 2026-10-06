@@ -72,7 +72,7 @@ module Kamal::Cli
           if config_file.exist? && !options[:skip_hooks]
             cli = self
             commander.before_config do
-              if (new_dest = cli.send(:run_pre_configure_hook, config_file, destination).presence)
+              if (new_dest = cli.send(:run_pre_configure_hook, destination).presence)
                 commander.configure config_file: config_file, destination: new_dest, version: version
               end
             end
@@ -91,10 +91,11 @@ module Kamal::Cli
       # Fires before config is created — can inject or rewrite the destination.
       # Runs as a lightweight hook (no config-derived env) because config
       # may be invalid without a destination (require_destination: true).
-      def run_pre_configure_hook(config_file, destination)
+      def run_pre_configure_hook(destination)
         env = { "KAMAL_DESTINATION" => destination }
 
-        hook_file = File.join(pre_configure_hooks_path(config_file, env), "pre-configure")
+        # Configuration (and so hooks_path) does not exist yet: always .kamal/hooks
+        hook_file = File.join(".kamal/hooks", "pre-configure")
         return unless File.exist?(hook_file)
 
         hook_output = Kamal::HookOutput.new
@@ -119,15 +120,6 @@ module Kamal::Cli
         end
       end
 
-      def pre_configure_hooks_path(config_file, env)
-        with_env(env) do
-          load_method = YAML.respond_to?(:unsafe_load) ? :unsafe_load : :load
-          raw = YAML.send(load_method, ERB.new(File.read(config_file)).result)
-          raw&.dig("hooks_path") || ".kamal/hooks"
-        end
-      rescue Psych::SyntaxError, SyntaxError, KeyError
-        ".kamal/hooks"
-      end
 
       def print_runtime
         started_at = Time.now

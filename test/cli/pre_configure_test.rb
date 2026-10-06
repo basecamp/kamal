@@ -94,34 +94,10 @@ class CliPreConfigureTest < CliTestCase
     end
   end
 
-  test "pre-configure hook falls back to default hooks_path on config ERB error" do
-    Tempfile.create([ "deploy", ".yml" ]) do |config_file|
-      config_file.write(<<~YAML)
-        service: app
-        image: dhh/app
-        hooks_path: '<%= ENV.fetch("NONEXISTENT_VAR_FOR_TEST") %>'
-      YAML
-      config_file.flush
-
-      cli = Kamal::Cli::Base.allocate
-      result = cli.send(:pre_configure_hooks_path, config_file.path, {})
-      assert_equal ".kamal/hooks", result
-    end
-  end
-
-  test "pre-configure hook honors destination-aware hooks_path" do
-    hooks_path = '.kamal/hooks-<%= ENV["KAMAL_DESTINATION"] %>'
-    with_pre_configure_hook({ "KAMAL_DESTINATION" => "world" }, hooks_path: hooks_path, destination: "beta") do
-      run_command("exec", "date", "-c", "config/deploy.yml", "-d", "beta")
-
-      assert_equal "world", KAMAL.config.destination
-    end
-  end
-
   private
     def run_command(*command)
       SSHKit::Backend::Abstract.any_instance.stubs(:capture)
-        .with("date", verbosity: 1)
+        .with("date", strip: true, verbosity: 1)
         .returns("Today")
 
       stdouted { Kamal::Cli::Server.start(command) }
@@ -131,52 +107,16 @@ class CliPreConfigureTest < CliTestCase
       "test/fixtures/#{fixture_name}.yml"
     end
 
-    def with_pre_configure_hook(output, hooks_path: nil, destination: nil)
+    def with_pre_configure_hook(output)
       Dir.mktmpdir do |tmpdir|
         original_pwd = Dir.pwd
         old_dest = ENV["KAMAL_DESTINATION"]
         begin
           copy_fixtures(tmpdir)
 
-          # Resolve ERB hooks_path to determine the actual directory on disk
-          resolved_hooks_path = if hooks_path && destination
-            ENV["KAMAL_DESTINATION"] = destination
-            ERB.new(hooks_path).result
-          else
-            hooks_path || ".kamal/hooks"
-          end
-
-          hook_dir = File.join(tmpdir, resolved_hooks_path)
+          hook_dir = File.join(tmpdir, ".kamal", "hooks")
           FileUtils.mkdir_p(hook_dir)
           File.write(File.join(hook_dir, "pre-configure"), "#!/bin/bash\n")
-
-          # If custom hooks_path, write a config that uses it (with raw ERB intact),
-          # plus a destination overlay so config loads successfully after rewrite
-          if hooks_path
-            config_dir = File.join(tmpdir, "config")
-            FileUtils.mkdir_p(config_dir)
-            File.write(File.join(config_dir, "deploy.yml"), <<~YAML)
-              service: app
-              image: dhh/app
-              registry:
-                username: dhh
-                password: secret
-              servers:
-                - 1.1.1.1
-              builder:
-                arch: amd64
-              hooks_path: '#{hooks_path}'
-            YAML
-
-            # Create destination overlay for the rewritten destination
-            rewritten_dest = output["KAMAL_DESTINATION"]
-            if rewritten_dest
-              File.write(File.join(config_dir, "deploy.#{rewritten_dest}.yml"), <<~YAML)
-                servers:
-                  - 1.1.1.1
-              YAML
-            end
-          end
 
           Dir.chdir(tmpdir)
 
