@@ -4,12 +4,12 @@ class Kamal::Secrets::Adapters::Bitwarden < Kamal::Secrets::Adapters::Base
       status = run_command("status")
 
       if status["status"] == "unauthenticated"
-        run_command("login #{account.shellescape}", raw: true)
+        run_command("login", account, raw: true)
         status = run_command("status")
       end
 
       if status["status"] == "locked"
-        session = run_command("unlock --raw", raw: true).presence
+        session = run_command("unlock", "--raw", raw: true).presence
         status = run_command("status", session: session)
       end
 
@@ -24,7 +24,7 @@ class Kamal::Secrets::Adapters::Bitwarden < Kamal::Secrets::Adapters::Base
     def fetch_secrets(secrets, from:, account:, session:)
       {}.tap do |results|
         items_fields(prefixed_secrets(secrets, from: from)).each do |item, fields|
-          item_json = run_command("get item #{item.shellescape}", session: session, raw: true)
+          item_json = run_command("get", "item", item, session: session, raw: true)
           raise RuntimeError, "Could not read #{item} from Bitwarden" unless $?.success?
           item_json = JSON.parse(item_json)
           if fields.any?
@@ -64,9 +64,8 @@ class Kamal::Secrets::Adapters::Bitwarden < Kamal::Secrets::Adapters::Base
       run_command("status")["status"] != "unauthenticated"
     end
 
-    def run_command(command, session: nil, raw: false)
-      full_command = [ *("BW_SESSION=#{session.shellescape}" if session), "bw", command ].join(" ")
-      result = `#{full_command}`.strip
+    def run_command(*command, session: nil, raw: false)
+      result = capture_command("bw", *command, env: { "BW_SESSION" => session }.compact).strip
       raw ? result : JSON.parse(result)
     end
 
