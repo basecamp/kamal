@@ -6,12 +6,14 @@ class CliPreConfigureTest < CliTestCase
     ENV.delete("PRE_CONFIGURE_HOST")
   end
 
-  test "rewrites the destination" do
+  test "rewrites the destination, saying so on stderr" do
     with_pre_configure_hook "KAMAL_DESTINATION=world" do
-      output = run_command("exec", "date", "-c", "test/fixtures/deploy_for_required_dest.yml", "-d", "beta")
+      stdout = nil
+      stderr = stderred { stdout = run_command("exec", "date", "-c", "test/fixtures/deploy_for_required_dest.yml", "-d", "beta") }
 
       assert_equal "world", KAMAL.config.destination
-      assert_match "Using destination world from the pre-configure hook", output
+      assert_match "Using destination world from the pre-configure hook", stderr
+      assert_no_match "pre-configure", stdout
     end
   end
 
@@ -104,6 +106,25 @@ class CliPreConfigureTest < CliTestCase
       end
 
       assert_match "invalid line 2", error.message
+    end
+  end
+
+  test "fails on a NUL in a value, before setting anything" do
+    with_pre_configure_hook "PRE_CONFIGURE_HOST=1.1.1.9", "KAMAL_DESTINATION=wor\0ld" do
+      error = assert_raises(Kamal::Cli::HookError) do
+        run_command("exec", "date", "-c", "test/fixtures/deploy_for_required_dest.yml")
+      end
+
+      assert_match "invalid line 2", error.message
+      assert_nil ENV["PRE_CONFIGURE_HOST"]
+    end
+  end
+
+  test "sets a value that isn't UTF-8 as written" do
+    with_pre_configure_hook "PRE_CONFIGURE_HOST=caf\xE9" do
+      run_command("exec", "date", "-c", "test/fixtures/deploy_with_accessories.yml")
+
+      assert_equal "caf\xE9".b, ENV["PRE_CONFIGURE_HOST"].b
     end
   end
 

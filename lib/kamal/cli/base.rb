@@ -264,7 +264,8 @@ module Kamal::Cli
         if !options[:skip_hooks] && File.exist?(PRE_CONFIGURE_HOOK)
           exports = Tempfile.create("kamal-pre-configure") do |output|
             with_env "KAMAL_DESTINATION" => destination, "KAMAL_COMMAND" => command, "KAMAL_SUBCOMMAND" => subcommand, "KAMAL_ENV" => output.path do
-              KAMAL.with_verbosity(KAMAL.verbosity) do
+              # Every command can run it, including --raw ones whose stdout must stay clean
+              KAMAL.with_verbosity(KAMAL.verbosity == :debug ? :debug : :error) do
                 run_locally { execute PRE_CONFIGURE_HOOK }
               end
             end
@@ -277,7 +278,7 @@ module Kamal::Cli
           ENV.update(exports)
 
           (exports["KAMAL_DESTINATION"].presence || destination).tap do |hook_destination|
-            say "Using destination #{hook_destination} from the pre-configure hook", :magenta unless hook_destination == destination
+            say_error "Using destination #{hook_destination} from the pre-configure hook", :magenta unless hook_destination == destination
           end
         else
           destination
@@ -285,9 +286,9 @@ module Kamal::Cli
       end
 
       def read_hook_exports(path)
-        File.readlines(path, chomp: true).each_with_index.filter_map do |line, index|
+        File.readlines(path, chomp: true, encoding: Encoding::BINARY).each_with_index.filter_map do |line, index|
           unless line.blank? || line.start_with?("#")
-            line.match(/\A([A-Za-z_][A-Za-z0-9_]*)=(.*)\z/)&.captures || \
+            line.match(/\A([A-Za-z_][A-Za-z0-9_]*)=([^\0]*)\z/)&.captures || \
               raise(HookError, "Hook `pre-configure` wrote an invalid line #{index + 1} to $KAMAL_ENV, expected NAME=value")
           end
         end.to_h

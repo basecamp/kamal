@@ -230,6 +230,22 @@ class CommanderTest < ActiveSupport::TestCase
     ENV.delete("KAMAL_DESTINATION")
   end
 
+  test "destination resolver runs again after it fails" do
+    attempts = 0
+    kamal = Kamal::Commander.new
+    kamal.configure(config_file: Pathname.new(File.expand_path("fixtures/deploy_for_dest.yml", __dir__)), destination: "world") do |destination|
+      attempts += 1
+      raise Kamal::Cli::HookError, "beta3 is leased" if attempts == 1
+      destination
+    end
+
+    assert_raises(Kamal::Cli::HookError) { kamal.config }
+    assert_equal "world", kamal.config.destination
+    assert_equal 2, attempts
+  ensure
+    ENV.delete("KAMAL_DESTINATION")
+  end
+
   private
     def configure_with(variant)
       @kamal = Kamal::Commander.new.tap do |kamal|
