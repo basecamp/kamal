@@ -1,0 +1,27 @@
+lib/kamal/secrets/adapters/base.rb
+  s_c8ecb2a9cf2c3a::t_3b1e936ff846e6 33-38
+lib/kamal/secrets/adapters/one_password.rb
+  s_c8ecb2a9cf2c3a::t_8fc4f6f60e5910 7,9,14-21,93,100
+test/secrets/base_adapter_test.rb
+  s_c8ecb2a9cf2c3a::t_5183ff402dd55c 1-22
+test/secrets/one_password_adapter_test.rb
+  s_c8ecb2a9cf2c3a::t_2178b9c80fbb84 8,62,90,120,176,178,194-195,197
+test/test_helper.rb
+  s_c8ecb2a9cf2c3a::t_974e6c8c30af88 159-165
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "927dd29c0aef845f43b537829913e79d5da95db6",
+  "prompts": {},
+  "sessions": {
+    "s_c8ecb2a9cf2c3a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ecceba0b-b8c3-41b6-89cd-16be89dcf9c8",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Jeremy Daer <jeremy@37signals.com>"
+    }
+  }
+}
