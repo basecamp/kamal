@@ -183,8 +183,8 @@ class Kamal::Commander
 
   private
     def resolve_destination
-      resolver, @destination_resolver = @destination_resolver, nil
-      @config_kwargs = @config_kwargs.merge(destination: resolver.call(@config_kwargs[:destination]))
+      @config_kwargs = @config_kwargs.merge(destination: @destination_resolver.call(@config_kwargs[:destination]))
+      @destination_resolver = nil
     end
 
     def output_logger
