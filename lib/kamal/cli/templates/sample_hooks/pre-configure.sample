@@ -1,0 +1,21 @@
+#!/bin/sh
+
+# A sample pre-configure hook
+#
+# Runs before the configuration is loaded, the first time a command needs it.
+# It is always read from .kamal/hooks, whatever hooks_path is set to.
+#
+# These environment variables are available:
+# KAMAL_DESTINATION (if set)
+# KAMAL_COMMAND
+# KAMAL_SUBCOMMAND (if set)
+# KAMAL_ENV
+#
+# Each NAME=value line written to $KAMAL_ENV is set in the environment for
+# the rest of the run, so the config's ERB and later hooks can read it.
+# KAMAL_DESTINATION picks the destination to load.
+
+# Deploy to staging unless a destination is given
+if [ -z "$KAMAL_DESTINATION" ]; then
+  echo "KAMAL_DESTINATION=staging" >> "$KAMAL_ENV"
+fi

@@ -1,4 +1,5 @@
 require "thor"
+require "tempfile"
 require "kamal/sshkit_with_ext"
 
 module Kamal::Cli
@@ -7,6 +8,7 @@ module Kamal::Cli
 
     VERBOSITY = { verbose: :debug, quiet: :error }.freeze
     AUTOMATIC_DEPLOY_LOCK_MESSAGE = "Automatic deploy lock"
+    PRE_CONFIGURE_HOOK = ".kamal/hooks/pre-configure"
 
     class LockHeldError < StandardError; end
     class LockMissingError < StandardError; end
@@ -63,7 +65,8 @@ module Kamal::Cli
           commander.configure \
             config_file: Pathname.new(File.expand_path(options[:config_file])),
             destination: options[:destination],
-            version: options[:version]
+            version: options[:version],
+            &method(:run_pre_configure_hook)
 
           commander.specific_hosts    = options[:hosts]&.split(",")
           commander.specific_roles    = options[:roles]&.split(",")
@@ -253,6 +256,43 @@ module Kamal::Cli
         end
       end
 
+      # Runs before the configuration loads, so the hook is always found in
+      # .kamal/hooks and gets no config-derived env. Each NAME=value line it
+      # writes to $KAMAL_ENV is set in the environment for the rest of the
+      # run, and KAMAL_DESTINATION picks the destination to load.
+      def run_pre_configure_hook(destination)
+        if !options[:skip_hooks] && File.exist?(PRE_CONFIGURE_HOOK)
+          exports = Tempfile.create("kamal-pre-configure") do |output|
+            with_env "KAMAL_DESTINATION" => destination, "KAMAL_COMMAND" => command, "KAMAL_SUBCOMMAND" => subcommand, "KAMAL_ENV" => output.path do
+              KAMAL.with_verbosity(KAMAL.verbosity) do
+                run_locally { execute PRE_CONFIGURE_HOOK }
+              end
+            end
+
+            read_hook_exports(output.path)
+          rescue SSHKit::Command::Failed => e
+            raise HookError.new("Hook `pre-configure` failed:\n#{e.message}")
+          end
+
+          ENV.update(exports)
+
+          (exports["KAMAL_DESTINATION"].presence || destination).tap do |hook_destination|
+            say "Using destination #{hook_destination} from the pre-configure hook", :magenta unless hook_destination == destination
+          end
+        else
+          destination
+        end
+      end
+
+      def read_hook_exports(path)
+        File.readlines(path, chomp: true).each_with_index.filter_map do |line, index|
+          unless line.blank? || line.start_with?("#")
+            line.match(/\A([A-Za-z_][A-Za-z0-9_]*)=(.*)\z/)&.captures || \
+              raise(HookError, "Hook `pre-configure` wrote an invalid line #{index + 1} to $KAMAL_ENV, expected NAME=value")
+          end
+        end.to_h
+      end
+
       def on(*args, &block)
         pre_connect_if_required
 
@@ -289,8 +329,10 @@ module Kamal::Cli
         end
       end
 
+      # The pre-configure hook can fire while the CLI is still initializing, before
+      # Thor has recorded the invocation, so fall back to the command being started
       def first_invocation
-        instance_variable_get("@_invocations").first
+        instance_variable_get("@_invocations").first || [ self.class, [ @_initializer.last[:current_command]&.name ] ]
       end
 
       def reset_invocation(cli_class)
