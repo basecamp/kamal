@@ -1,0 +1,25 @@
+lib/kamal/configuration/proxy/run.rb
+  s_c8ecb2a9cf2c3a::t_206373efc621cd 2
+test/cli/proxy_test.rb
+  s_c8ecb2a9cf2c3a::t_79e1aee68fea3d 16-17
+test/commands/proxy_test.rb
+  s_c8ecb2a9cf2c3a::t_4141640d8722a5 171,178,192,199,206,213,220
+test/integration/docker/deployer/setup.sh
+  s_c8ecb2a9cf2c3a::t_c397ce488553bc 16-18
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "67818504541f3ff603fa8fbd8fd60d3e569a2ac8",
+  "prompts": {},
+  "sessions": {
+    "s_c8ecb2a9cf2c3a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ecceba0b-b8c3-41b6-89cd-16be89dcf9c8",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Jeremy Daer <jeremy@37signals.com>"
+    }
+  }
+}
