@@ -1,0 +1,21 @@
+lib/kamal/secrets/adapters/bitwarden.rb
+  s_c8ecb2a9cf2c3a::t_4814ae19eef2f5 7,12,27,67-68
+test/secrets/bitwarden_adapter_test.rb
+  s_c8ecb2a9cf2c3a::t_68fca2e3345fea 8,22,35,51,69,73,109,116-118,131,136,141-143,156,161,166-168,199,206,228,251,280
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "b3684c5e86e8c766d2315f4fcc8aba00b6929010",
+  "prompts": {},
+  "sessions": {
+    "s_c8ecb2a9cf2c3a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ecceba0b-b8c3-41b6-89cd-16be89dcf9c8",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Jeremy Daer <jeremy@37signals.com>"
+    }
+  }
+}
