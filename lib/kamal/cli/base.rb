@@ -324,10 +324,25 @@ module Kamal::Cli
           if invocation_class != Kamal::Cli::Main
             invocation_commands[0]
           elsif subcommand_class = Kamal::Cli::Main.subcommand_classes[invocation_commands[0]]
-            # `kamal app boot` records Main's `app` first, then App's `boot`
-            instance_variable_get("@_invocations").fetch(subcommand_class, []).first
+            subcommand_invocation(subcommand_class)
           end
         end
+      end
+
+      # `kamal app boot` records Main's `app` first, then App's `boot`. While the CLI is
+      # still initializing neither is recorded, so take the first argument Main has left once
+      # it has taken its options, wherever they were given, and name it as Thor will: `kamal
+      # app bo` boots.
+      def subcommand_invocation(subcommand_class)
+        invocations = instance_variable_get("@_invocations")
+        if invocations.key?(subcommand_class)
+          invocations[subcommand_class].first
+        elsif args.first
+          name = subcommand_class.send(:normalize_command_name, args.first)
+          name if subcommand_class.all_commands.key?(name)
+        end
+      rescue Thor::AmbiguousCommandError
+        nil
       end
 
       # The pre-configure hook can fire while the CLI is still initializing, before
