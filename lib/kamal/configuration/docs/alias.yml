@@ -27,3 +27,9 @@ aliases:
 #
 # Aliases can include a destination with the `-d` flag:
   staging_deploy: deploy -d staging
+
+# Aliases and external commands
+#
+# A command that isn't built in runs an alias of that name, if there is one, and
+# otherwise an external command: an executable `.kamal/bin/<name>`, or `kamal-<name>`
+# on the PATH. Built-in commands can't be overridden by either.

@@ -43,6 +43,10 @@ class Kamal::Commander
     @config || @config_kwargs
   end
 
+  def config_file?
+    @config.present? || @config_kwargs[:config_file].exist?
+  end
+
   def specific_primary!
     @specifics = nil
     if specific_roles.present?
