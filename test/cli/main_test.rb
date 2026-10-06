@@ -947,6 +947,27 @@ class CliMainTest < CliTestCase
     end
   end
 
+  test "alias lookup renders the config with its destination in the environment, selectors or not" do
+    config = File.read("test/fixtures/deploy_simple.yml") + <<~YAML
+      aliases:
+        info: <%= ENV.fetch("KAMAL_DESTINATION") == "world" ? "version" : "details" %>
+    YAML
+
+    in_external_command_dir do
+      FileUtils.mkdir_p("config")
+      File.write("config/deploy.yml", config)
+      File.write("config/deploy.world.yml", "env:\n  clear:\n    WORLD: 1\n")
+
+      [ [], [ "--primary" ] ].each do |selector|
+        ENV.delete("KAMAL_DESTINATION")
+        KAMAL.reset
+
+        output = stdouted { with_argv([ "info", "-d", "world", *selector ]) { Kamal::Cli::Main.start } }
+        assert_equal Kamal::VERSION, output.strip, "with #{selector.inspect}"
+      end
+    end
+  end
+
   test "non-executable file in .kamal/bin is skipped" do
     in_external_command_dir do
       write_executable ".kamal/bin/foo", mode: 0644

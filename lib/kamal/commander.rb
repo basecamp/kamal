@@ -137,6 +137,8 @@ class Kamal::Commander
     if @config
       @config.aliases[name]&.command
     else
+      # Rendered with its destination in the environment, as loading the config would
+      ENV["KAMAL_DESTINATION"] = @config_kwargs[:destination]
       raw_config = Kamal::Configuration.load_raw_config(**@config_kwargs.to_h.slice(:config_file, :destination))
       raw_config[:aliases]&.dig(name)
     end
