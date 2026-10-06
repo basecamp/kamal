@@ -5,8 +5,7 @@ class SecretsOnePasswordAdapterTest < SecretAdapterTestCase
     stub_ticks.with("op --version 2> /dev/null")
     stub_ticks.with("op account get --account myaccount 2> /dev/null")
 
-    stub_ticks
-      .with("op item get myitem --vault \"myvault\" --format \"json\" --account \"myaccount\" --fields \"label=section.SECRET1,label=section.SECRET2,label=section2.SECRET3\"")
+    stub_command("op", "item", "get", "myitem", "--vault", "myvault", "--format", "json", "--account", "myaccount", "--fields", "label=section.SECRET1,label=section.SECRET2,label=section2.SECRET3")
       .returns(<<~JSON)
         [
           {
@@ -60,8 +59,7 @@ class SecretsOnePasswordAdapterTest < SecretAdapterTestCase
     stub_ticks.with("op --version 2> /dev/null")
     stub_ticks.with("op account get --account myaccount 2> /dev/null")
 
-    stub_ticks
-      .with("op item get myitem --vault \"myvault\" --format \"json\" --account \"myaccount\" --fields \"label=section.SECRET1,label=section.SECRET2\"")
+    stub_command("op", "item", "get", "myitem", "--vault", "myvault", "--format", "json", "--account", "myaccount", "--fields", "label=section.SECRET1,label=section.SECRET2")
       .returns(<<~JSON)
         [
           {
@@ -89,8 +87,7 @@ class SecretsOnePasswordAdapterTest < SecretAdapterTestCase
         ]
       JSON
 
-    stub_ticks
-      .with("op item get myitem2 --vault \"myvault\" --format \"json\" --account \"myaccount\" --fields \"label=section2.SECRET3\"")
+    stub_command("op", "item", "get", "myitem2", "--vault", "myvault", "--format", "json", "--account", "myaccount", "--fields", "label=section2.SECRET3")
       .returns(<<~JSON)
         {
           "id": "aaaaaaaaaaaaaaaaaaaaaaaaaa",
@@ -120,8 +117,7 @@ class SecretsOnePasswordAdapterTest < SecretAdapterTestCase
     stub_ticks.with("op --version 2> /dev/null")
     stub_ticks.with("op account get --account myaccount 2> /dev/null")
 
-    stub_ticks
-      .with("op item get myitem --vault \"myvault\" --format \"json\" --account \"myaccount\"")
+    stub_command("op", "item", "get", "myitem", "--vault", "myvault", "--format", "json", "--account", "myaccount")
       .returns(<<~JSON)
         {
           "id": "ucbtiii777",
@@ -177,10 +173,9 @@ class SecretsOnePasswordAdapterTest < SecretAdapterTestCase
     stub_ticks.with("op --version 2> /dev/null")
 
     stub_ticks_with("op account get --account myaccount 2> /dev/null", succeed: false)
-    stub_ticks_with("op signin --account \"myaccount\" --force --raw", succeed: true).returns("")
+    stub_ticks_with("op signin --account \"myaccount\" --force", succeed: true).returns("")
 
-    stub_ticks
-      .with("op item get myitem --vault \"myvault\" --format \"json\" --account \"myaccount\" --fields \"label=section.SECRET1\"")
+    stub_command("op", "item", "get", "myitem", "--vault", "myvault", "--format", "json", "--account", "myaccount", "--fields", "label=section.SECRET1")
       .returns(single_item_json)
 
     json = JSON.parse(run_command("fetch", "--from", "op://myvault/myitem", "section/SECRET1"))
@@ -196,10 +191,10 @@ class SecretsOnePasswordAdapterTest < SecretAdapterTestCase
     stub_ticks.with("op --version 2> /dev/null")
 
     stub_ticks_with("op account get --account myaccount 2> /dev/null", succeed: false)
-    stub_ticks_with("op signin --account \"myaccount\" --force --raw", succeed: true).returns("1234567890")
+    stub_ticks_with("op signin --account \"myaccount\" --force", succeed: true)
+      .returns(%Q(export OP_SESSION_ABCDEFGHIJKLMNOPQRSTUVWXYZ="1234567890"\n# This command is meant to be used with your shell's eval function.\n))
 
-    stub_ticks
-      .with("op item get myitem --vault \"myvault\" --format \"json\" --account \"myaccount\" --session \"1234567890\" --fields \"label=section.SECRET1\"")
+    stub_command("op", "item", "get", "myitem", "--vault", "myvault", "--format", "json", "--account", "myaccount", "--fields", "label=section.SECRET1", env: { "OP_SESSION_ABCDEFGHIJKLMNOPQRSTUVWXYZ" => "1234567890" })
       .returns(single_item_json)
 
     json = JSON.parse(run_command("fetch", "--from", "op://myvault/myitem", "section/SECRET1"))

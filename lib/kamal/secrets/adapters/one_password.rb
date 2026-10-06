@@ -4,9 +4,18 @@ class Kamal::Secrets::Adapters::OnePassword < Kamal::Secrets::Adapters::Base
   private
     def login(account)
       unless loggedin?(account)
-        `op signin #{to_options(account: account, force: true, raw: true)}`.tap do
+        `op signin #{to_options(account: account, force: true)}`.then do |output|
           raise RuntimeError, "Failed to login to 1Password" unless $?.success?
+          session_env(output)
         end
+      end
+    end
+
+    # `op signin` prints the session as a shell export, e.g. `export OP_SESSION_<id>="<token>"`.
+    # Keep it as env for subsequent `op` calls rather than passing it as `--session` on the command line.
+    def session_env(signin_output)
+      if match = signin_output.match(/\b(OP_SESSION_\w+)\W+([^"\s]+)/)
+        { match[1] => match[2] }
       end
     end
 
@@ -81,14 +90,14 @@ class Kamal::Secrets::Adapters::OnePassword < Kamal::Secrets::Adapters::Base
     end
 
     def op_item_get(vault, item, fields: nil, account:, session:)
-      options = { vault: vault, format: "json", account: account, session: session.presence }
+      options = { vault: vault, format: "json", account: account }
 
       if fields.present?
         labels = fields.map { |field| "label=#{field}" }.join(",")
         options.merge!(fields: labels)
       end
 
-      `op item get #{item.shellescape} #{to_options(**options)}`.tap do
+      capture_command("op", "item", "get", item, *optionize(options.compact, escape: false), env: session.to_h).tap do
         raise RuntimeError, "Could not read #{"#{fields.join(", ")} " if fields.present?}from #{item} in the #{vault} 1Password vault" unless $?.success?
       end
     end
