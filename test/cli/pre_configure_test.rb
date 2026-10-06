@@ -83,6 +83,20 @@ class CliPreConfigureTest < CliTestCase
     end
   end
 
+  test "runs before an alias is looked up, and again for the command it expands to" do
+    with_pre_configure_hook "KAMAL_DESTINATION=world" do
+      with_argv([ "info", "-c", "test/fixtures/deploy_for_required_dest.yml" ]) do
+        File.write("test/fixtures/deploy_for_required_dest.world.yml", "aliases:\n  info: config\n", mode: "a")
+
+        stdouted { Kamal::Cli::Main.start }
+        assert_equal "world", KAMAL.config.destination
+      end
+
+      # Named for the alias to look it up, so a hook can leave side effects to the commands it knows
+      assert_equal [ "info", "config" ], @hook_commands
+    end
+  end
+
   test "fails on an invalid output line" do
     with_pre_configure_hook "KAMAL_DESTINATION=world", "export FOO=bar" do
       error = assert_raises(Kamal::Cli::HookError) do
@@ -148,6 +162,7 @@ class CliPreConfigureTest < CliTestCase
     # record the env it would get and write its output
     def with_pre_configure_hook(*output_lines)
       @hook_runs = 0
+      @hook_commands = []
 
       Dir.mktmpdir do |tmpdir|
         copy_fixtures(tmpdir)
@@ -159,6 +174,7 @@ class CliPreConfigureTest < CliTestCase
           SSHKit::Backend::Abstract.any_instance.stubs(:execute).with do |*args|
             if args == [ ".kamal/hooks/pre-configure" ]
               @hook_runs += 1
+              @hook_commands << ENV["KAMAL_COMMAND"]
               @hook_env = ENV.to_h
               File.write(ENV["KAMAL_ENV"], output_lines.map { |line| "#{line}\n" }.join)
             end
