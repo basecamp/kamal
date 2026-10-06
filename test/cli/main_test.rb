@@ -826,7 +826,7 @@ class CliMainTest < CliTestCase
         File.write(".kamal/bin/foo", "#!/bin/sh\n")
         File.chmod(0755, ".kamal/bin/foo")
 
-        Kamal::Cli::Main.expects(:exec).with(".kamal/bin/foo")
+        Kamal::Cli::Main.expects(:exec).with([ ".kamal/bin/foo", ".kamal/bin/foo" ])
         with_argv([ "foo" ]) { Kamal::Cli::Main.start }
       end
     end
@@ -843,7 +843,27 @@ class CliMainTest < CliTestCase
         original_path = ENV["PATH"]
         ENV["PATH"] = "#{bin_dir}#{File::PATH_SEPARATOR}#{original_path}"
 
-        Kamal::Cli::Main.expects(:exec).with(File.join(bin_dir, "kamal-bar"))
+        Kamal::Cli::Main.expects(:exec).with([ File.join(bin_dir, "kamal-bar"), File.join(bin_dir, "kamal-bar") ])
+        with_argv([ "bar" ]) { Kamal::Cli::Main.start }
+      ensure
+        ENV["PATH"] = original_path
+      end
+    end
+  end
+
+  test "external command from a PATH directory with a space runs without a shell" do
+    Dir.mktmpdir do |tmpdir|
+      Dir.chdir(tmpdir) do
+        bin_dir = File.join(tmpdir, "my tools")
+        FileUtils.mkdir_p(bin_dir)
+        File.write(File.join(bin_dir, "kamal-bar"), "#!/bin/sh\n")
+        File.chmod(0755, File.join(bin_dir, "kamal-bar"))
+
+        original_path = ENV["PATH"]
+        ENV["PATH"] = "#{bin_dir}#{File::PATH_SEPARATOR}#{original_path}"
+
+        # A lone string argument to exec is split on spaces or run by a shell
+        Kamal::Cli::Main.expects(:exec).with([ File.join(bin_dir, "kamal-bar"), File.join(bin_dir, "kamal-bar") ])
         with_argv([ "bar" ]) { Kamal::Cli::Main.start }
       ensure
         ENV["PATH"] = original_path
@@ -866,7 +886,7 @@ class CliMainTest < CliTestCase
         original_path = ENV["PATH"]
         ENV["PATH"] = "#{bin_dir}#{File::PATH_SEPARATOR}#{original_path}"
 
-        Kamal::Cli::Main.expects(:exec).with(".kamal/bin/baz")
+        Kamal::Cli::Main.expects(:exec).with([ ".kamal/bin/baz", ".kamal/bin/baz" ])
         with_argv([ "baz" ]) { Kamal::Cli::Main.start }
       ensure
         ENV["PATH"] = original_path
@@ -907,7 +927,7 @@ class CliMainTest < CliTestCase
         File.write(".kamal/bin/foo", "#!/bin/sh\n")
         File.chmod(0755, ".kamal/bin/foo")
 
-        Kamal::Cli::Main.expects(:exec).with(".kamal/bin/foo", "--bar", "baz")
+        Kamal::Cli::Main.expects(:exec).with([ ".kamal/bin/foo", ".kamal/bin/foo" ], "--bar", "baz")
         with_argv([ "foo", "--bar", "baz" ]) { Kamal::Cli::Main.start }
       end
     end

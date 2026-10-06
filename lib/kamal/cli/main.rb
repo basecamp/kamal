@@ -1,7 +1,7 @@
 class Kamal::Cli::Main < Kamal::Cli::Base
   def self.dispatch(command, given_args, given_opts, config)
     if command.nil? && (ext = resolve_external_command(given_args.first))
-      exec ext, *given_args.drop(1)
+      exec [ ext, ext ], *given_args.drop(1)
     else
       super
     end
