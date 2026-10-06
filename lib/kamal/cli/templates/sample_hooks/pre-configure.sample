@@ -3,7 +3,10 @@
 # A sample pre-configure hook
 #
 # Runs before the configuration is loaded, the first time a command needs it.
-# It is always read from .kamal/hooks, whatever hooks_path is set to.
+# An alias runs it twice: with KAMAL_COMMAND set to the alias's name to look the
+# alias up, then for the command it expands to. So a hook that does more than
+# pick a destination, like leasing one, should do it only for the commands it
+# knows. It is always read from .kamal/hooks, whatever hooks_path is set to.
 #
 # These environment variables are available:
 # KAMAL_DESTINATION (if set)

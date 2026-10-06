@@ -139,6 +139,7 @@ class Kamal::Commander
     if @config
       @config.aliases[name]&.command
     else
+      resolve_destination if @destination_resolver
       raw_config = Kamal::Configuration.load_raw_config(**@config_kwargs.to_h.slice(:config_file, :destination))
       raw_config[:aliases]&.dig(name)
     end
