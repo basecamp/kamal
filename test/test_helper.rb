@@ -156,4 +156,11 @@ class SecretAdapterTestCase < ActiveSupport::TestCase
       # Sneakily run `false`/`true` after a match to set $? to 1/0
       stub_ticks.with { |c| c == command && (succeed ? `true` : `false`) }
     end
+
+    # Commands run via capture_command must match argv and env exactly, so a credential
+    # can only be expected in env and an unexpected shell or argv form fails the stub.
+    def stub_command(*argv, env: {}, succeed: true)
+      Kamal::Secrets::Adapters::Base.any_instance.stubs(:capture_command) \
+        .with { |*args, **options| args == argv && options == { env: env } && (succeed ? `true` : `false`) }
+    end
 end
