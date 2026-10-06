@@ -200,6 +200,36 @@ class CommanderTest < ActiveSupport::TestCase
     assert_nil @kamal.instance_variable_get(:@output_logger)
   end
 
+  test "destination resolver picks the destination once, when the config is first needed" do
+    resolved = []
+    kamal = Kamal::Commander.new
+    kamal.configure(config_file: Pathname.new(File.expand_path("fixtures/deploy_for_dest.yml", __dir__)), destination: "staging") do |destination|
+      resolved << destination
+      "world"
+    end
+
+    assert_empty resolved
+    assert_equal "world", kamal.config.destination
+    assert_equal "world", kamal.config.destination
+    assert_equal [ "staging" ], resolved
+  ensure
+    ENV.delete("KAMAL_DESTINATION")
+  end
+
+  test "destination resolver is not called again when the config fails to load" do
+    resolved = []
+    kamal = Kamal::Commander.new
+    kamal.configure(config_file: Pathname.new(File.expand_path("fixtures/deploy_for_dest.yml", __dir__))) do |destination|
+      resolved << destination
+      "missing"
+    end
+
+    2.times { assert_raises(RuntimeError) { kamal.config } }
+    assert_equal [ nil ], resolved
+  ensure
+    ENV.delete("KAMAL_DESTINATION")
+  end
+
   private
     def configure_with(variant)
       @kamal = Kamal::Commander.new.tap do |kamal|
