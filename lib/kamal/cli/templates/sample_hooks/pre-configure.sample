@@ -15,8 +15,11 @@
 # KAMAL_ENV
 #
 # Each NAME=value line written to $KAMAL_ENV is set in the environment for
-# the rest of the run, so the config's ERB and later hooks can read it.
-# KAMAL_DESTINATION picks the destination to load.
+# the rest of the run, so the config's ERB and later hooks can read it. Values
+# are taken as written, quotes included. KAMAL_DESTINATION picks the destination
+# to load.
+#
+# Its output is shown with -v, and when it fails.
 
 # Deploy to staging unless a destination is given
 if [ -z "$KAMAL_DESTINATION" ]; then

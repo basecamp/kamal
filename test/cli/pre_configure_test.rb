@@ -76,6 +76,25 @@ class CliPreConfigureTest < CliTestCase
     end
   end
 
+  test "gets the subcommand when run through main" do
+    config = [ "-c", "test/fixtures/deploy_with_accessories.yml" ]
+    [
+      [ "server", "exec", "date", *config ],
+      [ "server", "exec", "date", *config, "--hosts", "1.1.1.1" ],
+      [ "server", "--hosts", "1.1.1.1", "exec", "date", *config ],
+      [ "server", "--hosts", "1.1.1.1", "exe", "date", *config ]
+    ].each do |argv|
+      with_pre_configure_hook do
+        SSHKit::Backend::Abstract.any_instance.stubs(:capture).with("date", strip: true, verbosity: 1).returns("Today")
+        stdouted { Kamal::Cli::Main.start(argv) }
+
+        assert_equal "server", @hook_env["KAMAL_COMMAND"]
+        assert_equal "exec", @hook_env["KAMAL_SUBCOMMAND"], "for #{argv.join(" ")}"
+      end
+      KAMAL.reset
+    end
+  end
+
   test "runs once" do
     with_pre_configure_hook do
       run_command("exec", "date", "-c", "test/fixtures/deploy_with_accessories.yml")
