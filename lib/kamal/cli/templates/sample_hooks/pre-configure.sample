@@ -1,0 +1,27 @@
+#!/bin/sh
+
+# A sample pre-configure hook
+#
+# Runs before the configuration is loaded, the first time a command needs it.
+# An alias runs it twice: with KAMAL_COMMAND set to the alias's name to look the
+# alias up, then for the command it expands to. So a hook that does more than
+# pick a destination, like leasing one, should do it only for the commands it
+# knows. It is always read from .kamal/hooks, whatever hooks_path is set to.
+#
+# These environment variables are available:
+# KAMAL_DESTINATION (if set)
+# KAMAL_COMMAND
+# KAMAL_SUBCOMMAND (if set)
+# KAMAL_ENV
+#
+# Each NAME=value line written to $KAMAL_ENV is set in the environment for
+# the rest of the run, so the config's ERB and later hooks can read it. Values
+# are taken as written, quotes included. KAMAL_DESTINATION picks the destination
+# to load.
+#
+# Its output is shown with -v, and when it fails.
+
+# Deploy to staging unless a destination is given
+if [ -z "$KAMAL_DESTINATION" ]; then
+  echo "KAMAL_DESTINATION=staging" >> "$KAMAL_ENV"
+fi

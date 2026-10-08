@@ -23,20 +23,26 @@ class Kamal::Commander
     self.lock_wait_interval = 15
     @modify_depth = 0
     @specifics = @specific_roles = @specific_hosts = nil
-    @config = @config_kwargs = nil
+    @config = @config_kwargs = @destination_resolver = nil
     @output_logger = nil
     @commands = {}
   end
 
   def config
-    @config ||= Kamal::Configuration.create_from(**@config_kwargs.to_h).tap do |config|
-      @config_kwargs = nil
-      configure_sshkit_with(config)
+    @config ||= begin
+      resolve_destination if @destination_resolver
+
+      Kamal::Configuration.create_from(**@config_kwargs.to_h).tap do |config|
+        @config_kwargs = nil
+        configure_sshkit_with(config)
+      end
     end
   end
 
-  def configure(**kwargs)
-    @config, @config_kwargs = nil, kwargs
+  # The destination resolver is called with the configured destination when the
+  # config is first needed, and returns the destination to load in its place.
+  def configure(**kwargs, &destination_resolver)
+    @config, @config_kwargs, @destination_resolver = nil, kwargs, destination_resolver
   end
 
   def configured?
@@ -133,6 +139,7 @@ class Kamal::Commander
     if @config
       @config.aliases[name]&.command
     else
+      resolve_destination if @destination_resolver
       raw_config = Kamal::Configuration.load_raw_config(**@config_kwargs.to_h.slice(:config_file, :destination))
       raw_config[:aliases]&.dig(name)
     end
@@ -175,6 +182,11 @@ class Kamal::Commander
   end
 
   private
+    def resolve_destination
+      @config_kwargs = @config_kwargs.merge(destination: @destination_resolver.call(@config_kwargs[:destination]))
+      @destination_resolver = nil
+    end
+
     def output_logger
       @output_logger ||= ActiveSupport::BroadcastLogger.new
     end
