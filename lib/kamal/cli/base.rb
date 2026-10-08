@@ -280,7 +280,12 @@ module Kamal::Cli
       def subcommand
         @kamal_subcommand ||= begin
           invocation_class, invocation_commands = *first_invocation
-          invocation_commands[0] if invocation_class != Kamal::Cli::Main
+          if invocation_class != Kamal::Cli::Main
+            invocation_commands[0]
+          elsif subcommand_class = Kamal::Cli::Main.subcommand_classes[invocation_commands[0]]
+            # `kamal app boot` records Main's `app` first, then App's `boot`
+            instance_variable_get("@_invocations").fetch(subcommand_class, []).first
+          end
         end
       end
 
