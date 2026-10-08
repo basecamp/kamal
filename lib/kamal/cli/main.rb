@@ -1,4 +1,16 @@
 class Kamal::Cli::Main < Kamal::Cli::Base
+  # The executable to run for a command that is neither built in nor an alias in
+  # the config: .kamal/bin/<name>, or else kamal-<name> on the PATH. An empty PATH entry
+  # isn't taken for the current directory: .kamal/bin is the place for a project's own.
+  def self.external_command(name)
+    if name.present? && !name.start_with?("-") && !name.include?("/")
+      path_dirs = ENV["PATH"].to_s.split(File::PATH_SEPARATOR).reject(&:empty?)
+
+      [ File.join(".kamal", "bin", name), *path_dirs.map { |dir| File.join(dir, "kamal-#{name}") } ]
+        .find { |path| File.file?(path) && File.executable?(path) }
+    end
+  end
+
   desc "setup", "Setup all accessories, push the env, and deploy app to servers"
   option :skip_push, aliases: "-P", type: :boolean, default: false, desc: "Skip image build and push"
   option :no_cache, type: :boolean, default: false, desc: "Build without using Docker's build cache"
