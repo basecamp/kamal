@@ -14,6 +14,8 @@ permissions: {}
 
 jobs:
   build-and-push-image:
+    # Publishes only after a required reviewer approves (repo Settings > Environments).
+    environment: release
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -35,8 +37,12 @@ jobs:
         uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          # GHCR_PUBLISH_TOKEN (classic PAT, write:packages, machine user) exists only in
+          # the `release` environment. Once the release package's Actions access is locked
+          # to read, this repository's GITHUB_TOKEN cannot push to it; until then the
+          # fallback keeps releases working.
+          username: ${{ secrets.GHCR_PUBLISH_TOKEN && vars.GHCR_PUBLISH_USER || github.actor }}
+          password: ${{ secrets.GHCR_PUBLISH_TOKEN || secrets.GITHUB_TOKEN }}
       - name: Determine version tag
         id: version-tag
         run: |
