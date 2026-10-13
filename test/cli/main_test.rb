@@ -808,6 +808,14 @@ class CliMainTest < CliTestCase
     end
   end
 
+  test "render an alias with the destination" do
+    ENV.delete("KAMAL_DESTINATION")
+
+    run_command("console", "-d", "world", config_file: "deploy_with_destination_aliases").tap do |output|
+      assert_match "bin/console world", output
+    end
+  end
+
   test "upgrade" do
     invoke_options = base_invoke_options(config_file: "deploy_with_accessories.yml", version: nil, confirmed: true, rolling: false)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:proxy:upgrade", [], invoke_options)
