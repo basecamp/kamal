@@ -42,6 +42,21 @@ class CliAccessoryTest < CliTestCase
     end
   end
 
+  test "boot with custom ssl certificate" do
+    Kamal::Cli::Accessory.any_instance.expects(:directories).with("busybox")
+    Kamal::Cli::Accessory.any_instance.expects(:upload).with("busybox")
+    Kamal::Configuration::Proxy.any_instance.stubs(:custom_ssl_certificate?).returns(true)
+    Kamal::Configuration::Proxy.any_instance.stubs(:certificate_pem_content).returns("CERTIFICATE CONTENT")
+    Kamal::Configuration::Proxy.any_instance.stubs(:private_key_pem_content).returns("PRIVATE KEY CONTENT")
+
+    run_command("boot", "busybox").tap do |output|
+      assert_match "mkdir -p .kamal/proxy/apps-config/app/tls/accessories/busybox", output
+      assert_match "Uploading \"CERTIFICATE CONTENT\" to .kamal/proxy/apps-config/app/tls/accessories/busybox/cert.pem", output
+      assert_match "Uploading \"PRIVATE KEY CONTENT\" to .kamal/proxy/apps-config/app/tls/accessories/busybox/key.pem", output
+      assert_match "--tls-certificate-path=\"/home/kamal-proxy/.apps-config/app/tls/accessories/busybox/cert.pem\" --tls-private-key-path=\"/home/kamal-proxy/.apps-config/app/tls/accessories/busybox/key.pem\"", output
+    end
+  end
+
   test "upload" do
     run_command("upload", "mysql").tap do |output|
       assert_match "mkdir -p app-mysql/etc/mysql", output

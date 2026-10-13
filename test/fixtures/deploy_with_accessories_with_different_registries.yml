@@ -43,5 +43,7 @@ accessories:
       server: other.registry
       username: other_user
       password: other_pw
+    proxy:
+      host: busybox.example.com
 
 readiness_delay: 0
