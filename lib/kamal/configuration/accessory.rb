@@ -265,12 +265,21 @@ class Kamal::Configuration::Accessory
 
     def extract_hosts_from_config_with_tag(tag)
       if (servers_with_roles = config.raw_config.servers).is_a?(Hash)
-        servers_with_roles.flat_map do |role, servers_in_role|
-          servers_in_role.filter_map do |host|
-            host.keys.first if host.is_a?(Hash) && host.values.first.include?(tag)
+        servers_with_roles.flat_map do |_role, servers_in_role|
+          hosts_for_role(servers_in_role).filter_map do |host_config|
+            next unless host_config.is_a?(Hash)
+
+            host, tags = host_config.first
+            host if Array(tags).include?(tag)
           end
         end
       end
+    end
+
+    # Match Role#extract_hosts_from_config: roles may be a bare host list or a
+    # hash with a `hosts` key (plus env/options/etc).
+    def hosts_for_role(servers_in_role)
+      servers_in_role.is_a?(Array) ? servers_in_role : Array(servers_in_role["hosts"])
     end
 
     def network
