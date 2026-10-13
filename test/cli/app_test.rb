@@ -10,6 +10,29 @@ class CliAppTest < CliTestCase
     end
   end
 
+  test "boot through main names the subcommand to hooks and the output loggers" do
+    stub_running
+    Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
+
+    hook_env = {}
+    SSHKit::Backend::Abstract.any_instance.stubs(:execute).with do |*args|
+      hook_env[args.first] = ENV.slice("KAMAL_COMMAND", "KAMAL_SUBCOMMAND") if args.first.to_s.start_with?(".kamal/hooks/")
+      true
+    end
+
+    modifications = []
+    subscriber = ActiveSupport::Notifications.subscribe("modify.kamal") do |*, payload|
+      modifications << payload.slice(:command, :subcommand)
+    end
+
+    stdouted { Kamal::Cli::Main.start([ "app", "boot", "-c", "test/fixtures/deploy_with_accessories.yml", "--hosts", "1.1.1.1" ]) }
+
+    assert_equal({ "KAMAL_COMMAND" => "app", "KAMAL_SUBCOMMAND" => "boot" }, hook_env[".kamal/hooks/pre-app-boot"])
+    assert_equal [ { command: "app", subcommand: "boot" } ], modifications
+  ensure
+    ActiveSupport::Notifications.unsubscribe(subscriber) if subscriber
+  end
+
   test "boot will rename if same version is already running" do
     Object.any_instance.stubs(:sleep)
     run_command("details") # Preheat Kamal const
