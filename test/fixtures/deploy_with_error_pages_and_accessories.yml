@@ -1,0 +1,25 @@
+service: app
+image: dhh/app
+servers:
+  - "1.1.1.1"
+registry:
+  username: user
+  password: pw
+builder:
+  arch: amd64
+
+accessories:
+  mysql:
+    image: mysql:5.7
+    host: 1.1.1.1
+    port: 3306
+  cache:
+    image: redis:7-alpine
+    host: 1.1.1.1
+    port: 6379:6379
+    proxy:
+      host: cache.example.com
+      path_prefix: "/cache"
+      app_port: 6379
+
+error_pages_path: public
