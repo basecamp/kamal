@@ -463,4 +463,14 @@ class ConfigurationTest < ActiveSupport::TestCase
     end
     assert_match /Invalid hooks_output 'invalid' for hook 'pre-deploy'/, error.message
   end
+
+  test "post_deploy_lock defaults to false" do
+    assert_not @config.post_deploy_lock?
+  end
+
+  test "post_deploy_lock can be enabled" do
+    config = Kamal::Configuration.new(@deploy.merge(post_deploy_lock: true))
+
+    assert config.post_deploy_lock?
+  end
 end

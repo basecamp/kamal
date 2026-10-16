@@ -19,7 +19,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
   option :skip_push, aliases: "-P", type: :boolean, default: false, desc: "Skip image build and push"
   option :no_cache, type: :boolean, default: false, desc: "Build without using Docker's build cache"
   def deploy(boot_accessories: false)
-    modify do
+    modify(lock: KAMAL.config.post_deploy_lock?) do
       runtime = print_runtime do
         invoke_options = deploy_options
 
@@ -57,7 +57,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
   option :skip_push, aliases: "-P", type: :boolean, default: false, desc: "Skip image build and push"
   option :no_cache, type: :boolean, default: false, desc: "Build without using Docker's build cache"
   def redeploy
-    modify do
+    modify(lock: KAMAL.config.post_deploy_lock?) do
       runtime = print_runtime do
         invoke_options = deploy_options
 
@@ -87,7 +87,7 @@ class Kamal::Cli::Main < Kamal::Cli::Base
   def rollback(version)
     rolled_back = false
 
-    modify do
+    modify(lock: KAMAL.config.post_deploy_lock?) do
       runtime = print_runtime do
         modify(lock: true) do
           invoke_options = deploy_options

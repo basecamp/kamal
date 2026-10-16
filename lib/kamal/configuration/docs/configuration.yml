@@ -104,6 +104,13 @@ hooks_output:
   pre-deploy: :verbose
   pre-build: :quiet
 
+# Post-deploy lock
+#
+# Keep the remote deploy lock held while the post-deploy hook runs, defaults to `false`.
+# This also acquires the lock before the build, serializing the entire deploy command.
+# Useful when post-deploy performs stateful work such as database migrations or cache warming:
+post_deploy_lock: true
+
 # Secrets path
 #
 # Path to secrets, defaults to `.kamal/secrets`.
