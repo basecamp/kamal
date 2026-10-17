@@ -3,6 +3,14 @@ require "dotenv"
 class Kamal::Secrets
   Kamal::Secrets::Dotenv::InlineCommandSubstitution.install!
 
+  # Bash parameter-expansion operators (e.g. ${VAR:-default}, ${VAR:?error}) that
+  # the dotenv parser does not support. dotenv substitutes the variable name and
+  # leaves the operator and default portion in the value verbatim, so we warn the
+  # user rather than letting it happen silently. Plain ${VAR} and $(command) are
+  # fine, and a backslash-escaped \${...} is treated as a literal by dotenv. The
+  # /n flag keeps matching safe on files that contain non-UTF-8 bytes.
+  UNSUPPORTED_EXPANSION = /(?<!\\)\$\{[A-Za-z_][A-Za-z0-9_]*:?[-+?=]/n
+
   def initialize(destination: nil, secrets_path: ".kamal/secrets")
     @destination = destination
     @secrets_path = secrets_path
@@ -36,8 +44,19 @@ class Kamal::Secrets
   private
     def secrets
       @secrets ||= secrets_files.inject({}) do |secrets, secrets_file|
+        warn_on_unsupported_expansion(secrets_file)
         secrets.merge!(::Dotenv.parse(secrets_file, overwrite: true))
       end
+    end
+
+    def warn_on_unsupported_expansion(secrets_file)
+      offending = File.binread(secrets_file).each_line.any? do |line|
+        next false if line.match?(/\A\s*#/n)
+        line.match?(UNSUPPORTED_EXPANSION)
+      end
+      return unless offending
+
+      warn "Kamal secrets: #{secrets_file} uses ${VAR:-default}-style bash parameter expansion, which the secrets parser does not support. Only the variable name is substituted; the rest of the expression (e.g. ':-default}') is left in the value verbatim. Use a plain ${VAR} reference or compute the value with $(command) instead."
     end
 
     def secrets_filenames
