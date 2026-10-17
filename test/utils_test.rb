@@ -52,4 +52,14 @@ class UtilsTest < ActiveSupport::TestCase
     assert_equal "\"https://example.com/\\$2\"",
       Kamal::Utils.escape_shell_value("https://example.com/$2")
   end
+
+  test "join_commands preserves single string commands" do
+    assert_equal "ruby -v", Kamal::Utils.join_commands([ "ruby -v" ])
+  end
+
+  test "join_commands preserves separate arguments" do
+    assert_equal \
+      "/app/bin/appServer maintenance We\\ are\\ upgrading\\ our\\ infrastructure,\\ we\\ will\\ be\\ back\\ soon.",
+      Kamal::Utils.join_commands([ "/app/bin/appServer", "maintenance", "We are upgrading our infrastructure, we will be back soon." ])
+  end
 end
