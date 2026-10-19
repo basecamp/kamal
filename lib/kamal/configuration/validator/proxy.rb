@@ -30,6 +30,10 @@ class Kamal::Configuration::Validator::Proxy < Kamal::Configuration::Validator
           if run_config["bind_ips"].present? || run_config["http_port"].present? || run_config["https_port"].present?
             error "Cannot set http_port, https_port or bind_ips when publish is false"
           end
+
+          if run_config["http3"]
+            error "Cannot enable http3 when publish is false"
+          end
         end
       end
     end

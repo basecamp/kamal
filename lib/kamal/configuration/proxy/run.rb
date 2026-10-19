@@ -21,6 +21,10 @@ class Kamal::Configuration::Proxy::Run
     run_config.fetch("publish", true)
   end
 
+  def http3?
+    run_config.fetch("http3", false)
+  end
+
   def http_port
     run_config.fetch("http_port", DEFAULT_HTTP_PORT)
   end
@@ -40,7 +44,11 @@ class Kamal::Configuration::Proxy::Run
         publish_http = [ bind_ip, http_port, DEFAULT_HTTP_PORT ].compact.join(":")
         publish_https = [ bind_ip, https_port, DEFAULT_HTTPS_PORT ].compact.join(":")
 
-        argumentize "--publish", [ publish_http, publish_https ]
+        ports = [ publish_http, publish_https ]
+        # HTTP/3 (QUIC) runs over UDP on the HTTPS port, so it needs its own publish mapping.
+        ports << "#{publish_https}/udp" if http3?
+
+        argumentize "--publish", ports
       end.join(" ")
     end
   end
@@ -88,7 +96,7 @@ class Kamal::Configuration::Proxy::Run
   end
 
   def run_command_options
-    { debug: debug? || nil, "metrics-port": metrics_port }.compact
+    { debug: debug? || nil, "metrics-port": metrics_port, http3: (true if http3?) }.compact
   end
 
   def docker_options_args
