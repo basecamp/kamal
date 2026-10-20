@@ -81,6 +81,21 @@ class ConfigurationProxyTest < ActiveSupport::TestCase
     end
   end
 
+  test "deploy options with log filter paths" do
+    @deploy[:proxy] = { "logging" => { "filter_paths" => [ "/invitations/([^/]+)", "^/shared/([^/]+)/files/(.+)" ] } }
+
+    proxy = config.proxy
+    assert_equal [ "/invitations/([^/]+)", "^/shared/([^/]+)/files/(.+)" ], proxy.deploy_options[:"log-filter-path"]
+    assert_includes proxy.deploy_command_args(target: "abc123"), "--log-filter-path=\"/invitations/([^/]+)\""
+    assert_includes proxy.deploy_command_args(target: "abc123"), "--log-filter-path=\"^/shared/([^/]+)/files/(.+)\""
+  end
+
+  test "deploy options without log filter paths" do
+    @deploy[:proxy] = { "logging" => { "request_headers" => [ "Cache-Control" ] } }
+
+    assert_not config.proxy.deploy_options.key?(:"log-filter-path")
+  end
+
   test "ssl with certificate and no private key" do
     with_test_secrets("secrets" => "CERT_PEM=certificate") do
       @deploy[:proxy] = {
