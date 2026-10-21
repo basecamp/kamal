@@ -263,7 +263,14 @@ module SSHKitDslRoles
       # Host-first iteration: hosts run in parallel, roles on each host run sequentially
       on(hosts) do |host|
         roles.each do |role|
-          instance_exec(host, role, &block) if role.hosts.include?(host.to_s)
+          host_matches_role = role.hosts.any? do |role_host|
+            configured_host = SSHKit::Host.new(role_host)
+            configured_host.hostname == host.hostname &&
+              configured_host.user == host.user &&
+              configured_host.port == host.port
+          end
+
+          instance_exec(host, role, &block) if host_matches_role
         end
       end
     end
