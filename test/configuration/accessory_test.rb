@@ -188,6 +188,54 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
     assert_equal [ "1.1.1.1", "1.1.1.3" ], @config.accessory(:logger).hosts
   end
 
+  test "tag matching uses exact tags when hosts are nested under role hosts key" do
+    @deploy[:servers] = {
+      "web" => {
+        "hosts" => [ { "1.1.1.1" => "writer" }, { "1.1.1.2" => "reader" }, "1.1.1.9" ],
+        "env" => { "ROLE" => "web" }
+      },
+      "workers" => {
+        "hosts" => [ { "1.1.1.3" => [ "writer", "jobs" ] } ]
+      }
+    }
+    @deploy[:accessories] = {
+      "logger" => {
+        "image" => "logger:latest",
+        "tag" => "writer"
+      },
+      "reader" => {
+        "image" => "reader:latest",
+        "tag" => "reader"
+      }
+    }
+
+    config = Kamal::Configuration.new(@deploy)
+
+    assert_equal [ "1.1.1.1", "1.1.1.3" ], config.accessory(:logger).hosts
+    assert_equal [ "1.1.1.2" ], config.accessory(:reader).hosts
+  end
+
+  test "tag matching requires an exact tag, not a substring" do
+    @deploy[:servers] = {
+      "web" => [ { "1.1.1.1" => "writer" }, { "1.1.1.2" => "staging" } ]
+    }
+    @deploy[:accessories] = {
+      "partial" => {
+        "image" => "logger:latest",
+        "tag" => "write"
+      },
+      "exact" => {
+        "image" => "logger:latest",
+        "tag" => "writer"
+      }
+    }
+
+    config = Kamal::Configuration.new(@deploy)
+
+    assert_equal [], config.accessory(:partial).hosts
+    assert_equal [ "1.1.1.1" ], config.accessory(:exact).hosts
+  end
+
   test "missing host" do
     @deploy[:accessories]["mysql"]["host"] = nil
 
