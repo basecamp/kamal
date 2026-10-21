@@ -8,6 +8,8 @@ PATH
       concurrent-ruby (~> 1.2)
       dotenv (~> 3.1)
       ed25519 (~> 1.4)
+      net-scp (>= 4.1, < 5.0)
+      net-sftp (>= 4.0, < 5.0)
       net-ssh (>= 7.3, < 9.0)
       sshkit (>= 1.23.0, < 2.0)
       thor (~> 1.3)
