@@ -148,6 +148,14 @@ proxy:
       - X-Request-ID
       - X-Request-Start
 
+    # Sensitive path text to replace with [FILTERED] in the proxy's logs, such as
+    # tokens that URLs carry in a path segment. Each entry is a regular expression
+    # matched against the decoded request path; when it has capture groups, the
+    # text each group matches is filtered, otherwise the whole match is:
+    filter_paths:
+      - /invitations/([^/]+)
+      - ^/shared/([^/]+)/files/(.+)
+
   # Run configuration
   #
   # These options are used when booting the proxy container.
