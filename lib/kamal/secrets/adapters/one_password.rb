@@ -1,8 +1,28 @@
 class Kamal::Secrets::Adapters::OnePassword < Kamal::Secrets::Adapters::Base
   delegate :optionize, to: Kamal::Utils
 
+  def fetch(secrets, account: nil, from: nil, environment: nil)
+    raise RuntimeError, "Options '--from' and '--environment' cannot be used together" if from.present? && environment.present?
+    raise RuntimeError, "Missing required option '--account'" if requires_account?(environment) && account.blank?
+
+    check_dependencies!
+
+    session = login(account)
+    fetch_secrets(secrets, from: from, environment: environment, account: account, session: session)
+  end
+
+  def requires_account?(environment = nil)
+    environment.blank?
+  end
+
+  def supports_environment?
+    true
+  end
+
   private
     def login(account)
+      return if account.blank?
+
       unless loggedin?(account)
         `op signin #{to_options(account: account, force: true, raw: true)}`.tap do
           raise RuntimeError, "Failed to login to 1Password" unless $?.success?
@@ -15,15 +35,17 @@ class Kamal::Secrets::Adapters::OnePassword < Kamal::Secrets::Adapters::Base
       $?.success?
     end
 
-    def fetch_secrets(secrets, from:, account:, session:)
+    def fetch_secrets(secrets, from:, environment:, account:, session:)
       if secrets.blank?
-        fetch_all_secrets(from: from, account: account, session: session)
+        fetch_all_secrets(from: from, environment: environment, account: account, session: session)
       else
-        fetch_specified_secrets(secrets, from: from, account: account, session: session)
+        fetch_specified_secrets(secrets, from: from, environment: environment, account: account, session: session)
       end
     end
 
-    def fetch_specified_secrets(secrets, from:, account:, session:)
+    def fetch_specified_secrets(secrets, from:, environment:, account:, session:)
+      return fetch_specified_environment_secrets(secrets, environment: environment, account: account, session: session) if environment.present?
+
       {}.tap do |results|
         vaults_items_fields(prefixed_secrets(secrets, from: from)).map do |vault, items|
           items.each do |item, fields|
@@ -36,7 +58,9 @@ class Kamal::Secrets::Adapters::OnePassword < Kamal::Secrets::Adapters::Base
       end
     end
 
-    def fetch_all_secrets(from:, account:, session:)
+    def fetch_all_secrets(from:, environment:, account:, session:)
+      return op_environment_read(environment, account: account, session: session) if environment.present?
+
       {}.tap do |results|
         vault_items(from).each do |vault, items|
           items.each do |item|
@@ -44,6 +68,18 @@ class Kamal::Secrets::Adapters::OnePassword < Kamal::Secrets::Adapters::Base
 
             results.merge!(fields_map(fields_json))
           end
+        end
+      end
+    end
+
+    def fetch_specified_environment_secrets(secrets, environment:, account:, session:)
+      all_variables = op_environment_read(environment, account: account, session: session)
+
+      all_variables.slice(*secrets).tap do |results|
+        missing = secrets - results.keys
+
+        if missing.any?
+          raise RuntimeError, "Could not read #{missing.join(", ")} from the #{environment} 1Password Environment"
         end
       end
     end
@@ -90,6 +126,25 @@ class Kamal::Secrets::Adapters::OnePassword < Kamal::Secrets::Adapters::Base
 
       `op item get #{item.shellescape} #{to_options(**options)}`.tap do
         raise RuntimeError, "Could not read #{"#{fields.join(", ")} " if fields.present?}from #{item} in the #{vault} 1Password vault" unless $?.success?
+      end
+    end
+
+    def op_environment_read(environment, account:, session:)
+      raise ArgumentError, "environment must be present" if environment.blank?
+
+      options = { account: account.presence, session: session.presence }
+      command = [ "op environment read #{environment.shellescape}", to_options(**options) ].reject(&:blank?).join(" ")
+
+      output = `#{command}`.tap do
+        raise RuntimeError, "Could not read the #{environment} 1Password Environment" unless $?.success?
+      end
+
+      output.each_line.with_object({}) do |line, results|
+        line = line.chomp
+        next if line.blank?
+
+        key, value = line.split("=", 2)
+        results[key] = value if key.present?
       end
     end
 
