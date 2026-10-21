@@ -53,6 +53,7 @@ class ConfigurationValidationTest < ActiveSupport::TestCase
     assert_error "registry/password: is required", registry: { "username" => "foo" }
     assert_error "registry/password: should be a string or an array with one string (for secret lookup)", registry: { "username" => "foo", "password" => [ "SECRET1", "SECRET2" ] }
     assert_error "registry/server: should be a string", registry: { "username" => "foo", "password" => "bar", "server" => [] }
+    assert_error "registry: Invalid registry scheme: ftp", registry: { "username" => "foo", "password" => "bar", "scheme" => "ftp" }
   end
 
   test "accessories" do
@@ -99,6 +100,14 @@ class ConfigurationValidationTest < ActiveSupport::TestCase
     assert_error "builder/args: should be a hash", builder: { "args" => [ "foo" ] }
     assert_error "builder/cache/options: should be a string", builder: { "cache" => { "options" => [] } }
     assert_error "builder: buildpacks only support building for one arch", builder: { "arch" => [ "amd64", "arm64" ], "pack" => { "builder" => "heroku/builder:24" } }
+    assert_error "builder: Invalid builder engine: podman", builder: { "engine" => "podman", "arch" => "amd64" }
+    assert_error "builder: The apple-container engine does not support remote builders", builder: { "engine" => "apple-container", "arch" => "amd64", "remote" => "ssh://builder" }
+    assert_error "builder: The apple-container engine does not support cache exports", builder: { "engine" => "apple-container", "arch" => "amd64", "cache" => { "type" => "registry" } }
+    assert_error "builder: The apple-container engine does not support provenance attestations", builder: { "engine" => "apple-container", "arch" => "amd64", "provenance" => false }
+    assert_error "builder: The apple-container engine does not support SBOM attestations", builder: { "engine" => "apple-container", "arch" => "amd64", "sbom" => false }
+    assert_error "builder: The apple-container engine does not support custom builder drivers", builder: { "engine" => "apple-container", "arch" => "amd64", "driver" => "cloud example/builder" }
+    assert_error "builder: The apple-container engine only supports the default SSH agent", builder: { "engine" => "apple-container", "arch" => "amd64", "ssh" => "other=/tmp/agent.sock" }
+    assert_error "builder: The apple-container engine only supports the default SSH agent", builder: { "engine" => "apple-container", "arch" => "amd64", "ssh" => "default-other" }
   end
 
   test "local registry with remote builder requires ssh url" do

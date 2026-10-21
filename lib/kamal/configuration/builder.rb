@@ -89,6 +89,14 @@ class Kamal::Configuration::Builder
     builder_config.fetch("driver", "docker-container")
   end
 
+  def engine
+    builder_config.fetch("engine", "docker")
+  end
+
+  def apple_container?
+    engine == "apple-container"
+  end
+
   def pack_builder
     builder_config["pack"]["builder"] if pack?
   end
