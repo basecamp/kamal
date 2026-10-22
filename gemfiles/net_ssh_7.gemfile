@@ -1,0 +1,7 @@
+# Kamal still supports net-ssh 7, and only this Gemfile exercises its code paths
+source "https://rubygems.org"
+git_source(:github) { |repo| "https://github.com/#{repo}.git" }
+
+gem "net-ssh", "~> 7.3"
+
+gemspec path: "../"
