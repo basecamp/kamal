@@ -58,6 +58,9 @@ jobs:
         exclude:
           - ruby-version: "3.2"
             gemfile: gemfiles/rails_edge.gemfile
+        include:
+          - ruby-version: "3.4"
+            gemfile: gemfiles/net_ssh_7.gemfile
     name: ${{ format('Tests (Ruby {0})', matrix.ruby-version) }}
     runs-on: ubuntu-latest
     env:

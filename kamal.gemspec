@@ -13,11 +13,14 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency "activesupport", ">= 7.0"
   spec.add_dependency "sshkit", ">= 1.23.0", "< 2.0"
-  spec.add_dependency "net-ssh", "~> 7.3"
+  spec.add_dependency "net-ssh", ">= 7.3", "< 9.0"
+  # Floors, so Bundler can't satisfy net-ssh 8 by downgrading these to ancient releases without an upper bound
+  spec.add_dependency "net-scp", ">= 4.1", "< 5.0"
+  spec.add_dependency "net-sftp", ">= 4.0", "< 5.0"
   spec.add_dependency "thor", "~> 1.3"
   spec.add_dependency "dotenv", "~> 3.1"
   spec.add_dependency "zeitwerk", ">= 2.6.18", "< 3.0"
-  spec.add_dependency "ed25519", "~> 1.4"
+  spec.add_dependency "ed25519", "~> 1.4" # Only needed by net-ssh 7, drop with the net-ssh < 8 support
   spec.add_dependency "bcrypt_pbkdf", "~> 1.0"
   spec.add_dependency "concurrent-ruby", "~> 1.2"
   spec.add_dependency "base64", "~> 0.2"

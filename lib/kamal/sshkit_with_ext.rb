@@ -209,13 +209,13 @@ class SSHKit::Runner::Parallel
   prepend CompleteAll
 end
 
-# Avoid net-ssh debug, until https://github.com/net-ssh/net-ssh/pull/953 is merged
 module NetSshForwardingNoPuts
   def puts(*)
   end
 end
 
-Net::SSH::Service::Forward.prepend NetSshForwardingNoPuts
+# net-ssh 7 prints remote forwarding diagnostics to stdout, fixed in 8 by net-ssh/net-ssh#953
+Net::SSH::Service::Forward.prepend NetSshForwardingNoPuts if Net::SSH::Version::MAJOR < 8
 
 module SSHKitDslRoles
   # Execute on hosts grouped by role.
