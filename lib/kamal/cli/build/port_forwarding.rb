@@ -30,13 +30,10 @@ class Kamal::Cli::Build::PortForwarding
       @threads = hosts.map do |host|
         Thread.new do
           begin
-            Net::SSH.start(host, ssh_options[:user], **ssh_options.except(:user)) do |ssh|
+            Net::SSH.start(host.to_s.split("@").last, ssh_options[:user], **ssh_options.except(:user)) do |ssh|
               ssh.forward.remote(port, "localhost", port, "127.0.0.1") do |remote_port, bind_address|
-                if remote_port == :error
-                  raise "Failed to establish port forward on #{host}"
-                else
-                  ready.count_down
-                end
+                error "Port forward rejected on #{host} (tunnel may already exist)" if remote_port == :error
+                ready.count_down
               end
 
               ssh.loop(0.1) do
@@ -52,7 +49,7 @@ class Kamal::Cli::Build::PortForwarding
             error "Error setting up port forwarding to #{host}: #{e.class}: #{e.message}"
             error e.backtrace.join("\n")
 
-            raise
+            ready.count_down
           end
         end
       end
