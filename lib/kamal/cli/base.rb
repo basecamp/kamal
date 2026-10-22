@@ -45,6 +45,10 @@ module Kamal::Cli
     end
 
     private
+      def dynamic_command?
+        @_initializer.last[:current_command].is_a?(Kamal::Cli::Alias::Command)
+      end
+
       def options_with_subcommand_class_options
         options.merge(@_initializer.last[:class_options] || {})
       end
@@ -65,9 +69,13 @@ module Kamal::Cli
             destination: options[:destination],
             version: options[:version]
 
-          commander.specific_hosts    = options[:hosts]&.split(",")
-          commander.specific_roles    = options[:roles]&.split(",")
-          commander.specific_primary! if options[:primary]
+          # A command Thor doesn't know is looked up as an alias, which starts over with
+          # its own selectors, or run as an external command, so don't load the config for them
+          unless dynamic_command?
+            commander.specific_hosts    = options[:hosts]&.split(",")
+            commander.specific_roles    = options[:roles]&.split(",")
+            commander.specific_primary! if options[:primary]
+          end
 
           commander.lock_wait          = options[:lock_wait]
           commander.lock_wait_timeout  = options[:lock_wait_timeout]

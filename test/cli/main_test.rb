@@ -819,6 +819,190 @@ class CliMainTest < CliTestCase
     end
   end
 
+  test "external command from .kamal/bin" do
+    in_external_command_dir do
+      write_executable ".kamal/bin/foo"
+
+      expects_external_command ".kamal/bin/foo"
+      with_argv([ "foo" ]) { Kamal::Cli::Main.start }
+    end
+  end
+
+  test "external command from PATH" do
+    in_external_command_dir do |dir|
+      write_executable "#{dir}/bin/kamal-bar"
+      prepend_path "#{dir}/bin"
+
+      expects_external_command "#{dir}/bin/kamal-bar"
+      with_argv([ "bar" ]) { Kamal::Cli::Main.start }
+    end
+  end
+
+  test "external command from a PATH directory with a space runs without a shell" do
+    in_external_command_dir do |dir|
+      write_executable "#{dir}/my tools/kamal-bar"
+      prepend_path "#{dir}/my tools"
+
+      # A lone string argument to exec is split on spaces or run by a shell
+      expects_external_command "#{dir}/my tools/kamal-bar"
+      with_argv([ "bar" ]) { Kamal::Cli::Main.start }
+    end
+  end
+
+  test "external command in .kamal/bin takes priority over PATH" do
+    in_external_command_dir do |dir|
+      write_executable ".kamal/bin/baz"
+      write_executable "#{dir}/bin/kamal-baz"
+      prepend_path "#{dir}/bin"
+
+      expects_external_command ".kamal/bin/baz"
+      with_argv([ "baz" ]) { Kamal::Cli::Main.start }
+    end
+  end
+
+  test "external command gets the arguments as given, options included" do
+    in_external_command_dir do
+      write_executable ".kamal/bin/foo"
+
+      expects_external_command ".kamal/bin/foo", "--bar", "baz", "-v"
+      with_argv([ "foo", "--bar", "baz", "-v" ]) { Kamal::Cli::Main.start }
+    end
+  end
+
+  test "external command gets selectors without Kamal applying them" do
+    config_file = File.expand_path("test/fixtures/deploy_with_aliases.yml")
+
+    in_external_command_dir do
+      write_executable ".kamal/bin/foo"
+
+      # -h with no value would otherwise be --hosts=hosts, and fail to match a host
+      expects_external_command ".kamal/bin/foo", "-h", "-c", config_file
+      with_argv([ "foo", "-h", "-c", config_file ]) { Kamal::Cli::Main.start }
+    end
+  end
+
+  test "built-in commands win over external commands, without loading the config" do
+    in_external_command_dir do |dir|
+      write_executable ".kamal/bin/version"
+      write_executable "#{dir}/bin/kamal-version"
+      prepend_path "#{dir}/bin"
+
+      Kamal::Cli::Alias::Command.any_instance.expects(:exec).never
+      Kamal::Configuration.expects(:load_raw_config).never
+      Kamal::Configuration.expects(:create_from).never
+
+      output = stdouted { with_argv([ "version" ]) { Kamal::Cli::Main.start } }
+      assert_equal Kamal::VERSION, output.strip
+    end
+  end
+
+  test "built-in prefix matches win over external commands" do
+    in_external_command_dir do
+      write_executable ".kamal/bin/ver"
+
+      Kamal::Cli::Alias::Command.any_instance.expects(:exec).never
+      Kamal::Configuration.expects(:load_raw_config).never
+
+      output = stdouted { with_argv([ "ver" ]) { Kamal::Cli::Main.start } }
+      assert_equal Kamal::VERSION, output.strip
+    end
+  end
+
+  test "aliases win over external commands of the same name" do
+    config_file = File.expand_path("test/fixtures/deploy_with_aliases.yml")
+
+    in_external_command_dir do |dir|
+      write_executable ".kamal/bin/console"
+      write_executable "#{dir}/bin/kamal-console"
+      prepend_path "#{dir}/bin"
+
+      Kamal::Cli::Alias::Command.any_instance.expects(:exec).never
+
+      output = stdouted { with_argv([ "console", "-c", config_file ]) { Kamal::Cli::Main.start } }
+      assert_match "docker exec app-console-999 bin/console on 1.1.1.5", output
+    end
+  end
+
+  test "external command runs when the config has no alias of that name" do
+    config_file = File.expand_path("test/fixtures/deploy_with_aliases.yml")
+
+    in_external_command_dir do
+      write_executable ".kamal/bin/foo"
+
+      expects_external_command ".kamal/bin/foo", "-c", config_file
+      with_argv([ "foo", "-c", config_file ]) { Kamal::Cli::Main.start }
+    end
+  end
+
+  test "alias can expand to an external command" do
+    config = File.read("test/fixtures/deploy_simple.yml") + "aliases:\n  foo_list: foo list\n"
+
+    in_external_command_dir do
+      write_executable ".kamal/bin/foo"
+      FileUtils.mkdir_p("config")
+      File.write("config/deploy.yml", config)
+
+      expects_external_command ".kamal/bin/foo", "list", "--all"
+      with_argv([ "foo_list", "--all" ]) { Kamal::Cli::Main.start }
+    end
+  end
+
+  test "alias lookup renders the config with its destination in the environment, selectors or not" do
+    config = File.read("test/fixtures/deploy_simple.yml") + <<~YAML
+      aliases:
+        info: <%= ENV.fetch("KAMAL_DESTINATION") == "world" ? "version" : "details" %>
+    YAML
+
+    in_external_command_dir do
+      FileUtils.mkdir_p("config")
+      File.write("config/deploy.yml", config)
+      File.write("config/deploy.world.yml", "env:\n  clear:\n    WORLD: 1\n")
+
+      [ [], [ "--primary" ] ].each do |selector|
+        ENV.delete("KAMAL_DESTINATION")
+        KAMAL.reset
+
+        output = stdouted { with_argv([ "info", "-d", "world", *selector ]) { Kamal::Cli::Main.start } }
+        assert_equal Kamal::VERSION, output.strip, "with #{selector.inspect}"
+      end
+    end
+  end
+
+  test "non-executable file in .kamal/bin is skipped" do
+    in_external_command_dir do
+      write_executable ".kamal/bin/foo", mode: 0644
+
+      assert_no_external_command "foo"
+    end
+  end
+
+  test "directory in .kamal/bin is skipped" do
+    in_external_command_dir do
+      FileUtils.mkdir_p(".kamal/bin/foo")
+
+      assert_no_external_command "foo"
+    end
+  end
+
+  test "directory on PATH is skipped" do
+    in_external_command_dir do |dir|
+      FileUtils.mkdir_p("#{dir}/bin/kamal-foo")
+      prepend_path "#{dir}/bin"
+
+      assert_no_external_command "foo"
+    end
+  end
+
+  test "path traversal in command name is rejected" do
+    in_external_command_dir do |dir|
+      write_executable "#{dir}/evil"
+      FileUtils.mkdir_p(".kamal/bin")
+      File.symlink("#{dir}/evil", ".kamal/bin/../foo")
+
+      assert_no_external_command "../foo"
+    end
+  end
+
   test "upgrade rolling" do
     invoke_options = base_invoke_options(config_file: "deploy_with_accessories.yml", version: nil, confirmed: true, rolling: false)
     Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:proxy:upgrade", [], invoke_options).times(4)
@@ -837,6 +1021,36 @@ class CliMainTest < CliTestCase
   end
 
   private
+    def in_external_command_dir
+      Dir.mktmpdir do |tmpdir|
+        Dir.chdir(tmpdir) { yield tmpdir }
+      end
+    end
+
+    def write_executable(path, mode: 0755)
+      FileUtils.mkdir_p(File.dirname(path))
+      File.write(path, "#!/bin/sh\n")
+      File.chmod(mode, path)
+    end
+
+    # The PATH is restored with the rest of the environment on teardown
+    def prepend_path(dir)
+      ENV["PATH"] = [ dir, ENV["PATH"] ].join(File::PATH_SEPARATOR)
+    end
+
+    def expects_external_command(path, *args)
+      Kamal::Cli::Alias::Command.any_instance.expects(:exec).with([ path, path ], *args)
+    end
+
+    def assert_no_external_command(name)
+      Kamal::Cli::Alias::Command.any_instance.expects(:exec).never
+
+      with_argv([ name ]) do
+        error = assert_raises(RuntimeError) { Kamal::Cli::Main.start }
+        assert_match /Configuration file not found/, error.message
+      end
+    end
+
     def run_command(*command, config_file: "deploy_simple")
       with_argv([ *command, "-c", "test/fixtures/#{config_file}.yml" ]) do
         stdouted { Kamal::Cli::Main.start }
