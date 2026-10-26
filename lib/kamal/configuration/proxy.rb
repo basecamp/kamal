@@ -67,6 +67,10 @@ class Kamal::Configuration::Proxy
     proxy_config["path_prefixes"] || proxy_config["path_prefix"]&.split(",") || []
   end
 
+  def healthcheck_debug?
+    !!proxy_config.dig("healthcheck", "debug")
+  end
+
   def deploy_options
     {
       host: hosts,
