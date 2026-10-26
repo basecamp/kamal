@@ -1,23 +1,34 @@
 class Kamal::Cli::App::Boot
-  attr_reader :host, :role, :version, :barrier, :sshkit
+  attr_reader :host, :role, :version, :barrier, :sshkit, :pre_app_drain
   delegate :execute, :capture_with_info, :capture_with_pretty_json, :info, :error, :upload!, to: :sshkit
   delegate :assets?, :running_proxy?, to: :role
 
-  def initialize(host, role, sshkit, version, barrier)
+  def initialize(host, role, sshkit, version, barrier, pre_app_drain: nil)
     @host = host
     @role = role
     @version = version
     @barrier = barrier
     @sshkit = sshkit
+    @pre_app_drain = pre_app_drain
   end
 
   def run
     old_version = old_version_renamed_if_clashing
+    drain_hook = pre_app_drain && old_version && running_proxy?
 
     wait_at_barrier if queuer?
 
     begin
-      start_new_version
+      if drain_hook
+        unless capture_with_info(*app.deploy_help).include?("--async-drain")
+          raise Kamal::Cli::BootError, "pre-app-drain requires a kamal-proxy release with --async-drain support on #{host}; upgrade the proxy before deploying"
+        end
+        draining_container_id = capture_with_info(*app.container_id_for_version(old_version)).strip
+        if draining_container_id.blank?
+          raise Kamal::Cli::BootError, "Failed to find retiring container #{old_version} for #{role} on #{host}"
+        end
+      end
+      drain_id = start_new_version(async_drain: drain_hook)
     rescue => e
       close_barrier if gatekeeper?
       stop_new_version
@@ -27,7 +38,19 @@ class Kamal::Cli::App::Boot
     release_barrier if gatekeeper?
 
     if old_version
-      stop_old_version(old_version)
+      if drain_hook
+        begin
+          pre_app_drain.call(hosts: host.to_s, role: role.name,
+            draining_version: old_version, draining_container_id: draining_container_id)
+        ensure
+          # Traffic has switched. A failed hook must not stop the healthy replacement
+          # or leave the old container running after its requests finish draining.
+          execute *app.wait_drain(drain_id)
+          stop_old_version(old_version)
+        end
+      else
+        stop_old_version(old_version)
+      end
     end
   end
 
@@ -43,7 +66,7 @@ class Kamal::Cli::App::Boot
       capture_with_info(*app.current_running_version, raise_on_non_zero_exit: false).strip.presence
     end
 
-    def start_new_version
+    def start_new_version(async_drain: false)
       audit "Booted app version #{version}"
       hostname = "#{host.to_s[0...51].chomp(".")}-#{SecureRandom.hex(6)}"
 
@@ -54,7 +77,11 @@ class Kamal::Cli::App::Boot
       if running_proxy?
         endpoint = capture_with_info(*app.container_id_for_version(version)).strip
         raise Kamal::Cli::BootError, "Failed to get endpoint for #{role} on #{host}, did the container boot?" if endpoint.empty?
-        execute *app.deploy(target: endpoint)
+        if async_drain
+          capture_with_info(*app.deploy(target: endpoint, async_drain: true)).strip
+        else
+          execute *app.deploy(target: endpoint)
+        end
       else
         Kamal::Cli::Healthcheck::Poller.wait_for_healthy { capture_with_info(*app.status(version: version)) }
       end

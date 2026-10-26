@@ -1,6 +1,151 @@
 require_relative "cli_test_case"
 
 class CliAppTest < CliTestCase
+  test "boot with pre-app-drain hook" do
+    stub_running
+    stub_drain_hook
+
+    Kamal::Commands::Hook.any_instance.expects(:env).with(
+      hosts: "1.1.1.1", role: "web", lock: "true", command: "app", subcommand: "boot",
+      draining_version: "123", draining_container_id: "123"
+    ).returns({})
+
+    run_command("boot").tap do |output|
+      assert_match(/pre-app-drain.*wait-drain drain-123.*name=\^app-web-123\$.*docker stop/m, output)
+    end
+  end
+
+  test "boot without old container skips pre-app-drain" do
+    stub_running
+    stub_drain_hook
+    Kamal::Commands::App.any_instance.stubs(:current_running_version).returns([ :old_version ])
+    SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info).with(:old_version, raise_on_non_zero_exit: false).returns("")
+
+    run_command("boot").tap do |output|
+      assert_no_match(/pre-app-drain|async-drain|wait-drain/, output)
+    end
+  end
+
+  test "pre-app-drain identifies the renamed container when redeploying the same version" do
+    stub_running
+    stub_drain_hook
+    Kamal::Commands::App.any_instance.stubs(:current_running_version).returns([ :old_version ])
+    SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info).with(:old_version, raise_on_non_zero_exit: false)
+      .returns("latest_replaced_existing")
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :container, :ls, "--all", "--filter", "'name=^app-web-latest_replaced_existing$'", "--quiet")
+      .returns("retiring-container")
+    Kamal::Commands::Hook.any_instance.expects(:env).with do |**details|
+      details[:draining_version] == "latest_replaced_existing" && details[:draining_container_id] == "retiring-container"
+    end.returns({})
+
+    run_command("boot").tap do |output|
+      assert_match(/docker rename app-web-latest .*pre-app-drain.*wait-drain/m, output)
+    end
+  end
+
+  test "boot skips pre-app-drain when hooks are skipped" do
+    stub_running
+    stub_drain_hook
+
+    run_command("boot", "--skip-hooks").tap do |output|
+      assert_no_match(/pre-app-drain|async-drain|wait-drain/, output)
+    end
+  end
+
+  test "pre-app-drain requires proxy support before starting a replacement" do
+    stub_running
+    stub_drain_hook
+    SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info)
+      .with(:docker, :exec, "kamal-proxy", "kamal-proxy", :deploy, "--help").returns("deploy options")
+    Kamal::Commands::Hook.any_instance.expects(:env).never
+
+    executions = []
+    SSHKit::Backend::Abstract.any_instance.stubs(:execute).with { |*args| executions << args; true }
+
+    error = assert_raises(SSHKit::Runner::ExecuteError) { stderred { run_command("boot") } }
+
+    assert_match "pre-app-drain requires a kamal-proxy release with --async-drain support", error.message
+    assert_not executions.any? { |args| args.first == :docker && args.include?(:run) }
+    assert_not executions.any? { |args| args.include?("'name=^app-web-123$'") && args.include?(:stop) }
+    assert_not KAMAL.holding_lock?
+  end
+
+  test "boot does not call pre-app-drain if replacement fails" do
+    stub_running
+    stub_drain_hook
+    SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info).with { |*args| args.include?("--async-drain") }
+      .raises(SSHKit::Command::Failed.new("replacement is unhealthy"))
+    Kamal::Commands::Hook.any_instance.expects(:env).never
+
+    error = assert_raises(SSHKit::Runner::ExecuteError) { stderred { run_command("boot") } }
+
+    assert_match "replacement is unhealthy", error.message
+    assert_not KAMAL.holding_lock?
+  end
+
+  test "pre-app-drain keeps each host's environment isolated" do
+    stub_running
+    stub_drain_hook
+    keys = %w[ KAMAL_HOSTS KAMAL_ROLE KAMAL_DRAINING_CONTAINER_ID KAMAL_DRAINING_VERSION ]
+    original = ENV.slice(*keys)
+    contexts = Queue.new
+    SSHKit::Backend::Abstract.any_instance.stubs(:execute).returns(true)
+    SSHKit::Backend::Abstract.any_instance.stubs(:execute).with do |*args|
+      if args == [ ".kamal/hooks/pre-app-drain" ]
+        before = ENV.slice(*keys)
+        Kernel.sleep(0.01)
+        contexts << [ before, ENV.slice(*keys) ]
+        true
+      else
+        false
+      end
+    end.returns(true)
+
+    run_command("boot", config: :with_proxy_roles, host: nil)
+
+    assert_equal 4, contexts.size
+    4.times do
+      before, after = contexts.pop
+      assert_equal before, after
+      assert_equal "123", before["KAMAL_DRAINING_CONTAINER_ID"]
+    end
+    assert_equal original, ENV.slice(*keys)
+  end
+
+  test "boot calls pre-app-drain once per proxied host and role" do
+    stub_running
+    stub_drain_hook
+    seen = []
+    Kamal::Commands::Hook.any_instance.stubs(:env).with do |**details|
+      seen << details.slice(:hosts, :role, :draining_container_id)
+      true
+    end.returns({})
+
+    run_command("boot", config: :with_proxy_roles, host: nil)
+
+    assert_equal [
+      { hosts: "1.1.1.1", role: "web", draining_container_id: "123" },
+      { hosts: "1.1.1.2", role: "web", draining_container_id: "123" },
+      { hosts: "1.1.1.3", role: "web2", draining_container_id: "123" },
+      { hosts: "1.1.1.4", role: "web2", draining_container_id: "123" }
+    ], seen.sort_by { |details| details[:hosts] }
+  end
+
+  test "pre-app-drain failure still drains and stops the old container" do
+    stub_running
+    stub_drain_hook
+    fail_hook("pre-app-drain")
+
+    error = assert_raises(SSHKit::Runner::ExecuteError) { run_command("boot") }
+
+    assert_match "Hook `pre-app-drain` failed", error.message
+    assert_includes @executions, [ :docker, :exec, "kamal-proxy", "kamal-proxy", :"wait-drain", "drain-123" ]
+    assert_includes @executions, [ :docker, :container, :ls, "--all", "--filter", "'name=^app-web-123$'", "--quiet", "|", :xargs, :docker, :stop, { raise_on_non_zero_exit: false } ]
+    assert_not @executions.any? { |args| args.include?("'name=^app-web-latest$'") && args.include?(:stop) }
+    assert_not KAMAL.holding_lock?
+  end
+
   test "boot" do
     stub_running
     run_command("boot").tap do |output|
@@ -13,6 +158,8 @@ class CliAppTest < CliTestCase
   test "boot through main names the subcommand to hooks and the output loggers" do
     stub_running
     Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
+    SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info)
+      .with(:docker, :exec, "kamal-proxy", "kamal-proxy", :deploy, "--help").returns("--async-drain")
 
     hook_env = {}
     SSHKit::Backend::Abstract.any_instance.stubs(:execute).with do |*args|
@@ -614,6 +761,14 @@ class CliAppTest < CliTestCase
   end
 
   private
+    def stub_drain_hook
+      Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(false)
+      Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).with("pre-app-drain").returns(true)
+      SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info)
+        .with(:docker, :exec, "kamal-proxy", "kamal-proxy", :deploy, "--help").returns("--async-drain")
+      SSHKit::Backend::Abstract.any_instance.stubs(:capture_with_info).with { |*args| args.include?("--async-drain") }.returns("drain-123")
+    end
+
     def run_command(*command, config: :with_accessories, host: "1.1.1.1", allow_execute_error: false)
       stdouted do
         Kamal::Cli::App.start([ *command, "-c", "test/fixtures/deploy_#{config}.yml", *([ "--hosts", host ] if host) ])

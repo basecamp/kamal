@@ -460,9 +460,18 @@ class CliMainTest < CliTestCase
       .returns("running").at_least_once # health check
 
     Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :container, :ls, "--all", "--filter", "'name=^app-web-version-to-rollback$'", "--quiet")
+      .returns("old-web-container").at_least_once
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with { |*args| args.include?("--async-drain") }.returns("drain-rollback").at_least_once
+    SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+      .with(:docker, :exec, "kamal-proxy", "kamal-proxy", :deploy, "--help").returns("--async-drain").at_least_once
 
     run_command("rollback", "--verbose", "123", config_file: "deploy_with_accessories").tap do |output|
       assert_hook_ran "pre-deploy", output
+      assert_hook_ran "pre-app-drain", output
+      assert_match "wait-drain drain-rollback", output
       assert_match "docker tag dhh/app:123 dhh/app:latest", output
       assert_match "docker run --detach --restart unless-stopped --name app-web-123", output
       assert_match "docker container ls --all --filter 'name=^app-web-version-to-rollback$' --quiet | xargs docker stop", output, "Should stop the container that was previously running"

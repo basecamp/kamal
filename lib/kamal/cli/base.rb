@@ -7,6 +7,7 @@ module Kamal::Cli
 
     VERBOSITY = { verbose: :debug, quiet: :error }.freeze
     AUTOMATIC_DEPLOY_LOCK_MESSAGE = "Automatic deploy lock"
+    HOOK_MUTEX = Mutex.new
 
     class LockHeldError < StandardError; end
     class LockMissingError < StandardError; end
@@ -223,32 +224,36 @@ module Kamal::Cli
 
       def run_hook(hook, **extra_details)
         if !options[:skip_hooks] && KAMAL.hook.hook_exists?(hook)
-          details = {
-            hosts: KAMAL.hosts.join(","),
-            roles: KAMAL.specific_roles&.join(","),
-            lock: KAMAL.holding_lock?.to_s,
-            command: command,
-            subcommand: subcommand
-          }.compact
+          # Per-container hooks may run on multiple hosts at once. Hook environment
+          # variables and logging verbosity are process-wide, so isolate each run.
+          HOOK_MUTEX.synchronize do
+            details = {
+              hosts: KAMAL.hosts.join(","),
+              roles: KAMAL.specific_roles&.join(","),
+              lock: KAMAL.holding_lock?.to_s,
+              command: command,
+              subcommand: subcommand
+            }.compact
 
-          hooks_output = KAMAL.config.hooks_output_for(hook)
+            hooks_output = KAMAL.config.hooks_output_for(hook)
 
-          # CLI flags override config: -q hides all, -v shows all
-          # Config setting :verbose forces output, :quiet forces silence
-          hook_verbosity = if KAMAL.verbosity == :info && hooks_output
-            VERBOSITY.fetch(hooks_output)
-          else
-            KAMAL.verbosity
-          end
-
-          with_env KAMAL.hook.env(**details, **extra_details) do
-            KAMAL.with_verbosity(hook_verbosity) do
-              run_locally do
-                execute *KAMAL.hook.run(hook)
-              end
+            # CLI flags override config: -q hides all, -v shows all
+            # Config setting :verbose forces output, :quiet forces silence
+            hook_verbosity = if KAMAL.verbosity == :info && hooks_output
+              VERBOSITY.fetch(hooks_output)
+            else
+              KAMAL.verbosity
             end
-          rescue SSHKit::Command::Failed => e
-            raise HookError.new("Hook `#{hook}` failed:\n#{e.message}")
+
+            with_env KAMAL.hook.env(**details, **extra_details) do
+              KAMAL.with_verbosity(hook_verbosity) do
+                run_locally do
+                  execute *KAMAL.hook.run(hook)
+                end
+              end
+            rescue SSHKit::Command::Failed => e
+              raise HookError.new("Hook `#{hook}` failed:\n#{e.message}")
+            end
           end
         end
       end

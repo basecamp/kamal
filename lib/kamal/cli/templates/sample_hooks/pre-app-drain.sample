@@ -1,0 +1,18 @@
+#!/usr/bin/env sh
+
+# Runs locally once per retiring proxied container, after the replacement is
+# healthy and new traffic has switched to it. Existing requests are draining.
+# Requires kamal-proxy support for deploy --async-drain and wait-drain.
+#
+# KAMAL_HOSTS contains this container's host, and KAMAL_ROLE its role.
+# KAMAL_VERSION remains the replacement version.
+# KAMAL_DRAINING_VERSION and KAMAL_DRAINING_CONTAINER_ID identify the retiring
+# container, including when the same version is redeployed.
+#
+# Use SSH and docker exec to notify that exact container, for example to close
+# SSE streams while ordinary requests finish. Do not use the public app URL:
+# it now routes to the replacement.
+# Keep this hook short: the proxy's drain timeout starts when traffic switches.
+# Hooks should be idempotent. --skip-hooks retains the usual synchronous deploy.
+
+echo "Draining $KAMAL_DRAINING_CONTAINER_ID ($KAMAL_DRAINING_VERSION, $KAMAL_ROLE) on $KAMAL_HOSTS..."

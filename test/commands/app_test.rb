@@ -11,6 +11,13 @@ class CommandsAppTest < ActiveSupport::TestCase
     teardown_test_secrets
   end
 
+  test "deploy with asynchronous draining" do
+    command = new_command
+    assert_equal command.deploy(target: "123") + [ "--async-drain" ], command.deploy(target: "123", async_drain: true)
+    assert_equal "docker exec kamal-proxy kamal-proxy wait-drain drain-123", command.wait_drain("drain-123").join(" ")
+    assert_equal "docker exec kamal-proxy kamal-proxy deploy --help", command.deploy_help.join(" ")
+  end
+
   test "run" do
     assert_equal \
       "docker run --detach --restart unless-stopped --name app-web-999 --network kamal --env KAMAL_CONTAINER_NAME=\"app-web-999\" --env KAMAL_VERSION=\"999\" --env KAMAL_HOST=\"1.1.1.1\" --env-file .kamal/apps/app/env/roles/web.env --log-opt max-size=\"10m\" --label service=\"app\" --label role=\"web\" --label destination dhh/app:999",

@@ -18,13 +18,16 @@ class Kamal::Cli::App < Kamal::Cli::Base
 
         # Primary hosts and roles are returned first, so they can open the barrier
         barrier = Kamal::Cli::Healthcheck::Barrier.new
+        if !options[:skip_hooks] && KAMAL.hook.hook_exists?("pre-app-drain")
+          pre_app_drain = ->(**details) { run_hook "pre-app-drain", **details }
+        end
 
         host_boot_groups.each do |hosts|
           host_list = Array(hosts).join(",")
           run_hook "pre-app-boot", hosts: host_list
 
           on_roles(KAMAL.roles, hosts: hosts, parallel: KAMAL.config.boot.parallel_roles) do |host, role|
-            Kamal::Cli::App::Boot.new(host, role, self, version, barrier).run
+            Kamal::Cli::App::Boot.new(host, role, self, version, barrier, pre_app_drain: pre_app_drain).run
           end
 
           run_hook "post-app-boot", hosts: host_list
