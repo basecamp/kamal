@@ -394,6 +394,23 @@ class CliAppTest < CliTestCase
     end
   end
 
+  test "exec through main runs the pre-connect hook" do
+    Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
+
+    run_command_through_main("exec", "ruby -v").tap do |output|
+      assert_hook_ran "pre-connect", output
+    end
+  end
+
+  test "exec through main with skip hooks does not run the pre-connect hook" do
+    Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
+
+    run_command_through_main("exec", "--skip-hooks", "ruby -v").tap do |output|
+      assert_no_match "/usr/bin/env .kamal/hooks/pre-connect", output
+      assert_match %r{docker run --rm --name app-web-exec-latest-[0-9a-f]{6} .* dhh/app:latest ruby -v}, output
+    end
+  end
+
   test "exec without command fails" do
     error = assert_raises(ArgumentError, "Exec requires a command to be specified") do
       run_command("exec")
@@ -619,6 +636,13 @@ class CliAppTest < CliTestCase
         Kamal::Cli::App.start([ *command, "-c", "test/fixtures/deploy_#{config}.yml", *([ "--hosts", host ] if host) ])
       rescue SSHKit::Runner::ExecuteError => e
         raise e unless allow_execute_error
+      end
+    end
+
+    # The way `kamal app ...` is invoked from the command line: Main dispatches to the app subcommand.
+    def run_command_through_main(*command, config: :with_accessories, host: "1.1.1.1")
+      stdouted do
+        Kamal::Cli::Main.start([ "app", *command, "-c", "test/fixtures/deploy_#{config}.yml", *([ "--hosts", host ] if host) ])
       end
     end
 

@@ -49,6 +49,12 @@ module Kamal::Cli
         options.merge(@_initializer.last[:class_options] || {})
       end
 
+      # Class options given after a subcommand (`kamal app exec --skip-hooks ...`) are only in the
+      # subcommand class options, so check those too.
+      def skip_hooks?
+        options_with_subcommand_class_options[:skip_hooks]
+      end
+
       def initialize_commander
         KAMAL.tap do |commander|
           if options[:verbose]
@@ -222,7 +228,7 @@ module Kamal::Cli
       end
 
       def run_hook(hook, **extra_details)
-        if !options[:skip_hooks] && KAMAL.hook.hook_exists?(hook)
+        if !skip_hooks? && KAMAL.hook.hook_exists?(hook)
           details = {
             hosts: KAMAL.hosts.join(","),
             roles: KAMAL.specific_roles&.join(","),
@@ -261,7 +267,7 @@ module Kamal::Cli
 
       def pre_connect_if_required
         if !KAMAL.connected?
-          run_hook "pre-connect", secrets: true unless options[:skip_hooks]
+          run_hook "pre-connect", secrets: true unless skip_hooks?
           KAMAL.connected = true
         end
       end
