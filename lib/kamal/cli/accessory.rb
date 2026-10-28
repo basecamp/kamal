@@ -13,11 +13,17 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
         with_accessory(name) do |accessory, hosts|
           booted_hosts = Concurrent::Array.new
           on(hosts) do |host|
-            booted_hosts << host.to_s if capture_with_info(*accessory.info(all: true, quiet: true)).strip.presence
+            if capture_with_info(*accessory.info(all: true, quiet: true)).strip.presence
+              running_image = capture_with_info(*accessory.running_image).strip.presence
+              if running_image && running_image != accessory.image
+                raise "Accessory `#{name}` image has changed on host #{host} (#{running_image} → #{accessory.image}), run `kamal accessory reboot #{name}` to update"
+              end
+              booted_hosts << host.to_s
+            end
           end
 
           if booted_hosts.any?
-            say "Skipping booting `#{name}` on #{booted_hosts.sort.join(", ")}, a container already exists", :yellow
+            say "Skipping booting `#{name}` on #{booted_hosts.sort.join(", ")}, container already exists with the correct image", :yellow
             hosts -= booted_hosts
           end
 
