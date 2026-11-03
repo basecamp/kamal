@@ -28,7 +28,8 @@ class Kamal::Secrets
   end
 
   def key?(key)
-    synchronized_fetch(key).present?
+    synchronized_fetch(key)
+    true
   rescue KeyError
     false
   end
