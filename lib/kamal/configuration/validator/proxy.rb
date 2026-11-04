@@ -3,7 +3,9 @@ class Kamal::Configuration::Validator::Proxy < Kamal::Configuration::Validator
     unless config.nil?
       super
 
-      if config["host"].blank? && config["hosts"].blank? && config["ssl"]
+      custom_ssl_certificate = config["ssl"].is_a?(Hash) &&
+        config["ssl"]["certificate_pem"].present? && config["ssl"]["private_key_pem"].present?
+      if config["host"].blank? && config["hosts"].blank? && config["ssl"] && !custom_ssl_certificate
         error "Must set a host to enable automatic SSL"
       end
 
