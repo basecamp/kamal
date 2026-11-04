@@ -30,4 +30,10 @@ class Kamal::Secrets::Adapters::Base
     def prefixed_secrets(secrets, from:)
       secrets.map { |secret| [ from, secret ].compact.join("/") }
     end
+
+    # Runs the command directly, without a shell, and returns its output, setting $? like backticks.
+    # Pass credentials through env so they never appear in a process's command line.
+    def capture_command(*argv, env: {})
+      IO.popen(env, argv, &:read)
+    end
 end
