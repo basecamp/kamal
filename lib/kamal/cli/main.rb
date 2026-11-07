@@ -85,8 +85,6 @@ class Kamal::Cli::Main < Kamal::Cli::Base
 
   desc "rollback [VERSION]", "Rollback app to VERSION"
   def rollback(version)
-    rolled_back = false
-
     modify do
       runtime = print_runtime do
         modify(lock: true) do
@@ -98,14 +96,13 @@ class Kamal::Cli::Main < Kamal::Cli::Base
             run_hook "pre-deploy", secrets: true
 
             invoke "kamal:cli:app:boot", [], invoke_options.merge(version: version)
-            rolled_back = true
           else
-            say "The app version '#{version}' is not available as a container (use 'kamal app containers' for available versions)", :red
+            raise "The app version '#{version}' is not available as a container (use 'kamal app containers' for available versions)"
           end
         end
       end
 
-      run_hook "post-deploy", secrets: true, runtime: runtime.round.to_s if rolled_back
+      run_hook "post-deploy", secrets: true, runtime: runtime.round.to_s
     end
   end
 
