@@ -435,10 +435,13 @@ class CliMainTest < CliTestCase
 
     run_command("details") # Preheat Kamal const
 
-    run_command("rollback", "nonsense").tap do |output|
-      assert_match /docker container ls --all --filter 'name=\^app-web-nonsense\$' --quiet/, output
-      assert_match /The app version 'nonsense' is not available as a container/, output
+    Kamal::Cli::Main.any_instance.expects(:release_lock)
+    Kamal::Cli::Main.any_instance.expects(:run_hook).never
+
+    error = assert_raises(RuntimeError) do
+      run_command("rollback", "nonsense")
     end
+    assert_match /The app version 'nonsense' is not available as a container/, error.message
   end
 
   test "rollback good version" do
