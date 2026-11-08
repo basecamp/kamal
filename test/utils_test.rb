@@ -52,4 +52,18 @@ class UtilsTest < ActiveSupport::TestCase
     assert_equal "\"https://example.com/\\$2\"",
       Kamal::Utils.escape_shell_value("https://example.com/$2")
   end
+
+  test "escape_shell_value leaves a hash before an interpolation character unescaped" do
+    assert_equal '"#{x}"', Kamal::Utils.escape_shell_value('#{x}')
+    assert_equal '"#@x"', Kamal::Utils.escape_shell_value('#@x')
+    assert_equal '"#\$x"', Kamal::Utils.escape_shell_value('#$x')
+    assert_equal '"a#b"', Kamal::Utils.escape_shell_value("a#b")
+    assert_equal '"\\\\#{x}"', Kamal::Utils.escape_shell_value('\\#{x}')
+  end
+
+  test "escape_shell_value round trips through the shell" do
+    [ '#{x}', '#@x', '#$x', "a#b", '\\#{x}', '\\\\#@x', '##{x}', 'pa#{ss}w#$rd' ].each do |value|
+      assert_equal value, `printf %s #{Kamal::Utils.escape_shell_value(value)}`, "round trip failed for #{value.inspect}"
+    end
+  end
 end
