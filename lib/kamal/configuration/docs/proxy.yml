@@ -112,12 +112,14 @@ proxy:
   #
   # When deploying, the proxy will by default hit `/up` once every second until we hit
   # the deploy timeout, with a 5-second timeout for each request.
+  # You can also specify the host header to use for the healthcheck (empty by default).
   #
   # Once the app is up, the proxy will stop hitting the healthcheck endpoint.
   healthcheck:
     interval: 3
-    path: /health
     timeout: 3
+    path: /health
+    host: foo.example.com
 
   # Buffering
   #
