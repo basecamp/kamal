@@ -81,6 +81,24 @@ class ConfigurationProxyTest < ActiveSupport::TestCase
     end
   end
 
+  test "deploy options with custom healthcheck options" do
+    @deploy[:proxy] = {
+      "healthcheck" => {
+        "interval" => 5,
+        "timeout" => 2,
+        "path" => "/health",
+        "host" => "foo.example.com"
+      }
+    }
+
+    proxy = config.proxy
+    options = proxy.deploy_options
+    assert_equal "5s", options[:"health-check-interval"]
+    assert_equal "2s", options[:"health-check-timeout"]
+    assert_equal "/health", options[:"health-check-path"]
+    assert_equal "foo.example.com", options[:"health-check-host"]
+  end
+
   test "ssl with certificate and no private key" do
     with_test_secrets("secrets" => "CERT_PEM=certificate") do
       @deploy[:proxy] = {
