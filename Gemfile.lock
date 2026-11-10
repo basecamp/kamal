@@ -104,7 +104,7 @@ GEM
     prettyprint (0.2.0)
     prism (1.7.0)
     racc (1.8.1)
-    rack (3.2.6)
+    rack (3.2.8)
     rack-session (2.1.2)
       base64 (>= 0.1.0)
       rack (>= 3.0.0)
