@@ -56,6 +56,31 @@ class ConfigurationProxyRunTest < ActiveSupport::TestCase
     assert config
   end
 
+  test "http3 is disabled by default" do
+    config = Kamal::Configuration.new(base_deploy)
+    run = Kamal::Configuration::Proxy::Run.new(config, run_config: {})
+
+    assert_not run.http3?
+    assert_equal "--publish 80:80 --publish 443:443", run.publish_args
+    assert_not_includes run.run_command, "--http3"
+  end
+
+  test "http3 adds --http3 and publishes the https port over udp" do
+    config = Kamal::Configuration.new(base_deploy)
+    run = Kamal::Configuration::Proxy::Run.new(config, run_config: { "http3" => true })
+
+    assert run.http3?
+    assert_equal "--publish 80:80 --publish 443:443 --publish 443:443/udp", run.publish_args
+    assert_includes run.run_command, "--http3"
+  end
+
+  test "http3 udp publish honors a custom https port" do
+    config = Kamal::Configuration.new(base_deploy)
+    run = Kamal::Configuration::Proxy::Run.new(config, run_config: { "http3" => true, "https_port" => 8443 })
+
+    assert_equal "--publish 80:80 --publish 8443:443 --publish 8443:443/udp", run.publish_args
+  end
+
   private
     def base_deploy
       {
