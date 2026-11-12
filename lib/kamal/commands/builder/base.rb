@@ -42,6 +42,13 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
     docker :buildx, :inspect, builder_name unless docker_driver?
   end
 
+  def prune(max_used_space: nil)
+    docker :buildx, :prune,
+      *([ "--builder", builder_name ] unless docker_driver?),
+      "--force",
+      *argumentize("--max-used-space", max_used_space)
+  end
+
   def build_options
     [ *build_cache, *build_labels, *build_args, *build_secrets, *build_dockerfile, *build_target, *build_ssh, *builder_provenance, *builder_sbom ]
   end

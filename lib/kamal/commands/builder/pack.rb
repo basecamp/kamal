@@ -7,6 +7,8 @@ class Kamal::Commands::Builder::Pack < Kamal::Commands::Builder::Base
 
   def remove;end
 
+  def prune(max_used_space: nil);end
+
   def info
     pack :builder, :inspect, pack_builder
   end

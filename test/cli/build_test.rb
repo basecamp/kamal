@@ -385,6 +385,29 @@ class CliBuildTest < CliTestCase
     end
   end
 
+  test "prune" do
+    run_command("prune").tap do |output|
+      assert_match "docker buildx prune --builder kamal-local-docker-container-6e208c509c5d --force", output
+    end
+  end
+
+  test "prune remote with max used space" do
+    run_command("prune", "--max-used-space", "5gb", fixture: :with_remote_builder).tap do |output|
+      assert_match "docker buildx prune --builder kamal-remote-ssh---app-1-1-1-5-6e208c509c5d --force --max-used-space 5gb", output
+    end
+  end
+
+  test "prune without a builder" do
+    stub_setup
+    SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+      .with { |*args| args[0..1] == [ :docker, :buildx ] && args[2] == :prune }
+      .raises(SSHKit::Command::Failed.new("ERROR: no builder \"kamal-local-docker-container-6e208c509c5d\" found"))
+
+    run_command("prune").tap do |output|
+      assert_match "No builder found, so there is no build cache to prune", output
+    end
+  end
+
   test "details" do
     SSHKit::Backend::Abstract.any_instance.stubs(:capture)
       .with(:docker, :context, :ls, "&&", :docker, :buildx, :ls)

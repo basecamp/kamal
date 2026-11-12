@@ -113,6 +113,31 @@ class Kamal::Cli::Build < Kamal::Cli::Base
     end
   end
 
+  desc "prune", "Prune the build cache of the builder"
+  option :max_used_space, type: :string, banner: "SIZE", desc: "Keep up to SIZE of build cache (e.g. 5gb) instead of pruning all unused cache"
+  def prune
+    cli = self
+
+    pre_connect_if_required
+
+    run_locally do
+      if (prune = KAMAL.builder.prune(max_used_space: cli.options[:max_used_space]))
+        begin
+          debug "Using builder: #{KAMAL.builder.name}"
+          execute *prune
+        rescue SSHKit::Command::Failed => e
+          if e.message =~ /no builder .* found/
+            warn "No builder found, so there is no build cache to prune"
+          else
+            raise
+          end
+        end
+      else
+        warn "The #{KAMAL.builder.name} builder has no build cache to prune"
+      end
+    end
+  end
+
   desc "details", "Show build setup"
   def details
     run_locally do
