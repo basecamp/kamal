@@ -27,6 +27,52 @@ class CliBuildTest < CliTestCase
         assert_match /git -C #{Dir.tmpdir}\/kamal-clones\/app-#{pwd_sha} clone #{Dir.pwd}/, output
         assert_match /docker --version && docker buildx version/, output
         assert_match /docker buildx build --output=type=registry --platform linux\/amd64 --builder kamal-local-docker-container-6e208c509c5d -t dhh\/app:999 -t dhh\/app:latest --label service="app" --file Dockerfile \. 2>&1 as .*@localhost/, output
+        assert_no_match "docker buildx prune", output
+      end
+    end
+  end
+
+  test "push prunes the build cache when builder prune is set" do
+    with_build_directory do |build_directory|
+      Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
+
+      SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+        .with(:git, "-C", anything, :"rev-parse", :HEAD)
+        .returns(Kamal::Git.revision)
+
+      SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+        .with(:git, "-C", anything, :status, "--porcelain")
+        .returns("")
+
+      run_command("push", "--verbose", fixture: :with_remote_builder_and_prune).tap do |output|
+        build = "docker buildx build --output=type=registry"
+        prune = "docker buildx prune --builder kamal-remote-ssh---app-1-1-1-5-6e208c509c5d --force --max-used-space 5gb"
+
+        assert_match build, output
+        assert_match prune, output
+        assert_operator output.index(build), :<, output.index(prune)
+      end
+    end
+  end
+
+  test "push does not fail when pruning the build cache fails" do
+    with_build_directory do |build_directory|
+      Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
+
+      SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+        .with(:git, "-C", anything, :"rev-parse", :HEAD)
+        .returns(Kamal::Git.revision)
+
+      SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+        .with(:git, "-C", anything, :status, "--porcelain")
+        .returns("")
+
+      Kamal::Cli::Build.any_instance.stubs(:prune_build_cache).with("5gb")
+        .raises(SSHKit::Command::Failed.new("ERROR: failed to prune"))
+
+      run_command("push", "--verbose", fixture: :with_remote_builder_and_prune).tap do |output|
+        assert_match "docker buildx build --output=type=registry", output
+        assert_match "Failed to prune the build cache: ERROR: failed to prune", output
       end
     end
   end
@@ -394,6 +440,18 @@ class CliBuildTest < CliTestCase
   test "prune remote with max used space" do
     run_command("prune", "--max-used-space", "5gb", fixture: :with_remote_builder).tap do |output|
       assert_match "docker buildx prune --builder kamal-remote-ssh---app-1-1-1-5-6e208c509c5d --force --max-used-space 5gb", output
+    end
+  end
+
+  test "prune uses builder prune by default" do
+    run_command("prune", fixture: :with_remote_builder_and_prune).tap do |output|
+      assert_match "docker buildx prune --builder kamal-remote-ssh---app-1-1-1-5-6e208c509c5d --force --max-used-space 5gb", output
+    end
+  end
+
+  test "prune option overrides builder prune" do
+    run_command("prune", "--max-used-space", "1gb", fixture: :with_remote_builder_and_prune).tap do |output|
+      assert_match "docker buildx prune --builder kamal-remote-ssh---app-1-1-1-5-6e208c509c5d --force --max-used-space 1gb", output
     end
   end
 

@@ -130,3 +130,15 @@ builder:
   # It is used to configure SBOM generation for the build result.
   # The value can also be a boolean to enable or disable SBOM generation.
   sbom: true
+
+  # Prune
+  #
+  # Prune the builder's build cache after each build, keeping up to this much cache.
+  # It is passed to `docker buildx prune --max-used-space`, so it needs a buildx version
+  # that supports that option.
+  #
+  # Without it, BuildKit only garbage-collects its cache once it uses 60% of the disk
+  # (up to 100GB), which can fill up the disk of a remote builder that also runs the app.
+  #
+  # `kamal build prune` uses the same limit. Not supported with buildpacks:
+  prune: 5gb

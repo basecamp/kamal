@@ -135,6 +135,10 @@ class Kamal::Configuration::Builder
     builder_config["sbom"]
   end
 
+  def prune
+    builder_config["prune"]
+  end
+
   def git_clone?
     Kamal::Git.used? && builder_config["context"].nil?
   end
