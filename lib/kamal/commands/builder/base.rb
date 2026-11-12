@@ -46,7 +46,7 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
     docker :buildx, :prune,
       *([ "--builder", builder_name ] unless docker_driver?),
       "--force",
-      *argumentize("--max-used-space", max_used_space)
+      *([ "--max-used-space", Kamal::Utils.escape_shell_value(max_used_space) ] if max_used_space.present?)
   end
 
   def build_options

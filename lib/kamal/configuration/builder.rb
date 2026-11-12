@@ -136,7 +136,7 @@ class Kamal::Configuration::Builder
   end
 
   def prune
-    builder_config["prune"]
+    builder_config["prune"]&.to_s
   end
 
   def git_clone?

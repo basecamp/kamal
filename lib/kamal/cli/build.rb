@@ -121,12 +121,18 @@ class Kamal::Cli::Build < Kamal::Cli::Base
     end
   end
 
-  desc "prune", "Prune the build cache of the builder"
+  desc "prune", "Prune the build cache of the builder (with the docker driver, the local Docker build cache)"
   option :max_used_space, type: :string, banner: "SIZE", desc: "Keep up to SIZE of build cache (e.g. 5gb), defaults to builder.prune, or prunes all unused cache if neither is set"
   def prune
+    max_used_space = options[:max_used_space].presence
+
+    if max_used_space && !Kamal::Utils.docker_size?(max_used_space)
+      raise ArgumentError, "--max-used-space must be a size, e.g. 5gb"
+    end
+
     pre_connect_if_required
 
-    prune_build_cache(options[:max_used_space] || KAMAL.config.builder.prune)
+    prune_build_cache(max_used_space || KAMAL.config.builder.prune)
   end
 
   desc "details", "Show build setup"
@@ -188,7 +194,7 @@ class Kamal::Cli::Build < Kamal::Cli::Base
             end
           end
         else
-          warn "The #{KAMAL.builder.name} builder has no build cache to prune"
+          warn "There is no build cache to prune for the #{KAMAL.builder.name} builder"
         end
       end
     end

@@ -313,8 +313,15 @@ class CommandsBuilderTest < ActiveSupport::TestCase
   test "prune remote builder with max used space" do
     builder = new_builder_command(builder: { "remote" => "ssh://app@127.0.0.1", "local" => false })
     assert_equal \
-      "docker buildx prune --builder kamal-remote-ssh---app-127-0-0-1-f005c512b8b0 --force --max-used-space 5gb",
+      "docker buildx prune --builder kamal-remote-ssh---app-127-0-0-1-f005c512b8b0 --force --max-used-space \"5gb\"",
       builder.prune(max_used_space: "5gb").join(" ")
+  end
+
+  test "prune escapes max used space" do
+    builder = new_builder_command
+    assert_equal \
+      "docker buildx prune --builder kamal-local-docker-container-f005c512b8b0 --force --max-used-space \"5 GB\"",
+      builder.prune(max_used_space: "5 GB").join(" ")
   end
 
   test "prune hybrid builder" do
@@ -327,6 +334,11 @@ class CommandsBuilderTest < ActiveSupport::TestCase
   test "prune docker driver uses the default builder" do
     builder = new_builder_command(builder: { "driver" => "docker" })
     assert_equal "docker buildx prune --force", builder.prune.join(" ")
+  end
+
+  test "prune cloud builder is a no-op" do
+    builder = new_builder_command(builder: { "driver" => "cloud docker-org-name/builder-name" })
+    assert_nil builder.prune(max_used_space: "5gb")
   end
 
   test "prune pack builder is a no-op" do

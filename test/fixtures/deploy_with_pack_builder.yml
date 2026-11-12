@@ -1,0 +1,13 @@
+service: app
+image: dhh/app
+servers:
+  - "1.1.1.1"
+registry:
+  username: user
+  password: pw
+builder:
+  arch: amd64
+  pack:
+    builder: heroku/builder:24
+    buildpacks:
+      - heroku/ruby
