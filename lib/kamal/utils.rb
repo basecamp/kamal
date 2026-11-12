@@ -6,7 +6,7 @@ module Kamal::Utils
   DOLLAR_SIGN_WITHOUT_SHELL_EXPANSION_REGEX = /\$(?!{[^\}]*\})/
 
   # Sizes as parsed by Docker's RAMInBytes, e.g. 5gb, 500MiB, 5g, 5 GB or 5368709120 (bytes)
-  DOCKER_SIZE_REGEX = /\A\d+(\.\d+)? ?([kmgtp](i?b)?|b)?\z/i
+  DOCKER_SIZE_REGEX = /\A(\d+(?:\.\d+)?) ?([kmgtp](?:i?b)?|b)?\z/i
 
   # Return a list of escaped shell arguments using the same named argument against the passed attributes (hash or array).
   def argumentize(argument, attributes, sensitive: false)
@@ -62,7 +62,16 @@ module Kamal::Utils
   # Escape a value to make it safe for shell use.
   # Whether a value is a positive size that Docker accepts, as a string or a number of bytes
   def docker_size?(value)
-    (value.is_a?(String) || value.is_a?(Integer)) && value.to_s.match?(DOCKER_SIZE_REGEX) && value.to_s.to_f > 0
+    (value.is_a?(String) || value.is_a?(Integer)) && docker_size_in_bytes(value.to_s).to_i >= 1
+  end
+
+  # Parses a size like Docker does (binary units, truncated to whole bytes), or returns nil if it isn't one
+  def docker_size_in_bytes(size)
+    if (match = size.match(DOCKER_SIZE_REGEX))
+      unit = match[2].to_s.downcase[0]
+      multiplier = unit && unit != "b" ? 1024**"kmgtp".index(unit).succ : 1
+      (match[1].to_f * multiplier).to_i
+    end
   end
 
   def escape_shell_value(value)

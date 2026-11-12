@@ -196,7 +196,7 @@ class ConfigurationBuilderTest < ActiveSupport::TestCase
   end
 
   test "prune must be a size" do
-    [ true, false, "", "0", 0, "0gb", "5gigs", "5gi", "-5gb", "5gb; rm -rf /", 1.5 ].each do |size|
+    [ true, false, "", "0", 0, "0gb", "0.5b", "0.0001kb", "5gigs", "5gi", "-5gb", "5gb; rm -rf /", 1.5 ].each do |size|
       @deploy[:builder]["prune"] = size
 
       assert_raises(Kamal::ConfigurationError, match: "prune must be a size, e.g. 5gb") do

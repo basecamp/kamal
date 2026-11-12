@@ -331,9 +331,9 @@ class CommandsBuilderTest < ActiveSupport::TestCase
       builder.prune.join(" ")
   end
 
-  test "prune docker driver uses the default builder" do
+  test "prune docker driver is a no-op" do
     builder = new_builder_command(builder: { "driver" => "docker" })
-    assert_equal "docker buildx prune --force", builder.prune.join(" ")
+    assert_nil builder.prune(max_used_space: "5gb")
   end
 
   test "prune cloud builder is a no-op" do

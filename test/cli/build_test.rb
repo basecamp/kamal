@@ -497,10 +497,10 @@ class CliBuildTest < CliTestCase
     end
   end
 
-  test "prune docker driver prunes the local docker build cache" do
+  test "prune docker driver leaves the selected builder alone" do
     run_command("prune", "--max-used-space", "5gb", fixture: :with_docker_driver_builder).tap do |output|
-      assert_match "docker buildx prune --force --max-used-space \"5gb\"", output
-      assert_no_match "--builder", output
+      assert_no_match "Running docker buildx prune", output
+      assert_match "The docker driver builds on the selected buildx builder, so prune its cache directly, e.g. with `docker buildx prune`", output
     end
   end
 
@@ -517,7 +517,7 @@ class CliBuildTest < CliTestCase
   end
 
   test "prune with an invalid max used space" do
-    [ "0", "5gigs", "-5gb", "5gb; rm -rf /" ].each do |size|
+    [ "0", "0.5b", "0.0001kb", "5gigs", "-5gb", "5gb; rm -rf /" ].each do |size|
       assert_raises(ArgumentError, match: "--max-used-space must be a size, e.g. 5gb") do
         run_command("prune", "--max-used-space", size)
       end

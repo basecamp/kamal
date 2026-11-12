@@ -121,7 +121,7 @@ class Kamal::Cli::Build < Kamal::Cli::Base
     end
   end
 
-  desc "prune", "Prune the build cache of the builder (with the docker driver, the local Docker build cache)"
+  desc "prune", "Prune the build cache of the builder"
   option :max_used_space, type: :string, banner: "SIZE", desc: "Keep up to SIZE of build cache (e.g. 5gb), defaults to builder.prune, or prunes all unused cache if neither is set"
   def prune
     max_used_space = options[:max_used_space].presence
@@ -193,6 +193,8 @@ class Kamal::Cli::Build < Kamal::Cli::Base
               raise
             end
           end
+        elsif KAMAL.config.builder.docker_driver?
+          warn "The docker driver builds on the selected buildx builder, so prune its cache directly, e.g. with `docker buildx prune`"
         else
           warn "There is no build cache to prune for the #{KAMAL.builder.name} builder"
         end
