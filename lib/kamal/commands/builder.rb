@@ -2,7 +2,7 @@ require "active_support/core_ext/string/filters"
 
 class Kamal::Commands::Builder < Kamal::Commands::Base
   delegate \
-    :create, :remove, :dev, :push, :clean, :pull, :info, :inspect_builder,
+    :create, :remove, :dev, :push, :clean, :pull, :info, :inspect_builder, :prune,
     :validate_image, :first_mirror, :login_to_registry_locally?, :push_env,
     to: :target
 

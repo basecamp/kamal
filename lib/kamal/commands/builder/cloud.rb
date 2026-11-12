@@ -9,6 +9,9 @@ class Kamal::Commands::Builder::Cloud < Kamal::Commands::Builder::Base
     docker :buildx, :rm, builder_name
   end
 
+  # Docker Build Cloud's cache is shared by the whole organization, so leave it alone
+  def prune(max_used_space: nil);end
+
   private
     def builder_name
       driver.gsub(/[ \/]/, "-")

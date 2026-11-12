@@ -65,6 +65,14 @@ class Kamal::Cli::Build < Kamal::Cli::Base
         end
       end
     end
+
+    if (max_used_space = KAMAL.config.builder.prune)
+      begin
+        prune_build_cache(max_used_space)
+      rescue SSHKit::Command::Failed => e
+        say "Failed to prune the build cache: #{e.message}", :yellow
+      end
+    end
   end
 
   desc "pull", "Pull app image from registry onto servers"
@@ -113,6 +121,20 @@ class Kamal::Cli::Build < Kamal::Cli::Base
     end
   end
 
+  desc "prune", "Prune the build cache of the builder"
+  option :max_used_space, type: :string, banner: "SIZE", desc: "Keep up to SIZE of build cache (e.g. 5gb), defaults to builder.prune, or prunes all unused cache if neither is set"
+  def prune
+    max_used_space = options[:max_used_space].presence
+
+    if max_used_space && !Kamal::Utils.docker_size?(max_used_space)
+      raise ArgumentError, "--max-used-space must be a size, e.g. 5gb"
+    end
+
+    pre_connect_if_required
+
+    prune_build_cache(max_used_space || KAMAL.config.builder.prune)
+  end
+
   desc "details", "Show build setup"
   def details
     run_locally do
@@ -158,6 +180,27 @@ class Kamal::Cli::Build < Kamal::Cli::Base
   end
 
   private
+    def prune_build_cache(max_used_space)
+      run_locally do
+        if (prune = KAMAL.builder.prune(max_used_space: max_used_space))
+          begin
+            debug "Using builder: #{KAMAL.builder.name}"
+            execute *prune
+          rescue SSHKit::Command::Failed => e
+            if e.message =~ /no builder .* found/
+              warn "No builder found, so there is no build cache to prune"
+            else
+              raise
+            end
+          end
+        elsif KAMAL.config.builder.docker_driver?
+          warn "The docker driver builds on the selected buildx builder, so prune its cache directly, e.g. with `docker buildx prune`"
+        else
+          warn "There is no build cache to prune for the #{KAMAL.builder.name} builder"
+        end
+      end
+    end
+
     def connect_to_remote_host(remote_host)
       remote_uri = URI.parse(remote_host)
       if remote_uri.scheme == "ssh"

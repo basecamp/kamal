@@ -27,6 +27,58 @@ class CliBuildTest < CliTestCase
         assert_match /git -C #{Dir.tmpdir}\/kamal-clones\/app-#{pwd_sha} clone #{Dir.pwd}/, output
         assert_match /docker --version && docker buildx version/, output
         assert_match /docker buildx build --output=type=registry --platform linux\/amd64 --builder kamal-local-docker-container-6e208c509c5d -t dhh\/app:999 -t dhh\/app:latest --label service="app" --file Dockerfile \. 2>&1 as .*@localhost/, output
+        assert_no_match "docker buildx prune", output
+      end
+    end
+  end
+
+  test "push prunes the build cache when builder prune is set" do
+    with_build_directory do |build_directory|
+      Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
+
+      SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+        .with(:git, "-C", anything, :"rev-parse", :HEAD)
+        .returns(Kamal::Git.revision)
+
+      SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+        .with(:git, "-C", anything, :status, "--porcelain")
+        .returns("")
+
+      run_command("push", "--verbose", fixture: :with_remote_builder_and_prune).tap do |output|
+        build = "docker buildx build --output=type=registry"
+        prune = "docker buildx prune --builder kamal-remote-ssh---app-1-1-1-5-6e208c509c5d --force --max-used-space \"5gb\""
+
+        assert_match build, output
+        assert_match prune, output
+        assert_operator output.index(build), :<, output.index(prune)
+      end
+    end
+  end
+
+  test "push does not fail when pruning the build cache fails" do
+    with_build_directory do |build_directory|
+      Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
+
+      SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+        .with(:git, "-C", anything, :"rev-parse", :HEAD)
+        .returns(Kamal::Git.revision)
+
+      SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+        .with(:git, "-C", anything, :status, "--porcelain")
+        .returns("")
+
+      build_then_prune = sequence("build then prune")
+      SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+      SSHKit::Backend::Abstract.any_instance.expects(:execute)
+        .with { |*args| args.join(" ").include?("docker buildx build --output=type=registry") }
+        .in_sequence(build_then_prune)
+      SSHKit::Backend::Abstract.any_instance.expects(:execute)
+        .with { |*args| args[0..2] == [ :docker, :buildx, :prune ] }
+        .raises(SSHKit::Command::Failed.new("ERROR: failed to prune"))
+        .in_sequence(build_then_prune)
+
+      run_command("push", "--verbose", fixture: :with_remote_builder_and_prune).tap do |output|
+        assert_match "Failed to prune the build cache: ERROR: failed to prune", output
       end
     end
   end
@@ -382,6 +434,93 @@ class CliBuildTest < CliTestCase
   test "remove cloud" do
     run_command("remove", fixture: :with_cloud_builder).tap do |output|
       assert_match /docker buildx rm cloud-example_org-cloud_builder/, output
+    end
+  end
+
+  test "prune" do
+    run_command("prune").tap do |output|
+      assert_match "docker buildx prune --builder kamal-local-docker-container-6e208c509c5d --force", output
+    end
+  end
+
+  test "prune remote with max used space" do
+    run_command("prune", "--max-used-space", "5gb", fixture: :with_remote_builder).tap do |output|
+      assert_match "docker buildx prune --builder kamal-remote-ssh---app-1-1-1-5-6e208c509c5d --force --max-used-space \"5gb\"", output
+    end
+  end
+
+  test "prune uses builder prune by default" do
+    run_command("prune", fixture: :with_remote_builder_and_prune).tap do |output|
+      assert_match "docker buildx prune --builder kamal-remote-ssh---app-1-1-1-5-6e208c509c5d --force --max-used-space \"5gb\"", output
+    end
+  end
+
+  test "prune option overrides builder prune" do
+    run_command("prune", "--max-used-space", "1gb", fixture: :with_remote_builder_and_prune).tap do |output|
+      assert_match "docker buildx prune --builder kamal-remote-ssh---app-1-1-1-5-6e208c509c5d --force --max-used-space \"1gb\"", output
+    end
+  end
+
+  test "prune without a builder" do
+    stub_setup
+    SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+      .with { |*args| args[0..1] == [ :docker, :buildx ] && args[2] == :prune }
+      .raises(SSHKit::Command::Failed.new("ERROR: no builder \"kamal-local-docker-container-6e208c509c5d\" found"))
+
+    run_command("prune").tap do |output|
+      assert_match "No builder found, so there is no build cache to prune", output
+    end
+  end
+
+  test "prune re-raises other errors" do
+    stub_setup
+    SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+      .with { |*args| args[0..2] == [ :docker, :buildx, :prune ] }
+      .raises(SSHKit::Command::Failed.new("ERROR: failed to prune"))
+
+    assert_raises(SSHKit::Command::Failed, match: "ERROR: failed to prune") do
+      run_command("prune")
+    end
+  end
+
+  test "prune pack builder" do
+    run_command("prune", fixture: :with_pack_builder).tap do |output|
+      assert_match "There is no build cache to prune for the pack builder", output
+      assert_no_match "docker buildx prune", output
+    end
+  end
+
+  test "prune cloud builder" do
+    run_command("prune", fixture: :with_cloud_builder).tap do |output|
+      assert_match "There is no build cache to prune for the cloud builder", output
+      assert_no_match "docker buildx prune", output
+    end
+  end
+
+  test "prune docker driver leaves the selected builder alone" do
+    run_command("prune", "--max-used-space", "5gb", fixture: :with_docker_driver_builder).tap do |output|
+      assert_no_match "Running docker buildx prune", output
+      assert_match "The docker driver builds on the selected buildx builder, so prune its cache directly, e.g. with `docker buildx prune`", output
+    end
+  end
+
+  test "prune with an empty max used space falls back to builder prune" do
+    run_command("prune", "--max-used-space", "", fixture: :with_remote_builder_and_prune).tap do |output|
+      assert_match "docker buildx prune --builder kamal-remote-ssh---app-1-1-1-5-6e208c509c5d --force --max-used-space \"5gb\"", output
+    end
+  end
+
+  test "prune with a spaced max used space" do
+    run_command("prune", "--max-used-space", "5 GB").tap do |output|
+      assert_match "docker buildx prune --builder kamal-local-docker-container-6e208c509c5d --force --max-used-space \"5 GB\"", output
+    end
+  end
+
+  test "prune with an invalid max used space" do
+    [ "0", "0.5b", "0.0001kb", "5gigs", "-5gb", "5gb; rm -rf /" ].each do |size|
+      assert_raises(ArgumentError, match: "--max-used-space must be a size, e.g. 5gb") do
+        run_command("prune", "--max-used-space", size)
+      end
     end
   end
 

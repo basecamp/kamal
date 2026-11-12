@@ -52,4 +52,24 @@ class UtilsTest < ActiveSupport::TestCase
     assert_equal "\"https://example.com/\\$2\"",
       Kamal::Utils.escape_shell_value("https://example.com/$2")
   end
+
+  test "docker size in bytes" do
+    assert_equal 5 * 1024**3, Kamal::Utils.docker_size_in_bytes("5gb")
+    assert_equal 5 * 1024**3, Kamal::Utils.docker_size_in_bytes("5 GB")
+    assert_equal 500 * 1024**2, Kamal::Utils.docker_size_in_bytes("500MiB")
+    assert_equal 1536, Kamal::Utils.docker_size_in_bytes("1.5k")
+    assert_equal 1024, Kamal::Utils.docker_size_in_bytes("1024")
+    assert_equal 0, Kamal::Utils.docker_size_in_bytes("0.5b")
+    assert_nil Kamal::Utils.docker_size_in_bytes("5gigs")
+  end
+
+  test "docker size" do
+    assert Kamal::Utils.docker_size?("5gb")
+    assert Kamal::Utils.docker_size?(5368709120)
+    assert Kamal::Utils.docker_size?("0.001kb")
+    assert_not Kamal::Utils.docker_size?("0.5b")
+    assert_not Kamal::Utils.docker_size?("0.0001kb")
+    assert_not Kamal::Utils.docker_size?("0")
+    assert_not Kamal::Utils.docker_size?(1.5)
+  end
 end

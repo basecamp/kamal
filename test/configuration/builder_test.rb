@@ -171,6 +171,64 @@ class ConfigurationBuilderTest < ActiveSupport::TestCase
     assert_equal true, config.builder.sbom
   end
 
+  test "prune" do
+    assert_nil config.builder.prune
+  end
+
+  test "setting prune" do
+    @deploy[:builder]["prune"] = "5gb"
+
+    assert_equal "5gb", config.builder.prune
+  end
+
+  test "setting prune in bytes" do
+    @deploy[:builder]["prune"] = 5368709120
+
+    assert_equal "5368709120", config.builder.prune
+  end
+
+  test "prune sizes" do
+    [ "5gb", "5GB", "5g", "500mb", "5GiB", "1.5gb", "5 GB", "1024b", "5368709120" ].each do |size|
+      @deploy[:builder]["prune"] = size
+
+      assert_equal size, Kamal::Configuration.new(@deploy).builder.prune
+    end
+  end
+
+  test "prune must be a size" do
+    [ true, false, "", "0", 0, "0gb", "0.5b", "0.0001kb", "5gigs", "5gi", "-5gb", "5gb; rm -rf /", 1.5 ].each do |size|
+      @deploy[:builder]["prune"] = size
+
+      assert_raises(Kamal::ConfigurationError, match: "prune must be a size, e.g. 5gb") do
+        Kamal::Configuration.new(@deploy)
+      end
+    end
+  end
+
+  test "prune is not supported with the docker driver" do
+    @deploy[:builder].merge!("prune" => "5gb", "driver" => "docker")
+
+    assert_raises(Kamal::ConfigurationError, match: "prune is not supported with the docker driver") do
+      config.builder
+    end
+  end
+
+  test "prune is not supported with Docker Build Cloud" do
+    @deploy[:builder].merge!("prune" => "5gb", "driver" => "cloud docker-org-name/builder-name")
+
+    assert_raises(Kamal::ConfigurationError, match: "prune is not supported with Docker Build Cloud") do
+      config.builder
+    end
+  end
+
+  test "prune is not supported with buildpacks" do
+    @deploy[:builder].merge!("prune" => "5gb", "pack" => { "builder" => "heroku/builder:24", "buildpacks" => [ "heroku/ruby" ] })
+
+    assert_raises(Kamal::ConfigurationError, match: "prune is not supported with buildpacks") do
+      config.builder
+    end
+  end
+
   test "local disabled but no remote set" do
     @deploy[:builder]["local"] = false
 
