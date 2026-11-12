@@ -17,6 +17,10 @@ module Kamal::Commands::App::Proxy
     proxy_exec :stop, role.container_prefix, *role.proxy.stop_command_args(**options)
   end
 
+  def renew_certificates(hosts: nil)
+    proxy_exec :cert, :renew, role.container_prefix, *Kamal::Utils.optionize({ host: hosts }.compact, with: "=")
+  end
+
   def remove_proxy_app_directory
     remove_directory config.proxy_boot.app_directory
   end

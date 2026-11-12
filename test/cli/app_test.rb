@@ -613,12 +613,89 @@ class CliAppTest < CliTestCase
     end
   end
 
+  test "renew_certificates" do
+    with_ssl_proxy_config do |config_file|
+      run_command("renew_certificates", "-y", config_file: config_file).tap do |output|
+        assert_match "docker exec kamal-proxy kamal-proxy cert renew app-web on 1.1.1.1", output
+        assert_no_match "app-workers", output
+      end
+    end
+  end
+
+  test "renew_certificates with domains" do
+    with_ssl_proxy_config(hosts: [ "example.com", "www.example.com" ]) do |config_file|
+      run_command("renew_certificates", "-y", "--domains", "www.example.com", config_file: config_file).tap do |output|
+        assert_match "docker exec kamal-proxy kamal-proxy cert renew app-web --host=\"www.example.com\" on 1.1.1.1", output
+        assert_no_match "--host=\"example.com\"", output
+      end
+    end
+  end
+
+  test "renew_certificates with unknown domains" do
+    with_ssl_proxy_config do |config_file|
+      error = assert_raises(ArgumentError) do
+        run_command("renew_certificates", "-y", "--domains", "other.example.com", config_file: config_file)
+      end
+      assert_equal "Unknown proxy hosts: other.example.com", error.message
+    end
+  end
+
+  test "renew_certificates asks for confirmation" do
+    Kamal::Cli::App.any_instance.expects(:ask)
+      .with("This will request new certificates from Let's Encrypt, which limits how often certificates can be issued for the same domains (5 per week). Are you sure?", limited_to: %w[ y N ], default: "N")
+      .returns("N")
+
+    with_ssl_proxy_config do |config_file|
+      run_command("renew_certificates", config_file: config_file).tap do |output|
+        assert_match "Aborted", output
+        assert_no_match "cert renew", output
+      end
+    end
+  end
+
+  test "renew_certificates without automatic ssl" do
+    run_command("renew_certificates", "-y", config: :with_proxy).tap do |output|
+      assert_match "No roles use automatic SSL certificates, nothing to renew", output
+      assert_no_match "cert renew", output
+    end
+  end
+
+  test "renew_certificates with custom ssl certificate" do
+    Kamal::Configuration::Proxy.any_instance.stubs(:custom_ssl_certificate?).returns(true)
+
+    with_ssl_proxy_config do |config_file|
+      run_command("renew_certificates", "-y", config_file: config_file).tap do |output|
+        assert_match "No roles use automatic SSL certificates, nothing to renew", output
+        assert_no_match "cert renew", output
+      end
+    end
+  end
+
   private
-    def run_command(*command, config: :with_accessories, host: "1.1.1.1", allow_execute_error: false)
+    def run_command(*command, config: :with_accessories, config_file: nil, host: "1.1.1.1", allow_execute_error: false)
+      config_file ||= "test/fixtures/deploy_#{config}.yml"
       stdouted do
-        Kamal::Cli::App.start([ *command, "-c", "test/fixtures/deploy_#{config}.yml", *([ "--hosts", host ] if host) ])
+        Kamal::Cli::App.start([ *command, "-c", config_file, *([ "--hosts", host ] if host) ])
       rescue SSHKit::Runner::ExecuteError => e
         raise e unless allow_execute_error
+      end
+    end
+
+    def with_ssl_proxy_config(hosts: [ "example.com" ])
+      Dir.mktmpdir do |dir|
+        config_file = File.join(dir, "deploy.yml")
+        File.write config_file, {
+          "service" => "app",
+          "image" => "dhh/app",
+          "registry" => { "username" => "user", "password" => "pw" },
+          "builder" => { "arch" => "amd64" },
+          "servers" => {
+            "web" => { "hosts" => [ "1.1.1.1" ], "proxy" => { "ssl" => true, "hosts" => hosts } },
+            "workers" => { "hosts" => [ "1.1.1.2" ], "cmd" => "bin/jobs" }
+          }
+        }.to_yaml
+
+        yield config_file
       end
     end
 
