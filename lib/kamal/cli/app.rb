@@ -274,6 +274,49 @@ class Kamal::Cli::App < Kamal::Cli::Base
     end
   end
 
+  desc "renew_certificates", "Renew the Let's Encrypt certificates for the app's proxy hosts (proxied accessories aren't covered)"
+  option :domains, desc: "Only renew the certificates for these domains (separate by comma, defaults to all of the app's proxy hosts with automatic SSL)"
+  option :confirmed, aliases: "-y", type: :boolean, default: false, desc: "Proceed without confirmation question"
+  def renew_certificates
+    if options.key?(:domains)
+      domains = options[:domains].to_s.split(",").map { |domain| normalize_domain(domain) }.reject(&:empty?).uniq
+      raise ArgumentError, "No domains given" if domains.empty?
+    end
+
+    roles = KAMAL.roles.select { |role| role.ssl? && !role.proxy.custom_ssl_certificate? }
+
+    if roles.none?
+      say "No roles use automatic SSL certificates, nothing to renew", :yellow
+      return
+    end
+
+    role_domains = roles.to_h { |role| [ role, role.proxy.hosts.map { |domain| normalize_domain(domain) } ] }
+
+    if domains && (unknown = domains - role_domains.values.flatten).any?
+      raise ArgumentError, "No automatic SSL certificate for domains: #{unknown.join(", ")} (check the role's proxy hosts, SSL settings and the --roles/--hosts filters)"
+    end
+
+    confirming "This will request new certificates from Let's Encrypt, and renewals count towards its rate limits for the same domains. Are you sure?" do
+      modify(lock: true) do
+        on_roles(roles, hosts: KAMAL.proxy_hosts) do |host, role|
+          renew_hosts = domains && (role_domains[role] & domains)
+          next if renew_hosts&.none?
+
+          begin
+            execute *KAMAL.app(role: role, host: host).renew_certificates(hosts: renew_hosts)
+          rescue SSHKit::Command::Failed => e
+            raise unless e.message.include?('unknown command "cert"')
+            raise "kamal-proxy on #{host} doesn't support certificate renewal, upgrade it (e.g. with `kamal proxy reboot`) once a release supports it"
+          end
+
+          renewed = renew_hosts ? renew_hosts.join(", ") : "all hosts"
+          execute *KAMAL.auditor.record("Renewed SSL certificates for #{renewed}", role: role), verbosity: :debug
+          info "Renewed certificates for #{renewed} (#{role}) on #{host}"
+        end
+      end
+    end
+  end
+
   desc "remove_container [VERSION]", "Remove app container with given version from servers", hide: true
   def remove_container(version)
     modify(lock: true) do
@@ -325,6 +368,10 @@ class Kamal::Cli::App < Kamal::Cli::Base
   end
 
   private
+    def normalize_domain(domain)
+      domain.strip.downcase.delete_suffix(".")
+    end
+
     def hosts_removing_all_roles
       KAMAL.app_hosts.select { |host| KAMAL.roles_on(host).map(&:name).sort == KAMAL.config.host_roles(host.to_s).map(&:name).sort }
     end
