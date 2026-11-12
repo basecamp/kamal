@@ -617,6 +617,13 @@ class CommandsAppTest < ActiveSupport::TestCase
       new_command.renew_certificates(hosts: [ "example.com", "www.example.com" ]).join(" ")
   end
 
+  test "renew_certificates with destination" do
+    @destination = "staging"
+    assert_equal \
+      "docker exec kamal-proxy kamal-proxy cert renew app-web-staging",
+      new_command.renew_certificates.join(" ")
+  end
+
   test "remove_proxy_app_directory" do
     assert_equal \
       "rm -r .kamal/proxy/apps-config/app",
