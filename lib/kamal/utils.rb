@@ -7,7 +7,8 @@ module Kamal::Utils
 
   # String#dump escapes a '#' that precedes '{', '$' or '@' with a backslash. A shell
   # keeps that backslash inside double quotes, so strip it, leaving any escaped
-  # backslashes before it alone.
+  # backslashes before it alone. For example, dump turns '#{x}' into '"\#{x}"';
+  # this removes only the backslash before #, producing '"#{x}"'.
   DUMP_ESCAPED_INTERPOLATION_HASH_REGEX = /(?<!\\)((?:\\\\)*)\\#(?=[{$@])/
 
   # Return a list of escaped shell arguments using the same named argument against the passed attributes (hash or array).
