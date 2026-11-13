@@ -5,6 +5,12 @@ module Kamal::Utils
 
   DOLLAR_SIGN_WITHOUT_SHELL_EXPANSION_REGEX = /\$(?!{[^\}]*\})/
 
+  # String#dump escapes a '#' that precedes '{', '$' or '@' with a backslash. A shell
+  # keeps that backslash inside double quotes, so strip it, leaving any escaped
+  # backslashes before it alone. For example, dump turns '#{x}' into '"\#{x}"';
+  # this removes only the backslash before #, producing '"#{x}"'.
+  DUMP_ESCAPED_INTERPOLATION_HASH_REGEX = /(?<!\\)((?:\\\\)*)\\#(?=[{$@])/
+
   # Return a list of escaped shell arguments using the same named argument against the passed attributes (hash or array).
   def argumentize(argument, attributes, sensitive: false)
     Array(attributes).flat_map do |key, value|
@@ -65,6 +71,7 @@ module Kamal::Utils
 
   def escape_ascii_shell_value(value)
     value.to_s.dump
+      .gsub(DUMP_ESCAPED_INTERPOLATION_HASH_REGEX, '\\1#')
       .gsub(/`/, '\\\\`')
       .gsub(DOLLAR_SIGN_WITHOUT_SHELL_EXPANSION_REGEX, '\$')
   end

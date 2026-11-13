@@ -1,4 +1,5 @@
 require "test_helper"
+require "open3"
 
 class UtilsTest < ActiveSupport::TestCase
   test "argumentize" do
@@ -51,5 +52,23 @@ class UtilsTest < ActiveSupport::TestCase
       Kamal::Utils.escape_shell_value("^(https?://)www.example.com/(.*)$")
     assert_equal "\"https://example.com/\\$2\"",
       Kamal::Utils.escape_shell_value("https://example.com/$2")
+  end
+
+  test "escape_shell_value leaves a hash before an interpolation character unescaped" do
+    assert_equal '"#{x}"', Kamal::Utils.escape_shell_value('#{x}')
+    assert_equal '"#@x"', Kamal::Utils.escape_shell_value('#@x')
+    assert_equal '"#\$x"', Kamal::Utils.escape_shell_value('#$x')
+    assert_equal '"a#b"', Kamal::Utils.escape_shell_value("a#b")
+    assert_equal '"\\\\#{x}"', Kamal::Utils.escape_shell_value('\\#{x}')
+  end
+
+  test "escape_shell_value round trips through the shell" do
+    skip "requires a POSIX shell" unless File.executable?("/bin/sh")
+
+    [ '#{x}', '#@x', '#$x', "a#b", '\\#{x}', '\\\\#@x', '##{x}', 'pa#{ss}w#$rd' ].each do |value|
+      output, error, status = Open3.capture3("/bin/sh", "-c", "printf %s #{Kamal::Utils.escape_shell_value(value)}")
+      assert_predicate status, :success?, "shell failed for #{value.inspect}: #{error}"
+      assert_equal value, output, "round trip failed for #{value.inspect}"
+    end
   end
 end
