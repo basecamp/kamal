@@ -16,22 +16,38 @@ class CommandsPruneTest < ActiveSupport::TestCase
 
   test "tagged images" do
     assert_equal \
-      "docker image ls --filter label=service=app --format '{{.ID}} {{.Repository}}:{{.Tag}}' | grep -v -w \"$(docker container ls -a --format '{{.Image}}\\|' --filter label=service=app | tr -d '\\n')dhh/app:latest\\|dhh/app:<none>\" | while read image tag; do docker rmi $tag; done",
+      "docker image ls --filter label=service=app --format '{{.ID}} {{.Repository}}:{{.Tag}}' | grep -v -w \"$(docker container ls -a --format '{{.Image}}\\|' --filter label=service=app | tr -d '\\n')dhh/app:<none>\\|[^ ]*:latest\\(-[^ ]*\\)\\?$\" | while read image tag; do docker rmi $tag; done",
+      new_command.tagged_images.join(" ")
+  end
+
+  test "tagged images with destination" do
+    @destination = "staging"
+
+    assert_equal \
+      "docker image ls --filter label=service=app --format '{{.ID}} {{.Repository}}:{{.Tag}}' | grep -v -w \"$(docker container ls -a --format '{{.Image}}\\|' --filter label=service=app | tr -d '\\n')dhh/app:<none>\\|[^ ]*:latest\\(-[^ ]*\\)\\?$\" | while read image tag; do docker rmi $tag; done",
       new_command.tagged_images.join(" ")
   end
 
   test "app containers" do
     assert_equal \
-      "docker ps -q -a --filter label=service=app --filter status=created --filter status=exited --filter status=dead | tail -n +6 | while read container_id; do docker rm $container_id; done",
+      "docker ps -q -a --filter label=service=app --filter label=destination= --filter status=created --filter status=exited --filter status=dead | tail -n +6 | while read container_id; do docker rm $container_id; done",
       new_command.app_containers(retain: 5).join(" ")
 
     assert_equal \
-      "docker ps -q -a --filter label=service=app --filter status=created --filter status=exited --filter status=dead | tail -n +4 | while read container_id; do docker rm $container_id; done",
+      "docker ps -q -a --filter label=service=app --filter label=destination= --filter status=created --filter status=exited --filter status=dead | tail -n +4 | while read container_id; do docker rm $container_id; done",
       new_command.app_containers(retain: 3).join(" ")
+  end
+
+  test "app containers with destination" do
+    @destination = "staging"
+
+    assert_equal \
+      "docker ps -q -a --filter label=service=app --filter label=destination=staging --filter status=created --filter status=exited --filter status=dead | tail -n +6 | while read container_id; do docker rm $container_id; done",
+      new_command.app_containers(retain: 5).join(" ")
   end
 
   private
     def new_command
-      Kamal::Commands::Prune.new(Kamal::Configuration.new(@config, version: "123"))
+      Kamal::Commands::Prune.new(Kamal::Configuration.new(@config, destination: @destination, version: "123"))
     end
 end

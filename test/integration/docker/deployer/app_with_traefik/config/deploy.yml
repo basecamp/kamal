@@ -28,7 +28,7 @@ accessories:
   traefik:
     service: traefik
     image: traefik:v3.6
-    port: 80
+    port: "0.0.0.0:80:80"
     cmd: "--providers.docker"
     options:
       volume:

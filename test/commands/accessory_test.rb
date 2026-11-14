@@ -14,7 +14,7 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
         "mysql" => {
           "image" => "private.registry/mysql:8.0",
           "host" => "1.1.1.5",
-          "port" => "3306",
+          "port" => "127.0.0.1:3306:3306",
           "env" => {
             "clear" => {
               "MYSQL_ROOT_HOST" => "%"
@@ -31,7 +31,7 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
         "redis" => {
           "image" => "redis:latest",
           "host" => "1.1.1.6",
-          "port" => "6379:6379",
+          "port" => "127.0.0.1:6379:6379",
           "labels" => {
             "cache" => "true"
           },
@@ -61,11 +61,11 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
 
   test "run" do
     assert_equal \
-      "docker run --name app-mysql --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 3306:3306 --env MYSQL_ROOT_HOST=\"%\" --env-file .kamal/apps/app/env/accessories/mysql.env --label service=\"app-mysql\" --cpus \"4\" --memory \"2GB\" private.registry/mysql:8.0",
+      "docker run --name app-mysql --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 127.0.0.1:3306:3306 --env MYSQL_ROOT_HOST=\"%\" --env-file .kamal/apps/app/env/accessories/mysql.env --label service=\"app-mysql\" --cpus \"4\" --memory \"2GB\" private.registry/mysql:8.0",
       new_command(:mysql).run.join(" ")
 
     assert_equal \
-      "docker run --name app-redis --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 6379:6379 --env SOMETHING=\"else\" --env-file .kamal/apps/app/env/accessories/redis.env --volume /var/lib/redis:/data --label service=\"app-redis\" --label cache=\"true\" redis:latest",
+      "docker run --name app-redis --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 127.0.0.1:6379:6379 --env SOMETHING=\"else\" --env-file .kamal/apps/app/env/accessories/redis.env --volume /var/lib/redis:/data --label service=\"app-redis\" --label cache=\"true\" redis:latest",
       new_command(:redis).run.join(" ")
 
     assert_equal \
@@ -85,7 +85,7 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
     @config[:accessories]["mysql"]["options"]["restart"] = "on-failure"
 
     assert_equal \
-      "docker run --name app-mysql --detach --restart on-failure --network kamal --log-opt max-size=\"10m\" --publish 3306:3306 --env MYSQL_ROOT_HOST=\"%\" --env-file .kamal/apps/app/env/accessories/mysql.env --label service=\"app-mysql\" --cpus \"4\" --memory \"2GB\" private.registry/mysql:8.0",
+      "docker run --name app-mysql --detach --restart on-failure --network kamal --log-opt max-size=\"10m\" --publish 127.0.0.1:3306:3306 --env MYSQL_ROOT_HOST=\"%\" --env-file .kamal/apps/app/env/accessories/mysql.env --label service=\"app-mysql\" --cpus \"4\" --memory \"2GB\" private.registry/mysql:8.0",
       new_command(:mysql).run.join(" ")
   end
 
@@ -93,7 +93,7 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
     @config[:accessories]["mysql"]["network"] = "custom"
 
     assert_equal \
-      "docker run --name app-mysql --detach --restart unless-stopped --network custom --log-opt max-size=\"10m\" --publish 3306:3306 --env MYSQL_ROOT_HOST=\"%\" --env-file .kamal/apps/app/env/accessories/mysql.env --label service=\"app-mysql\" --cpus \"4\" --memory \"2GB\" private.registry/mysql:8.0",
+      "docker run --name app-mysql --detach --restart unless-stopped --network custom --log-opt max-size=\"10m\" --publish 127.0.0.1:3306:3306 --env MYSQL_ROOT_HOST=\"%\" --env-file .kamal/apps/app/env/accessories/mysql.env --label service=\"app-mysql\" --cpus \"4\" --memory \"2GB\" private.registry/mysql:8.0",
       new_command(:mysql).run.join(" ")
   end
 
@@ -179,12 +179,30 @@ class CommandsAccessoryTest < ActiveSupport::TestCase
 
   test "follow logs" do
     assert_equal \
-      "ssh -t root@1.1.1.5 -p 22 'docker logs app-mysql --timestamps --tail 10 --follow 2>&1'",
-      new_command(:mysql).follow_logs
+      "ssh -t root@1.1.1.5 -p 22 'docker logs app-mysql --timestamps --follow 2>&1'",
+      new_command(:mysql).follow_logs(host: "1.1.1.5")
 
     assert_equal \
-      "ssh -t root@1.1.1.5 -p 22 'docker logs app-mysql --tail 10 --follow 2>&1'",
-      new_command(:mysql).follow_logs(timestamps: false)
+      "ssh -t root@1.1.1.5 -p 22 'docker logs app-mysql --follow 2>&1'",
+      new_command(:mysql).follow_logs(host: "1.1.1.5", timestamps: false)
+  end
+
+  test "follow logs with since and lines" do
+    assert_equal \
+      "ssh -t root@1.1.1.5 -p 22 'docker logs app-mysql --timestamps --since 5m --tail 123 --follow 2>&1'",
+      new_command(:mysql).follow_logs(host: "1.1.1.5", since: "5m", lines: 123)
+  end
+
+  test "current image id names the container, so a stray label match cannot be picked" do
+    assert_equal \
+      "docker inspect app-mysql --format '{{.Image}}'",
+      new_command(:mysql).current_image_id.join(" ")
+  end
+
+  test "remove image id is unforced, so docker refuses while it is in use" do
+    assert_equal \
+      "docker image rm sha256:abc123",
+      new_command(:mysql).remove_image_id("sha256:abc123").join(" ")
   end
 
   test "remove container" do

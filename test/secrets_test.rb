@@ -13,6 +13,17 @@ class SecretsTest < ActiveSupport::TestCase
     end
   end
 
+  test "to_h from concurrent threads loads the secrets once" do
+    with_test_secrets("secrets" => "SECRET=$(echo loaded >> loads; sleep 0.1; echo ABC)") do
+      secrets = Kamal::Secrets.new(secrets_path: ".kamal/secrets")
+
+      values = 4.times.map { Thread.new { secrets.to_h } }.map(&:value)
+
+      assert_equal [ { "SECRET" => "ABC" } ] * 4, values
+      assert_equal 1, File.readlines("loads").size
+    end
+  end
+
   test "key?" do
     with_test_secrets("secrets" => "SECRET1=ABC") do
       assert Kamal::Secrets.new(secrets_path: ".kamal/secrets").key?("SECRET1")

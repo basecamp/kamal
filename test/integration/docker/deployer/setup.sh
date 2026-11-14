@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Fail loudly: a failed gem install here otherwise surfaces much later as a
+# confusing "kamal: executable file not found in $PATH".
+set -euo pipefail
+
 install_kamal() {
   cd /kamal && gem build kamal.gemspec -o /tmp/kamal.gem && gem install /tmp/kamal.gem
 }

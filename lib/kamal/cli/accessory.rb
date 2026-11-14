@@ -82,9 +82,11 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
       else
         prepare(name)
         pull_image(name)
+        superseded = superseded_image_ids(name)
         stop(name)
         remove_container(name)
         boot(name, prepare: false)
+        remove_superseded_images(name, superseded)
       end
     end
   end
@@ -202,15 +204,19 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
       grep = options[:grep]
       grep_options = options[:grep_options]
       timestamps = !options[:skip_timestamps]
+      since = options[:since]
 
       if options[:follow]
-        run_locally do
-          info "Following logs on #{hosts}..."
-          info accessory.follow_logs(timestamps: timestamps, grep: grep, grep_options: grep_options)
-          exec accessory.follow_logs(timestamps: timestamps, grep: grep, grep_options: grep_options)
+        if hosts.any?
+          lines = options[:lines].presence || ((since || grep) ? nil : 10) # Default to 10 lines if since or grep isn't set
+
+          run_locally do
+            info "Following logs on #{hosts.first}..."
+            info accessory.follow_logs(host: hosts.first, timestamps: timestamps, since: since, lines: lines, grep: grep, grep_options: grep_options)
+            exec accessory.follow_logs(host: hosts.first, timestamps: timestamps, since: since, lines: lines, grep: grep, grep_options: grep_options)
+          end
         end
       else
-        since = options[:since]
         lines = options[:lines].presence || ((since || grep) ? nil : 100) # Default to 100 lines if since or grep isn't set
 
         on(hosts) do
@@ -301,6 +307,30 @@ class Kamal::Cli::Accessory < Kamal::Cli::Base
   end
 
   private
+    # Read the image the accessory is on before its container goes, so the old
+    # image can be removed once the new one is up.
+    def superseded_image_ids(name)
+      Concurrent::Hash.new.tap do |image_ids|
+        with_accessory(name) do |accessory, hosts|
+          on(hosts) do |host|
+            image_ids[host.to_s] = capture_with_info(*accessory.current_image_id, raise_on_non_zero_exit: false).strip.presence
+          end
+        end
+      end
+    end
+
+    def remove_superseded_images(name, image_ids)
+      with_accessory(name) do |accessory, hosts|
+        on(hosts) do |host|
+          next unless (image_id = image_ids[host.to_s])
+
+          unless execute(*accessory.remove_image_id(image_id), raise_on_non_zero_exit: false)
+            info "Kept #{name} image #{image_id[0..18]} on #{host}, docker declined to remove it"
+          end
+        end
+      end
+    end
+
     def with_accessory(name)
       if KAMAL.config.accessory(name)
         accessory = KAMAL.accessory(name)

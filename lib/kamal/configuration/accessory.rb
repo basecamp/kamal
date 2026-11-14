@@ -1,3 +1,5 @@
+require "ipaddr"
+
 class Kamal::Configuration::Accessory
   include Kamal::Configuration::Validation
 
@@ -17,6 +19,7 @@ class Kamal::Configuration::Accessory
       with: Kamal::Configuration::Validator::Accessory
 
     ensure_valid_roles
+    ensure_valid_port
 
     @env = initialize_env
     @proxy = initialize_proxy if running_proxy?
@@ -36,9 +39,7 @@ class Kamal::Configuration::Accessory
   end
 
   def port
-    if port = accessory_config["port"]&.to_s
-      port.include?(":") ? port : "#{port}:#{port}"
-    end
+    accessory_config["port"]&.to_s.presence
   end
 
   def network_args
@@ -148,21 +149,27 @@ class Kamal::Configuration::Accessory
 
     def expand_local_file(local_file)
       if local_file.end_with?("erb")
-        with_env_loaded { read_dynamic_file(local_file) }
+        read_dynamic_file(local_file)
       else
         Pathname.new(File.expand_path(local_file)).to_s
       end
     end
 
-    def with_env_loaded
-      env.to_h.each { |k, v| ENV[k] = v }
-      yield
-    ensure
-      env.to_h.each { |k, v| ENV.delete(k) }
+    def read_dynamic_file(local_file)
+      StringIO.new(render_dynamic_erb(File.read(local_file)))
     end
 
-    def read_dynamic_file(local_file)
-      StringIO.new(ERB.new(File.read(local_file)).result)
+    # Render with a per-call ENV constant so parallel host threads cannot
+    # clobber process-global ENV (SSHKit runs on(hosts) in :parallel).
+    def render_dynamic_erb(template)
+      renderer = Class.new
+      renderer.const_set(:ENV, ENV.to_h.merge(env.to_h))
+      renderer.class_eval <<~RUBY, __FILE__, __LINE__ + 1
+        def render(template)
+          ::ERB.new(template).result(binding)
+        end
+      RUBY
+      renderer.new.render(template)
     end
 
     def expand_remote_file(remote_file)
@@ -268,6 +275,43 @@ class Kamal::Configuration::Accessory
 
     def network
       accessory_config["network"] || DEFAULT_NETWORK
+    end
+
+    def ensure_valid_port
+      ensure_bound_publish port, "port"
+
+      # `options` passes flags straight to `docker run`, so publishing through it
+      # has to clear the same bar as `port`.
+      Array(docker_options["publish"]).each { |publish| ensure_bound_publish publish.to_s, "options/publish" }
+    end
+
+    def ensure_bound_publish(port_config, key)
+      return if port_config.blank?
+
+      host = port_config.split("/", 2).first
+
+      bound =
+        if host.start_with?("[")
+          (ip = host[/\A\[([^\]]+)\]/, 1]) && valid_ip?(ip)
+        elsif host.count(":") >= 2
+          valid_ip?(host.split(":").first)
+        end
+
+      require_bind_host! port_config, key unless bound
+    end
+
+    def valid_ip?(str)
+      IPAddr.new(str)
+      true
+    rescue IPAddr::InvalidAddressError, ArgumentError, TypeError
+      false
+    end
+
+    def require_bind_host!(port_config, key)
+      raise Kamal::ConfigurationError,
+        "accessories/#{name}: #{key} \"#{port_config}\" must name a bind address — " \
+        "\"127.0.0.1:PORT:PORT\" to keep it private, \"0.0.0.0:PORT:PORT\" to publish it. " \
+        "Run `kamal accessory reboot #{name}` to rebind an existing container."
     end
 
     def ensure_valid_roles

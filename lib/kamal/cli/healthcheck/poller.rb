@@ -12,7 +12,7 @@ module Kamal::Cli::Healthcheck::Poller
       if status == "running"
         # Wait for the readiness delay and confirm it is still running
         if readiness_delay > 0
-          info "Container is running, waiting for readiness delay of #{readiness_delay} seconds"
+          info "Container is running, waiting for readiness with a delay of #{readiness_delay} seconds"
           sleep readiness_delay
           status = block.call
         end

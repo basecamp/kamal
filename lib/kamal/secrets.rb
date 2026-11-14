@@ -20,7 +20,7 @@ class Kamal::Secrets
   end
 
   def to_h
-    secrets
+    @mutex.synchronize { secrets }
   end
 
   def secrets_files

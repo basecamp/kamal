@@ -15,7 +15,7 @@ class CliAccessoryTest < CliTestCase
 
     run_command("boot", "mysql").tap do |output|
       assert_match "docker login private.registry -u [REDACTED] -p [REDACTED] on 1.1.1.3", output
-      assert_match "docker run --name app-mysql --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 3306:3306 --env KAMAL_HOST=\"1.1.1.3\" --env MYSQL_ROOT_HOST=\"%\" --env-file .kamal/apps/app/env/accessories/mysql.env --volume $PWD/app-mysql/etc/mysql/my.cnf:/etc/mysql/my.cnf --volume $PWD/app-mysql/data:/var/lib/mysql --label service=\"app-mysql\" private.registry/mysql:5.7 on 1.1.1.3", output
+      assert_match "docker run --name app-mysql --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 127.0.0.1:3306:3306 --env KAMAL_HOST=\"1.1.1.3\" --env MYSQL_ROOT_HOST=\"%\" --env-file .kamal/apps/app/env/accessories/mysql.env --volume $PWD/app-mysql/etc/mysql/my.cnf:/etc/mysql/my.cnf --volume $PWD/app-mysql/data:/var/lib/mysql --label service=\"app-mysql\" private.registry/mysql:5.7 on 1.1.1.3", output
     end
   end
 
@@ -35,9 +35,9 @@ class CliAccessoryTest < CliTestCase
       assert_match /docker network create kamal.*on 1.1.1.1/, output
       assert_match /docker network create kamal.*on 1.1.1.2/, output
       assert_match /docker network create kamal.*on 1.1.1.3/, output
-      assert_match "docker run --name app-mysql --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 3306:3306 --env KAMAL_HOST=\"1.1.1.3\" --env MYSQL_ROOT_HOST=\"%\" --env-file .kamal/apps/app/env/accessories/mysql.env --volume $PWD/app-mysql/etc/mysql/my.cnf:/etc/mysql/my.cnf --volume $PWD/app-mysql/data:/var/lib/mysql --label service=\"app-mysql\" private.registry/mysql:5.7 on 1.1.1.3", output
-      assert_match "docker run --name app-redis --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 6379:6379 --env KAMAL_HOST=\"1.1.1.1\" --env-file .kamal/apps/app/env/accessories/redis.env --volume $PWD/app-redis/data:/data --label service=\"app-redis\" redis:latest on 1.1.1.1", output
-      assert_match "docker run --name app-redis --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 6379:6379 --env KAMAL_HOST=\"1.1.1.2\" --env-file .kamal/apps/app/env/accessories/redis.env --volume $PWD/app-redis/data:/data --label service=\"app-redis\" redis:latest on 1.1.1.2", output
+      assert_match "docker run --name app-mysql --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 127.0.0.1:3306:3306 --env KAMAL_HOST=\"1.1.1.3\" --env MYSQL_ROOT_HOST=\"%\" --env-file .kamal/apps/app/env/accessories/mysql.env --volume $PWD/app-mysql/etc/mysql/my.cnf:/etc/mysql/my.cnf --volume $PWD/app-mysql/data:/var/lib/mysql --label service=\"app-mysql\" private.registry/mysql:5.7 on 1.1.1.3", output
+      assert_match "docker run --name app-redis --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 127.0.0.1:6379:6379 --env KAMAL_HOST=\"1.1.1.1\" --env-file .kamal/apps/app/env/accessories/redis.env --volume $PWD/app-redis/data:/data --label service=\"app-redis\" redis:latest on 1.1.1.1", output
+      assert_match "docker run --name app-redis --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 127.0.0.1:6379:6379 --env KAMAL_HOST=\"1.1.1.2\" --env-file .kamal/apps/app/env/accessories/redis.env --volume $PWD/app-redis/data:/data --label service=\"app-redis\" redis:latest on 1.1.1.2", output
       assert_match "docker run --name custom-box --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --env KAMAL_HOST=\"1.1.1.3\" --env-file .kamal/apps/app/env/accessories/busybox.env --label service=\"custom-box\" other.registry/busybox:latest on 1.1.1.3", output
     end
   end
@@ -160,18 +160,52 @@ class CliAccessoryTest < CliTestCase
     assert_match "docker logs app-mysql --timestamps --tail 10 --follow 2>&1", run_command("logs", "mysql", "--follow")
   end
 
+  test "logs with follow and since" do
+    SSHKit::Backend::Abstract.any_instance.stubs(:exec)
+      .with("ssh -t root@1.1.1.3 -p 22 'docker logs app-mysql --timestamps --since 5m --follow 2>&1'")
+
+    assert_match "docker logs app-mysql --timestamps --since 5m --follow 2>&1", run_command("logs", "mysql", "--follow", "--since", "5m")
+  end
+
+  test "logs with follow and lines" do
+    SSHKit::Backend::Abstract.any_instance.stubs(:exec)
+      .with("ssh -t root@1.1.1.3 -p 22 'docker logs app-mysql --timestamps --tail 123 --follow 2>&1'")
+
+    assert_match "docker logs app-mysql --timestamps --tail 123 --follow 2>&1", run_command("logs", "mysql", "--follow", "--lines", "123")
+  end
+
   test "logs with follow and grep" do
     SSHKit::Backend::Abstract.any_instance.stubs(:exec)
-      .with("ssh -t root@1.1.1.3 -p 22 'docker logs app-mysql --timestamps --tail 10 --follow 2>&1 | grep \"hey\"'")
+      .with("ssh -t root@1.1.1.3 -p 22 'docker logs app-mysql --timestamps --follow 2>&1 | grep \"hey\"'")
 
-    assert_match "docker logs app-mysql --timestamps --tail 10 --follow 2>&1 | grep \"hey\"", run_command("logs", "mysql", "--follow", "--grep", "hey")
+    assert_match "docker logs app-mysql --timestamps --follow 2>&1 | grep \"hey\"", run_command("logs", "mysql", "--follow", "--grep", "hey")
   end
 
   test "logs with follow, grep, and grep options" do
     SSHKit::Backend::Abstract.any_instance.stubs(:exec)
-      .with("ssh -t root@1.1.1.3 -p 22 'docker logs app-mysql --timestamps --tail 10 --follow 2>&1 | grep \"hey\" -C 2'")
+      .with("ssh -t root@1.1.1.3 -p 22 'docker logs app-mysql --timestamps --follow 2>&1 | grep \"hey\" -C 2'")
 
-    assert_match "docker logs app-mysql --timestamps --tail 10 --follow 2>&1 | grep \"hey\" -C 2", run_command("logs", "mysql", "--follow", "--grep", "hey", "--grep-options", "-C 2")
+    assert_match "docker logs app-mysql --timestamps --follow 2>&1 | grep \"hey\" -C 2", run_command("logs", "mysql", "--follow", "--grep", "hey", "--grep-options", "-C 2")
+  end
+
+  test "logs with follow defaults to first host" do
+    SSHKit::Backend::Abstract.any_instance.stubs(:exec)
+      .with("ssh -t root@1.1.1.1 -p 22 'docker logs app-redis --timestamps --tail 10 --follow 2>&1'")
+
+    assert_match "ssh -t root@1.1.1.1 -p 22 'docker logs app-redis", run_command("logs", "redis", "--follow")
+  end
+
+  test "logs with follow respects hosts" do
+    SSHKit::Backend::Abstract.any_instance.stubs(:exec)
+      .with("ssh -t root@1.1.1.2 -p 22 'docker logs app-redis --timestamps --tail 10 --follow 2>&1'")
+
+    assert_match "ssh -t root@1.1.1.2 -p 22 'docker logs app-redis", run_command("logs", "redis", "--follow", "--hosts", "1.1.1.2")
+  end
+
+  test "logs with follow does nothing when accessory does not run on the hosts" do
+    SSHKit::Backend::Abstract.any_instance.expects(:exec).never
+
+    run_command("logs", "mysql", "--follow", "--hosts", "1.1.1.1")
   end
 
   test "remove with confirmation" do
@@ -223,7 +257,7 @@ class CliAccessoryTest < CliTestCase
     run_command("boot", "redis", "--hosts", "1.1.1.1").tap do |output|
       assert_match "docker login private.registry -u [REDACTED] -p [REDACTED] on 1.1.1.1", output
       assert_no_match "docker login private.registry -u [REDACTED] -p [REDACTED] on 1.1.1.2", output
-      assert_match "docker run --name app-redis --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 6379:6379 --env KAMAL_HOST=\"1.1.1.1\" --env-file .kamal/apps/app/env/accessories/redis.env --volume $PWD/app-redis/data:/data --label service=\"app-redis\" redis:latest on 1.1.1.1", output
+      assert_match "docker run --name app-redis --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 127.0.0.1:6379:6379 --env KAMAL_HOST=\"1.1.1.1\" --env-file .kamal/apps/app/env/accessories/redis.env --volume $PWD/app-redis/data:/data --label service=\"app-redis\" redis:latest on 1.1.1.1", output
       assert_no_match /docker run --name app-redis .* on 1.1.1.2/, output
     end
   end
@@ -235,7 +269,7 @@ class CliAccessoryTest < CliTestCase
     run_command("boot", "redis", "--hosts", "1.1.1.1,1.1.1.3").tap do |output|
       assert_match "docker login private.registry -u [REDACTED] -p [REDACTED] on 1.1.1.1", output
       assert_no_match "docker login private.registry -u [REDACTED] -p [REDACTED] on 1.1.1.3", output
-      assert_match "docker run --name app-redis --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 6379:6379 --env KAMAL_HOST=\"1.1.1.1\" --env-file .kamal/apps/app/env/accessories/redis.env --volume $PWD/app-redis/data:/data --label service=\"app-redis\" redis:latest on 1.1.1.1", output
+      assert_match "docker run --name app-redis --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 127.0.0.1:6379:6379 --env KAMAL_HOST=\"1.1.1.1\" --env-file .kamal/apps/app/env/accessories/redis.env --volume $PWD/app-redis/data:/data --label service=\"app-redis\" redis:latest on 1.1.1.1", output
       assert_no_match /docker run --name app-redis .* on 1.1.1.3/, output
     end
   end
@@ -245,7 +279,7 @@ class CliAccessoryTest < CliTestCase
       assert_match "Upgrading all accessories on 1.1.1.3,1.1.1.1,1.1.1.2...", output
       assert_match "docker network create kamal on 1.1.1.3", output
       assert_match "docker container stop app-mysql on 1.1.1.3", output
-      assert_match "docker run --name app-mysql --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 3306:3306 --env KAMAL_HOST=\"1.1.1.3\" --env MYSQL_ROOT_HOST="%" --env-file .kamal/apps/app/env/accessories/mysql.env --volume $PWD/app-mysql/etc/mysql/my.cnf:/etc/mysql/my.cnf --volume $PWD/app-mysql/data:/var/lib/mysql --label service=\"app-mysql\" private.registry/mysql:5.7 on 1.1.1.3", output
+      assert_match "docker run --name app-mysql --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 127.0.0.1:3306:3306 --env KAMAL_HOST=\"1.1.1.3\" --env MYSQL_ROOT_HOST="%" --env-file .kamal/apps/app/env/accessories/mysql.env --volume $PWD/app-mysql/etc/mysql/my.cnf:/etc/mysql/my.cnf --volume $PWD/app-mysql/data:/var/lib/mysql --label service=\"app-mysql\" private.registry/mysql:5.7 on 1.1.1.3", output
       assert_match "Upgraded all accessories on 1.1.1.3,1.1.1.1,1.1.1.2...", output
     end
   end
@@ -255,15 +289,15 @@ class CliAccessoryTest < CliTestCase
       assert_match "Upgrading all accessories on 1.1.1.3...", output
       assert_match "docker network create kamal on 1.1.1.3", output
       assert_match "docker container stop app-mysql on 1.1.1.3", output
-      assert_match "docker run --name app-mysql --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 3306:3306 --env KAMAL_HOST=\"1.1.1.3\" --env MYSQL_ROOT_HOST="%" --env-file .kamal/apps/app/env/accessories/mysql.env --volume $PWD/app-mysql/etc/mysql/my.cnf:/etc/mysql/my.cnf --volume $PWD/app-mysql/data:/var/lib/mysql --label service=\"app-mysql\" private.registry/mysql:5.7 on 1.1.1.3", output
+      assert_match "docker run --name app-mysql --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 127.0.0.1:3306:3306 --env KAMAL_HOST=\"1.1.1.3\" --env MYSQL_ROOT_HOST="%" --env-file .kamal/apps/app/env/accessories/mysql.env --volume $PWD/app-mysql/etc/mysql/my.cnf:/etc/mysql/my.cnf --volume $PWD/app-mysql/data:/var/lib/mysql --label service=\"app-mysql\" private.registry/mysql:5.7 on 1.1.1.3", output
       assert_match "Upgraded all accessories on 1.1.1.3", output
     end
   end
 
   test "boot with web role filter" do
     run_command("boot", "redis", "-r", "web").tap do |output|
-      assert_match "docker run --name app-redis --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 6379:6379 --env KAMAL_HOST=\"1.1.1.1\" --env-file .kamal/apps/app/env/accessories/redis.env --volume $PWD/app-redis/data:/data --label service=\"app-redis\" redis:latest on 1.1.1.1", output
-      assert_match "docker run --name app-redis --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 6379:6379 --env KAMAL_HOST=\"1.1.1.2\" --env-file .kamal/apps/app/env/accessories/redis.env --volume $PWD/app-redis/data:/data --label service=\"app-redis\" redis:latest on 1.1.1.2", output
+      assert_match "docker run --name app-redis --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 127.0.0.1:6379:6379 --env KAMAL_HOST=\"1.1.1.1\" --env-file .kamal/apps/app/env/accessories/redis.env --volume $PWD/app-redis/data:/data --label service=\"app-redis\" redis:latest on 1.1.1.1", output
+      assert_match "docker run --name app-redis --detach --restart unless-stopped --network kamal --log-opt max-size=\"10m\" --publish 127.0.0.1:6379:6379 --env KAMAL_HOST=\"1.1.1.2\" --env-file .kamal/apps/app/env/accessories/redis.env --volume $PWD/app-redis/data:/data --label service=\"app-redis\" redis:latest on 1.1.1.2", output
     end
   end
 

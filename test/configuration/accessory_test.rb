@@ -16,7 +16,7 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
         "mysql" => {
           "image" => "public.registry/mysql:8.0",
           "host" => "1.1.1.5",
-          "port" => "3306",
+          "port" => "127.0.0.1:3306:3306",
           "env" => {
             "clear" => {
               "MYSQL_ROOT_HOST" => "%"
@@ -36,7 +36,7 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
         "redis" => {
           "image" => "redis:latest",
           "hosts" => [ "1.1.1.6", "1.1.1.7" ],
-          "port" => "6379:6379",
+          "port" => "127.0.0.1:6379:6379",
           "labels" => {
             "cache" => "true"
           },
@@ -56,7 +56,7 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
           "image" => "monitoring:latest",
           "registry" => { "server" => "other.registry", "username" => "user", "password" => "pw" },
           "role" => "web",
-          "port" => "4321:4321",
+          "port" => "127.0.0.1:4321:4321",
           "labels" => {
             "cache" => "true"
           },
@@ -107,8 +107,77 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
   end
 
   test "port" do
-    assert_equal "3306:3306", @config.accessory(:mysql).port
-    assert_equal "6379:6379", @config.accessory(:redis).port
+    assert_equal "127.0.0.1:3306:3306", @config.accessory(:mysql).port
+    assert_equal "127.0.0.1:6379:6379", @config.accessory(:redis).port
+  end
+
+  test "port with no port config" do
+    @deploy[:accessories]["mysql"].delete("port")
+    assert_nil Kamal::Configuration.new(@deploy).accessory(:mysql).port
+  end
+
+  test "explicit bind addresses are preserved verbatim" do
+    {
+      "127.0.0.1:3306:3306" => "127.0.0.1:3306:3306",
+      "0.0.0.0:3306:3306" => "0.0.0.0:3306:3306",
+      "192.168.1.1:3306:3306" => "192.168.1.1:3306:3306",
+      "[::1]:3306:3306" => "[::1]:3306:3306",
+      "[::]::3306" => "[::]::3306",
+      "192.168.1.1:3306:3306/tcp" => "192.168.1.1:3306:3306/tcp",
+      "127.0.0.1:3306:3306/udp" => "127.0.0.1:3306:3306/udp"
+    }.each do |port_config, expected|
+      @deploy[:accessories]["mysql"]["port"] = port_config
+      assert_equal expected, Kamal::Configuration.new(@deploy).accessory(:mysql).port, port_config
+    end
+  end
+
+  test "publishing through options requires a bind address too" do
+    @deploy[:accessories]["mysql"].delete("port")
+    @deploy[:accessories]["mysql"]["options"] = { "publish" => "3306:3306" }
+
+    error = assert_raises(Kamal::ConfigurationError) { Kamal::Configuration.new(@deploy).accessory(:mysql) }
+    assert_match /options\/publish "3306:3306" must name a bind address/, error.message
+  end
+
+  test "a bound publish in options is accepted" do
+    @deploy[:accessories]["mysql"].delete("port")
+    @deploy[:accessories]["mysql"]["options"] = { "publish" => [ "127.0.0.1:3306:3306" ] }
+
+    assert_equal [ "--publish", "\"127.0.0.1:3306:3306\"" ], Kamal::Configuration.new(@deploy).accessory(:mysql).option_args
+  end
+
+  test "a blank port publishes nothing" do
+    @deploy[:accessories]["mysql"]["port"] = ""
+
+    assert_nil Kamal::Configuration.new(@deploy).accessory(:mysql).publish_args
+  end
+
+  test "port without an explicit bind address raises an error" do
+    [
+      "3306",
+      "3306:3306",
+      "3306:3306/udp",
+      "127.0.0.1:3306"
+    ].each do |port_config|
+      @deploy[:accessories]["mysql"]["port"] = port_config
+      error = assert_raises(Kamal::ConfigurationError, port_config) do
+        Kamal::Configuration.new(@deploy).accessory(:mysql).port
+      end
+      assert_match "must name a bind address", error.message
+    end
+  end
+
+  test "port with an invalid bind address raises an error" do
+    [
+      "999.999.999.999:3306:3306",
+      "[not::valid::ip]:3306:3306",
+      "[::1:3306:3306"
+    ].each do |port_config|
+      @deploy[:accessories]["mysql"]["port"] = port_config
+      assert_raises(Kamal::ConfigurationError, port_config) do
+        Kamal::Configuration.new(@deploy).accessory(:mysql).port
+      end
+    end
   end
 
   test "host" do
@@ -179,6 +248,50 @@ class ConfigurationAccessoryTest < ActiveSupport::TestCase
       assert_match "%", @config.accessory(:mysql).files.keys[2].read
       assert_match "secret123", @config.accessory(:mysql).files.keys[2].read
       assert_match "secret_env_value", @config.accessory(:mysql).files.keys[2].read
+    end
+  end
+
+  test "parallel erb file renders keep accessory env interpolations" do
+    @deploy[:accessories]["mysql"]["files"] = [
+      "test/fixtures/files/structure.sql.erb:/docker-entrypoint-initdb.d/structure.sql"
+    ]
+    @deploy[:accessories]["mysql"]["env"]["secret"] << "ENV_VAR:SECRET_VAR"
+
+    with_test_secrets("secrets" => "MYSQL_ROOT_PASSWORD=secret123\nSECRET_VAR=secret_env_value") do
+      accessory = Kamal::Configuration.new(@deploy).accessory(:mysql)
+      original_result = ERB.instance_method(:result)
+      entered, release, finished = Queue.new, Queue.new, Queue.new
+      renders = {}
+
+      begin
+        ERB.define_method(:result) do |*args, **kwargs|
+          entered.push(true)
+          release.pop
+          original_result.bind_call(self, *args, **kwargs)
+        end
+
+        threads = [ :host_a, :host_b ].map do |host|
+          Thread.new do
+            renders[host] = accessory.files.keys.first.read
+          ensure
+            finished.push(host)
+          end
+        end
+
+        2.times { entered.pop }
+        release.push(true)
+        finished.pop
+        release.push(true)
+        threads.each(&:value)
+
+        renders.each do |host, contents|
+          assert_match "secret123", contents, "#{host} lost MYSQL_ROOT_PASSWORD"
+          assert_match "secret_env_value", contents, "#{host} lost ENV_VAR"
+          assert_match "%", contents, "#{host} lost MYSQL_ROOT_HOST"
+        end
+      ensure
+        ERB.define_method(:result, original_result)
+      end
     end
   end
 

@@ -1,0 +1,2 @@
+# Agent session state — worktrees under .claude/ are whole extra checkouts of this repo
+.claude

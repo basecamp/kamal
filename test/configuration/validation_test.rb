@@ -102,8 +102,6 @@ class ConfigurationValidationTest < ActiveSupport::TestCase
   end
 
   test "local registry with remote builder requires ssh url" do
-    remote_arch = Kamal::Utils.docker_arch == "arm64" ? "amd64" : "arm64"
-
     assert_error "Local registry with remote builder requires an SSH URL (e.g., ssh://user@host)",
       registry: { "server" => "localhost:5000" },
       builder: { "arch" => remote_arch, "remote" => "docker-container://remote-builder" }

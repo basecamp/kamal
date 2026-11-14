@@ -10,6 +10,29 @@ class CliAppTest < CliTestCase
     end
   end
 
+  test "boot through main names the subcommand to hooks and the output loggers" do
+    stub_running
+    Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
+
+    hook_env = {}
+    SSHKit::Backend::Abstract.any_instance.stubs(:execute).with do |*args|
+      hook_env[args.first] = ENV.slice("KAMAL_COMMAND", "KAMAL_SUBCOMMAND") if args.first.to_s.start_with?(".kamal/hooks/")
+      true
+    end
+
+    modifications = []
+    subscriber = ActiveSupport::Notifications.subscribe("modify.kamal") do |*, payload|
+      modifications << payload.slice(:command, :subcommand)
+    end
+
+    stdouted { Kamal::Cli::Main.start([ "app", "boot", "-c", "test/fixtures/deploy_with_accessories.yml", "--hosts", "1.1.1.1" ]) }
+
+    assert_equal({ "KAMAL_COMMAND" => "app", "KAMAL_SUBCOMMAND" => "boot" }, hook_env[".kamal/hooks/pre-app-boot"])
+    assert_equal [ { command: "app", subcommand: "boot" } ], modifications
+  ensure
+    ActiveSupport::Notifications.unsubscribe(subscriber) if subscriber
+  end
+
   test "boot will rename if same version is already running" do
     Object.any_instance.stubs(:sleep)
     run_command("details") # Preheat Kamal const
@@ -304,12 +327,16 @@ class CliAppTest < CliTestCase
   end
 
   test "remove" do
+    Kamal::Commands::Hook.any_instance.stubs(:hook_exists?).returns(true)
+
     run_command("remove").tap do |output|
+      assert_hook_ran "pre-app-remove", output
       assert_match "sh -c 'docker ps --latest --quiet --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''{{.ID}}'\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting' | head -1 | xargs docker stop", output
       assert_match "docker container prune --force --filter label=service=app", output
       assert_match "docker image prune --all --force --filter label=service=app", output
       assert_match "rm -r .kamal/apps/app on 1.1.1.1", output
       assert_match "rm -r .kamal/proxy/apps-config/app on 1.1.1.1", output
+      assert_hook_ran "post-app-remove", output
     end
   end
 
@@ -503,6 +530,13 @@ class CliAppTest < CliTestCase
       .with("ssh -t root@1.1.1.1 -p 22 'sh -c '\\''docker ps --latest --quiet --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''\\'\\'''\\''{{.ID}}'\\''\\'\\'''\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting'\\'' | head -1 | xargs docker logs --timestamps --follow 2>&1 | grep \"hey\" -C 2'")
 
     assert_match "sh -c '\\''docker ps --latest --quiet --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''\\'\\'''\\''{{.ID}}'\\''\\'\\'''\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting'\\'' | head -1 | xargs docker logs --timestamps --follow 2>&1 | grep \"hey\" -C 2", run_command("logs", "--follow", "--grep", "hey", "--grep-options", "-C 2")
+  end
+
+  test "logs with follow and since" do
+    SSHKit::Backend::Abstract.any_instance.stubs(:exec)
+      .with("ssh -t root@1.1.1.1 -p 22 'sh -c '\\''docker ps --latest --quiet --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''\\'\\'''\\''{{.ID}}'\\''\\'\\'''\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting'\\'' | head -1 | xargs docker logs --timestamps --since 5m --follow 2>&1'")
+
+    assert_match "sh -c '\\''docker ps --latest --quiet --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting --filter ancestor=$(docker image ls --filter reference=dhh/app:latest --format '\\''\\'\\'''\\''{{.ID}}'\\''\\'\\'''\\'') ; docker ps --latest --quiet --filter label=service=app --filter label=destination= --filter label=role=web --filter status=running --filter status=restarting'\\'' | head -1 | xargs docker logs --timestamps --since 5m --follow 2>&1", run_command("logs", "--follow", "--since", "5m")
   end
 
   test "version" do

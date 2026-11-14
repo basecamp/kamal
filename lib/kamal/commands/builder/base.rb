@@ -1,3 +1,5 @@
+require "digest"
+
 class Kamal::Commands::Builder::Base < Kamal::Commands::Base
   class BuilderError < StandardError; end
 
@@ -139,5 +141,13 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
 
     def platform_options(arches)
       argumentize "--platform", arches.map { |arch| "linux/#{arch}" }.join(",") if arches.any?
+    end
+
+    # Buildx caches registry credentials on the builder, so a builder must not
+    # be shared between registry accounts. The digest is an identifier, not a
+    # secret: the name reveals which account an app pushes to.
+    def registry_digest
+      identity = [ registry_config.server || "docker.io", registry_config.username ]
+      Digest::SHA256.hexdigest(identity.join("\x00"))[0, 12]
     end
 end
