@@ -208,7 +208,7 @@ class CliBuildTest < CliTestCase
         .with(:docker, :buildx, :create, "--name", "kamal-local-registry-docker-container-3e4092d0c8b9", "--driver=docker-container", "--driver-opt", "network=host")
 
       SSHKit::Backend::Abstract.any_instance.expects(:execute)
-        .with(:docker, :buildx, :inspect, "kamal-local-registry-docker-container-3e4092d0c8b9")
+        .with(:sh, "-c", "'! docker buildx inspect kamal-local-registry-docker-container-3e4092d0c8b9 | grep -q '\\''unable to parse docker host'\\'' || (echo builder context not found && exit 1) && docker buildx inspect kamal-local-registry-docker-container-3e4092d0c8b9'")
         .raises(SSHKit::Command::Failed.new("no builder"))
 
       SSHKit::Backend::Abstract.any_instance.expects(:execute).with { |*args| args.first.to_s.start_with?("git") }
@@ -247,8 +247,48 @@ class CliBuildTest < CliTestCase
         .with(:docker, :buildx, :create, "--name", "kamal-local-docker-container-6e208c509c5d", "--driver=docker-container")
 
       SSHKit::Backend::Abstract.any_instance.expects(:execute)
-        .with(:docker, :buildx, :inspect, "kamal-local-docker-container-6e208c509c5d")
+        .with(:sh, "-c", "'! docker buildx inspect kamal-local-docker-container-6e208c509c5d | grep -q '\\''unable to parse docker host'\\'' || (echo builder context not found && exit 1) && docker buildx inspect kamal-local-docker-container-6e208c509c5d'")
         .raises(SSHKit::Command::Failed.new("no builder"))
+
+      SSHKit::Backend::Abstract.any_instance.expects(:execute).with { |*args| args.first.start_with?("git") }
+
+      SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+        .with(:git, "-C", anything, :"rev-parse", :HEAD)
+        .returns(Kamal::Git.revision)
+
+      SSHKit::Backend::Abstract.any_instance.expects(:capture_with_info)
+        .with(:git, "-C", anything, :status, "--porcelain")
+        .returns("")
+
+      SSHKit::Backend::Abstract.any_instance.expects(:execute)
+        .with(:docker, :buildx, :build, "--output=type=registry", "--platform", "linux/amd64", "--builder", "kamal-local-docker-container-6e208c509c5d", "-t", "dhh/app:999", "-t", "dhh/app:latest", "--label", "service=\"app\"", "--file", "Dockerfile", ".", "2>&1", env: {})
+
+      run_command("push").tap do |output|
+        assert_match /WARN Missing compatible builder, so creating a new one first/, output
+      end
+    end
+  end
+
+  test "push with a builder whose Docker context was removed" do
+    with_build_directory do |build_directory|
+      stub_setup
+
+      SSHKit::Backend::Abstract.any_instance.expects(:execute)
+        .with(:docker, "--version", "&&", :docker, :buildx, "version")
+
+      SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+        .with { |*args| args[0..1] == [ :docker, :login ] }
+
+      SSHKit::Backend::Abstract.any_instance.expects(:execute)
+        .with(:sh, "-c", "'! docker buildx inspect kamal-local-docker-container-6e208c509c5d | grep -q '\\''unable to parse docker host'\\'' || (echo builder context not found && exit 1) && docker buildx inspect kamal-local-docker-container-6e208c509c5d'")
+        .raises(SSHKit::Command::Failed.new("builder context not found"))
+
+      SSHKit::Backend::Abstract.any_instance.expects(:execute)
+        .with(:docker, :buildx, :rm, "kamal-local-docker-container-6e208c509c5d")
+        .raises(SSHKit::Command::Failed.new("failed to remove kamal-local-docker-container-6e208c509c5d: failed to load node kamal-local-docker-container-6e208c509c5d0: unable to parse docker host `gone`"))
+
+      SSHKit::Backend::Abstract.any_instance.expects(:execute)
+        .with(:docker, :buildx, :create, "--name", "kamal-local-docker-container-6e208c509c5d", "--driver=docker-container")
 
       SSHKit::Backend::Abstract.any_instance.expects(:execute).with { |*args| args.first.start_with?("git") }
 

@@ -103,6 +103,13 @@ class CommandsBuilderTest < ActiveSupport::TestCase
       builder.push.join(" ")
   end
 
+  test "inspect builder fails when the builder's Docker context no longer exists" do
+    builder = new_builder_command
+    assert_equal \
+      "sh -c '! docker buildx inspect kamal-local-docker-container-f005c512b8b0 | grep -q '\\''unable to parse docker host'\\'' || (echo builder context not found && exit 1) && docker buildx inspect kamal-local-docker-container-f005c512b8b0'",
+      builder.inspect_builder.join(" ")
+  end
+
   test "build args" do
     builder = new_builder_command(builder: { "args" => { "a" => 1, "b" => 2 } })
     assert_equal \
