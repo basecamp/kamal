@@ -40,9 +40,9 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
 
   def inspect_builder
     unless docker_driver?
-      shell combine(
-        any([ "!", *pipe(docker(:buildx, :inspect, builder_name), grep("-q", "'unable to parse docker host'")) ], "(echo builder context not found && exit 1)"),
-        docker(:buildx, :inspect, builder_name)
+      shell any(
+        [ "output=$(#{docker(:buildx, :inspect, builder_name).join(" ")}) || exit;", "!", :echo, "\"$output\"", "|", *grep("-q", "'unable to parse docker host'") ],
+        "(echo builder context not found && exit 1)"
       )
     end
   end

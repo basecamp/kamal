@@ -37,7 +37,7 @@ class CliTestCase < ActiveSupport::TestCase
       SSHKit::Backend::Abstract.any_instance.stubs(:execute)
         .with { |arg1, arg2| arg1 == :rm && arg2 == ".kamal/lock-app/details" }
       SSHKit::Backend::Abstract.any_instance.stubs(:execute)
-        .with(:sh, "-c", "'! docker buildx inspect kamal-local-docker-container-6e208c509c5d | grep -q '\\''unable to parse docker host'\\'' || (echo builder context not found && exit 1) && docker buildx inspect kamal-local-docker-container-6e208c509c5d'")
+        .with(:sh, "-c", "'output=$(docker buildx inspect kamal-local-docker-container-6e208c509c5d) || exit; ! echo \"$output\" | grep -q '\\''unable to parse docker host'\\'' || (echo builder context not found && exit 1)'")
     end
 
     def assert_hook_ran(hook, output, count: 1)
