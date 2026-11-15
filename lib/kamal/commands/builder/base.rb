@@ -39,7 +39,12 @@ class Kamal::Commands::Builder::Base < Kamal::Commands::Base
   end
 
   def inspect_builder
-    docker :buildx, :inspect, builder_name unless docker_driver?
+    unless docker_driver?
+      shell any(
+        [ "output=$(#{docker(:buildx, :inspect, builder_name).join(" ")}) || exit;", "!", :echo, "\"$output\"", "|", *grep("-q", "'unable to parse docker host'") ],
+        "(echo builder context not found && exit 1)"
+      )
+    end
   end
 
   def build_options

@@ -103,6 +103,42 @@ class CommandsBuilderTest < ActiveSupport::TestCase
       builder.push.join(" ")
   end
 
+  test "inspect builder fails when the builder's node points at a removed Docker context" do
+    result = run_inspect_builder(stdout: "Name: kamal-local-docker-container0\nEndpoint: gone\nError: unable to parse docker host `gone`\n")
+
+    assert_equal [ :failed, "builder context not found" ], result.first(2)
+    assert_equal 1, result.last
+  end
+
+  test "inspect builder passes for a healthy builder" do
+    result = run_inspect_builder(stdout: "Name: kamal-local-docker-container0\nEndpoint: default\nStatus: running\n")
+
+    assert_equal [ :ok, 1 ], [ result.first, result.last ]
+  end
+
+  test "inspect builder passes while the engine is down, so the builder and its cache are kept" do
+    result = run_inspect_builder(stdout: "Name: kamal-local-docker-container0\nEndpoint: default\nError: failed to connect to the docker API\n")
+
+    assert_equal [ :ok, 1 ], [ result.first, result.last ]
+  end
+
+  test "inspect builder keeps the error of a missing builder" do
+    result = run_inspect_builder(stderr: "ERROR: no builder \"kamal-local-docker-container-f005c512b8b0\" found\n", status: 1)
+
+    assert_equal :failed, result.first
+    assert_match "no builder", result[1]
+    assert_no_match "builder context not found", result[1]
+  end
+
+  test "inspect builder keeps the error of an unrelated inspect failure, so the builder is not recreated" do
+    result = run_inspect_builder(stderr: "ERROR: invalid character 'n' looking for beginning of object key string\n", status: 1)
+
+    assert_equal :failed, result.first
+    assert_match "invalid character", result[1]
+    assert_no_match "builder context not found", result[1]
+  end
+
+
   test "build args" do
     builder = new_builder_command(builder: { "args" => { "a" => 1, "b" => 2 } })
     assert_equal \
@@ -304,6 +340,36 @@ class CommandsBuilderTest < ActiveSupport::TestCase
   end
 
   private
+    def run_inspect_builder(stdout: "", stderr: "", status: 0)
+      Dir.mktmpdir do |dir|
+        File.write(File.join(dir, "stdout"), stdout)
+        File.write(File.join(dir, "stderr"), stderr)
+        File.write(File.join(dir, "docker"), <<~SH)
+          #!/bin/sh
+          echo "$*" >> "#{dir}/calls"
+          cat "#{dir}/stdout"
+          cat "#{dir}/stderr" >&2
+          exit #{status}
+        SH
+        File.chmod(0o755, File.join(dir, "docker"))
+
+        command = new_builder_command.inspect_builder
+        path = ENV["PATH"]
+        ENV["PATH"] = "#{dir}:#{path}"
+        outcome = nil
+        capture(:stdout) do
+          SSHKit::Backend::Local.new { execute(*command) }.run
+          outcome = [ :ok, nil ]
+        rescue SSHKit::Command::Failed => e
+          outcome = [ :failed, e.message.lines.grep(/ std(out|err): /).map { |line| line.split(": ", 2).last.strip }.reject { |line| line == "Nothing written" }.join("\n") ]
+        end
+        calls = File.exist?(File.join(dir, "calls")) ? File.readlines(File.join(dir, "calls")) : []
+      outcome + [ calls.count { |line| line.start_with?("buildx inspect") } ]
+      ensure
+        ENV["PATH"] = path
+      end
+    end
+
     def new_builder_command(additional_config = {})
       Kamal::Configuration.new(@config.deep_merge(additional_config), version: "123").then do |config|
         KAMAL.reset
