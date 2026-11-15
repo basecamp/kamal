@@ -73,6 +73,17 @@ env:
 # This requires that file names change when the contents change
 # (e.g., by including a hash of the contents in the name).
 #
+# Bridging includes assets extracted from the current and immediately previous
+# images, not every retained container. After deploying A, B, then C, assets
+# found only in A are no longer available. `retain_containers` does not extend
+# this window.
+#
+# A long-lived browser tab may still request an older lazy-loaded JS file.
+# If it has not fetched that file before, browser caching cannot prevent a 404.
+# Applications that need assets to remain available across more deployments
+# should serve them from persistent storage or an asset origin/CDN that retains
+# older files for the required lifetime.
+#
 # To configure this, set the path to the assets.
 #
 # You can also specify mount options after a colon, such as `ro` for read-only
