@@ -73,6 +73,7 @@ class Kamal::Configuration::Proxy
       tls: ssl? ? true : nil,
       "tls-certificate-path": container_tls_cert,
       "tls-private-key-path": container_tls_key,
+      "tls-acme-cache-path": proxy_config["ssl_acme_cache_path"],
       "deploy-timeout": seconds_duration(config.deploy_timeout),
       "drain-timeout": seconds_duration(config.drain_timeout),
       "health-check-interval": seconds_duration(proxy_config.dig("healthcheck", "interval")),

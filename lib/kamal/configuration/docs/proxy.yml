@@ -70,6 +70,19 @@ proxy:
   # HTTPS traffic), you can disable this redirect by setting `ssl_redirect: false`:
   ssl_redirect: false
 
+  # ACME cache path
+  #
+  # The directory where kamal-proxy stores Let's Encrypt certificates and account keys.
+  # The path is inside the kamal-proxy container. Use a path on a persistent volume,
+  # such as below `/home/kamal-proxy/.config/kamal-proxy`, so that the certificates
+  # are kept when the proxy restarts.
+  #
+  # If you mount a shared volume at this path, multiple kamal-proxy instances can share
+  # the Let's Encrypt certificates for the same domains.
+  #
+  # Defaults to the kamal-proxy certificate directory:
+  ssl_acme_cache_path: /home/kamal-proxy/.config/kamal-proxy/certs
+
   # Forward headers
   #
   # Whether to forward the `X-Forwarded-For` and `X-Forwarded-Proto` headers.

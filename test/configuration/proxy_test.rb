@@ -81,6 +81,16 @@ class ConfigurationProxyTest < ActiveSupport::TestCase
     end
   end
 
+  test "deploy options with acme cache path" do
+    @deploy[:proxy] = { "ssl" => true, "host" => "example.com", "ssl_acme_cache_path" => "/home/kamal-proxy/.config/kamal-proxy/acme" }
+    assert_equal "/home/kamal-proxy/.config/kamal-proxy/acme", config.proxy.deploy_options[:"tls-acme-cache-path"]
+  end
+
+  test "deploy options without acme cache path" do
+    @deploy[:proxy] = { "ssl" => true, "host" => "example.com" }
+    assert_not config.proxy.deploy_options.key?(:"tls-acme-cache-path")
+  end
+
   test "ssl with certificate and no private key" do
     with_test_secrets("secrets" => "CERT_PEM=certificate") do
       @deploy[:proxy] = {
