@@ -1,0 +1,14 @@
+<% raise "destination missing" if ENV["KAMAL_DESTINATION"].to_s.empty? %>
+service: app
+image: dhh/app
+servers:
+  web:
+    - 1.1.1.1
+registry:
+  server: registry.digitalocean.com
+  username: user
+  password: pass
+builder:
+  arch: amd64
+aliases:
+  console: app exec --interactive --reuse "bin/rails console"
