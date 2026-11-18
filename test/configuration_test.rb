@@ -287,6 +287,20 @@ class ConfigurationTest < ActiveSupport::TestCase
     end
   end
 
+  test "destination check precedes sub-config validation" do
+    # A destination-only key (builder.arch) lives only in the destination file, so
+    # the base config is incomplete. The missing-destination guard must run before
+    # the sub-configs validate themselves, otherwise "Builder arch not set" masks
+    # the real cause.
+    @deploy.delete(:builder)
+    @deploy[:require_destination] = true
+
+    error = assert_raises(ArgumentError) do
+      Kamal::Configuration.new(@deploy)
+    end
+    assert_equal "You must specify a destination", error.message
+  end
+
   test "to_h" do
     expected_config = \
       { roles: [ "web" ],
