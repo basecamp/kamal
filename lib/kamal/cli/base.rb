@@ -298,7 +298,7 @@ module Kamal::Cli
       end
 
       def ensure_run_directory
-        on(KAMAL.hosts) do
+        on(KAMAL.primary_host) do
           execute(*KAMAL.server.ensure_run_directory)
         end
       end
