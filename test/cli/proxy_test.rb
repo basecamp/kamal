@@ -120,9 +120,9 @@ class CliProxyTest < CliTestCase
 
   test "logs with follow" do
     SSHKit::Backend::Abstract.any_instance.stubs(:exec)
-      .with("ssh -t root@1.1.1.1 -p 22 'docker logs kamal-proxy --timestamps --tail 10 --follow 2>&1'")
+      .with("ssh -t root@1.1.1.1 -p 22 'docker logs kamal-proxy --tail 10 --timestamps --follow 2>&1'")
 
-    assert_match "docker logs kamal-proxy --timestamps --tail 10 --follow", run_command("logs", "--follow")
+    assert_match "docker logs kamal-proxy --tail 10 --timestamps --follow", run_command("logs", "--follow")
   end
 
   test "remove" do

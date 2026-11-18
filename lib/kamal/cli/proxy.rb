@@ -215,18 +215,19 @@ class Kamal::Cli::Proxy < Kamal::Cli::Base
   def logs
     grep = options[:grep]
     timestamps = !options[:skip_timestamps]
+    since = options[:since]
 
     if options[:follow]
+      lines = options[:lines].presence || ((since || grep) ? nil : 10) # Default to 10 lines if since or grep isn't set
       run_locally do
         proxy = KAMAL.proxy(KAMAL.primary_host)
         info "Following logs on #{KAMAL.primary_host}..."
-        info proxy.follow_logs(host: KAMAL.primary_host, timestamps: timestamps, grep: grep)
-        exec proxy.follow_logs(host: KAMAL.primary_host, timestamps: timestamps, grep: grep)
+        follow_logs = proxy.follow_logs(host: KAMAL.primary_host, timestamps: timestamps, since: since, lines: lines, grep: grep)
+        info follow_logs
+        exec follow_logs
       end
     else
-      since = options[:since]
       lines = options[:lines].presence || ((since || grep) ? nil : 100) # Default to 100 lines if since or grep isn't set
-
       on(KAMAL.proxy_hosts) do |host|
         puts_by_host host, capture(*KAMAL.proxy(host).logs(timestamps: timestamps, since: since, lines: lines, grep: grep)), type: "Proxy"
       end
