@@ -1,0 +1,4 @@
+accessories:
+  mysql:
+    roles:
+      - web
