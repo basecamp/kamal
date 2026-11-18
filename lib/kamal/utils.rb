@@ -1,4 +1,5 @@
 require "active_support/core_ext/object/try"
+require "shellwords"
 
 module Kamal::Utils
   extend self
@@ -89,7 +90,13 @@ module Kamal::Utils
   end
 
   def join_commands(commands)
-    commands.map(&:strip).join(" ")
+    commands = commands.map(&:strip)
+
+    if commands.one?
+      commands.first
+    else
+      Shellwords.join(commands)
+    end
   end
 
   def docker_arch
