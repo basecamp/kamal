@@ -57,21 +57,21 @@ class EnvFileTest < ActiveSupport::TestCase
       "foo" => "hello\\nthere"
     }
 
-    assert_equal "foo=hello\\\\nthere\n", \
+    # Literal backslash-n should be preserved, not double-escaped
+    assert_equal "foo=hello\\nthere\n", \
       Kamal::EnvFile.new(env).to_s
   ensure
     ENV.delete "PASSWORD"
   end
 
-  test "to_s newline" do
+  test "to_s newline raises" do
     env = {
       "foo" => "hello\nthere"
     }
 
-    assert_equal "foo=hello\\nthere\n", \
+    assert_raises ArgumentError do
       Kamal::EnvFile.new(env).to_s
-  ensure
-    ENV.delete "PASSWORD"
+    end
   end
 
   test "stringIO conversion" do
