@@ -73,6 +73,10 @@ class Kamal::Commands::App < Kamal::Commands::Base
       extract_version_from_name
   end
 
+  def list_versions_with_ages
+    docker(:ps, "--all", *container_filter_args, "--format", '"{{.Names}}\t{{.CreatedAt}}"')
+  end
+
   def ensure_env_directory
     make_directory role.env_directory
   end
