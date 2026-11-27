@@ -128,6 +128,28 @@ class CliMainTest < CliTestCase
     end
   end
 
+  test "deploy with skip_push and skip_pull" do
+    invoke_options = base_invoke_options
+
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:pull", [], invoke_options).never
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:proxy:boot", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true))
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:boot", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:prune:all", [], invoke_options)
+
+    run_command("deploy", "--skip_push", "--skip_pull").tap do |output|
+      assert_match /Use app image already on servers/, output
+      assert_match "docker inspect -f '{{ .Config.Labels.service }}' dhh/app:999 | grep -x app", output
+      assert_no_match /docker pull/, output
+      assert_no_match /docker image rm/, output
+    end
+  end
+
+  test "deploy with skip_pull requires skip_push" do
+    error = assert_raises(ArgumentError) { run_command("deploy", "--skip_pull") }
+    assert_equal "--skip-pull requires --skip-push", error.message
+  end
+
   test "deploy with no_cache" do
     invoke_options = base_invoke_options(no_cache: true)
 
@@ -415,6 +437,19 @@ class CliMainTest < CliTestCase
 
     run_command("redeploy", "--skip_push").tap do |output|
       assert_match /Pull app image/, output
+    end
+  end
+
+  test "redeploy with skip_push and skip_pull" do
+    invoke_options = base_invoke_options
+
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:pull", [], invoke_options).never
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true))
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:boot", [], invoke_options)
+
+    run_command("redeploy", "--skip_push", "--skip_pull").tap do |output|
+      assert_match /Use app image already on servers/, output
+      assert_no_match /docker pull/, output
     end
   end
 

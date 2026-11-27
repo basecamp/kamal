@@ -17,19 +17,14 @@ class Kamal::Cli::Main < Kamal::Cli::Base
 
   desc "deploy", "Deploy app to servers"
   option :skip_push, aliases: "-P", type: :boolean, default: false, desc: "Skip image build and push"
+  option :skip_pull, type: :boolean, default: false, desc: "Use the image already on the servers instead of pulling it (with --skip-push)"
   option :no_cache, type: :boolean, default: false, desc: "Build without using Docker's build cache"
   def deploy(boot_accessories: false)
     modify do
       runtime = print_runtime do
         invoke_options = deploy_options
 
-        if options[:skip_push]
-          say "Pull app image...", :magenta
-          invoke "kamal:cli:build:pull", [], invoke_options
-        else
-          say "Build and push app image...", :magenta
-          invoke "kamal:cli:build:deliver", [], invoke_options
-        end
+        deliver_image(invoke_options)
 
         modify(lock: true) do
           run_hook "pre-deploy", secrets: true
@@ -55,19 +50,14 @@ class Kamal::Cli::Main < Kamal::Cli::Base
 
   desc "redeploy", "Deploy app to servers without bootstrapping servers, starting kamal-proxy and pruning"
   option :skip_push, aliases: "-P", type: :boolean, default: false, desc: "Skip image build and push"
+  option :skip_pull, type: :boolean, default: false, desc: "Use the image already on the servers instead of pulling it (with --skip-push)"
   option :no_cache, type: :boolean, default: false, desc: "Build without using Docker's build cache"
   def redeploy
     modify do
       runtime = print_runtime do
         invoke_options = deploy_options
 
-        if options[:skip_push]
-          say "Pull app image...", :magenta
-          invoke "kamal:cli:build:pull", [], invoke_options
-        else
-          say "Build and push app image...", :magenta
-          invoke "kamal:cli:build:deliver", [], invoke_options
-        end
+        deliver_image(invoke_options)
 
         modify(lock: true) do
           run_hook "pre-deploy", secrets: true
@@ -281,8 +271,23 @@ class Kamal::Cli::Main < Kamal::Cli::Base
       true
     end
 
+    def deliver_image(invoke_options)
+      if options[:skip_pull]
+        raise ArgumentError, "--skip-pull requires --skip-push" unless options[:skip_push]
+
+        say "Use app image already on servers...", :magenta
+        on(KAMAL.app_hosts) { execute *KAMAL.builder.validate_image }
+      elsif options[:skip_push]
+        say "Pull app image...", :magenta
+        invoke "kamal:cli:build:pull", [], invoke_options
+      else
+        say "Build and push app image...", :magenta
+        invoke "kamal:cli:build:deliver", [], invoke_options
+      end
+    end
+
     def deploy_options
-      base_options = options.without("skip_push")
+      base_options = options.without("skip_push", "skip_pull")
       base_options = base_options.except("no_cache") unless base_options["no_cache"]
       { "version" => KAMAL.config.version }.merge(base_options)
     end
