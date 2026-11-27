@@ -128,6 +128,32 @@ class CliMainTest < CliTestCase
     end
   end
 
+  test "deploy with skip_push and skip_pull" do
+    invoke_options = base_invoke_options
+
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:pull", [], invoke_options).never
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:proxy:boot", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true))
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:boot", [], invoke_options)
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:prune:all", [], invoke_options)
+
+    run_command("deploy", "--skip_push", "--skip_pull").tap do |output|
+      assert_match /Use app image already on servers/, output
+      assert_match "docker inspect -f '{{ .Config.Labels.service }}' dhh/app:999 | grep -x app", output
+      assert_no_match /docker pull/, output
+      assert_no_match /docker image rm/, output
+    end
+  end
+
+  test "deploy with skip_push and skip_pull stops before the lock when the image is missing" do
+    assert_missing_image_stops_before_lock("deploy")
+  end
+
+  test "deploy with skip_pull requires skip_push" do
+    error = assert_raises(ArgumentError) { run_command("deploy", "--skip_pull") }
+    assert_equal "--skip-pull requires --skip-push", error.message
+  end
+
   test "deploy with no_cache" do
     invoke_options = base_invoke_options(no_cache: true)
 
@@ -416,6 +442,23 @@ class CliMainTest < CliTestCase
     run_command("redeploy", "--skip_push").tap do |output|
       assert_match /Pull app image/, output
     end
+  end
+
+  test "redeploy with skip_push and skip_pull" do
+    invoke_options = base_invoke_options
+
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:build:pull", [], invoke_options).never
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:stale_containers", [], invoke_options.merge(stop: true))
+    Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:boot", [], invoke_options)
+
+    run_command("redeploy", "--skip_push", "--skip_pull").tap do |output|
+      assert_match /Use app image already on servers/, output
+      assert_no_match /docker pull/, output
+    end
+  end
+
+  test "redeploy with skip_push and skip_pull stops before the lock when the image is missing" do
+    assert_missing_image_stops_before_lock("redeploy")
   end
 
   test "redeploy with no_cache" do
@@ -837,6 +880,22 @@ class CliMainTest < CliTestCase
   end
 
   private
+    def assert_missing_image_stops_before_lock(command)
+      Thread.report_on_exception = false
+
+      SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+      SSHKit::Backend::Abstract.any_instance.stubs(:execute)
+        .with { |*args| args[0..1] == [ :docker, :inspect ] }
+        .raises(SSHKit::Command::Failed, "Error: No such object: dhh/app:999")
+      SSHKit::Backend::Abstract.any_instance.expects(:execute)
+        .with { |*args| args[0..1] == [ :mkdir, ".kamal/lock-app" ] }
+        .never
+      Kamal::Cli::Main.any_instance.expects(:invoke).with("kamal:cli:app:boot", anything, anything).never
+
+      error = assert_raises(SSHKit::Runner::ExecuteError) { run_command(command, "--skip_push", "--skip_pull") }
+      assert_match "No such object: dhh/app:999", error.message
+    end
+
     def run_command(*command, config_file: "deploy_simple")
       with_argv([ *command, "-c", "test/fixtures/#{config_file}.yml" ]) do
         stdouted { Kamal::Cli::Main.start }
